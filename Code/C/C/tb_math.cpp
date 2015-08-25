@@ -19,7 +19,7 @@ uint32_t reverseBitsLowMem(uint32_t x, uint32_t l)
     return((x >> 16) | (x << 16)) >> (32 - l);
 }
 
-int compareComplex(my_complex *c1, my_complex *c2, uint32_t N)
+int compareComplex(tb_cpx *c1, tb_cpx *c2, uint32_t N)
 {
     double m = 0.00001;
     double max_r = -DBL_MAX;

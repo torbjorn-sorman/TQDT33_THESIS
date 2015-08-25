@@ -3,7 +3,7 @@
 #ifndef TB_MATH_H
 #define TB_MATH_H
 
-typedef kiss_fft_cpx my_complex;
+typedef kiss_fft_cpx tb_cpx;
 typedef unsigned __int32 uint32_t;
 
 #define M_2_PI 6.28318530718
@@ -38,6 +38,6 @@ static const uint32_t revTbl256[] =
 
 uint32_t reverseBitsLowMem(uint32_t x, uint32_t l);
 int log2_32(uint32_t value);
-int compareComplex(my_complex *c1, my_complex *c2, uint32_t N);
+int compareComplex(tb_cpx *c1, tb_cpx *c2, uint32_t N);
 
 #endif

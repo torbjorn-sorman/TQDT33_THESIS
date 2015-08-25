@@ -6,12 +6,13 @@
 #define FORWARD_FFT 1
 #define INVERSE_FFT -1
 
-void tb_fft(int dir, my_complex *x, my_complex *X, uint32_t N);
-void tb_fft_inplace(int dir, my_complex *x, my_complex *X, uint32_t N);
+typedef void(*fft_function)(int, tb_cpx*, tb_cpx*, uint32_t);
 
-void tb_fft2d(int dir, void(*fn)(int, my_complex*, my_complex*, uint32_t), my_complex **seq2d, uint32_t N);
-void tb_dft_naive(my_complex *x, my_complex *X, uint32_t N);
+void tb_fft(int dir, tb_cpx *x, tb_cpx *X, uint32_t N);
+void tb_fft_inplace(int dir, tb_cpx *x, tb_cpx *X, uint32_t N);
+void tb_fft_real(int dir, tb_cpx *x, tb_cpx *X, uint32_t N);
 
-void tb_fft_test(int dir, my_complex *x, my_complex *X, uint32_t N);
+void tb_fft2d(int dir, void(*fn)(int, tb_cpx*, tb_cpx*, uint32_t), tb_cpx **seq2d, uint32_t N);
+void tb_dft_naive(tb_cpx *x, tb_cpx *X, uint32_t N);
 
 #endif

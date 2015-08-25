@@ -7,7 +7,7 @@
 /* These are not written for performance, only visualizations and conversions.
  */
 
-void min_rng_avg(double *m, double *r, double *avg, my_complex **com, uint32_t N)
+void min_rng_avg(double *m, double *r, double *avg, tb_cpx **com, uint32_t N)
 {
     double mi, ma, mag;
     mi = DBL_MAX;
@@ -37,7 +37,7 @@ void cpPixel(uint32_t px, uint32_t px2, unsigned char *in, unsigned char *out)
     out[p + 2] = in[p2 + 2];
 }
 
-void img_to_cpx(unsigned char *img, my_complex **com, uint32_t N)
+void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N)
 {
     float r, g, b, intensity;
     uint32_t px;
@@ -56,7 +56,7 @@ void img_to_cpx(unsigned char *img, my_complex **com, uint32_t N)
     }
 }
 
-void cpx_to_img(my_complex **com, unsigned char *img, uint32_t N, unsigned char mag)
+void cpx_to_img(tb_cpx **com, unsigned char *img, uint32_t N, unsigned char mag)
 {
     uint32_t px, x, y;
     double magnitude, val, amin, range, avg, scale, avg_pos;

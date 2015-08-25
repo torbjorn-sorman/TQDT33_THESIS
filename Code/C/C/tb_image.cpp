@@ -39,7 +39,7 @@ void cpPixel(uint32_t px, uint32_t px2, unsigned char *in, unsigned char *out)
 
 void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N)
 {
-    float r, g, b, intensity;
+    double r, g, b, intensity;
     uint32_t px;
     for (uint32_t y = 0; y < N; ++y)
     {

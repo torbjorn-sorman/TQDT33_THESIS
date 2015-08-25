@@ -4,8 +4,9 @@
 #include "tb_test.h"
 #include "tb_fft.h"
 #include "tb_image.h"
+#include "tb_transpose.h"
 
-#define NO_TESTS 64
+#define NO_TESTS 32
 #define ERROR_MARGIN 0.0002
 
 int checkError(tb_cpx *seq, tb_cpx *ref, uint32_t N, int print)
@@ -62,6 +63,78 @@ unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, uint3
     return res;
 }
 
+unsigned char test_equal_dft2d(fft_function fft_fn, fft_function dft_ref_fn, uint32_t N, uint32_t inplace)
+{
+    int res, n, m;
+    uint32_t i;
+    char filename[30];
+    unsigned char *image, *imImage, *imImage2, *imImageRef, *imImageRef2;
+    tb_cpx **cxImage, **cxImageRef;
+
+    sprintf_s(filename, 30, "lena_%u.ppm", N);   
+    
+    printf("File: %s\n", filename);
+     
+    image = readppm(filename, &n, &m);
+    imImage = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
+    imImage2 = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
+    imImageRef = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
+    imImageRef2 = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
+    cxImage = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cxImageRef = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    for (i = 0; i < N; ++i) {
+        cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cxImageRef[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+    }
+    writeppm("test_original.ppm", N, N, image);
+    img_to_cpx(image, cxImage, N);
+    img_to_cpx(image, cxImageRef, N);
+    cpx_to_img(cxImage, image, N, 0);
+    writeppm("test_original_grey.ppm", N, N, image);
+
+    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cxImage, N);
+    //tb_fft2d_inplace(INVERSE_FFT, tb_fft, cxImage, N);
+    tb_fft2d_inplace(FORWARD_FFT, kiss_fft, cxImageRef, N);
+    //tb_fft2d_inplace(INVERSE_FFT, kiss_fft, cxImageRef, N);
+        
+    cpx_to_img(cxImage, imImage, N, 1);
+    cpx_to_img(cxImageRef, imImageRef, N, 1);
+
+    writeppm("test.ppm", N, N, imImage2);
+    writeppm("test_ref.ppm", N, N, imImageRef2);
+
+    res = 1;
+    for (i = 0; i < N * N * 3; ++i) {
+        if (imImage[i] != imImageRef[i]) {
+            res = 0;
+            printf("Ref! At: %d Is: %u Should be: %u\n", i, imImage[i], imImageRef[i]);
+            break;
+        }
+    }
+    if (res > 0) {
+        for (i = 0; i < N * N * 3; ++i) {
+            if (image[i] != imImageRef[i]) {
+                res = 0;
+                printf("Image! At: %d Is: %u Should be: %u\n", i, imImageRef[i], image[i]);
+                break;
+            }
+        }
+    }
+    // Free all resources...
+    free(image);
+    for (i = 0; i < N; ++i) {
+        free(cxImage[i]);
+        free(cxImageRef[i]);
+    }
+    free(cxImage);
+    free(cxImageRef);
+    free(imImage);
+    free(imImage2);
+    free(imImageRef);
+    free(imImageRef2);
+    return res;
+}
+
 double test_time_dft(fft_function fft_fn, uint32_t N)
 {
     LARGE_INTEGER freq, tStart, tStop;
@@ -89,7 +162,7 @@ double test_time_dft_2d(fft_function fft_fn, uint32_t N)
 {
     int x, y;
     LARGE_INTEGER freq, tStart, tStop;
-    double m, tmp;
+    double m;
     char filename[30];
     unsigned char *image;
     tb_cpx **cxImage;
@@ -100,24 +173,23 @@ double test_time_dft_2d(fft_function fft_fn, uint32_t N)
     {
         cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
     }    
-    sprintf_s(filename, 30, "photo05_%u.ppm", N);
+    sprintf_s(filename, 30, "lena_%u.ppm", N);
     image = readppm(filename, &x, &y);        
     m = DBL_MAX;
     QueryPerformanceFrequency(&freq);
-    for (int i = 0; i < NO_TESTS / 4; ++i)
+    QueryPerformanceCounter(&tStart);
+    for (int i = 0; i < NO_TESTS; ++i)
     {
         img_to_cpx(image, cxImage, N);
-        QueryPerformanceCounter(&tStart);
-        tb_fft2d(FORWARD_FFT, fft_fn, cxImage, N);
-        QueryPerformanceCounter(&tStop);
-        tmp = (double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (float)freq.QuadPart;
-        m = tmp < m ? tmp : m;
+        //tb_fft2d(FORWARD_FFT, fft_fn, cxImage, N);
+        tb_fft2d_trans(FORWARD_FFT, fft_fn, cxImage, N);
     }
+    QueryPerformanceCounter(&tStop);
     free(image);
     for (i = 0; i < N; ++i)
         free(cxImage[i]);
     free(cxImage);
-    return (double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (float)freq.QuadPart;
+    return ((double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (float)freq.QuadPart) / NO_TESTS;
 }
 
 unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
@@ -323,6 +395,63 @@ int run_fft2dTest(fft_function fn, uint32_t N)
     free(cxImage);
     free(imImage);
     return res;
+}
+
+unsigned char test_transpose(uint32_t N)
+{    
+    tb_cpx **in = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    tb_cpx **in2 = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    for (uint32_t y = 0; y < N; ++y) {
+        in[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        in2[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        for (uint32_t x = 0; x < N; ++x) {
+            in[y][x] = { (float)x, (float)y };
+            in2[y][x] = { (float)x, (float)y };
+        }
+    }
+    
+    transpose(in, N);
+    transpose_block(in, N, 16);
+    return 0;
+}
+
+double test_time_transpose(void(*transpose_function)(tb_cpx**, uint32_t), uint32_t N)
+{
+    LARGE_INTEGER freq, tStart, tStop;
+    tb_cpx **in = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    for (uint32_t y = 0; y < N; ++y) {
+        in[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        for (uint32_t x = 0; x < N; ++x) {
+            in[y][x] = { (float)x, (float)y };
+        }
+    }
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&tStart);
+    for (int i = 0; i < NO_TESTS; ++i){
+        transpose_function(in, N);
+    }
+    QueryPerformanceCounter(&tStop);
+    return (double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (double)freq.QuadPart;
+}
+
+double test_time_transpose_block(void(*transpose_function)(tb_cpx**, uint32_t, uint32_t), uint32_t block_size, uint32_t N)
+{
+    LARGE_INTEGER freq, tStart, tStop;
+    uint32_t x, y;
+    tb_cpx **in = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    for (y = 0; y < N; ++y) {
+        in[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        for (x = 0; x < N; ++x) {
+            in[y][x] = { (float)x, (float)y };
+        }
+    }
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&tStart);
+    for (int i = 0; i < NO_TESTS; ++i){
+        transpose_function(in, N, block_size);
+    }
+    QueryPerformanceCounter(&tStop);
+    return (double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (double)freq.QuadPart;
 }
 
 void kiss_fft(int dir, tb_cpx *in, tb_cpx *out, uint32_t N)

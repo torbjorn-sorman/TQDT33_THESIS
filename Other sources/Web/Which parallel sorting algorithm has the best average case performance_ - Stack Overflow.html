@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<!-- saved from url=(0113)http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance -->
+<html itemscope="" itemtype="http://schema.org/QAPage"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Which parallel sorting algorithm has the best average case performance? - Stack Overflow</title>
+    <link rel="shortcut icon" href="http://cdn.sstatic.net/stackoverflow/img/favicon.ico?v=6cd6089ee7f6">
+    <link rel="apple-touch-icon image_src" href="http://cdn.sstatic.net/stackoverflow/img/apple-touch-icon.png?v=41f6e13ade69">
+    <link rel="search" type="application/opensearchdescription+xml" title="Stack Overflow" href="http://stackoverflow.com/opensearch.xml">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:domain" content="stackoverflow.com">
+    <meta property="og:type" content="website">
+    <meta property="og:image" itemprop="image primaryImageOfPage" content="http://cdn.sstatic.net/stackoverflow/img/apple-touch-icon@2.png?v=ea71a5211a91&amp;a">
+    <meta name="twitter:title" property="og:title" itemprop="title name" content="Which parallel sorting algorithm has the best average case performance?">
+    <meta name="twitter:description" property="og:description" itemprop="description" content="Sorting takes O(n log n) in the serial case. If we have O(n) processors we would hope for a linear speedup. O(log n) parallel algorithms exist but they have a very high constant. They also aren&#39;t ">
+    <meta property="og:url" content="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance">
+    <link rel="canonical" href="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/Which parallel sorting algorithm has the best average case performance_ - Stack Overflow.html">
+
+    
+    
+    <script type="text/javascript" async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/ados"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/quant.js"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/beacon.js"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/analytics.js"></script><script type="text/javascript" async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/ados.js"></script><script src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/jquery.min.js"></script>
+    <script src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/stub.en.js"></script>
+    <link rel="stylesheet" type="text/css" href="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/all.css">
+
+            <link rel="alternate" type="application/atom+xml" title="Feed for question &#39;Which parallel sorting algorithm has the best average case performance?&#39;" href="http://stackoverflow.com/feeds/question/3969813">
+            <meta name="twitter:app:country" content="US">
+            <meta name="twitter:app:name:iphone" content="Stack Exchange iOS">
+            <meta name="twitter:app:id:iphone" content="871299723">
+            <meta name="twitter:app:url:iphone" content="se-zaphod://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance">
+            <meta name="twitter:app:name:ipad" content="Stack Exchange iOS">
+            <meta name="twitter:app:id:ipad" content="871299723">
+            <meta name="twitter:app:url:ipad" content="se-zaphod://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance">
+            <meta name="twitter:app:name:googleplay" content="Stack Exchange Android">
+            <meta name="twitter:app:url:googleplay" content="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance">
+            <meta name="twitter:app:id:googleplay" content="com.stackexchange.marvin">
+        <script>
+        
+            StackExchange.ready(function () {
+                    
+                    StackExchange.using("snippets", function () {
+                        StackExchange.snippets.initSnippetRenderer();
+                    });
+                    
+
+                StackExchange.using("postValidation", function () {
+                    StackExchange.postValidation.initOnBlurAndSubmit($('#post-form'), 2, 'answer');
+                });
+
+                
+                StackExchange.question.init({showAnswerHelp:true,totalCommentCount:8,shownCommentCount:5,highlightColor:'#F4A83D',backgroundColor:'#FFF',questionId:3969813});
+
+                styleCode();
+
+                    StackExchange.realtime.subscribeToQuestion('1', '3969813');
+                                                                    StackExchange.using("gps", function () { StackExchange.gps.trackOutboundClicks('#content', '.post-text'); });
+
+            });
+        </script>
+
+
+    <script>
+        StackExchange.init({"locale":"en","stackAuthUrl":"https://stackauth.com","serverTime":1439975582,"networkMetaHostname":"meta.stackexchange.com","routeName":"Questions/Show","styleCode":true,"enableUserHovercards":true,"snippets":{"enabled":true,"domain":"stacksnippets.net"},"site":{"name":"Stack Overflow","description":"Q&A for professional and enthusiast programmers","isNoticesTabEnabled":true,"recaptchaPublicKey":"6LdchgIAAAAAAJwGpIzRQSOFaO0pU6s44Xt8aTwc","recaptchaAudioLang":"en","enableNewTagCreationWarning":true,"insertSpaceAfterNameTabCompletion":false,"globalAuthDisabled":true,"nonAsciiTags":true,"enableSocialMediaInSharePopup":true},"user":{"fkey":"32420adc2e1fd2e0208f846d88820bce","isAnonymous":true}});
+        StackExchange.using.setCacheBreakers({"js/prettify-full.en.js":"b7e9023f266a","js/moderator.en.js":"0ba2ffbf1322","js/full-anon.en.js":"1cbdb136d8dc","js/full.en.js":"8cd4eba9c916","js/wmd.en.js":"855c17f04040","js/third-party/jquery.autocomplete.min.js":"e5f01e97f7c3","js/third-party/jquery.autocomplete.min.en.js":"","js/mobile.en.js":"b40abb8c020f","js/help.en.js":"5fde64fe67a3","js/tageditor.en.js":"260ae44a356d","js/tageditornew.en.js":"6ffe0641f10d","js/inline-tag-editing.en.js":"de80429b1816","js/revisions.en.js":"5f5ba1a4eb8c","js/review.en.js":"af8254acdf76","js/tagsuggestions.en.js":"b278f9a0b23b","js/post-validation.en.js":"2c068e8b65dc","js/explore-qlist.en.js":"cd6e5274146c","js/events.en.js":"fcae0e1f9c16","js/keyboard-shortcuts.en.js":"dc70147edd5a","js/external-editor.en.js":"24fc09189c99","js/external-editor.en.js":"24fc09189c99","js/snippet-javascript.en.js":"a31b1ccd5acc","js/snippet-javascript-codemirror.en.js":"d0dcad0d4679"});
+        StackExchange.using("gps", function() {
+             StackExchange.gps.init(true);
+        });
+    </script>
+    
+        <script>
+            StackExchange.ready(function () {
+                $('#nav-tour').click(function () {
+                    StackExchange.using("gps", function() {
+                        StackExchange.gps.track("aboutpage.click", { aboutclick_location: "headermain" }, true);
+                    });
+                });
+            });
+        </script>
+    
+    
+<script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/full-anon.en.js"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/snippet-javascript.en.js"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/post-validation.en.js"></script><script async="" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/external-editor.en.js"></script><script type="text/javascript" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/adFeedback.js"></script><link rel="stylesheet" href="http://static.adzerk.net/Extensions/adFeedback.css"><link type="text/css" rel="stylesheet" href="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/jobs.min.css"></head>
+<body class="question-page new-topbar">
+    <noscript>&lt;div id="noscript-padding"&gt;&lt;/div&gt;</noscript>
+    <div id="notify-container"></div>
+    <div id="overlay-header"></div>
+    <div id="custom-header"></div>
+
+
+
+
+<div class="topbar">
+    <div class="topbar-wrapper">
+
+        <div class="js-topbar-dialog-corral">
+
+<div class="topbar-dialog siteSwitcher-dialog dno">
+    <div class="header">
+        <h3><a href="http://stackoverflow.com/">current community</a></h3>
+    </div>
+    <div class="modal-content current-site-container">
+        <ul class="current-site">
+                <li>
+                        <div class="related-links">
+            <a href="http://chat.stackoverflow.com/" class="js-gps-track" data-gps-track="site_switcher.click({ item_type:6 })">chat</a>
+                    <a href="http://blog.stackoverflow.com/" class="js-gps-track" data-gps-track="site_switcher.click({ item_type:7 })">blog</a>
+            </div>
+
+
+
+
+    <a href="http://stackoverflow.com/" class="current-site-link site-link js-gps-track" data-id="1" data-gps-track="
+        site_switcher.click({ item_type:3 })">
+        <div class="site-icon favicon favicon-stackoverflow" title="Stack Overflow"></div>
+        Stack Overflow
+    </a>
+
+                </li>
+                <li class="related-site">
+                        <div class="L-shaped-icon-container">
+        <span class="L-shaped-icon"></span>
+    </div>
+
+                    
+
+
+
+    <a href="http://meta.stackoverflow.com/" class="site-link js-gps-track" data-id="552" data-gps-track="
+            site.switch({ target_site:552, item_type:3 }),
+        site_switcher.click({ item_type:4 })">
+        <div class="site-icon favicon favicon-stackoverflowmeta" title="Meta Stack Overflow"></div>
+        Meta Stack Overflow
+    </a>
+
+                </li>
+                            <li class="related-site">
+                        <div class="L-shaped-icon-container">
+        <span class="L-shaped-icon"></span>
+    </div>
+
+                    <a class="site-link js-gps-track" href="http://careers.stackoverflow.com/?utm_source=stackoverflow.com&utm_medium=site-ui&utm_campaign=multicollider" data-gps-track="site_switcher.click({ item_type:9 })">
+                        <div class="site-icon favicon favicon-careers" title="Stack Overflow Careers"></div>
+                        Stack Overflow Careers
+                    </a>
+                </li>
+        </ul>
+    </div>
+    
+    <div class="header" id="your-communities-header">
+        <h3>
+your communities        </h3>
+            
+    </div>
+    <div class="modal-content" id="your-communities-section">
+            
+            <div class="call-to-login">
+<a href="https://stackoverflow.com/users/signup?returnurl=http%3a%2f%2fstackoverflow.com%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance" class="login-link js-gps-track" data-gps-track="site_switcher.click({ item_type:10 })">Sign up</a> or <a href="https://stackoverflow.com/users/login?returnurl=http%3a%2f%2fstackoverflow.com%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance" class="login-link js-gps-track" data-gps-track="site_switcher.click({ item_type:11 })">log in</a> to customize your list.
+            </div>
+    </div>
+    
+    <div class="header">
+        <h3><a href="http://stackexchange.com/sites">more stack exchange communities</a></h3>
+    </div>
+    <div class="modal-content">
+            <div class="child-content"></div>
+    </div>
+</div>
+        </div>
+
+        <div class="network-items">
+
+            <a href="http://stackexchange.com/" class="topbar-icon icon-site-switcher yes-hover js-site-switcher-button js-gps-track" data-gps-track="site_switcher.show" title="A list of all 149 Stack Exchange sites">
+                <span class="hidden-text">Stack Exchange</span>
+            </a>
+
+        </div>
+
+        <div class="topbar-links">
+
+                <div class="links-container">
+                <span class="topbar-menu-links">
+                                <a href="https://stackoverflow.com/users/signup?returnurl=http%3a%2f%2fstackoverflow.com%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance" class="login-link">sign up</a>
+                                <a href="https://stackoverflow.com/users/login?returnurl=http%3a%2f%2fstackoverflow.com%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance" class="login-link">log in</a>
+
+                        <a href="http://stackoverflow.com/tour">tour</a>
+                            <a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" class="icon-help js-help-button" title="Help Center and other resources">
+        help
+        <span class="triangle"></span>
+    </a>
+    <div class="topbar-dialog help-dialog js-help-dialog dno">
+        <div class="modal-content">
+            <ul>
+                                    <li>
+                        <a href="http://stackoverflow.com/tour" class="js-gps-track" data-gps-track="help_popup.click({ item_type:1 })">
+                            Tour
+                            <span class="item-summary">
+                                Start here for a quick overview of the site
+                            </span>
+                        </a>
+                    </li>
+                <li>
+                    <a href="http://stackoverflow.com/help" class="js-gps-track" data-gps-track="help_popup.click({ item_type:4 })">
+                        Help Center
+                        <span class="item-summary">
+                            Detailed answers to any questions you might have
+                        </span>
+                    </a>
+                </li>
+                    <li>
+                        <a href="http://meta.stackoverflow.com/" class="js-gps-track" data-gps-track="help_popup.click({ item_type:2 })">
+                            Meta
+                            <span class="item-summary">
+                                Discuss the workings and policies of this site
+                            </span>
+                        </a>
+                    </li>
+            </ul>
+        </div>
+    </div>
+
+                            <a href="http://careers.stackoverflow.com/?utm_source=stackoverflow.com&utm_medium=site-ui&utm_campaign=anon-topbar">stack overflow careers</a>
+                    </span>
+                </div>
+
+            <div class="search-container">
+                <form id="search" action="http://stackoverflow.com/search" method="get" autocomplete="off">
+                    <input name="q" type="text" placeholder="search" value="" tabindex="1" autocomplete="off" maxlength="240">
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+    <script>
+        StackExchange.ready(function() { StackExchange.topbar.init(); });
+    </script>
+
+    <div class="container">
+        <div id="header">
+            <br class="cbt">
+            <div id="hlogo">
+                <a href="http://stackoverflow.com/">
+                    Stack Overflow
+                </a>
+            </div>
+            <div id="hmenus">
+                <div class="nav mainnavs">
+                    <ul>
+                        <li class="youarehere"><a id="nav-questions" href="http://stackoverflow.com/questions">Questions</a></li>
+                        <li><a id="nav-tags" href="http://stackoverflow.com/tags">Tags</a></li>
+                        <li><a id="nav-users" href="http://stackoverflow.com/users">Users</a></li>
+                        <li><a id="nav-badges" href="http://stackoverflow.com/help/badges">Badges</a></li>
+                        <li><a id="nav-unanswered" href="http://stackoverflow.com/unanswered">Unanswered</a></li>
+                    </ul>
+                </div>
+                <div class="nav askquestion">
+                    <ul>
+                        <li>
+                            <a id="nav-askquestion" href="http://stackoverflow.com/questions/ask">Ask Question</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+
+
+
+        <div id="content" class="snippet-hidden">
+            
+
+<div itemscope="" itemtype="http://schema.org/Question">
+    <link itemprop="image" href="http://cdn.sstatic.net/stackoverflow/img/apple-touch-icon.png?v=41f6e13ade69">
+			<!--googleoff: all-->
+
+<div id="herobox-mini">
+    <div id="hero-content">
+        <span id="controls">
+            <a href="http://stackoverflow.com/tour" id="tell-me-more" class="button">Take the 2-minute tour</a>
+            <span id="close"><a title="click to dismiss">×</a></span>
+        </span>
+        <div id="blurb">
+            Stack Overflow is a question and answer site for professional and enthusiast programmers. It's 100% free.
+        </div>        
+    </div>
+    <script>
+        $('#tell-me-more').click(function () {
+            var clickSource = $("body").attr("class") + '-mini';
+            if ($("body").hasClass("questions-page")) {
+                clickSource = 'questionpagemini';
+            } else if ($("body").hasClass("question-page")) {
+                clickSource = 'questionpagemini';
+            } else if ($("body").hasClass("home-page")) {
+                clickSource = 'homepagemini';
+            }
+
+            StackExchange.using("gps", function () {
+                StackExchange.gps.track("aboutpage.click", { aboutclick_location: clickSource } , true);
+            });
+        });
+        $('#herobox-mini #close').click(function () {
+            StackExchange.using("gps", function () {
+                StackExchange.gps.track("hero.action", { hero_action_type: "close" }, true);
+            });
+            $.cookie("hero", "none", { path: "/", expires: 365 });
+            var $hero = $("#herobox-mini");
+            $hero.slideUp('fast', function () { $hero.remove(); });
+            return false;
+        });
+    </script>
+</div>
+			<!--googleon: all-->
+			<div id="question-header">
+                <h1 itemprop="name"><a href="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/Which parallel sorting algorithm has the best average case performance_ - Stack Overflow.html" class="question-hyperlink">Which parallel sorting algorithm has the best average case performance?</a></h1>
+		</div>
+			<div id="mainbar">
+
+			
+
+<div class="question" data-questionid="3969813" id="question">
+
+    <script>
+                var ados = ados || {}; ados.run = ados.run || [];
+                ados.run.push(function () { ados_add_placement(22,8277,"adzerk1885451915",4).setZone(43); });
+            </script>
+            <div class="everyonelovesstackoverflow adzerk-vote" id="adzerk1885451915"><a href="http://engine.adzerk.net/r?e=eyJhdiI6MjQ4MjUsImF0Ijo0LCJidCI6MCwiY20iOjI4MDU5MCwiY2giOjExNzgsImNrIjp7fSwiY3IiOjk5MTU0NSwiZGkiOiIzYTU5NTRlODlmMGY0NDQ0YjM5YjUxZmFhZjQ5ZDA5ZCIsImRtIjoxLCJmYyI6MTA0Mjc3NiwiZmwiOjcwNDE2NSwiaXAiOiI5MC4yMzIuMjA0LjIwOCIsImt3IjoiYWxnb3JpdGhtLHNvcnRpbmcsY29uY3VycmVuY3kiLCJtayI6ImFsZ29yaXRobSIsIm53IjoyMiwicGMiOjcsInByIjo3NjUsInJ0IjoyLCJyZiI6Imh0dHBzOi8vd3d3Lmdvb2dsZS5zZS8iLCJzdCI6ODI3NywidWsiOiJ1ZTEtMmQyNTU4N2FhYjM4NDRiODk3NDRjNDAzMzU3Y2RhNmIiLCJ6biI6NDMsInRzIjoxNDM5OTc1NTg0MDkyLCJiZiI6dHJ1ZSwicG4iOiJhZHplcmsxODg1NDUxOTE1IiwidXIiOiJodHRwOi8vd3d3LmFsY2hlbXlhcGkuY29tL2FwaS9yZWdpc3Rlci5odG1sP3V0bV9zb3VyY2U9c3RhY2stb3ZlcmZsb3cmdXRtX21lZGl1bT1tZWRpYS1vdXRyZWFjaCZ1dG1fY2FtcGFpZ249bmxwLWFwaSJ9&s=pLZitYwo-hzH-kdV_pZQ5krsSWs" rel="nofollow" target="_blank" title=""><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/6f98fe609df541a6984a766d5d26685b.jpg" title="" alt="" border="0" width="728" height="90"></a><div class="adzerk-vote-controls" style="display:none;"><div class="adzerk-vote-option adzerk-vote-up"><div class="adzerk-vote-icon"></div></div><div class="adzerk-vote-option adzerk-vote-down"><div class="adzerk-vote-icon"></div></div></div><div class="adzerk-vote-survey" style="display:none;"><form><span>No problem. We won't show you that ad again. Why didn't you like it?</span><ul><li><label><input type="radio" value="12" name="downvoteReason">Uninteresting</label></li><li><label><input type="radio" value="13" name="downvoteReason">Misleading</label></li><li><label><input type="radio" value="14" name="downvoteReason">Offensive</label></li><li><label><input type="radio" value="15" name="downvoteReason">Repetitive</label></li><li><label><input type="radio" value="16" name="downvoteReason">Other</label></li></ul><a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" class="adzerk-vote-cancel">Oops! I didn't mean to do this.</a></form></div><img height="0px" width="0px" border="0" style="position:absolute;" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/i.gif"></div>    <table>
+        <tbody><tr>
+            <td class="votecell">
+                
+
+<div class="vote">
+        <input type="hidden" name="_id_" value="3969813">
+        <a class="vote-up-off" title="This question shows research effort; it is useful and clear">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">75</span>
+        <a class="vote-down-off" title="This question does not show any research effort; it is unclear or not useful">down vote</a>
+
+        <a class="star-off" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" title="This is a favorite question (click again to undo)">favorite</a>
+        <div class="favoritecount"><b>68</b></div>
+
+
+</div>
+
+            </td>
+            
+<td class="postcell">
+<div>
+    <div class="post-text" itemprop="text">
+
+<p>Sorting takes O(n log n) in the serial case. If we have O(n) processors we would hope for a linear speedup. O(log n) parallel algorithms exist but they have a very high constant. They also aren't applicable on commodity hardware which doesn't have anywhere near O(n) processors. With p processors, reasonable algorithms should take O(n/p log n) time.</p>
+
+<p>In the serial case, quick sort has the best runtime complexity on average. A parallel quick sort algorithm is easy to implement (see <a href="http://stackoverflow.com/questions/1897458/parallel-sort-algorithm">here</a> and <a href="http://stackoverflow.com/questions/1784028/which-sorting-method-is-most-suitable-for-parallel-processing">here</a>). However it doesn't perform well since the very first step is to partition the whole collection on a single core. I have found information on many parallel sort algorithms but so far I have not seen anything pointing to a clear winner.</p>
+
+<p>I'm looking to sort lists of 1 million to 100 million elements in a JVM language running on 8 to 32 cores.</p>
+    </div>
+    <div class="post-taglist">
+        <a href="http://stackoverflow.com/questions/tagged/algorithm" class="post-tag js-gps-track" title="show questions tagged &#39;algorithm&#39;" rel="tag">algorithm</a> <a href="http://stackoverflow.com/questions/tagged/sorting" class="post-tag js-gps-track" title="show questions tagged &#39;sorting&#39;" rel="tag">sorting</a> <a href="http://stackoverflow.com/questions/tagged/concurrency" class="post-tag js-gps-track" title="show questions tagged &#39;concurrency&#39;" rel="tag">concurrency</a> 
+    </div>
+    <table class="fw">
+    <tbody><tr>
+    <td class="vt">
+<div class="post-menu"><a href="http://stackoverflow.com/q/3969813" title="short permalink to this question" class="short-link" id="link-post-3969813">share</a><span class="lsep">|</span><a href="http://stackoverflow.com/posts/3969813/edit" class="suggest-edit-post" title="">improve this question</a></div>        
+    </td>
+    <td align="right" class="post-signature">
+<div class="user-info ">
+    <div class="user-action-time">
+        <a href="http://stackoverflow.com/posts/3969813/revisions" title="show all edits to this post">edited <span title="2012-09-20 22:50:00Z" class="relativetime">Sep 20 '12 at 22:50</span></a>
+    </div>
+    <div class="user-gravatar32">
+        
+    </div>
+    <div class="user-details">
+        <br>
+        
+    </div>
+</div>    </td>
+    <td class="post-signature owner">
+        <div class="user-info user-hover">
+    <div class="user-action-time">
+        asked <span title="2010-10-19 15:07:32Z" class="relativetime">Oct 19 '10 at 15:07</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="http://stackoverflow.com/users/23572/craig-p-motlin"><div class="gravatar-wrapper-32"><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/2fb7d5f5a2ddf9b35d8bfe9d4c4a49fd" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="http://stackoverflow.com/users/23572/craig-p-motlin">Craig P. Motlin</a><br>
+        <span class="reputation-score" title="reputation score 13435" dir="ltr">13.4k</span><span title="9 gold badges"><span class="badge1"></span><span class="badgecount">9</span></span><span title="56 silver badges"><span class="badge2"></span><span class="badgecount">56</span></span><span title="100 bronze badges"><span class="badge3"></span><span class="badgecount">100</span></span>
+    </div>
+</div>
+    </td>
+    </tr>
+    </tbody></table>
+</div>
+</td>
+        </tr>
+                
+<tr>
+    <td class="votecell"></td>
+    <td>
+	    <div id="comments-3969813" class="comments ">
+		    <table>
+                <tbody data-remaining-comments-count="3" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+
+
+    <tr id="comment-5557413" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">For what kind of elements?</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/13924/jon-harrop" title="30702 reputation" class="comment-user">Jon Harrop</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment5557413_3969813"><span title="2011-02-12 09:09:42Z" class="relativetime-clean">Feb 12 '11 at 9:09</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-5574192" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">@Jon Anything really. They'll be my domain objects which are all different, but all implement Comparable.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/23572/craig-p-motlin" title="13435 reputation" class="comment-user owner">Craig P. Motlin</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment5574192_3969813"><span title="2011-02-14 05:44:23Z" class="relativetime-clean">Feb 14 '11 at 5:44</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-16759498" class="comment ">
+        <td class="comment-actions">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                <span title="number of &#39;useful comment&#39; votes received" class="cool">1</span>
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">I think you have one too many n/p in your "should take"</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/13675/sparr" title="5949 reputation" class="comment-user">Sparr</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment16759498_3969813"><span title="2012-09-17 14:16:45Z" class="relativetime-clean">Sep 17 '12 at 14:16</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-16761026" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">@Sparr I don't think so. I'm making a distinction between having a few processors and having as many processors as elements being sorted.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/23572/craig-p-motlin" title="13435 reputation" class="comment-user owner">Craig P. Motlin</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment16761026_3969813"><span title="2012-09-17 15:07:43Z" class="relativetime-clean">Sep 17 '12 at 15:07</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-16791391" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">@CraigP.Motlin right, but you seem to have "distributed" the /p erroneously. There should be only one /p.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/13675/sparr" title="5949 reputation" class="comment-user">Sparr</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment16791391_3969813"><span title="2012-09-18 16:23:18Z" class="relativetime-clean">Sep 18 '12 at 16:23</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+                </tbody>
+		    </table>
+	    </div>
+
+        <div id="comments-link-3969813" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link  dno" title="Use comments to ask for more information or suggest improvements. Avoid answering questions in comments."></a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link " title="expand to show all comments on this post" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" onclick="">show <b>3</b> more comments</a>
+        </div>         
+    </td>
+</tr>        </tbody></table>
+</div>
+
+			<div id="answers">
+
+				<a name="tab-top"></a>
+				<div id="answers-header">
+					<div class="subheader answers-subheader">
+						<h2>
+								4 Answers
+                                <span style="display:none;" itemprop="answerCount">4</span>
+						</h2>
+						<div>
+							<div id="tabs">
+        <a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance?answertab=active#tab-top" data-nav-xhref="" title="Answers with the latest activity first" data-value="active">active</a>
+        <a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance?answertab=oldest#tab-top" data-nav-xhref="" title="Answers in the order they were provided" data-value="oldest">oldest</a>
+        <a class="youarehere" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance?answertab=votes#tab-top" data-nav-xhref="" title="Answers with the highest score first" data-value="votes">votes</a>
+</div>
+						</div>
+					</div>    
+				</div>    
+
+
+
+
+  
+<a name="3969847"></a>
+<div id="answer-3969847" class="answer accepted-answer" data-answerid="3969847" itemscope="" itemtype="http://schema.org/Answer" itemprop="acceptedAnswer">
+
+    <table>
+        <tbody><tr>
+            <td class="votecell">
+                
+
+<div class="vote">
+        <input type="hidden" name="_id_" value="3969847">
+        <a class="vote-up-off" title="This answer is useful">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">121</span>
+        <a class="vote-down-off" title="This answer is not useful">down vote</a>
+
+
+
+        <span class="vote-accepted-on load-accepted-answer-date" title="loading when this answer was accepted...">accepted</span>
+<div class="bounty-award-container"><span class="bounty-award" title="This answer has been awarded bounties worth 50 reputation by Alex Chamberlain">+50</span></div>
+</div>
+
+            </td>
+            
+
+
+<td class="answercell">
+    <div class="post-text" itemprop="text">
+<p>The following article (PDF download) is a comparative study of parallel sorting algorithms on various architectures:</p>
+
+<p><a href="http://parasol.tamu.edu/publications/download.php?file_id=191">Parallel sorting algorithms on various architectures</a></p>
+
+<p>According to the article, <strong>sample sort</strong> seems to be best on many parallel architecture types.</p>
+
+<p>Update to address Mark's concern of age:</p>
+
+<p>Here are more recent articles introducing something more novel (from 2007, which, btw, still get compared with sample sort):</p>
+
+<p><a href="http://gauss.cs.ucsb.edu/publication/psort.pdf">Improvements on sample sort</a> <br>
+<a href="http://www.dia.eui.upm.es/asignatu/pro_par/articulos/AASort.pdf">AA-Sort</a></p>
+
+<p>The bleeding edge (circa 2010, some only a couple months old):</p>
+
+<p><a href="http://parlab.eecs.berkeley.edu/wiki/_media/patterns/sortingpattern.pdf">Parallel sorting pattern</a><br>
+<a href="http://lap.epfl.ch/webdav/site/lap/shared/publications/YeApr10_HighPerformanceComparisonBasedSortingAlgorithmOnManyCoreGpus_IPDPS10.pdf">Many-core GPU based parallel sorting</a><br>
+<a href="http://cass-mt.pnl.gov/docs/pubs/gpusort-2010-08-25.pdf">Hybrid CPU/GPU parallel sort</a><br>
+<a href="http://www.cc.gatech.edu/~bader/COURSES/UNM/ece638-Fall2004/papers/HBJ98.pdf">Randomized Parallel Sorting Algorithm with an Experimental Study</a><br>
+<a href="http://charm.cs.uiuc.edu/charmWorkshop/slides/CharmWorkshop2010_Sorting.pdf">Highly scalable parallel sorting</a><br>
+<a href="http://www.scipub.org/fulltext/jcs/jcs62163-167.pdf">Sorting N-Elements Using Natural Order: A New Adaptive Sorting Approach</a><br></p>
+
+<p><strong>Update for 2013:</strong>
+Here is the bleeding edge circa January, 2013. (Note: A few of the links are to papers at Citeseer and require registration which is free):<br></p>
+
+<p>University lectures:<br>
+<a href="http://www.cs.sunysb.edu/~rezaul/Spring-2012/CSE613/CSE613-lecture-9.pdf">Parallel Partitioning for Selection and Sorting</a><br>
+<a href="http://homepages.math.uic.edu/~jan/mcs572/parallelsorting.pdf">Parallel Sorting Algorithms Lecture</a><br>
+<a href="http://www.clear.rice.edu/comp422/lecture-notes/comp422-2012-Lecture21-Sorting.pdf">Parallel Sorting Algorithms Lecture 2</a><br>
+<a href="http://www.redgenes.com/Lecture-Sorting.pdf">Parallel Sorting Algorithms Lecture 3</a><br>
+<br>
+Other sources and papers:
+<br>
+<a href="http://hgpu.org/?p=7227">A novel sorting algorithm for many-core architectures based on adaptive bitonic sort</a><br>
+<a href="http://charm.cs.illinois.edu/talks/SortingIPDPS10.pdf">Highly Scalable Parallel Sorting 2</a><br>
+<a href="http://www.economyinformatics.ase.ro/content/EN4/alecu.pdf">Parallel Merging</a><br>
+<a href="http://www.drdobbs.com/parallel/parallel-merge/229204454?queryText=parallel%2Bsort">Parallel Merging 2</a><br>
+<a href="http://arxiv.org/ftp/arxiv/papers/1209/1209.3050.pdf">Parallel Self-Sorting System for Objects</a><br>
+<a href="http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.252.9314">Performance Comparison of Sequential Quick Sort and Parallel Quick Sort Algorithms</a><br>
+<a href="http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.217.7866">Shared Memory, Message Passing, and Hybrid Merge Sorts for Standalone and Clustered SMPs</a><br>
+<a href="http://pages.videotron.com/aminer/">Various parallel algorithms (sorting et al) including implementations</a><br>
+<br>
+GPU and CPU/GPU hybrid sources and papers:
+<br>
+<a href="http://hgpu.org/?p=8085">An OpenCL Method of Parallel Sorting Algorithms for GPU Architecture</a><br>
+<a href="http://hgpu.org/?p=8198">Data Sorting Using Graphics Processing Units</a><br>
+<a href="http://hgpu.org/?p=8031">Efficient Algorithms for Sorting on GPUs</a><br>
+<a href="http://hgpu.org/?p=1203">Designing efficient sorting algorithms for manycore GPUs</a><br>
+<a href="http://hgpu.org/?p=1422">Deterministic Sample Sort For GPUs</a><br>
+<a href="http://hgpu.org/?p=3331">Fast in-place sorting with CUDA based on bitonic sort</a><br>
+<a href="http://hgpu.org/?p=923">Fast parallel GPU-sorting using a hybrid algorithm</a><br>
+<a href="http://hgpu.org/?p=8602">Fast Parallel Sorting Algorithms on GPUs</a><br>
+<a href="http://hgpu.org/?p=1533">Fast sort on CPUs and GPUs: a case for bandwidth oblivious SIMD sort</a><br>
+<a href="http://hgpu.org/?p=892">GPU sample sort</a><br>
+<a href="http://hgpu.org/?p=2033">GPU-ABiSort: Optimal Parallel Sorting on Stream Architectures</a><br>
+<a href="http://hgpu.org/?p=1177">GPUTeraSort: high performance graphics co-processor sorting for large database management</a><br>
+<a href="http://hgpu.org/?p=4182">High performance comparison-based sorting algorithm on many-core GPUs</a><br>
+<a href="http://hgpu.org/?p=1084">Parallel external sorting for CUDA-enabled GPUs with load balancing and low transfer overhead</a><br>
+<a href="http://hgpu.org/?p=6687">Sorting on GPUs for large scale datasets: A thorough comparison</a><br></p>
+    </div>
+    <table class="fw">
+    <tbody><tr>
+    <td class="vt">
+<div class="post-menu"><a href="http://stackoverflow.com/a/3969847" title="short permalink to this answer" class="short-link" id="link-post-3969847">share</a><span class="lsep">|</span><a href="http://stackoverflow.com/posts/3969847/edit" class="suggest-edit-post" title="">improve this answer</a></div>                    </td>
+    <td align="right" class="post-signature">
+<div class="user-info ">
+    <div class="user-action-time">
+        <a href="http://stackoverflow.com/posts/3969847/revisions" title="show all edits to this post">edited <span title="2013-01-10 21:17:52Z" class="relativetime">Jan 10 '13 at 21:17</span></a>
+    </div>
+    <div class="user-gravatar32">
+        
+    </div>
+    <div class="user-details">
+        <br>
+        
+    </div>
+</div>    </td>
+            
+
+
+    <td align="right" class="post-signature">   
+       
+
+    <div class="user-info user-hover">
+    <div class="user-action-time">
+        answered <span title="2010-10-19 15:11:51Z" class="relativetime">Oct 19 '10 at 15:11</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="http://stackoverflow.com/users/473798/michael-goldshteyn"><div class="gravatar-wrapper-32"><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/dfe7867872770d2ce64436e7393cede3" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="http://stackoverflow.com/users/473798/michael-goldshteyn">Michael Goldshteyn</a><br>
+        <span class="reputation-score" title="reputation score 30249" dir="ltr">30.2k</span><span title="10 gold badges"><span class="badge1"></span><span class="badgecount">10</span></span><span title="73 silver badges"><span class="badge2"></span><span class="badgecount">73</span></span><span title="118 bronze badges"><span class="badge3"></span><span class="badgecount">118</span></span>
+    </div>
+</div>
+    </td>
+    </tr>
+    </tbody></table>
+</td>
+        </tr>
+        
+<tr>
+    <td class="votecell"></td>
+    <td>
+	    <div id="comments-3969847" class="comments ">
+		    <table>
+                <tbody data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+
+
+    <tr id="comment-4244817" class="comment ">
+        <td class="comment-actions">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                <span title="number of &#39;useful comment&#39; votes received" class="cool">2</span>
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">It's a comparative study of parallel sorting algorithms on various architectures current in 1996.  A lot has changed in parallel computing since then.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/44309/high-performance-mark" title="56252 reputation" class="comment-user">High Performance Mark</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment4244817_3969847"><span title="2010-10-19 15:15:27Z" class="relativetime-clean">Oct 19 '10 at 15:15</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-4245122" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">+1: thanks for the update.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/44309/high-performance-mark" title="56252 reputation" class="comment-user">High Performance Mark</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment4245122_3969847"><span title="2010-10-19 15:39:31Z" class="relativetime-clean">Oct 19 '10 at 15:39</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-19708265" class="comment ">
+        <td class="comment-actions">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                <span title="number of &#39;useful comment&#39; votes received" class="cool">1</span>
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">Any updates to this?</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/961353/alex-chamberlain" title="2985 reputation" class="comment-user">Alex Chamberlain</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment19708265_3969847"><span title="2013-01-08 09:22:05Z" class="relativetime-clean">Jan 8 '13 at 9:22</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-19764486" class="comment ">
+        <td class="comment-actions">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                <span title="number of &#39;useful comment&#39; votes received" class="warm">7</span>
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">Just updated it for <i>January, 2013</i>. Have fun!</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/473798/michael-goldshteyn" title="30249 reputation" class="comment-user">Michael Goldshteyn</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment19764486_3969847"><span title="2013-01-09 19:03:57Z" class="relativetime-clean">Jan 9 '13 at 19:03</span></a></span>
+                    <span class="edited-yes" title="this comment was edited 2 times"></span>
+                                                                            </div>
+                    </td>
+    </tr>
+    <tr id="comment-41301323" class="comment ">
+        <td>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class=" comment-score">
+                                &nbsp;&nbsp;
+                        </td>
+                        <td>
+                                &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td class="comment-text">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">It seems you missed what's IMHO the best of all, Efficient Implementation of Sorting in Multi-core SIMD architecture. From Intel research, presented at VLDB 2008.</span>
+                –&nbsp;
+                    <a href="http://stackoverflow.com/users/169437/alecco" title="1473 reputation" class="comment-user">alecco</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#comment41301323_3969847"><span title="2014-10-11 18:27:54Z" class="relativetime-clean">Oct 11 '14 at 18:27</span></a></span>
+                                                                            </div>
+                    </td>
+    </tr>
+                </tbody>
+		    </table>
+	    </div>
+
+        <div id="comments-link-3969847" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid comments like “+1” or “thanks”.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" onclick=""></a>
+        </div>         
+    </td>
+</tr>    </tbody></table>
+</div>
+<script>
+                var ados = ados || {}; ados.run = ados.run || [];
+                ados.run.push(function () { ados_add_placement(22,8277,"adzerk952140148",4).setZone(44); });
+            </script>
+            <div class="everyonelovesstackoverflow adzerk-vote" id="adzerk952140148"><a href="http://engine.adzerk.net/r?e=eyJhdiI6NDE0LCJhdCI6NCwiYnQiOjAsImNtIjoxODY2MjQsImNoIjoxMTc4LCJjayI6e30sImNyIjo3MjQyODIsImRpIjoiOGNmNTllOGVlMzJkNDk1NmJlOThmZTVkZjhiNGMxZWQiLCJkbSI6MSwiZmMiOjc1NDA3NiwiZmwiOjQxMDE4MywiaXAiOiI5MC4yMzIuMjA0LjIwOCIsImt3IjoiYWxnb3JpdGhtLHNvcnRpbmcsY29uY3VycmVuY3kiLCJudyI6MjIsInBjIjowLCJwciI6MTU2OCwicnQiOjEsInJmIjoiaHR0cHM6Ly93d3cuZ29vZ2xlLnNlLyIsInN0Ijo4Mjc3LCJ1ayI6InVlMS0yZDI1NTg3YWFiMzg0NGI4OTc0NGM0MDMzNTdjZGE2YiIsInpuIjo0NCwidHMiOjE0Mzk5NzU1ODQwOTQsImJmIjp0cnVlLCJwbiI6ImFkemVyazk1MjE0MDE0OCIsInVyIjoiaHR0cDovL2NhcmVlcnMuc3RhY2tvdmVyZmxvdy5jb20vcHJvZHVjdHM_dXRtX3NvdXJjZT1zdGFja292ZXJmbG93LmNvbSZ1dG1fbWVkaXVtPWFkJnV0bV9jYW1wYWlnbj1lbXBsb3llcnMtYmVzdC13YXkmdXRtX2NvbnRlbnQ9bGItYmVzdC13YXkifQ&s=OfjhzkywLUryU-BZpQMm6w-wNq8" rel="nofollow" target="_blank" title=""><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/6a84d696ad6c4679804e4923a617ade4.png" title="" alt="" border="0" width="728" height="90"></a><div class="adzerk-vote-controls" style="display:none;"><div class="adzerk-vote-option adzerk-vote-up"><div class="adzerk-vote-icon"></div></div><div class="adzerk-vote-option adzerk-vote-down"><div class="adzerk-vote-icon"></div></div></div><div class="adzerk-vote-survey" style="display:none;"><form><span>No problem. We won't show you that ad again. Why didn't you like it?</span><ul><li><label><input type="radio" value="12" name="downvoteReason">Uninteresting</label></li><li><label><input type="radio" value="13" name="downvoteReason">Misleading</label></li><li><label><input type="radio" value="14" name="downvoteReason">Offensive</label></li><li><label><input type="radio" value="15" name="downvoteReason">Repetitive</label></li><li><label><input type="radio" value="16" name="downvoteReason">Other</label></li></ul><a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" class="adzerk-vote-cancel">Oops! I didn't mean to do this.</a></form></div><img height="0px" width="0px" border="0" style="position:absolute;" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/i(1).gif"></div>
+  
+<a name="19898084"></a>
+<div id="answer-19898084" class="answer" data-answerid="19898084" itemscope="" itemtype="http://schema.org/Answer">
+
+    <table>
+        <tbody><tr>
+            <td class="votecell">
+                
+
+<div class="vote">
+        <input type="hidden" name="_id_" value="19898084">
+        <a class="vote-up-off" title="This answer is useful">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">4</span>
+        <a class="vote-down-off" title="This answer is not useful">down vote</a>
+
+
+
+
+</div>
+
+            </td>
+            
+
+
+<td class="answercell">
+    <div class="post-text" itemprop="text">
+<p>I have worked with both a Parallel Quicksort algorithm and a PSRS algorithm that essentially combines quicksort in parallel with merging.</p>
+
+<p>With the Parallel Quicksort algorithm, I have demonstrated near linear speedup with up to 4 cores (dual core with hyper-threading), which is expected given the limitations of the algorithm. A pure Parallel Quicksort relies on a shared stack resource which will result in contention among threads, thus reducing any gain in performance. The advantage of this algorithm is that it sorts 'in-place,' which reduces the amount of memory needed. You may want to consider this when sorting upwards of 100M elements as you stated.</p>
+
+<p>I see you are looking to sort on a system with 8-32 cores. The PSRS algorithm avoids contention at the shared resource, allowing speedup at higher numbers of processes. I have demonstrated the algorithm with up to 4 cores as above, but experimental results of others report near linear speedup with much larger numbers of core, 32 and beyond. The disadvantage of the PSRS algorithm is that it is not in-place and will require considerably more memory. </p>
+
+<p>If you are interested, you may use or peruse my Java code for each of these algorithms. You can find it on github: <a href="https://github.com/broadbear/sort" rel="nofollow">https://github.com/broadbear/sort</a>. The code is intended as a drop-in replacement of Java Collections.sort(). If you are looking for the ability to perform parallel sorting in a JVM as you state above, the code in my repo may help you out. The API is fully genericized for elements implementing Comparable or implementing your own Comparator.</p>
+
+<p>May I ask what you are looking to sort that many elements for? I'm interested to know of potential applications for my sorting package.</p>
+    </div>
+    <table class="fw">
+    <tbody><tr>
+    <td class="vt">
+<div class="post-menu"><a href="http://stackoverflow.com/a/19898084" title="short permalink to this answer" class="short-link" id="link-post-19898084">share</a><span class="lsep">|</span><a href="http://stackoverflow.com/posts/19898084/edit" class="suggest-edit-post" title="">improve this answer</a></div>                    </td>
+    <td align="right" class="post-signature">
+<div class="user-info ">
+    <div class="user-action-time">
+        <a href="http://stackoverflow.com/posts/19898084/revisions" title="show all edits to this post">edited <span title="2013-11-24 04:47:31Z" class="relativetime">Nov 24 '13 at 4:47</span></a>
+    </div>
+    <div class="user-gravatar32">
+        
+    </div>
+    <div class="user-details">
+        <br>
+        
+    </div>
+</div>    </td>
+            
+
+
+    <td align="right" class="post-signature">   
+       
+
+    <div class="user-info ">
+    <div class="user-action-time">
+        answered <span title="2013-11-11 02:50:28Z" class="relativetime">Nov 11 '13 at 2:50</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="http://stackoverflow.com/users/1560534/broadbear"><div class="gravatar-wrapper-32"><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/ef114916182a94f10a87376c0acd36c6" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="http://stackoverflow.com/users/1560534/broadbear">broadbear</a><br>
+        <span class="reputation-score" title="reputation score " dir="ltr">55</span><span title="10 bronze badges"><span class="badge3"></span><span class="badgecount">10</span></span>
+    </div>
+</div>
+    </td>
+    </tr>
+    </tbody></table>
+</td>
+        </tr>
+        
+<tr>
+    <td class="votecell"></td>
+    <td>
+	    <div id="comments-19898084" class="comments  dno">
+		    <table>
+                <tbody data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+                        <tr><td></td><td></td></tr>
+                </tbody>
+		    </table>
+	    </div>
+
+        <div id="comments-link-19898084" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid comments like “+1” or “thanks”.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" onclick=""></a>
+        </div>         
+    </td>
+</tr>    </tbody></table>
+</div>
+
+  
+<a name="3969854"></a>
+<div id="answer-3969854" class="answer" data-answerid="3969854" itemscope="" itemtype="http://schema.org/Answer">
+
+    <table>
+        <tbody><tr>
+            <td class="votecell">
+                
+
+<div class="vote">
+        <input type="hidden" name="_id_" value="3969854">
+        <a class="vote-up-off" title="This answer is useful">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">2</span>
+        <a class="vote-down-off" title="This answer is not useful">down vote</a>
+
+
+
+
+</div>
+
+            </td>
+            
+
+
+<td class="answercell">
+    <div class="post-text" itemprop="text">
+<p>The paper <a href="http://www.google.com/url?sa=t&source=web&cd=2&ved=0CBoQFjAB&url=http%3A%2F%2Fparasol.tamu.edu%2Fpublications%2Fdownload.php%3Ffile_id%3D191&rct=j&q=parallel%20sort%20comparison&ei=9rS9TK29CIK6sAOzrJDpDA&usg=AFQjCNGTWnWF35k0JddKs4W0NjOSPWNgbw&sig2=R5EM6ACvFIvYH5j07cvRZA" rel="nofollow">"Comparison of Parallel Sorting Algorithms on Different
+Architectures"</a> may be a good place for you to start.</p>
+    </div>
+    <table class="fw">
+    <tbody><tr>
+    <td class="vt">
+<div class="post-menu"><a href="http://stackoverflow.com/a/3969854" title="short permalink to this answer" class="short-link" id="link-post-3969854">share</a><span class="lsep">|</span><a href="http://stackoverflow.com/posts/3969854/edit" class="suggest-edit-post" title="">improve this answer</a></div>                    </td>
+            
+
+
+    <td align="right" class="post-signature">   
+       
+
+    <div class="user-info user-hover">
+    <div class="user-action-time">
+        answered <span title="2010-10-19 15:12:39Z" class="relativetime">Oct 19 '10 at 15:12</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="http://stackoverflow.com/users/91671/lbushkin"><div class="gravatar-wrapper-32"><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/30a3cb31d7b256ce3d36710aab409cca" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="http://stackoverflow.com/users/91671/lbushkin">LBushkin</a><br>
+        <span class="reputation-score" title="reputation score 70551" dir="ltr">70.6k</span><span title="18 gold badges"><span class="badge1"></span><span class="badgecount">18</span></span><span title="155 silver badges"><span class="badge2"></span><span class="badgecount">155</span></span><span title="225 bronze badges"><span class="badge3"></span><span class="badgecount">225</span></span>
+    </div>
+</div>
+    </td>
+    </tr>
+    </tbody></table>
+</td>
+        </tr>
+        
+<tr>
+    <td class="votecell"></td>
+    <td>
+	    <div id="comments-3969854" class="comments  dno">
+		    <table>
+                <tbody data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+                        <tr><td></td><td></td></tr>
+                </tbody>
+		    </table>
+	    </div>
+
+        <div id="comments-link-3969854" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid comments like “+1” or “thanks”.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" onclick=""></a>
+        </div>         
+    </td>
+</tr>    </tbody></table>
+</div>
+
+  
+<a name="4702581"></a>
+<div id="answer-4702581" class="answer" data-answerid="4702581" itemscope="" itemtype="http://schema.org/Answer">
+
+    <table>
+        <tbody><tr>
+            <td class="votecell">
+                
+
+<div class="vote">
+        <input type="hidden" name="_id_" value="4702581">
+        <a class="vote-up-off" title="This answer is useful">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">2</span>
+        <a class="vote-down-off" title="This answer is not useful">down vote</a>
+
+
+
+
+</div>
+
+            </td>
+            
+
+
+<td class="answercell">
+    <div class="post-text" itemprop="text">
+<p>Take a look at this paper: <a href="http://darwin.bth.rwth-aachen.de/opus3/volltexte/2010/3502/pdf/3502.pdf" rel="nofollow">A Scalable Parallel Sorting Algorithm Using Exact Splitting</a>. It is concerned with many more than 32 cores. However, it describes in detail an algorithm, which has a running time complexity of O(n/p * log(n) + p * log(n)**2) and is applicable for arbitrary comparators.</p>
+    </div>
+    <table class="fw">
+    <tbody><tr>
+    <td class="vt">
+<div class="post-menu"><a href="http://stackoverflow.com/a/4702581" title="short permalink to this answer" class="short-link" id="link-post-4702581">share</a><span class="lsep">|</span><a href="http://stackoverflow.com/posts/4702581/edit" class="suggest-edit-post" title="">improve this answer</a></div>                    </td>
+    <td align="right" class="post-signature">
+<div class="user-info ">
+    <div class="user-action-time">
+        <a href="http://stackoverflow.com/posts/4702581/revisions" title="show all edits to this post">edited <span title="2014-11-20 06:55:38Z" class="relativetime">Nov 20 '14 at 6:55</span></a>
+    </div>
+    <div class="user-gravatar32">
+        
+    </div>
+    <div class="user-details">
+        <br>
+        
+    </div>
+</div>    </td>
+            
+
+
+    <td align="right" class="post-signature">   
+       
+
+    <div class="user-info ">
+    <div class="user-action-time">
+        answered <span title="2011-01-15 22:47:42Z" class="relativetime">Jan 15 '11 at 22:47</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="http://stackoverflow.com/users/577108/haraldkl"><div class="gravatar-wrapper-32"><img src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/610ad16428ea873d3e8f624eacd58045" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="http://stackoverflow.com/users/577108/haraldkl">haraldkl</a><br>
+        <span class="reputation-score" title="reputation score " dir="ltr">1,637</span><span title="9 silver badges"><span class="badge2"></span><span class="badgecount">9</span></span><span title="17 bronze badges"><span class="badge3"></span><span class="badgecount">17</span></span>
+    </div>
+</div>
+    </td>
+    </tr>
+    </tbody></table>
+</td>
+        </tr>
+        
+<tr>
+    <td class="votecell"></td>
+    <td>
+	    <div id="comments-4702581" class="comments  dno">
+		    <table>
+                <tbody data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+                        <tr><td></td><td></td></tr>
+                </tbody>
+		    </table>
+	    </div>
+
+        <div id="comments-link-4702581" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid comments like “+1” or “thanks”.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" onclick=""></a>
+        </div>         
+    </td>
+</tr>    </tbody></table>
+</div>
+									<a name="new-answer"></a>
+						<form id="post-form" action="http://stackoverflow.com/questions/3969813/answer/submit" method="post" class="post-form">
+						    <input type="hidden" id="post-id" value="3969813">
+                            <input type="hidden" id="qualityBanWarningShown" name="qualityBanWarningShown" value="false">
+                            <input type="hidden" name="referrer" value="https://www.google.se/">
+							<h2 class="space">Your Answer</h2>
+
+
+
+            <script>
+            StackExchange.ifUsing("editor", function () {
+                StackExchange.using("externalEditor", function () {
+                    StackExchange.using("snippets", function () {
+                        StackExchange.snippets.init();
+                    });
+                });
+            }, "code-snippets");
+        </script>
+    
+
+<script>
+    StackExchange.ready(function() {
+        initTagRenderer("".split(" "), "".split(" "));
+       
+        StackExchange.using("externalEditor", function() {
+            // Have to fire editor after snippets, if snippets enabled
+            if (StackExchange.options.snippets.enabled) {
+                StackExchange.using("snippets", function() {
+                    createEditor();
+                });
+            }
+            else {
+                createEditor();
+            }
+        });
+
+        function createEditor() {
+            prepareEditor({
+                heartbeatType: 'answer',
+                bindNavPrevention: true,
+                postfix: "",
+                    onDemand: true,
+                    discardSelector: ".discard-answer"
+                ,immediatelyShowMarkdownHelp:true
+                });
+                
+
+        }
+    });  
+</script>
+
+
+<div id="post-editor" class="post-editor js-post-editor">
+
+    <div style="position: relative;">     
+        <div class="wmd-container">
+            <div id="wmd-button-bar" class="wmd-button-bar"><ul id="wmd-button-row" class="wmd-button-row"><li id="wmd-bold-button" class="wmd-button" style="left: 0px;"><span style="background-position: 0px -20px;"></span></li><li id="wmd-italic-button" class="wmd-button" style="left: 25px;"><span style="background-position: -20px -20px;"></span></li><li id="wmd-spacer1" class="wmd-spacer" style="left: 50px;"><span style="background-position: -40px -20px;"></span></li><li id="wmd-link-button" class="wmd-button" style="left: 75px;"><span style="background-position: -40px -20px;"></span></li><li id="wmd-quote-button" class="wmd-button" style="left: 100px;"><span style="background-position: -60px -20px;"></span></li><li id="wmd-code-button" class="wmd-button" style="left: 125px;"><span style="background-position: -80px -20px;"></span></li><li id="wmd-image-button" class="wmd-button" style="left: 150px;"><span style="background-position: -100px -20px;"></span></li><li id="wmd-spacer2" class="wmd-spacer" style="left: 175px;"><span style="background-position: -120px -20px;"></span></li><li id="wmd-olist-button" class="wmd-button" style="left: 200px;"><span style="background-position: -120px -20px;"></span></li><li id="wmd-ulist-button" class="wmd-button" style="left: 225px;"><span style="background-position: -140px -20px;"></span></li><li id="wmd-heading-button" class="wmd-button" style="left: 250px;"><span style="background-position: -160px -20px;"></span></li><li id="wmd-hr-button" class="wmd-button" style="left: 275px;"><span style="background-position: -180px -20px;"></span></li><li id="wmd-spacer3" class="wmd-spacer" style="left: 300px;"><span style="background-position: -200px -20px;"></span></li><li id="wmd-undo-button" class="wmd-button" style="left: 325px;"><span style="background-position: -200px -20px;"></span></li><li id="wmd-redo-button" class="wmd-button" style="left: 350px;"><span style="background-position: -220px -20px;"></span></li></ul></div>
+            <textarea id="wmd-input" class="wmd-input" name="post-text" cols="92" rows="15" tabindex="101" data-min-length=""></textarea>
+        </div>
+    </div>
+
+    <div class="fl" style="margin-top: 8px; height:24px;">&nbsp;</div>
+    <div id="draft-saved" class="draft-saved community-option fl" style="margin-top: 8px; height:24px; display:none;">draft saved</div>
+
+    <div id="draft-discarded" class="draft-discarded community-option fl" style="margin-top: 8px; height:24px; display:none;">draft discarded</div>
+
+
+
+    <div id="wmd-preview" class="wmd-preview"></div>
+    <div></div>
+    <div class="edit-block">
+        <input id="fkey" name="fkey" type="hidden" value="32420adc2e1fd2e0208f846d88820bce">
+        <input id="author" name="author" type="text">
+    </div>
+
+
+
+</div>
+							<div style="position: relative;">
+								
+            <div class="form-item new-post-login">
+        
+                <div class="new-login-form">
+                    <div class="new-login-left">
+                        <h3>Sign up or <a id="login-link" href="http://stackoverflow.com/users/login?returnurl=%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance%23new-answer">log in</a></h3>
+                        <script>
+                            StackExchange.ready(function () {
+                                StackExchange.helpers.onClickDraftSave('#login-link');
+                            });
+                        </script>
+                        <div class="preferred-login google-login">
+                            <p><span class="icon"></span><span>Sign up using Google</span></p>
+                        </div>
+                        <div class="preferred-login facebook-login">
+                            <p><span class="icon"></span><span>Sign up using Facebook</span></p>
+                        </div>
+                        <div class="preferred-login stackexchange-login">
+                            <p><span class="icon"></span><span>Sign up using Stack Exchange</span></p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="manual-openid" class="manual-openid">
+                    <input type="hidden" name="use-facebook" class="use-facebook" value="false">
+                    <input type="hidden" name="use-google" class="use-google" value="false">
+                    <input type="button" class="submit-openid" value="Submit" style="display:none">
+                    <div class="new-login-right">
+                                <h3>Post as a guest</h3>
+    <div class="form-item">
+        <table>
+        <tbody><tr>
+                    <td class="vm">
+                <div>
+                    <label for="display-name">Name</label>
+                    <input id="display-name" name="display-name" type="text" size="30" maxlength="30" value="" tabindex="105">
+                </div>
+                <div>
+                    <label for="m-address">Email</label>
+                    <input id="m-address" name="m-address" type="email" size="30" maxlength="100" value="" tabindex="106" placeholder="required, but never shown">
+                </div>
+            </td>
+        </tr>
+        </tbody></table>
+    </div>
+
+                    </div>
+                </div>
+            </div>
+            <script>
+                StackExchange.ready(
+                    function () {
+                        StackExchange.openid.initPostLogin('.new-post-login', '%2fquestions%2f3969813%2fwhich-parallel-sorting-algorithm-has-the-best-average-case-performance%23new-answer');
+                    }
+                );
+            </script>
+            <noscript>
+                        &lt;h3&gt;Post as a guest&lt;/h3&gt;
+    &lt;div class="form-item"&gt;
+        &lt;table&gt;
+        &lt;tr&gt;
+                    &lt;td class="vm"&gt;
+                &lt;div&gt;
+                    &lt;label for="display-name"&gt;Name&lt;/label&gt;
+                    &lt;input id="display-name" name="display-name" type="text" size="30" maxlength="30" value="" tabindex="105"&gt;
+                &lt;/div&gt;
+                &lt;div&gt;
+                    &lt;label for="m-address"&gt;Email&lt;/label&gt;
+                    &lt;input id="m-address" name="m-address" type="email" size="30" maxlength="100" value="" tabindex="106" placeholder="required, but never shown" /&gt;
+                &lt;/div&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
+
+            </noscript>
+							</div>
+           
+															<div class="form-submit cbt">
+									<input id="submit-button" type="submit" value="Post Your Answer" tabindex="110">
+									<a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" class="discard-answer dno">discard</a>
+
+<p class="privacy-policy-agreement">
+By posting your answer, you agree to the <a href="http://stackexchange.com/legal/privacy-policy" target="_blank">privacy policy</a> and <a href="http://stackexchange.com/legal/terms-of-service" target="_blank">terms of service</a>.</p>
+<input type="hidden" name="legalLinksShown" value="1">								</div>
+						</form>
+
+
+
+						<h2 class="bottom-notice" data-loc="1">
+Not the answer you're looking for?							Browse other questions tagged <a href="http://stackoverflow.com/questions/tagged/algorithm" class="post-tag" title="show questions tagged &#39;algorithm&#39;" rel="tag">algorithm</a> <a href="http://stackoverflow.com/questions/tagged/sorting" class="post-tag" title="show questions tagged &#39;sorting&#39;" rel="tag">sorting</a> <a href="http://stackoverflow.com/questions/tagged/concurrency" class="post-tag" title="show questions tagged &#39;concurrency&#39;" rel="tag">concurrency</a>  or <a href="http://stackoverflow.com/questions/ask">ask your own question</a>.						</h2>
+			</div>
+		</div>
+				<div id="sidebar" class="show-votes">
+						    <div class="module question-stats">
+			        <table id="qinfo">
+			            <tbody><tr>
+			                <td>
+			                    <p class="label-key">asked</p>
+			                </td>
+			                <td style="padding-left: 10px">
+			                    <p class="label-key" title="2010-10-19 15:07:32Z"><b>4 years ago</b></p>
+			                </td>
+			            </tr>
+			            <tr>
+			                <td>
+			                    <p class="label-key">viewed</p>
+			                </td>
+
+			                <td style="padding-left: 10px">
+			                    <p class="label-key">
+			                        <b>27467 times</b>
+			                    </p>
+			                </td>
+			            </tr>
+			                <tr>
+			                    <td>
+			                        <p class="label-key">active</p>
+			                    </td>
+			                    <td style="padding-left: 10px">
+			                        <p class="label-key"><b><a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance?lastactivity" class="lastactivity-link" title="2014-11-20 06:55:38Z">9 months ago</a></b></p>
+			                    </td>
+			                </tr>
+			        </tbody></table>
+			    </div>
+			<div class="module community-bulletin" data-tracker="cb=1">
+    <div class="related">
+                <div class="bulletin-title">
+                    Blog
+                </div>
+                <hr>
+    <div class="spacer">
+        <div class="bulletin-item-type">
+                <a href="http://blog.stackexchange.com/2015/08/why-stack-overflow-is-a-good-workplace-for-women/?cb=1" class="question-hyperlink">
+<div class="favicon favicon-stackexchangemeta" title="Meta Stack Exchange"></div>                </a>
+            </div>
+                <div class="bulletin-item-content">
+                    <a href="http://blog.stackexchange.com/2015/08/why-stack-overflow-is-a-good-workplace-for-women/?cb=1" class="question-hyperlink">Why Stack Overflow is a Good Workplace for Women</a>
+                </div>
+                <br class="cbt">
+            </div>
+    </div>
+</div>			
+			<script>
+                var ados = ados || {}; ados.run = ados.run || [];
+                ados.run.push(function () { ados_add_placement(22,8277,"adzerk1367352639",[17,2221]).setZone(45); });
+            </script>
+            <div class="everyonelovesstackoverflow adzerk-vote" id="adzerk1367352639"><div id="careersadsdoublehigh" style="display:none;"></div><div class="adzerk-vote-controls" style="display:none;"><div class="adzerk-vote-option adzerk-vote-up"><div class="adzerk-vote-icon"></div></div><div class="adzerk-vote-option adzerk-vote-down"><div class="adzerk-vote-icon"></div></div></div><div class="adzerk-vote-survey" style="display:none;"><form><span>No problem. We won't show you that ad again. Why didn't you like it?</span><ul><li><label><input type="radio" value="12" name="downvoteReason">Uninteresting</label></li><li><label><input type="radio" value="13" name="downvoteReason">Misleading</label></li><li><label><input type="radio" value="14" name="downvoteReason">Offensive</label></li><li><label><input type="radio" value="15" name="downvoteReason">Repetitive</label></li><li><label><input type="radio" value="16" name="downvoteReason">Other</label></li></ul><a href="http://stackoverflow.com/questions/3969813/which-parallel-sorting-algorithm-has-the-best-average-case-performance#" class="adzerk-vote-cancel">Oops! I didn't mean to do this.</a></form></div><img height="0px" width="0px" border="0" style="position:absolute;" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/i(2).gif"></div>
+        <div id="hireme" class=" blue looking tagged"><a href="http://careers.stackoverflow.com/jobs" target="_blank" data-hf="h" class="top"> <span>Looking for a job?</span></a><ul class="jobs"><li><a data-cid="177646" href="http://careers.stackoverflow.com/jobs/91632/systemutvecklare-med-huvudfokus-p%C3%A5-java-redbridge-group" target="_blank" title="Systemutvecklare med huvudfokus på Java at RedBridge Group. Click to learn more.">Systemutvecklare med huvudfokus på Java<br><div class="company">RedBridge Group</div><div class="location" title="Stockholm, Sweden">Stockholm, Sweden</div><span class="post-tag">java</span><span class="post-tag">java-ee</span></a></li><li><a data-cid="181394" href="http://careers.stackoverflow.com/jobs/95414/erfaren-webbutvecklare-till-expansivt-f%C3%B6retag-i-caspeco-ab" target="_blank" title="Erfaren webbutvecklare till expansivt företag i Uppsala at Caspeco AB. Click to learn more.">Erfaren webbutvecklare till expansivt företag i Uppsala<br><div class="company">Caspeco AB</div><div class="location" title="Uppsala, Sweden">Uppsala, Sweden</div><span class="post-tag">javascript</span><span class="post-tag">reactjs</span></a></li><li><a data-cid="143345" href="http://careers.stackoverflow.com/jobs/56874/not-just-any-net-developer-betsson-group" target="_blank" title="Not just any .Net-Developer at Betsson Group. Click to learn more.">Not just any .Net-Developer<br><div class="company">Betsson Group</div><div class="location" title="Stockholm, Sweden / relocation">Stockholm, Sweden / relocation</div><span class="post-tag">c#</span><span class="post-tag">.net</span></a></li><li><a data-cid="175921" href="http://careers.stackoverflow.com/jobs/89898/net-utvecklare-etimo" target="_blank" title=".NET-utvecklare at Etimo. Click to learn more.">.NET-utvecklare<br><div class="company">Etimo</div><div class="location" title="Stockholm, Sweden">Stockholm, Sweden</div><span class="post-tag">c#</span><span class="post-tag">azure</span></a></li></ul><img class="impression" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/i" style="display:none;"></div>
+			  
+    
+            <div class="module sidebar-linked">
+	<h4 id="h-linked">Linked</h4>
+	<div class="linked" data-tracker="lq=1">
+<div class="spacer">
+	<a href="http://stackoverflow.com/q/1897458?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">20</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/1897458/parallel-sort-algorithm?lq=1" class="question-hyperlink">Parallel Sort Algorithm</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/13832424?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">18</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/13832424/c-optimize-if-else-condition?lq=1" class="question-hyperlink">C++ Optimize if/else condition</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/1784028?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">10</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/1784028/which-sorting-method-is-most-suitable-for-parallel-processing?lq=1" class="question-hyperlink">Which sorting method is most suitable for parallel  processing?</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/17319151?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">10</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/17319151/fastest-way-to-sort-huge-50-100-gb-files-when-you-have-enough-memory?lq=1" class="question-hyperlink">Fastest way to sort huge (50-100 GB) files when you have enough memory</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/17072588?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">-1</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/17072588/parallelizable-shell-sort?lq=1" class="question-hyperlink">Parallelizable Shell sort</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/23703476?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes answered-accepted default">1</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/23703476/scala-pararray-sorting?lq=1" class="question-hyperlink">Scala ParArray Sorting</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/18538701?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes  default">1</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/18538701/median-selection-in-cuda-kernel?lq=1" class="question-hyperlink">Median selection in CUDA kernel</a>
+</div><div class="spacer">
+	<a href="http://stackoverflow.com/q/21992501?lq=1" title="Vote score (upvotes - downvotes)">
+		<div class="answer-votes  default">3</div>
+	</a>
+	<a href="http://stackoverflow.com/questions/21992501/arm-neon-sort-an-array-of-16-bytes?lq=1" class="question-hyperlink">ARM NEON: Sort an array of 16 bytes</a>
+</div>			</div>
+</div>
+
+				<div class="module sidebar-related">
+					<h4 id="h-related">Related</h4>
+                    <div class="related js-gps-related-questions" data-tracker="rq=1">
+                        <div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/220044?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">88
+    </div>
+</a><a href="http://stackoverflow.com/questions/220044/which-sort-algorithm-works-best-on-mostly-sorted-data?rq=1" class="question-hyperlink">Which sort algorithm works best on mostly sorted data?</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/773253?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">3
+    </div>
+</a><a href="http://stackoverflow.com/questions/773253/what-sort-algorithm-provides-the-best-worst-case-performance?rq=1" class="question-hyperlink">What sort algorithm provides the best worst-case performance?</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/16290615?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">-1
+    </div>
+</a><a href="http://stackoverflow.com/questions/16290615/best-performance-and-worst-performance-in-algorithm?rq=1" class="question-hyperlink">Best performance and worst performance in algorithm</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/17586825?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">1
+    </div>
+</a><a href="http://stackoverflow.com/questions/17586825/algorithm-for-certain-permutaion-of-array-elements-parallel-sorting-by-regular?rq=1" class="question-hyperlink">Algorithm for certain permutaion of array elements (parallel sorting by regular sampling) [C++]</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/21759021?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">1
+    </div>
+</a><a href="http://stackoverflow.com/questions/21759021/what-is-the-average-case-running-time-of-fun-sort?rq=1" class="question-hyperlink">What is the average-case running time of Fun-sort?</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/22947834?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes default">0
+    </div>
+</a><a href="http://stackoverflow.com/questions/22947834/is-there-a-name-for-this-sorting-algorithm?rq=1" class="question-hyperlink">Is there a name for this sorting algorithm?</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/24101718?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes answered-accepted large">493
+    </div>
+</a><a href="http://stackoverflow.com/questions/24101718/swift-performance-sorting-arrays?rq=1" class="question-hyperlink">Swift performance: sorting arrays</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/25880492?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes answered-accepted default">0
+    </div>
+</a><a href="http://stackoverflow.com/questions/25880492/comparison-sort-algorithms-requires-%ce%a9nlgn-comparisons-in-the-worst-case?rq=1" class="question-hyperlink">comparison sort algorithms requires Ω(nlgn) comparisons in the worst case</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/29192262?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes answered-accepted default">-2
+    </div>
+</a><a href="http://stackoverflow.com/questions/29192262/algorithm-to-sort-three-kinds-of-balls?rq=1" class="question-hyperlink">Algorithm to sort three kinds of balls</a>
+</div>
+<div class="spacer js-gps-track">
+<a href="http://stackoverflow.com/q/30798569?rq=1" title="Vote score (upvotes - downvotes)">
+    <div class="answer-votes answered-accepted default">1
+    </div>
+</a><a href="http://stackoverflow.com/questions/30798569/determine-sorting-algorithm-from-results?rq=1" class="question-hyperlink">Determine sorting algorithm from results</a>
+</div>
+
+                    </div>
+				</div>
+            
+<div id="hot-network-questions" class="module">
+    <h4>
+        <a href="http://stackexchange.com/questions?tab=hot" class="js-gps-track" data-gps-track="posts_hot_network.click({ item_type:1, location:11 })">
+            Hot Network Questions
+        </a>
+    </h4>
+    <ul>
+            <li>
+                <div class="favicon favicon-mathoverflow" title="MathOverflow"></div><a href="http://mathoverflow.net/questions/214927/important-formulas-in-combinatorics" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:504 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Important formulas in Combinatorics
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-travel" title="Travel Stack Exchange"></div><a href="http://travel.stackexchange.com/questions/53139/carrying-a-handgun-in-other-countries-as-a-us-citizen" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:273 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Carrying a handgun in other countries as a US Citizen?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-stackoverflow" title="Stack Overflow"></div><a href="http://stackoverflow.com/questions/32085675/compact-a-b-c-or-a-c-b-or-b-c-a" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:1 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Compact a + b == c or a + c == b or b + c == a
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-portuguese" title="Portuguese Language Stack Exchange"></div><a href="http://portuguese.stackexchange.com/questions/916/can-obrigado-be-used-by-women" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:625 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Can "obrigado" be used by women?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-math" title="Mathematics Stack Exchange"></div><a href="http://math.stackexchange.com/questions/1402201/prove-the-theorem-on-analytic-geometry-in-the-picture" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:69 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Prove the theorem on analytic geometry in the picture.
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-rpg" title="Role-playing Games Stack Exchange"></div><a href="http://rpg.stackexchange.com/questions/67247/must-i-use-all-available-damage-if-i-want-to-leave-my-target-alive" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:122 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Must I use all available damage, if I want to leave my target alive?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-puzzling" title="Puzzling Stack Exchange"></div><a href="http://puzzling.stackexchange.com/questions/20248/a-childrens-plaything" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:559 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    A children's plaything
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-codegolf" title="Programming Puzzles &amp; Code Golf Stack Exchange"></div><a href="http://codegolf.stackexchange.com/questions/54807/the-programming-language-quiz" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:200 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    The Programming Language Quiz
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-askubuntu" title="Ask Ubuntu"></div><a href="http://askubuntu.com/questions/662911/same-folder-and-file-name-in-same-location" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:89 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Same folder and file name in same location
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-mathoverflow" title="MathOverflow"></div><a href="http://mathoverflow.net/questions/215104/questions-on-poincare-homology-spheres-and-branched-covers" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:504 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Questions on poincare homology spheres and branched covers
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-workplace" title="The Workplace Stack Exchange"></div><a href="http://workplace.stackexchange.com/questions/52277/manager-sounds-upset-every-time-i-inform-him-of-a-minor-obstacle" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:423 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Manager sounds upset every time I inform him of a (minor) obstacle
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-opensource" title="Open Source Stack Exchange"></div><a href="http://opensource.stackexchange.com/questions/1608/am-i-in-danger-if-a-project-component-is-relicensed" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:619 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Am I in danger if a project component is relicensed?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-workplace" title="The Workplace Stack Exchange"></div><a href="http://workplace.stackexchange.com/questions/52226/is-there-a-way-to-not-participate-in-office-politics-and-still-be-successful" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:423 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Is there a way to NOT participate in office politics and still be successful?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-scifi" title="Science Fiction &amp; Fantasy Stack Exchange"></div><a href="http://scifi.stackexchange.com/questions/99578/why-did-jk-rowling-choose-the-name-harry" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:186 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Why did JK Rowling choose the name 'Harry'?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-security" title="Information Security Stack Exchange"></div><a href="http://security.stackexchange.com/questions/97064/is-gmail-to-gmail-still-insecure-why" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:162 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Is gmail-to-gmail still insecure? Why?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-unix" title="Unix &amp; Linux Stack Exchange"></div><a href="http://unix.stackexchange.com/questions/224098/can-grep-crontab-destroy-all-jobs" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:106 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Can grep | crontab destroy all jobs?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-salesforce" title="Salesforce Stack Exchange"></div><a href="http://salesforce.stackexchange.com/questions/88579/what-does-it-mean-that-apex-is-an-on-demand-language" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:459 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    what does it mean that apex is an on demand language?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-stackoverflow" title="Stack Overflow"></div><a href="http://stackoverflow.com/questions/32084706/why-initialization-doesnt-work-for-tuple" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:1 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Why ={} initialization doesn't work for tuple?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-scifi" title="Science Fiction &amp; Fantasy Stack Exchange"></div><a href="http://scifi.stackexchange.com/questions/99468/which-star-trek-character-appeared-on-screen-with-the-most-different-ranks" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:186 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Which Star Trek character appeared on screen with the most different ranks?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-worldbuilding" title="Worldbuilding Stack Exchange"></div><a href="http://worldbuilding.stackexchange.com/questions/22729/if-the-insects-declared-war-who-would-win" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:579 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    If the insects declared war, who would win?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-spanish" title="Spanish Language Stack Exchange"></div><a href="http://spanish.stackexchange.com/questions/13543/how-do-you-say-in-castellano-spanish-jump-on-one-leg" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:353 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    How do you say in castellano/Spanish "Jump on one leg"?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-worldbuilding" title="Worldbuilding Stack Exchange"></div><a href="http://worldbuilding.stackexchange.com/questions/22882/is-mathematics-a-truly-universal-language" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:579 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Is mathematics a truly universal language?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-salesforce" title="Salesforce Stack Exchange"></div><a href="http://salesforce.stackexchange.com/questions/88591/another-approach-for-getting-the-apexserver-side-controller-returned-value-in" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:459 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Another Approach for Getting the Apex(Server side Controller) returned value in Lightning
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-rpg" title="Role-playing Games Stack Exchange"></div><a href="http://rpg.stackexchange.com/questions/67278/when-can-i-draw-my-weapon" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:122 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    When can I draw my weapon?
+                </a>
+
+            </li>
+    </ul>
+
+        
+</div>
+		</div>
+	
+<div id="feed-link">
+    <div id="feed-link-text">
+        <a href="http://stackoverflow.com/feeds/question/3969813" title="feed of this question and its answers">
+            <span class="feed-icon"></span>question feed
+        </a>
+    </div>
+</div>	<script>
+StackExchange.ready(function(){$.get('/posts/3969813/ivc/72b1');});
+</script>
+<noscript>
+    &lt;div&gt;&lt;img src="/posts/3969813/ivc/72b1" class="dno" alt="" width="0" height="0"&gt;&lt;/div&gt;
+</noscript><div style="display:none" id="prettify-lang"></div></div>
+
+
+
+        </div>
+    </div>
+    <div id="footer" class="categories">
+        <div class="footerwrap">
+            <div id="footer-menu">
+                <div class="top-footer-links">
+                        <a href="http://stackoverflow.com/tour">tour</a>
+                    <a href="http://stackoverflow.com/help">help</a>
+                    <a href="http://blog.stackoverflow.com/?blb=1">blog</a>
+                        <a href="http://chat.stackoverflow.com/">chat</a>
+                    <a href="http://data.stackexchange.com/">data</a>
+                    <a href="http://stackexchange.com/legal">legal</a>
+                    <a href="http://stackexchange.com/legal/privacy-policy">privacy policy</a>
+                    <a href="http://stackexchange.com/work-here">work here</a>
+                    <a href="http://stackexchange.com/mediakit">advertising info</a>
+
+                    <a onclick="StackExchange.switchMobile(&quot;on&quot;)">mobile</a>
+                    <b><a href="http://stackoverflow.com/contact">contact us</a></b>
+                        <b><a href="http://meta.stackoverflow.com/">feedback</a></b>
+                    
+                </div>
+                <div id="footer-sites">
+                    <table>
+    <tbody><tr>
+            <th colspan="3">
+                Technology
+            </th>
+            <th>
+                Life / Arts
+            </th>
+            <th>
+                Culture / Recreation
+            </th>
+            <th>
+                Science
+            </th>
+            <th>
+                Other
+            </th>
+    </tr>
+    <tr>
+            <td>
+                <ol>
+                        <li><a href="http://stackoverflow.com/" title="professional and enthusiast programmers">Stack Overflow</a></li>
+                        <li><a href="http://serverfault.com/" title="system and network administrators">Server Fault</a></li>
+                        <li><a href="http://superuser.com/" title="computer enthusiasts and power users">Super User</a></li>
+                        <li><a href="http://webapps.stackexchange.com/" title="power users of web applications">Web Applications</a></li>
+                        <li><a href="http://askubuntu.com/" title="Ubuntu users and developers">Ask Ubuntu</a></li>
+                        <li><a href="http://webmasters.stackexchange.com/" title="pro webmasters">Webmasters</a></li>
+                        <li><a href="http://gamedev.stackexchange.com/" title="professional and independent game developers">Game Development</a></li>
+                        <li><a href="http://tex.stackexchange.com/" title="users of TeX, LaTeX, ConTeXt, and related typesetting systems">TeX - LaTeX</a></li>
+                            </ol></td><td><ol>
+                        <li><a href="http://programmers.stackexchange.com/" title="professional programmers interested in conceptual questions about software development">Programmers</a></li>
+                        <li><a href="http://unix.stackexchange.com/" title="users of Linux, FreeBSD and other Un*x-like operating systems.">Unix &amp; Linux</a></li>
+                        <li><a href="http://apple.stackexchange.com/" title="power users of Apple hardware and software">Ask Different (Apple)</a></li>
+                        <li><a href="http://wordpress.stackexchange.com/" title="WordPress developers and administrators">WordPress Development</a></li>
+                        <li><a href="http://gis.stackexchange.com/" title="cartographers, geographers and GIS professionals">Geographic Information Systems</a></li>
+                        <li><a href="http://electronics.stackexchange.com/" title="electronics and electrical engineering professionals, students, and enthusiasts">Electrical Engineering</a></li>
+                        <li><a href="http://android.stackexchange.com/" title="enthusiasts and power users of the Android operating system">Android Enthusiasts</a></li>
+                        <li><a href="http://security.stackexchange.com/" title="information security professionals">Information Security</a></li>
+                            </ol></td><td><ol>
+                        <li><a href="http://dba.stackexchange.com/" title="database professionals who wish to improve their database skills and learn from others in the community">Database Administrators</a></li>
+                        <li><a href="http://drupal.stackexchange.com/" title="Drupal developers and administrators">Drupal Answers</a></li>
+                        <li><a href="http://sharepoint.stackexchange.com/" title="SharePoint enthusiasts">SharePoint</a></li>
+                        <li><a href="http://ux.stackexchange.com/" title="user experience researchers and experts">User Experience</a></li>
+                        <li><a href="http://mathematica.stackexchange.com/" title="users of Mathematica">Mathematica</a></li>
+                        <li><a href="http://salesforce.stackexchange.com/" title="Salesforce administrators, implementation experts, developers and anybody in-between">Salesforce</a></li>
+                        <li><a href="http://expressionengine.stackexchange.com/" title="administrators, end users, developers and designers for ExpressionEngine® CMS">ExpressionEngine® Answers</a></li>
+                    
+                        <li>
+                            <a href="http://stackexchange.com/sites#technology" class="more">
+                                more (13)
+                            </a>
+                        </li>
+                </ol>
+            </td>
+            <td>
+                <ol>
+                        <li><a href="http://photo.stackexchange.com/" title="professional, enthusiast and amateur photographers">Photography</a></li>
+                        <li><a href="http://scifi.stackexchange.com/" title="science fiction and fantasy enthusiasts">Science Fiction &amp; Fantasy</a></li>
+                        <li><a href="http://graphicdesign.stackexchange.com/" title="Graphic Design professionals, students, and enthusiasts">Graphic Design</a></li>
+                        <li><a href="http://movies.stackexchange.com/" title="movie and tv enthusiasts">Movies &amp; TV</a></li>
+                        <li><a href="http://cooking.stackexchange.com/" title="professional and amateur chefs">Seasoned Advice (cooking)</a></li>
+                        <li><a href="http://diy.stackexchange.com/" title="contractors and serious DIYers">Home Improvement</a></li>
+                        <li><a href="http://money.stackexchange.com/" title="people who want to be financially literate">Personal Finance &amp; Money</a></li>
+                        <li><a href="http://academia.stackexchange.com/" title="academics and those enrolled in higher education">Academia</a></li>
+                    
+                        <li>
+                            <a href="http://stackexchange.com/sites#lifearts" class="more">
+                                more (9)
+                            </a>
+                        </li>
+                </ol>
+            </td>
+            <td>
+                <ol>
+                        <li><a href="http://english.stackexchange.com/" title="linguists, etymologists, and serious English language enthusiasts">English Language &amp; Usage</a></li>
+                        <li><a href="http://skeptics.stackexchange.com/" title="scientific skepticism">Skeptics</a></li>
+                        <li><a href="http://judaism.stackexchange.com/" title="those who base their lives on Jewish law and tradition and anyone interested in learning more">Mi Yodeya (Judaism)</a></li>
+                        <li><a href="http://travel.stackexchange.com/" title="road warriors and seasoned travelers">Travel</a></li>
+                        <li><a href="http://christianity.stackexchange.com/" title="committed Christians, experts in Christianity and those interested in learning more">Christianity</a></li>
+                        <li><a href="http://gaming.stackexchange.com/" title="passionate videogamers on all platforms">Arqade (gaming)</a></li>
+                        <li><a href="http://bicycles.stackexchange.com/" title="people who build and repair bicycles, people who train cycling, or commute on bicycles">Bicycles</a></li>
+                        <li><a href="http://rpg.stackexchange.com/" title="gamemasters and players of tabletop, paper-and-pencil role-playing games">Role-playing Games</a></li>
+                    
+                        <li>
+                            <a href="http://stackexchange.com/sites#culturerecreation" class="more">
+                                more (21)
+                            </a>
+                        </li>
+                </ol>
+            </td>
+            <td>
+                <ol>
+                        <li><a href="http://math.stackexchange.com/" title="people studying math at any level and professionals in related fields">Mathematics</a></li>
+                        <li><a href="http://stats.stackexchange.com/" title="people interested in statistics, machine learning, data analysis, data mining, and data visualization">Cross Validated (stats)</a></li>
+                        <li><a href="http://cstheory.stackexchange.com/" title="theoretical computer scientists and researchers in related fields">Theoretical Computer Science</a></li>
+                        <li><a href="http://physics.stackexchange.com/" title="active researchers, academics and students of physics">Physics</a></li>
+                        <li><a href="http://mathoverflow.net/" title="professional mathematicians">MathOverflow</a></li>
+                        <li><a href="http://chemistry.stackexchange.com/" title="scientists, academics, teachers and students">Chemistry</a></li>
+                        <li><a href="http://biology.stackexchange.com/" title="biology researchers, academics, and students">Biology</a></li>
+                    
+                        <li>
+                            <a href="http://stackexchange.com/sites#science" class="more">
+                                more (5)
+                            </a>
+                        </li>
+                </ol>
+            </td>
+            <td>
+                <ol>
+                        <li><a href="http://stackapps.com/" title="apps, scripts, and development with the Stack Exchange API">Stack Apps</a></li>
+                        <li><a href="http://meta.stackexchange.com/" title="meta-discussion of the Stack Exchange family of Q&amp;A websites">Meta Stack Exchange</a></li>
+                        <li><a href="http://area51.stackexchange.com/" title="proposing new sites in the Stack Exchange network">Area 51</a></li>
+                        <li><a href="http://careers.stackoverflow.com/">Stack Overflow Careers</a></li>
+                    
+                </ol>
+            </td>
+    </tr>
+</tbody></table>
+                </div>
+            </div>
+
+            <div id="copyright">
+                site design / logo © 2015 Stack Exchange Inc; user contributions licensed under <a href="http://creativecommons.org/licenses/by-sa/3.0/" rel="license">cc by-sa 3.0</a> 
+                with <a href="http://blog.stackoverflow.com/2009/06/attribution-required/" rel="license">attribution required</a>
+            </div>
+            <div id="svnrev">
+                rev 2015.8.18.690
+            </div>
+            
+        </div>
+    </div>
+    <noscript>
+        &lt;div id="noscript-warning"&gt;Stack Overflow works best with JavaScript enabled&lt;img src="http://pixel.quantserve.com/pixel/p-c1rF4kxgLUzNc.gif" alt="" class="dno"&gt;&lt;/div&gt;
+    </noscript>
+<script>var p = "http", d = "static"; if (document.location.protocol == "https:") { p += "s"; d = "engine"; } var z = document.createElement("script"); z.type = "text/javascript"; z.async = true; z.src = p + "://" + d + ".adzerk.net/ados.js"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(z, s);</script>
+<script>
+    var ados = ados || {};
+    ados.run = ados.run || [];
+    ados.run.push(function () { ados_setKeywords('algorithm,sorting,concurrency');; ados_load(); });         
+</script>
+
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () { (i[r].q = i[r].q || []).push(arguments) }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m);
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+        ga('create', 'UA-5620270-1');        
+        
+        ga('set', 'dimension2', '|algorithm|sorting|concurrency|');         
+        ga('send', 'pageview');
+        var _qevents = _qevents || [],
+            _comscore = _comscore || [];
+        (function () {
+            var ssl='https:'==document.location.protocol,
+                s=document.getElementsByTagName('script')[0],
+                qc=document.createElement('script');
+            qc.async=true;
+            qc.src=(ssl?'https://secure':'http://edge')+'.quantserve.com/quant.js';
+            s.parentNode.insertBefore(qc, s);
+            var sc=document.createElement('script');
+            sc.async=true;
+            sc.src=(ssl?'https://sb':'http://b') + '.scorecardresearch.com/beacon.js';
+            s.parentNode.insertBefore(sc, s);
+        })();
+        _comscore.push({ c1: "2", c2: "17440561" });
+        _qevents.push({ qacct: "p-c1rF4kxgLUzNc" });
+    </script>            
+    
+<script type="text/javascript" src="./Which parallel sorting algorithm has the best average case performance_ - Stack Overflow_files/p"></script></body></html>

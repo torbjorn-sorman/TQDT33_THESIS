@@ -1,0 +1,18 @@
+freeglut & glew on Win & Visual Studio:
+
+	Download
+	Follow Read Me!
+	Add content in /bin to global path
+	Add folders /include & /lib to project
+	Properties
+		C/C++ -> General
+			Additional Include Directories -> add /include
+		Linker -> General
+			Additional Library Directories -> add /lib
+		Linker -> Input
+			Additional Dependencies add .lib
+Add:
+
+	#define FREEGLUT_LIB_PRAGMAS 0
+	#include <GL/glew.h>
+	#include <GL/freeglut.h>

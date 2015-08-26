@@ -19,24 +19,73 @@ uint32_t reverseBitsLowMem(uint32_t x, uint32_t l)
     return((x >> 16) | (x << 16)) >> (32 - l);
 }
 
-int compareComplex(tb_cpx *c1, tb_cpx *c2, uint32_t N)
+int cpx_equal(tb_cpx *c1, tb_cpx *c2, uint32_t N)
 {
-    double m = 0.00001;
-    double max_r = -DBL_MAX;
-    double max_i = -DBL_MAX;
-    for (int i = 0; i < N; ++i)
-    {
-        max_r = max(abs((double)c1[i].r - (double)c2[i].r), max_r);
-        max_i = max(abs((double)c1[i].i - (double)c2[i].i), max_i);
+    uint32_t i;
+    for (i = 0; i < N; ++i) {
+        if (c1[i].r != c2[i].r || c1[i].i != c2[i].i)
+            return 0;
     }
-    if ((max_r > m || max_i > m))
-    {
-        //printf("\nNOT EQUAL\nDiff: (%f, %f)\n", max_r, max_i);
-        return 0;
+    return 1;
+}
+
+int cpx_equal(tb_cpx **c1, tb_cpx **c2, uint32_t N)
+{
+    uint32_t i;
+    for (i = 0; i < N; ++i) {
+        if (cpx_equal(c1[i], c2[i], N) == 0)
+            return 0;
     }
-    else
-    {
-        //printf("\nEQUAL\n");
-        return 1;
+    return 1;
+}
+
+double cpx_diff(tb_cpx a, tb_cpx b)
+{
+    double re, im;
+    re = abs((double)a.r - (double)b.r);
+    im = abs((double)a.i - (double)b.i);
+    return max(re, im);
+}
+
+double cpx_diff(tb_cpx *a, tb_cpx *b, uint32_t N)
+{
+    uint32_t i;
+    double m_diff;
+    m_diff = DBL_MIN;
+    for (i = 0; i < N; ++i)
+        m_diff = max(m_diff, cpx_diff(a[i], b[i]));
+    return m_diff;
+}
+
+double cpx_diff(tb_cpx **a, tb_cpx **b, uint32_t N)
+{
+    uint32_t i;
+    double m_diff;
+    m_diff = DBL_MIN;
+    for (i = 0; i < N; ++i)
+        m_diff = max(m_diff, cpx_diff(a[i], b[i], N));
+    return m_diff;
+}
+
+double cpx_avg_diff(tb_cpx *a, tb_cpx *b, uint32_t N)
+{
+    uint32_t i;
+    double sum;
+    sum = 0.0;
+    for (i = 0; i < N; ++i)
+        sum += cpx_diff(a[i], b[i]);
+    return sum / N;
+}
+
+double cpx_avg_diff(tb_cpx **a, tb_cpx **b, uint32_t N)
+{
+    uint32_t i, j;
+    double sum;
+    sum = 0.0;
+    for (i = 0; i < N; ++i) {
+        for (j = 0; j < N; ++j) {
+            sum += cpx_diff(a[i][j], b[i][j]);
+        }
     }
+    return sum / (N * N);
 }

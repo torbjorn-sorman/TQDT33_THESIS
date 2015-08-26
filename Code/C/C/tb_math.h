@@ -1,13 +1,8 @@
-#include "kiss_fft.h"
-
 #ifndef TB_MATH_H
 #define TB_MATH_H
 
-typedef kiss_fft_cpx tb_cpx;
-typedef unsigned __int32 uint32_t;
-
-#define M_2_PI 6.28318530718
-#define M_PI 3.14159265359
+#include "kiss_fft.h"
+#include "tb_definitions.h"
 
 static const int tab32[32] =
 {
@@ -38,6 +33,13 @@ static const uint32_t revTbl256[] =
 
 uint32_t reverseBitsLowMem(uint32_t x, uint32_t l);
 int log2_32(uint32_t value);
-int compareComplex(tb_cpx *c1, tb_cpx *c2, uint32_t N);
+int cpx_equal(tb_cpx a, tb_cpx b);
+int cpx_equal(tb_cpx *a, tb_cpx *b, uint32_t N);
+int cpx_equal(tb_cpx **a, tb_cpx **b, uint32_t N);
+double cpx_diff(tb_cpx a, tb_cpx b);
+double cpx_diff(tb_cpx *a, tb_cpx *b, uint32_t N);
+double cpx_diff(tb_cpx **a, tb_cpx **b, uint32_t N);
+double cpx_avg_diff(tb_cpx *a, tb_cpx *b, uint32_t N);
+double cpx_avg_diff(tb_cpx **a, tb_cpx **b, uint32_t N);
 
 #endif

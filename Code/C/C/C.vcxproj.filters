@@ -39,6 +39,9 @@
     <ClCompile Include="tb_transpose.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tb_print.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kiss_fft.h">
@@ -66,6 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tb_transpose.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_print.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_definitions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

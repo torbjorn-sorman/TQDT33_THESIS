@@ -5,8 +5,9 @@
 #include "tb_fft.h"
 #include "tb_image.h"
 #include "tb_transpose.h"
+#include "tb_math.h"
 
-#define NO_TESTS 32
+#define NO_TESTS 16
 #define ERROR_MARGIN 0.0002
 
 int checkError(tb_cpx *seq, tb_cpx *ref, uint32_t N, int print)
@@ -21,118 +22,95 @@ int checkError(tb_cpx *seq, tb_cpx *ref, uint32_t N, int print)
         r = r > r_val ? r : r_val;
         i = i > i_val ? i : i_val;
     }
-    if (print == 1) printf("Error e, abs(real(e)): %f\t abs(imag(e)): %f\n", r, i);
+    if (print == 1) printf("Error %u\tre(e): %f\t im(e): %f\n", N, r, i);
     return r > ERROR_MARGIN || i > ERROR_MARGIN;
 }
 
-unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, uint32_t N, uint32_t inplace)
+unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, uint32_t inplace)
 {
-    uint32_t i;
+    uint32_t i, N;
     unsigned char res = 1;
     tb_cpx *fft_out, *dft_out, *in, *in2;
 
-    in = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-    for (i = 0; i < N; ++i)
-    {
-        in[i].r = (float)sin(M_2_PI * (((double)i) / N));
-        in[i].i = 0.f;
-    }
-    if (inplace == 0)
-    {
-        fft_out = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-        dft_out = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-        dft_ref_fn(FORWARD_FFT, in, dft_out, N);
-        fft_fn(FORWARD_FFT, in, fft_out, N);
-        res = checkError(dft_out, fft_out, N, 1);
-        free(dft_out);
-        free(fft_out);
-    }
-    else
-    {
-        in2 = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-        for (i = 0; i < N; ++i) {
-            in2[i].r = in[i].r;
-            in2[i].i = in[i].i;
+    for (N = 2; N < 4194304; N *= 2) {
+        in = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        for (i = 0; i < N; ++i)
+        {
+            in[i].r = (float)sin(M_2_PI * (((double)i) / N));
+            in[i].i = 0.f;
         }
-        dft_ref_fn(FORWARD_FFT, in, in, N);
-        fft_fn(FORWARD_FFT, in2, in2, N);
-        res = checkError(in, in2, N, 1);
-        free(in2);
+        if (inplace == 0)
+        {
+            fft_out = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+            dft_out = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+            dft_ref_fn(FORWARD_FFT, in, dft_out, N);
+            fft_fn(FORWARD_FFT, in, fft_out, N);
+            res = checkError(dft_out, fft_out, N, 1);
+            free(dft_out);
+            free(fft_out);
+        }
+        else
+        {
+            in2 = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+            for (i = 0; i < N; ++i) {
+                in2[i].r = in[i].r;
+                in2[i].i = in[i].i;
+            }
+            dft_ref_fn(FORWARD_FFT, in, in, N);
+            fft_fn(FORWARD_FFT, in2, in2, N);
+            res = checkError(in, in2, N, 1);
+            free(in2);
+        }
+        free(in);        
     }
-    free(in);
     return res;
 }
 
-unsigned char test_equal_dft2d(fft_function fft_fn, fft_function dft_ref_fn, uint32_t N, uint32_t inplace)
+unsigned char test_equal_dft2d(fft_function fft_fn, fft_function ref_fn, uint32_t inplace)
 {
-    int res, n, m;
-    uint32_t i;
-    char filename[30];
-    unsigned char *image, *imImage, *imImage2, *imImageRef, *imImageRef2;
-    tb_cpx **cxImage, **cxImageRef;
+    int n, m;
+    uint32_t i, N;    
+    unsigned char *image, *imImage, *imImageRef;
+    tb_cpx **cpxImg, **cpxImgRef;
 
-    sprintf_s(filename, 30, "lena_%u.ppm", N);   
-    
-    printf("File: %s\n", filename);
-     
-    image = readppm(filename, &n, &m);
+    N = 512;
+    image = readppm("lena_512.ppm", &n, &m);
     imImage = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
-    imImage2 = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
     imImageRef = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
-    imImageRef2 = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
-    cxImage = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
-    cxImageRef = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cpxImg = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cpxImgRef = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
     for (i = 0; i < N; ++i) {
-        cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-        cxImageRef[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cpxImg[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cpxImgRef[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
     }
-    writeppm("test_original.ppm", N, N, image);
-    img_to_cpx(image, cxImage, N);
-    img_to_cpx(image, cxImageRef, N);
-    cpx_to_img(cxImage, image, N, 0);
-    writeppm("test_original_grey.ppm", N, N, image);
+    img_to_cpx(image, cpxImg, N);
+    img_to_cpx(image, cpxImgRef, N);
 
-    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cxImage, N);
-    //tb_fft2d_inplace(INVERSE_FFT, tb_fft, cxImage, N);
-    tb_fft2d_inplace(FORWARD_FFT, kiss_fft, cxImageRef, N);
-    //tb_fft2d_inplace(INVERSE_FFT, kiss_fft, cxImageRef, N);
+    tb_fft2d_inplace(FORWARD_FFT, fft_fn, cpxImg, N);
+    tb_fft2d_inplace(FORWARD_FFT, ref_fn, cpxImgRef, N);    
+
+    printf("Max error: %f\n", cpx_diff(cpxImg, cpxImgRef, N));
+    printf("Avg error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, N));
+
+    tb_fft2d_inplace(INVERSE_FFT, fft_fn, cpxImg, N);
+    tb_fft2d_inplace(INVERSE_FFT, ref_fn, cpxImgRef, N);
         
-    cpx_to_img(cxImage, imImage, N, 1);
-    cpx_to_img(cxImageRef, imImageRef, N, 1);
+    cpx_to_img(cpxImg, imImage, N, 0);
+    cpx_to_img(cpxImgRef, imImageRef, N, 0);
 
-    writeppm("test.ppm", N, N, imImage2);
-    writeppm("test_ref.ppm", N, N, imImageRef2);
-
-    res = 1;
-    for (i = 0; i < N * N * 3; ++i) {
-        if (imImage[i] != imImageRef[i]) {
-            res = 0;
-            printf("Ref! At: %d Is: %u Should be: %u\n", i, imImage[i], imImageRef[i]);
-            break;
-        }
-    }
-    if (res > 0) {
-        for (i = 0; i < N * N * 3; ++i) {
-            if (image[i] != imImageRef[i]) {
-                res = 0;
-                printf("Image! At: %d Is: %u Should be: %u\n", i, imImageRef[i], image[i]);
-                break;
-            }
-        }
-    }
-    // Free all resources...
+    writeppm("test_equal.ppm", N, N, imImage);
+    writeppm("test_equal_ref.ppm", N, N, imImageRef);
+        
     free(image);
     for (i = 0; i < N; ++i) {
-        free(cxImage[i]);
-        free(cxImageRef[i]);
+        free(cpxImg[i]);
+        free(cpxImgRef[i]);
     }
-    free(cxImage);
-    free(cxImageRef);
+    free(cpxImg);
+    free(cpxImgRef);
     free(imImage);
-    free(imImage2);
     free(imImageRef);
-    free(imImageRef2);
-    return res;
+    return 1;
 }
 
 double test_time_dft(fft_function fft_fn, uint32_t N)
@@ -162,34 +140,60 @@ double test_time_dft_2d(fft_function fft_fn, uint32_t N)
 {
     int x, y;
     LARGE_INTEGER freq, tStart, tStop;
-    double m;
     char filename[30];
     unsigned char *image;
-    tb_cpx **cxImage;
-    uint32_t i;
+    tb_cpx **cpxImg, **cpxImgRef;
+    uint32_t i, k, l;
 
-    cxImage = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
-    for (i = 0; i < N; ++i)
-    {
-        cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+    cpxImg = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cpxImgRef = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    for (i = 0; i < N; ++i) {
+        cpxImg[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cpxImgRef[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
     }    
     sprintf_s(filename, 30, "lena_%u.ppm", N);
-    image = readppm(filename, &x, &y);        
-    m = DBL_MAX;
+    image = readppm(filename, &x, &y);
+    img_to_cpx(image, cpxImgRef, N);
+
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&tStart);
-    for (int i = 0; i < NO_TESTS; ++i)
+    for (i = 0; i < NO_TESTS; ++i)
     {
-        img_to_cpx(image, cxImage, N);
-        //tb_fft2d(FORWARD_FFT, fft_fn, cxImage, N);
-        tb_fft2d_trans(FORWARD_FFT, fft_fn, cxImage, N);
+        for (k = 0; k < N; ++k) {
+            for (l = 0; l < N; ++l) {
+                cpxImg[k][l].r = cpxImgRef[k][l].r;
+                cpxImg[k][l].i = cpxImgRef[k][l].i;
+            }
+        }
+        tb_fft2d_inplace(FORWARD_FFT, fft_fn, cpxImg, N);
+        tb_fft2d_inplace(INVERSE_FFT, fft_fn, cpxImg, N);
     }
     QueryPerformanceCounter(&tStop);
     free(image);
     for (i = 0; i < N; ++i)
-        free(cxImage[i]);
-    free(cxImage);
+        free(cpxImg[i]);
+    free(cpxImg);
     return ((double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (float)freq.QuadPart) / NO_TESTS;
+}
+
+double test_cmp_time(fft_function fn, fft_function ref)
+{
+    uint32_t n;
+    double time, time_ref, diff, rel, sum, sum_ref;
+    rel = DBL_MIN;
+    sum = sum_ref = 0.0;
+    printf("     rel.\tdiff.\t\ttime\t\tref\t\tN\n");
+    for (n = 4; n < 16777216; n *= 2) {
+        time = test_time_dft(fn, n);
+        time_ref = test_time_dft(ref, n);        
+        diff = time_ref - time; 
+        sum += time;
+        sum_ref += time_ref;
+        rel += diff / time_ref;
+        printf("(ms) %f\t%f\t%f\t%f\t%u\n", diff / time_ref, diff, time, time_ref, n);
+        
+    }
+    return rel / 22;
 }
 
 unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
@@ -198,7 +202,7 @@ unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
     uint32_t i;
     char file[30];
     unsigned char *image, *imImage, *imImage2, *greyImage;
-    tb_cpx **cxImage;
+    tb_cpx **cpxImg;
     sprintf_s(file, 30, "%s_%u.ppm", filename, N);
     printf("Read: %s\n", file);
     image = readppm(file, &n, &m);
@@ -211,32 +215,32 @@ unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
     greyImage = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
     imImage = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
     imImage2 = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
-    cxImage = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cpxImg = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
     for (i = 0; i < N; ++i)
     {
-        cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cpxImg[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
     }
 
     /* Set real values from image values.
     * Store the real-value version of the image.
     */
-    img_to_cpx(image, cxImage, N);
+    img_to_cpx(image, cpxImg, N);
     writeppm("img00-org.ppm", N, N, image);
-    cpx_to_img(cxImage, greyImage, N, 0);
+    cpx_to_img(cpxImg, greyImage, N, 0);
     printf("Write img00-grey.ppm\n");
     writeppm("img00-grey.ppm", N, N, greyImage);
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
-    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cxImage, N);
-    cpx_to_img(cxImage, imImage, N, 1);
+    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cpxImg, N);
+    cpx_to_img(cpxImg, imImage, N, 1);
     fft_shift(imImage, imImage2, N);
     printf("Write img01-magnitude.ppm\n");
     writeppm("img01-magnitude.ppm", N, N, imImage2);
 
     /* Run inverse 2D FFT on complex values */
-    tb_fft2d_inplace(INVERSE_FFT, tb_fft, cxImage, N);
-    cpx_to_img(cxImage, imImage, N, 0);
+    tb_fft2d_inplace(INVERSE_FFT, tb_fft, cpxImg, N);
+    cpx_to_img(cpxImg, imImage, N, 0);
     printf("Write img02-fftToImage.ppm\n");
     writeppm("img02-fftToImage.ppm", N, N, imImage);
 
@@ -253,8 +257,8 @@ unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
     // Free all resources...
     free(image);
     for (i = 0; i < N; ++i)
-        free(cxImage[i]);
-    free(cxImage);
+        free(cpxImg[i]);
+    free(cpxImg);
     free(imImage);
     free(imImage2);
     free(greyImage);
@@ -350,7 +354,7 @@ int run_fft2dTest(fft_function fn, uint32_t N)
     uint32_t i;
     char filename[13];
     unsigned char *image, *imImage;
-    tb_cpx **cxImage;
+    tb_cpx **cpxImg;
 
     sprintf_s(filename, 13, "lena_%u.ppm", N);
     /* Read image to memory */
@@ -363,20 +367,20 @@ int run_fft2dTest(fft_function fn, uint32_t N)
     }
     /* Allocate resources */
     imImage = (unsigned char *)malloc(sizeof(unsigned char) * N * N * 3);
-    cxImage = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
+    cpxImg = (tb_cpx **)malloc(sizeof(tb_cpx) * N);
     for (i = 0; i < N; ++i)
     {
-        cxImage[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+        cpxImg[i] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
     }
 
     /* Set real values from image values.
     * Store the real-value version of the image.
     */
-    img_to_cpx(image, cxImage, N);
-    cpx_to_img(cxImage, image, N, 0);
-    tb_fft2d(FORWARD_FFT, tb_fft, cxImage, N);
-    tb_fft2d(INVERSE_FFT, tb_fft, cxImage, N);
-    cpx_to_img(cxImage, imImage, N, 0);
+    img_to_cpx(image, cpxImg, N);
+    cpx_to_img(cpxImg, image, N, 0);
+    tb_fft2d(FORWARD_FFT, tb_fft, cpxImg, N);
+    tb_fft2d(INVERSE_FFT, tb_fft, cpxImg, N);
+    cpx_to_img(cpxImg, imImage, N, 0);
     writeppm("img-out.ppm", N, N, imImage);
 
     res = 1;
@@ -391,8 +395,8 @@ int run_fft2dTest(fft_function fn, uint32_t N)
     // Free all resources...
     free(image);
     for (i = 0; i < N; ++i)
-        free(cxImage[i]);
-    free(cxImage);
+        free(cpxImg[i]);
+    free(cpxImg);
     free(imImage);
     return res;
 }
@@ -481,7 +485,7 @@ double test_time_transpose_block(void(*transpose_function)(tb_cpx**, uint32_t, u
     return (double)(tStop.QuadPart - tStart.QuadPart) * 1000.0 / (double)freq.QuadPart;
 }
 
-void kiss_fft(int dir, tb_cpx *in, tb_cpx *out, uint32_t N)
+void kiss_fft(double dir, tb_cpx *in, tb_cpx *out, uint32_t N)
 {
     kiss_fft_cfg cfg = kiss_fft_alloc(N, (dir == INVERSE_FFT), NULL, NULL);
     kiss_fft(cfg, in, out);

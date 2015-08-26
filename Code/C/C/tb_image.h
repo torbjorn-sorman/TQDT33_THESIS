@@ -1,7 +1,7 @@
 #ifndef TB_IMAGE_H
 #define TB_IMAGE_H
 
-#include "tb_math.h"
+#include "tb_definitions.h"
 
 void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N);
 void cpx_to_img(tb_cpx **com, unsigned char *img, uint32_t N, unsigned char mag);

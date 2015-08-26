@@ -5,36 +5,10 @@
 inline void fft(tb_cpx *x, tb_cpx *W, uint32_t start, uint32_t steps, uint32_t dist, uint32_t N);
 inline void inner_fft(tb_cpx *x, tb_cpx *X, tb_cpx *W, int bit, uint32_t dist, uint32_t s2, uint32_t N);
 inline void twiddle_factors(tb_cpx *W, double w_angle, uint32_t lead, uint32_t N);
-inline void reverse_bit_order(tb_cpx *x, int dir, uint32_t N, uint32_t lead);
+inline void reverse_bit_order(tb_cpx *x, int dir, uint32_t n2, uint32_t N, uint32_t lead);
 
 /* Naive Fast Fourier Transform, simple single core CPU-tests */
 void tb_fft(int dir, tb_cpx *x, tb_cpx *X, uint32_t N)
-{
-    const uint32_t depth = log2_32(N);
-    const uint32_t n2 = (N / 2);    
-    tb_cpx *W;
-    uint32_t lead, start, dist;    
-    double w_angle;
-    W = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-    w_angle = (dir == FORWARD_FFT ? 1.0 : -1.0) * -(M_2_PI / N);
-    lead = 32 - depth;
-
-    twiddle_factors(W, w_angle, lead, N);
-    start = 0;
-    dist = N;
-    if (x != X) {
-        /* First iteration and also copy phase if not inplace */
-        inner_fft(x, X, W, depth - 1, dist = n2, N, N);
-        ++start;
-    }
-    fft(X, W, start, depth, dist, N);
-    reverse_bit_order(X, dir, N, lead);
-    /* Free allocated resources */
-    free(W);
-}
-
-/* Naive Fast Fourier Transform only Real Values */
-void tb_fft_real(int dir, tb_cpx *x, tb_cpx *X, uint32_t N)
 {
     const uint32_t depth = log2_32(N);
     const uint32_t n2 = (N / 2);
@@ -54,7 +28,33 @@ void tb_fft_real(int dir, tb_cpx *x, tb_cpx *X, uint32_t N)
         ++start;
     }
     fft(X, W, start, depth, dist, N);
-    reverse_bit_order(X, dir, N, lead);
+    reverse_bit_order(X, dir, n2, N, lead);
+    /* Free allocated resources */
+    free(W);
+}
+
+/* Naive Fast Fourier Transform only Real Values */
+void tb_fft_real(int dir, tb_cpx *x, tb_cpx *X, uint32_t N)
+{
+    const uint32_t depth = log2_32(N);
+    const uint32_t n2 = (N / 2);
+    tb_cpx *W;
+    uint32_t lead, start, dist;
+    double w_angle;
+    W = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
+    w_angle = dir * (M_2_PI / (double)N);
+    lead = 32 - depth;
+
+    twiddle_factors(W, w_angle, lead, N);
+    start = 0;
+    dist = N;
+    if (x != X) {
+        /* First iteration and also copy phase if not inplace */
+        inner_fft(x, X, W, depth - 1, dist = n2, N, N);
+        ++start;
+    }
+    fft(X, W, start, depth, dist, N);
+    reverse_bit_order(X, dir, n2, N, lead);
     /* Free allocated resources */
     free(W);
 }
@@ -76,7 +76,7 @@ void tb_fft2d(int dir, void(*fn)(int, tb_cpx*, tb_cpx*, uint32_t), tb_cpx **seq2
             seq2d[row][col].r = out[col].r;
             seq2d[row][col].i = out[col].i;
         }
-    } 
+    }
 
     for (col = 0; col < N; ++col) {
         for (row = 0; row < N; ++row) {
@@ -97,14 +97,13 @@ void tb_fft2d_inplace(int dir, void(*fn)(int, tb_cpx*, tb_cpx*, uint32_t), tb_cp
 {
     uint32_t row;
     const uint32_t block_size = 16;
+
     for (row = 0; row < N; ++row)
         fn(dir, seq2d[row], seq2d[row], N);
-
     transpose_block(seq2d, N, block_size);
 
     for (row = 0; row < N; ++row)
         fn(dir, seq2d[row], seq2d[row], N);
-
     transpose_block(seq2d, N, block_size);
 }
 
@@ -125,7 +124,7 @@ void tb_fft2d_trans(int dir, void(*fn)(int, tb_cpx*, tb_cpx*, uint32_t), tb_cpx 
             seq2d[row][col].r = out[col].r;
             seq2d[row][col].i = out[col].i;
         }
-    }  
+    }
     transpose_block(seq2d, N, block_size);
     for (row = 0; row < N; ++row) {
         for (col = 0; col < N; ++col) {
@@ -202,7 +201,7 @@ inline void inner_fft(tb_cpx *x, tb_cpx *X, tb_cpx *W, int bit, uint32_t dist, u
 inline void twiddle_factors(tb_cpx *W, double w_angle, uint32_t lead, uint32_t N)
 {
     static uint32_t n;
-    static float ang;
+    static double ang;
     for (n = 0; n < N; ++n) {
         ang = w_angle * reverseBits(n, lead);
         W[n].r = cos(ang);
@@ -210,32 +209,22 @@ inline void twiddle_factors(tb_cpx *W, double w_angle, uint32_t lead, uint32_t N
     }
 }
 
-inline void reverse_bit_order(tb_cpx *x, int dir, uint32_t N, uint32_t lead)
+inline void reverse_bit_order(tb_cpx *x, int dir, uint32_t n2, uint32_t N, uint32_t lead)
 {
     static uint32_t n, p;
-    static float tmp;
     static tb_cpx tmp_cpx;
-    if (dir == INVERSE_FFT) {
-        for (n = 0; n < N / 2; ++n) {
-            p = reverseBits(n, lead);
-            if (n < p) {
-                tmp = x[p].r / N;
-                x[p].r = x[n].r / N;
-                x[n].r = tmp;
-                tmp = x[p].i / N;
-                x[p].i = x[n].i / N;
-                x[n].i = tmp;
-            }
+    for (n = 0; n <= n2; ++n) {
+        p = reverseBits(n, lead);
+        if (n < p) {
+            tmp_cpx = x[n];
+            x[n] = x[p];
+            x[p] = tmp_cpx;
         }
     }
-    else {
-        for (n = 0; n < N / 2; ++n) {
-            p = reverseBits(n, lead);
-            if (n < p) {
-                tmp_cpx = x[n];
-                x[n] = x[p];
-                x[p] = tmp_cpx;
-            }
+    if (dir == INVERSE_FFT && 0) {
+        for (n = 0; n < N; ++n) {
+            x[n].r = x[n].r / (float)N;
+            x[n].i = x[n].i / (float)N;
         }
     }
 }

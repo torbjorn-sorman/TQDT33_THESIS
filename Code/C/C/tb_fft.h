@@ -3,8 +3,8 @@
 
 #include "tb_math.h"
 
-#define FORWARD_FFT 1
-#define INVERSE_FFT -1
+#define FORWARD_FFT -1.0
+#define INVERSE_FFT 1.0
 
 typedef void(*fft_function)(int, tb_cpx*, tb_cpx*, uint32_t);
 

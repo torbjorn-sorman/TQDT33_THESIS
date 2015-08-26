@@ -221,21 +221,21 @@ unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
     * Store the real-value version of the image.
     */
     img_to_cpx(image, cxImage, N);
+    writeppm("img00-org.ppm", N, N, image);
     cpx_to_img(cxImage, greyImage, N, 0);
     printf("Write img00-grey.ppm\n");
     writeppm("img00-grey.ppm", N, N, greyImage);
-
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
-    tb_fft2d(FORWARD_FFT, tb_fft, cxImage, N);
+    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cxImage, N);
     cpx_to_img(cxImage, imImage, N, 1);
     fft_shift(imImage, imImage2, N);
     printf("Write img01-magnitude.ppm\n");
     writeppm("img01-magnitude.ppm", N, N, imImage2);
 
     /* Run inverse 2D FFT on complex values */
-    tb_fft2d(INVERSE_FFT, tb_fft, cxImage, N);
+    tb_fft2d_inplace(INVERSE_FFT, tb_fft, cxImage, N);
     cpx_to_img(cxImage, imImage, N, 0);
     printf("Write img02-fftToImage.ppm\n");
     writeppm("img02-fftToImage.ppm", N, N, imImage);
@@ -397,22 +397,49 @@ int run_fft2dTest(fft_function fn, uint32_t N)
     return res;
 }
 
+void prntTrans(tb_cpx **seq, uint32_t N)
+{
+    uint32_t x, y, w, h;
+    w = N < 11 ? N : 10;
+    h = N < 11 ? N : 10;
+    printf("\n");
+    for (y = 0; y < h; ++y) {        
+        for (x = 0; x < w; ++x) {
+            printf("(%.0f, %.0f) ", seq[y][x].r, seq[y][x].i);
+        }
+        printf("\n");
+    }
+}
+
 unsigned char test_transpose(uint32_t N)
 {    
-    tb_cpx **in = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
-    tb_cpx **in2 = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
-    for (uint32_t y = 0; y < N; ++y) {
+    uint32_t x, y;
+    tb_cpx **in, **in2;
+    in = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    in2 = (tb_cpx **)malloc(sizeof(tb_cpx) * N * N);
+    for (y = 0; y < N; ++y) {
         in[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
         in2[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * N);
-        for (uint32_t x = 0; x < N; ++x) {
+        for (x = 0; x < N; ++x) {
             in[y][x] = { (float)x, (float)y };
             in2[y][x] = { (float)x, (float)y };
         }
-    }
-    
+    }    
     transpose(in, N);
-    transpose_block(in, N, 16);
-    return 0;
+    transpose_block(in2, N, 16);
+    for (y = 0; y < N; ++y) {
+        for (x = 0; x < N; ++x) {
+            if (in[y][x].r != (float)y || in[x][y].r != (float)x) {
+                printf("Error no block at (%u, %u) is: (%f,%f)\n", x, y, in[x][y].r, in[x][y].i);
+                return 0;
+            }
+            if (in2[y][x].r != (float)y || in2[x][y].r != (float)x) {
+                printf("Error no block at (%u, %u) is: (%f,%f)\n", x, y, in2[x][y].r, in2[x][y].i);
+                return 0;
+            }
+        }
+    }
+    return 1;
 }
 
 double test_time_transpose(void(*transpose_function)(tb_cpx**, uint32_t), uint32_t N)

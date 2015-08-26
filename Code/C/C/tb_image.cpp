@@ -40,17 +40,17 @@ void cpPixel(uint32_t px, uint32_t px2, unsigned char *in, unsigned char *out)
 void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N)
 {
     double r, g, b, intensity;
-    uint32_t px;
-    for (uint32_t y = 0; y < N; ++y)
+    uint32_t px, x, y;
+    for (y = 0; y < N; ++y)
     {
-        for (uint32_t x = 0; x < N; ++x)
+        for (x = 0; x < N; ++x)
         {
-            px = y * N * 3 + x * 3;
+            px = (y * N + x) * 3;
             r = img[px];
             g = img[px + 1];
             b = img[px + 2];
-            intensity = ((r + g + b) / 3.f) / 255.f;
-            com[y][x].r = intensity;
+            intensity = ((r + g + b) / 3.0) / 255.0;
+            com[y][x].r = (float)intensity;
             com[y][x].i = 0.f;
         }
     }
@@ -67,15 +67,15 @@ void cpx_to_img(tb_cpx **com, unsigned char *img, uint32_t N, unsigned char mag)
     avg_pos = 0.4;
     scale = tan(avg_pos * (M_PI / 2)) / ((avg - amin) / range);
 
-    for (y = 0; y < N; ++y)
-    {
-        for (x = 0; x < N; ++x)
-        {
+    for (y = 0; y < N; ++y) {
+        for (x = 0; x < N; ++x) {
             px = (y * N + x) * 3;
             magnitude = sqrt(com[y][x].r *com[y][x].r + com[y][x].i *com[y][x].i);
             val = ((magnitude - amin) / range);
             if (mag != 0)
                 val = (atan(val * scale) / (M_PI / 2.0)) * 255.0;            
+            else
+                val *= 255.0;
 
             /* Convert to pixel, greyscaled... */
             img[px] = img[px + 1] = img[px + 2] = (unsigned char)(val > 255.0 ? 255 : val);

@@ -22,7 +22,7 @@ int checkError(tb_cpx *seq, tb_cpx *ref, uint32_t N, int print)
         r = r > r_val ? r : r_val;
         i = i > i_val ? i : i_val;
     }
-    if (print == 1) printf("Error %u\tre(e): %f\t im(e): %f\n", N, r, i);
+    if (print == 1) printf("Error\tre(e): %f\t im(e): %f\t\t\t%u\n", r, i, N);
     return r > ERROR_MARGIN || i > ERROR_MARGIN;
 }
 
@@ -86,15 +86,15 @@ unsigned char test_equal_dft2d(fft_function fft_fn, fft_function ref_fn, uint32_
     img_to_cpx(image, cpxImg, N);
     img_to_cpx(image, cpxImgRef, N);
 
-    tb_fft2d_inplace(FORWARD_FFT, fft_fn, cpxImg, N);
-    tb_fft2d_inplace(FORWARD_FFT, ref_fn, cpxImgRef, N);    
-
+    tb_fft2d(FORWARD_FFT, fft_fn, cpxImg, N);
+    tb_fft2d(FORWARD_FFT, ref_fn, cpxImgRef, N);
+    
     printf("Max error: %f\n", cpx_diff(cpxImg, cpxImgRef, N));
     printf("Avg error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, N));
-
-    tb_fft2d_inplace(INVERSE_FFT, fft_fn, cpxImg, N);
-    tb_fft2d_inplace(INVERSE_FFT, ref_fn, cpxImgRef, N);
-        
+    
+    tb_fft2d(INVERSE_FFT, fft_fn, cpxImg, N);
+    tb_fft2d(INVERSE_FFT, ref_fn, cpxImgRef, N);
+    
     cpx_to_img(cpxImg, imImage, N, 0);
     cpx_to_img(cpxImgRef, imImageRef, N, 0);
 
@@ -165,8 +165,8 @@ double test_time_dft_2d(fft_function fft_fn, uint32_t N)
                 cpxImg[k][l].i = cpxImgRef[k][l].i;
             }
         }
-        tb_fft2d_inplace(FORWARD_FFT, fft_fn, cpxImg, N);
-        tb_fft2d_inplace(INVERSE_FFT, fft_fn, cpxImg, N);
+        tb_fft2d(FORWARD_FFT, fft_fn, cpxImg, N);
+        tb_fft2d(INVERSE_FFT, fft_fn, cpxImg, N);
     }
     QueryPerformanceCounter(&tStop);
     free(image);
@@ -183,7 +183,7 @@ double test_cmp_time(fft_function fn, fft_function ref)
     rel = DBL_MIN;
     sum = sum_ref = 0.0;
     printf("     rel.\tdiff.\t\ttime\t\tref\t\tN\n");
-    for (n = 4; n < 16777216; n *= 2) {
+    for (n = 4; n < 4194304; n *= 2) {
         time = test_time_dft(fn, n);
         time_ref = test_time_dft(ref, n);        
         diff = time_ref - time; 
@@ -232,14 +232,14 @@ unsigned char test_image(fft_function fft_fn, char *filename, uint32_t N)
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
-    tb_fft2d_inplace(FORWARD_FFT, tb_fft, cpxImg, N);
+    tb_fft2d(FORWARD_FFT, tb_fft, cpxImg, N);
     cpx_to_img(cpxImg, imImage, N, 1);
     fft_shift(imImage, imImage2, N);
     printf("Write img01-magnitude.ppm\n");
     writeppm("img01-magnitude.ppm", N, N, imImage2);
 
     /* Run inverse 2D FFT on complex values */
-    tb_fft2d_inplace(INVERSE_FFT, tb_fft, cpxImg, N);
+    tb_fft2d(INVERSE_FFT, tb_fft, cpxImg, N);
     cpx_to_img(cpxImg, imImage, N, 0);
     printf("Write img02-fftToImage.ppm\n");
     writeppm("img02-fftToImage.ppm", N, N, imImage);

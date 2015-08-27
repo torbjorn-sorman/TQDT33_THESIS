@@ -3,9 +3,9 @@
 
 #include "kiss_fft.h"
 
-typedef unsigned __int32 uint32_t;
 typedef kiss_fft_cpx tb_cpx;
-typedef void(*fft_function)(double, tb_cpx*, tb_cpx*, uint32_t);
+typedef void(*fft_function)(double, tb_cpx*, tb_cpx*, const int);
+typedef void(*transpose_function)(tb_cpx**, const int, const int);
 
 #define M_2_PI 6.28318530718
 #define M_PI 3.14159265359

@@ -7,15 +7,16 @@
 /* These are not written for performance, only visualizations and conversions.
  */
 
-void min_rng_avg(double *m, double *r, double *avg, tb_cpx **com, uint32_t N)
+void min_rng_avg(double *m, double *r, double *avg, tb_cpx **com, const int n)
 {
+    int x, y;
     double mi, ma, mag;
     mi = DBL_MAX;
     ma = DBL_MIN;
     *avg = 0.0;
-    for (uint32_t y = 0; y < N; ++y)
+    for (y = 0; y < n; ++y)
     {
-        for (uint32_t x = 0; x < N; ++x)
+        for (x = 0; x < n; ++x)
         {
             mag = sqrt(com[y][x].r *com[y][x].r + com[y][x].i *com[y][x].i);
             mi = min(mi, mag);
@@ -25,27 +26,28 @@ void min_rng_avg(double *m, double *r, double *avg, tb_cpx **com, uint32_t N)
     }
     *m = mi;
     *r = ma - mi;
-    *avg = *avg / (double)(N * N);
+    *avg = *avg / (double)(n * n);
 }
 
-void cpPixel(uint32_t px, uint32_t px2, unsigned char *in, unsigned char *out)
+void cpPixel(const int px, const int px2, unsigned char *in, unsigned char *out)
 {
-    uint32_t p = px * 3;
-    uint32_t p2 = px2 * 3;
+    int p, p2;
+    p = px * 3;
+    p2 = px2 * 3;
     out[p] = in[p2];
     out[p + 1] = in[p2 + 1];
     out[p + 2] = in[p2 + 2];
 }
 
-void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N)
+void img_to_cpx(unsigned char *img, tb_cpx **com, const int n)
 {
     double r, g, b, intensity;
-    uint32_t px, x, y;
-    for (y = 0; y < N; ++y)
+    int px, x, y;
+    for (y = 0; y < n; ++y)
     {
-        for (x = 0; x < N; ++x)
+        for (x = 0; x < n; ++x)
         {
-            px = (y * N + x) * 3;
+            px = (y * n + x) * 3;
             r = img[px];
             g = img[px + 1];
             b = img[px + 2];
@@ -56,20 +58,20 @@ void img_to_cpx(unsigned char *img, tb_cpx **com, uint32_t N)
     }
 }
 
-void cpx_to_img(tb_cpx **com, unsigned char *img, uint32_t N, unsigned char mag)
+void cpx_to_img(tb_cpx **com, unsigned char *img, const int n, unsigned char mag)
 {
-    uint32_t px, x, y;
+    int px, x, y;
     double magnitude, val, amin, range, avg, scale, avg_pos;
 
-    min_rng_avg(&amin, &range, &avg, com, N);    
+    min_rng_avg(&amin, &range, &avg, com, n);    
 
     /* scale shift the average magnitude to avg_pos, makes for better visualizations */
     avg_pos = 0.4;
     scale = tan(avg_pos * (M_PI / 2)) / ((avg - amin) / range);
 
-    for (y = 0; y < N; ++y) {
-        for (x = 0; x < N; ++x) {
-            px = (y * N + x) * 3;
+    for (y = 0; y < n; ++y) {
+        for (x = 0; x < n; ++x) {
+            px = (y * n + x) * 3;
             magnitude = sqrt(com[y][x].r *com[y][x].r + com[y][x].i *com[y][x].i);
             val = ((magnitude - amin) / range);
             if (mag != 0)
@@ -83,36 +85,36 @@ void cpx_to_img(tb_cpx **com, unsigned char *img, uint32_t N, unsigned char mag)
     }
 }
 
-void fft_shift(unsigned char *in, unsigned char *out, uint32_t N)
+void fft_shift(unsigned char *in, unsigned char *out, const int n)
 {
-    uint32_t x, y, n2, px1, px2;
-    n2 = N / 2;
+    int x, y, n2, px1, px2;
+    n2 = n / 2;
     for (y = 0; y < n2; ++y)
     {
         for (x = 0; x < n2; ++x)
         {
-            px1 = y * N + x;
-            px2 = (y + n2) * N + (x + n2);
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x + n2);
             cpPixel(px1, px2, in, out);
             cpPixel(px2, px1, in, out);
         }
     }
     for (y = 0; y < n2; ++y)
     {
-        for (x = n2; x < N; ++x)
+        for (x = n2; x < n; ++x)
         {
-            px1 = y * N + x;
-            px2 = (y + n2) * N + (x - n2);
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x - n2);
             cpPixel(px1, px2, in, out);
             cpPixel(px2, px1, in, out);
         }
     }
 }
 
-int generate_test_image_set(char *filename, char *groupname, uint32_t size)
+int generate_test_image_set(char *filename, char *groupname, const int size)
 {
     int n, m;
-    uint32_t x, y, half, px, opx, step;
+    int x, y, half, px, opx, step;
     unsigned char *image, *imImage;
     char file[30];
     /* Read image to memory */

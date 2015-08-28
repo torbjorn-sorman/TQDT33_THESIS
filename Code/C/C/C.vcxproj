@@ -76,28 +76,35 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="imglib.cpp" />
     <ClCompile Include="kiss_fft.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tb_fft.cpp" />
+    <ClCompile Include="tb_fft_helper.cpp" />
     <ClCompile Include="tb_image.cpp" />
     <ClCompile Include="tb_math.cpp" />
     <ClCompile Include="tb_print.cpp" />
     <ClCompile Include="tb_test.cpp" />
+    <ClCompile Include="tb_test_helper.cpp" />
     <ClCompile Include="tb_transpose.cpp" />
     <ClCompile Include="wiki_fft.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="imglib.h" />
     <ClInclude Include="kissfft.hh" />
     <ClInclude Include="kiss_fft.h" />
     <ClInclude Include="tb_definitions.h" />
     <ClInclude Include="tb_fft.h" />
+    <ClInclude Include="tb_fft_helper.h" />
     <ClInclude Include="tb_image.h" />
     <ClInclude Include="tb_math.h" />
     <ClInclude Include="tb_print.h" />
     <ClInclude Include="tb_test.h" />
+    <ClInclude Include="tb_test_helper.h" />
     <ClInclude Include="tb_transpose.h" />
     <ClInclude Include="wiki_fft.h" />
     <ClInclude Include="_kiss_fft_guts.h" />

@@ -13,69 +13,99 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\tb">
+      <UniqueIdentifier>{99ccb5d1-3a6a-48cf-b539-6aab7e053740}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ext">
+      <UniqueIdentifier>{a77f6bd3-1d98-4d9b-85e1-9af178c570c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ext">
+      <UniqueIdentifier>{add73f58-8d60-4cf9-8f74-497fe4a7739e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tb">
+      <UniqueIdentifier>{14ee92fa-0a32-405b-a45e-05aee3883a64}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kiss_fft.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tb_fft.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_fft_helper.cpp">
+      <Filter>Source Files\tb</Filter>
     </ClCompile>
     <ClCompile Include="tb_image.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\tb</Filter>
     </ClCompile>
     <ClCompile Include="tb_math.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tb_test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="wiki_fft.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tb_transpose.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\tb</Filter>
     </ClCompile>
     <ClCompile Include="tb_print.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_test.cpp">
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_test_helper.cpp">
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_transpose.cpp">
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
+    <ClCompile Include="kiss_fft.c">
+      <Filter>Source Files\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="wiki_fft.cpp">
+      <Filter>Source Files\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="imglib.cpp">
+      <Filter>Source Files\ext</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="_kiss_fft_guts.h">
+      <Filter>Header Files\ext</Filter>
+    </ClInclude>
     <ClInclude Include="kiss_fft.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\ext</Filter>
     </ClInclude>
     <ClInclude Include="kissfft.hh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="_kiss_fft_guts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_fft.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_test.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\ext</Filter>
     </ClInclude>
     <ClInclude Include="wiki_fft.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_transpose.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_print.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\ext</Filter>
     </ClInclude>
     <ClInclude Include="tb_definitions.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_fft.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_fft_helper.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_image.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_math.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_print.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_test.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_test_helper.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_transpose.h">
+      <Filter>Header Files\tb</Filter>
+    </ClInclude>
+    <ClInclude Include="imglib.h">
+      <Filter>Header Files\ext</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

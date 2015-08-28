@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-void console_print(const tb_cpx *seq, const int n)
+void console_print(tb_cpx *seq, const int n)
 {
     if (console_no_print != 0)
         return;
@@ -11,7 +11,7 @@ void console_print(const tb_cpx *seq, const int n)
         printf("%f\t%f\n", seq[i].r, seq[i].i);
 }
 
-void console_print_cmp(const tb_cpx *seq, tb_cpx *ref, const int n)
+void console_print_cmp(tb_cpx *seq, tb_cpx *ref, const int n)
 {
     if (console_no_print != 0)
         return;

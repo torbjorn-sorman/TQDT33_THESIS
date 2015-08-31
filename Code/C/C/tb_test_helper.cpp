@@ -1,21 +1,37 @@
 #include "tb_test_helper.h"
 
-#define ERROR_MARGIN 0.0002
+#define ERROR_MARGIN 0.0001
 
 int checkError(tb_cpx *seq, tb_cpx *ref, const int n, int print)
 {
     int j;
-    double r, i, i_val, r_val;
-    r = i = 0.0;
-    for (j = 0; j < j; ++j)
-    {
+    double re, im, i_val, r_val;
+    re = im = 0.0;
+    for (j = 0; j < n; ++j) {
         r_val = abs(seq[j].r - ref[j].r);
         i_val = abs(seq[j].i - ref[j].i);
-        r = r > r_val ? r : r_val;
-        i = i > i_val ? i : i_val;
+        re = re > r_val ? re : r_val;
+        im = im > i_val ? im : i_val;
     }
-    if (print == 1) printf("Error\tre(e): %f\t im(e): %f\t\t\t%u\n", r, i, n);
-    return r > ERROR_MARGIN || i > ERROR_MARGIN;
+    if (print == 1) printf("Error\tre(e): %f\t im(e): %f\t@%u\n", re, im, n);
+    return re > ERROR_MARGIN || im > ERROR_MARGIN;
+}
+
+int checkError(tb_cpx **seq, tb_cpx **ref, const int n, int print)
+{
+    int x, y;
+    double re, im, i_val, r_val;
+    re = im = 0.0;
+    for (y = 0; y < n; ++y) {
+        for (x = 0; x < n; ++x) {
+            r_val = abs(seq[y][x].r - ref[y][x].r);
+            i_val = abs(seq[y][x].i - ref[y][x].i);
+            re = re > r_val ? re : r_val;
+            im = im > i_val ? im : i_val;
+        }
+    }
+    if (print == 1) printf("Error\tre(e): %f\t im(e): %f\t@%u\n", re, im, n);
+    return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
 int equal(tb_cpx a, tb_cpx b)

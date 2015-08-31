@@ -4,6 +4,7 @@
 #include "tb_definitions.h"
 
 int checkError(tb_cpx *seq, tb_cpx *ref, const int n, int print);
+int checkError(tb_cpx **seq, tb_cpx **ref, const int n, int print);
 int cmp(const void *x, const void *y);
 int cmp(unsigned char *a, unsigned char *b, const int n);
 int equal(tb_cpx a, tb_cpx b);

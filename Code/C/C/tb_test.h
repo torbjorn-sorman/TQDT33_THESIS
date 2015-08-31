@@ -16,6 +16,10 @@ double test_time_dft_2d(fft2d_function fn2d, fft_function fn, const int n);
 double test_time_transpose(transpose_function fn, const int b, const int n);
 double test_time_twiddle(twiddle_function fn, const int n);
 double test_cmp_time(fft_function fn, fft_function ref);
+void test_twiddle_delux();
+
+void test_complete_fft(char *name, fft_function fn);
+void test_complete_fft2d(char *name, fft2d_function fn);
 
 
 /* External libraries to compare with. */

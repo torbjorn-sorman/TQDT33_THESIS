@@ -15,4 +15,6 @@ void twiddle_factors_inverse_omp(tb_cpx *W, const int n);
 void bit_reverse(tb_cpx *x, const double dir, const int n, const int lead);
 void bit_reverse_omp(tb_cpx *X, const double dir, const int n, const int lead);
 
+void fft_shift(tb_cpx **seq, const int n);
+
 #endif

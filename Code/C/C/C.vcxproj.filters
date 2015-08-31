@@ -63,6 +63,9 @@
     <ClCompile Include="imglib.cpp">
       <Filter>Source Files\ext</Filter>
     </ClCompile>
+    <ClCompile Include="tb_filter.cpp">
+      <Filter>Source Files\tb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">
@@ -106,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="imglib.h">
       <Filter>Header Files\ext</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_filter.h">
+      <Filter>Header Files\tb</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -86,6 +86,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tb_fft.cpp" />
     <ClCompile Include="tb_fft_helper.cpp" />
+    <ClCompile Include="tb_filter.cpp" />
     <ClCompile Include="tb_image.cpp" />
     <ClCompile Include="tb_math.cpp" />
     <ClCompile Include="tb_print.cpp" />
@@ -101,6 +102,7 @@
     <ClInclude Include="tb_definitions.h" />
     <ClInclude Include="tb_fft.h" />
     <ClInclude Include="tb_fft_helper.h" />
+    <ClInclude Include="tb_filter.h" />
     <ClInclude Include="tb_image.h" />
     <ClInclude Include="tb_math.h" />
     <ClInclude Include="tb_print.h" />

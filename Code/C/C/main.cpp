@@ -17,9 +17,9 @@ int main()
 {
     int size;
     double time;
-    size = 512;
+    size = 1024;
 
-    test_image(tb_fft2d, tb_fft, "photo05", size);
+    test_image(tb_fft2d, tb_fft, "crevisio", size);
    
     printf("\n... done!\n");
     getchar();

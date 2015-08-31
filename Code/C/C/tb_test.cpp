@@ -9,6 +9,7 @@
 #include "tb_transpose.h"
 #include "tb_math.h"
 #include "tb_print.h"
+#include "tb_filter.h"
 
 #define NO_TESTS 8
 #define MAX_LENGTH 1048576
@@ -225,24 +226,28 @@ unsigned char test_image(fft2d_function fft2d, fft_function fft_fn, char *filena
     * Store the real-value version of the image.
     */
     img_to_cpx(image, cpxImg, n);
-    writeppm("img00-org.ppm", n, n, image);
+    writeppm("img_out/img00-org.ppm", n, n, image);
     cpx_to_img(cpxImg, greyImage, n, 0);
     printf("Write img00-grey.ppm\n");
-    writeppm("img00-grey.ppm", n, n, greyImage);
+    writeppm("img_out/img00-grey.ppm", n, n, greyImage);
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
     fft2d(FORWARD_FFT, fft_fn, cpxImg, n);
+    
+    // Test to apply filter...
+    filter_blur(4, cpxImg, n);
+
     cpx_to_img(cpxImg, imImage, n, 1);
     fft_shift(imImage, imImage2, n);
     printf("Write img01-magnitude.ppm\n");
-    writeppm("img01-magnitude.ppm", n, n, imImage2);
+    writeppm("img_out/img01-magnitude.ppm", n, n, imImage2);
 
     /* Run inverse 2D FFT on complex values */
     fft2d(INVERSE_FFT, fft_fn, cpxImg, n);
     cpx_to_img(cpxImg, imImage, n, 0);
     printf("Write img02-fftToImage.ppm\n");
-    writeppm("img02-fftToImage.ppm", n, n, imImage);
+    writeppm("img_out/img02-fftToImage.ppm", n, n, imImage);
 
     res = cmp(imImage, greyImage);
     // Free all resources...

@@ -121,3 +121,28 @@ void bit_reverse_omp(tb_cpx *X, const double dir, const int n, const int lead)
         }
     }
 }
+
+void fft_shift(tb_cpx **seq, const int n)
+{
+    int x, y, n2;
+    tb_cpx tmp;
+    n2 = n / 2;
+    for (y = 0; y < n2; ++y)
+    {
+        for (x = 0; x < n2; ++x)
+        {
+            tmp = seq[y][x];
+            seq[y][x] = seq[y + n2][x + n2];
+            seq[y + n2][x + n2] = tmp;
+        }
+    }
+    for (y = 0; y < n2; ++y)
+    {
+        for (x = n2; x < n; ++x)
+        {
+            tmp = seq[y][x];
+            seq[y][x] = seq[y + n2][x - n2];
+            seq[y + n2][x - n2] = tmp;
+        }
+    }
+}

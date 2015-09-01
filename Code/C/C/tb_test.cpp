@@ -132,7 +132,7 @@ double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, const int n)
 
     cpxImg = get_seq2d(n);
     cpxImgRef = get_seq2d(n);
-    sprintf_s(filename, 30, "img/lena/%u.ppm", n);
+    sprintf_s(filename, 30, "img/splash/%u.ppm", n);
     image = readppm(filename, &x, &y);
     img_to_cpx(image, cpxImgRef, n);
 
@@ -204,7 +204,7 @@ unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n
     fft2d(dif, FORWARD_FFT, cpxImg, n);
 
     // Test to apply filter...
-    filter_blur(4, cpxImg, n);
+    filter_blur(1024, cpxImg, n);
 
     cpx_to_img(cpxImg, imImage, n, 1);
     fft_shift(imImage, imImage2, n);
@@ -324,7 +324,7 @@ void test_complete_fft(char *name, dif_fn fn)
 {
     int n;
     cpx *in, *ref, *W;
-    n = 16;
+    n = 8;
     in = get_seq(n);
     in[1].r = 1;
     ref = get_seq(n, in);
@@ -336,16 +336,16 @@ void test_complete_fft(char *name, dif_fn fn)
 
     twiddle_factors_inverse(W, n);
     
-    //console_print(in, n);
+    console_print(in, n);
     console_separator(1);
     fft_template(fn, INVERSE_FFT, in, in, W, n);
     free(W);
 
-    //console_print(ref, n);
+    console_print(ref, n);
     console_separator(1);
     checkError(in, ref, n, 1);
     console_separator(1);
-    //console_print(in, n);
+    console_print(in, n);
     console_separator(1);
 
     /*

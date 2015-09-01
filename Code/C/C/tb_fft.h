@@ -17,4 +17,6 @@ void fft_body_alt1_omp(PARAMS_BUTTERFLY);
 void fft_body_alt2(PARAMS_BUTTERFLY);
 void fft_body_alt2_omp(PARAMS_BUTTERFLY);
 
+void fft_body_const_geom(PARAMS_BUTTERFLY);
+
 #endif

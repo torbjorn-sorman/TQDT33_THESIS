@@ -17,10 +17,11 @@ int main()
 {
     int size;
     double time;
-    size = 128;
+    size = 4096;
     time = 0.0;
-    
-    test_cmp_time(fft_body_alt2_omp, fft_body);
+
+    test_complete_fft("CONST GEOM", fft_body_const_geom);
+
     /*
     twiddle_fn tw_ref = twiddle_factors_s;
     

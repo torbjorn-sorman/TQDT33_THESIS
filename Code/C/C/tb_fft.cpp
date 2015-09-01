@@ -15,7 +15,9 @@ void fft_template(PARAMS_FFT)
     dist = (n / 2);
     lead = 32 - bit;
     --bit;
+    console_print(in, n);
     dif(in, out, W, bit, dist, dist2, n);
+    console_print(in, n);
     while (bit-- > 0)
     {
         dist2 = dist;
@@ -37,7 +39,7 @@ void tb_fft2d(PARAMS_FFT2D)
 
     for (row = 0; row < n; ++row)
         fft_template(dif, dir, seq[row], seq[row], W, n);
-    transpose_block(seq, block_size, n);    
+    transpose_block(seq, block_size, n);
 
     for (row = 0; row < n; ++row)
         fft_template(dif, dir, seq[row], seq[row], W, n);
@@ -245,37 +247,39 @@ void fft_body_alt2_omp(PARAMS_BUTTERFLY)
     free(offset);
 }
 
-
-
-/*
-void inner_fft_constant_geom(cpx *in, cpx *out, cpx *W, int bit, int dist, int s2, const int n)
+void fft_body_const_geom(PARAMS_BUTTERFLY)
 {
-    int i, p;
-    cpx a_in, b_in;
-    for (i = 0; i < n; ++i) {    
-        a_in = in[i / 2];
-        b_in = in[n / 2 + i / 2];
-        CPX_ADD(out[i], a_in, b_in);
+    int i, start, end, l, u, p, n2;
+    float imag, real;
+    cpx tmp;
+    n2 = n / 2;
+    console_print(in, n);
+    for (i = 0; i < n; ++i){        
+        l = i / 2;
+        u = n2 + l;
+        p = (l >> bit);
+        /*
+        //cpx add
+        out[i].r = in[l].r + in[u].r;
+        out[i].i = in[l].i + in[u].i;
+        // cpx sub
+        out[i + 1].r = in[l].r - in[u].r;
+        out[i + 1].i = in[l].i - in[u].i;
+        // cpx mul
+        out[i + 1].r = W[p].r * in[u].r - W[p].i * in[u].i;
+        out[i + 1].i = W[p].r * in[u].i + W[p].i * in[u].r;
+        */
 
-        p = (i >> bit);
-        out[++i].r = (a_in.r - b_in.r)W[]
+        //printf("(%f, %f) och (%f, %f)\n", in[l].r, in[l].i, in[u].r, in[u].i);
+        printf("%d: %d och %d, %d\n", i, l, u, p);
 
-        df->wre[ni] = cf*(df->rre[j] - df->rre[nh]) + sf*(-df->rim[j] + df->rim[nh]);
-        df->wim[ni] = sf*(df->rre[j] - df->rre[nh]) + cf*(df->rim[j] - df->rim[nh]);
-
-        out[++i] = 
-        end = dist + start;
-        for (l = start; l < end; ++l) {
-            u = l + dist;
-            tl = x[l];
-            tu = x[u];
-            p = (l >> bit);
-            X[l].r = tl.r + W[p].r * tu.r - W[p].i * tu.i;
-            X[l].i = tl.i + W[p].r * tu.i + W[p].i * tu.r;
-            p = (u >> bit);
-            X[u].r = tl.r + W[p].r * tu.r - W[p].i * tu.i;
-            X[u].i = tl.i + W[p].r * tu.i + W[p].i * tu.r;
-        }
+        tmp = in[l];
+        real = in[u].r * W[p].r - in[u].i * W[p].i;
+        imag = in[u].i * W[p].r + in[u].r * W[p].i;
+        printf("re: %f im: %f\n", real, imag);
+        out[i].r = tmp.r - real;
+        out[i].i = tmp.i - imag;
+        out[++i].r = tmp.r + real;
+        out[i].i = tmp.i + imag;
     }
 }
-*/

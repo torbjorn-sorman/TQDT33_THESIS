@@ -11,68 +11,33 @@
 #include "tb_print.h"
 #include "tb_filter.h"
 
-#define NO_TESTS 8
+#define NO_TESTS 50
 #define MAX_LENGTH 1048576
 
-typedef LARGE_INTEGER LI;
+LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
+
 #define QPF QueryPerformanceFrequency
 #define QPC QueryPerformanceCounter
 
-#define MEASURE_TIME(RES, FN) LI s, e, em, f; QPF(&f); QPC(&s); FN; QPC(&e); em.QuadPart = e.QuadPart - s.QuadPart; em.QuadPart *= 1000000; em.QuadPart /= f.QuadPart; RES = (double)em.QuadPart;
+#define START_TIME QPF(&Frequency); QPC(&StartingTime)
+#define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
-double measureTime()
-{
-    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
-    // Activity to measure!
-    QueryPerformanceCounter(&EndingTime);
-    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    ElapsedMicroseconds.QuadPart *= 1000000;
-    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-    return (double)ElapsedMicroseconds.QuadPart;
-}
-
-void simple()
-{
-    const int n = 16;
-    tb_cpx *in, *in2, *out, *W;
-    W = NULL;
-    out = get_seq(n);
-    in = get_seq(n);
-    in[1].r = 1.f;
-    in2 = get_seq(n, in);
-
-    console_print(in, n);
-    console_separator(1);
-    tb_fft(FORWARD_FFT, in, in, W, n);
-    tb_fft_alt(FORWARD_FFT, in2, in2, W, n);
-    console_print_cmp(in, in2, n);
-
-    console_separator(1);    
-    free(W);
-    free(in);
-    free(in2);
-    free(out);
-}
-
-unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, const int inplace)
+unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
 {
     int n;
     unsigned char res = 1;
-    tb_cpx *fft_out, *dft_out, *in, *in2, *W;
+    cpx *fft_out, *dft_out, *in, *in2, *W;
 
     for (n = 2; n < MAX_LENGTH; n *= 2) {
-        W = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
+        W = (cpx *)malloc(sizeof(cpx) * n);
         twiddle_factors(W, 32 - log2_32(n), n);
         in = get_seq(n, 1);
         if (inplace == 0)
-        {            
+        {
             fft_out = get_seq(n);
             dft_out = get_seq(n);
-            dft_ref_fn(FORWARD_FFT, in, dft_out, W, n);
-            fft_fn(FORWARD_FFT, in, fft_out, W, n);
+            fft_template(ref, FORWARD_FFT, in, dft_out, W, n);
+            fft_template(fn, FORWARD_FFT, in, fft_out, W, n);
             res = checkError(dft_out, fft_out, n, 1);
             free(dft_out);
             free(fft_out);
@@ -80,8 +45,8 @@ unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, const
         else
         {
             in2 = get_seq(n, in);
-            dft_ref_fn(FORWARD_FFT, in, in, W, n);
-            fft_fn(FORWARD_FFT, in2, in2, W, n);
+            fft_template(ref, FORWARD_FFT, in, in, W, n);
+            fft_template(fn, FORWARD_FFT, in2, in2, W, n);
             res = checkError(in, in2, n, 1);
             free(W);
             free(in2);
@@ -93,12 +58,12 @@ unsigned char test_equal_dft(fft_function fft_fn, fft_function dft_ref_fn, const
     return res;
 }
 
-unsigned char test_equal_dft2d(fft2d_function fft_2d, fft_function fft_fn, fft_function ref_fn, const int inplace)
+unsigned char test_equal_dft2d(fft2d_fn fft_2d, dif_fn dif, dif_fn ref, const int inplace)
 {
     int n, m, size;
     unsigned char *image, *imImage, *imImageRef;
     char filename[30];
-    tb_cpx **cpxImg, **cpxImgRef;
+    cpx **cpxImg, **cpxImgRef;
     size = 4096;
     sprintf_s(filename, 30, "img/lena/%u.ppm", size);
     image = readppm(filename, &n, &m);
@@ -109,14 +74,14 @@ unsigned char test_equal_dft2d(fft2d_function fft_2d, fft_function fft_fn, fft_f
     img_to_cpx(image, cpxImg, size);
     img_to_cpx(image, cpxImgRef, size);
 
-    fft_2d(FORWARD_FFT, fft_fn, cpxImg, size);
-    fft_2d(FORWARD_FFT, ref_fn, cpxImgRef, size);
+    fft_2d(dif, FORWARD_FFT, cpxImg, size);
+    fft_2d(ref, FORWARD_FFT, cpxImgRef, size);
 
     printf("Max Fw error: %f\n", cpx_diff(cpxImg, cpxImgRef, size));
     printf("Avg Fw error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, size));
 
-    fft_2d(INVERSE_FFT, fft_fn, cpxImg, size);
-    fft_2d(INVERSE_FFT, ref_fn, cpxImgRef, size);
+    fft_2d(dif, INVERSE_FFT, cpxImg, size);
+    fft_2d(ref, INVERSE_FFT, cpxImgRef, size);
 
     printf("Max Inv error: %f\n", cpx_diff(cpxImg, cpxImgRef, size));
     printf("Avg Inv error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, size));
@@ -135,34 +100,34 @@ unsigned char test_equal_dft2d(fft2d_function fft_2d, fft_function fft_fn, fft_f
     return 1;
 }
 
-double test_time_dft(fft_function fft_fn, const int n)
+double test_time_dft(dif_fn fn, const int n)
 {
-    int i;    
+    int i;
     double measures[NO_TESTS];
-    tb_cpx *in, *out, *W;
-    
+    cpx *in, *out, *W;
+
 
     in = get_seq(n, 1);
     out = get_seq(n);
-    for (i = 0; i < NO_TESTS; ++i) {
-        MEASURE_TIME(measures[i], 
-            W = (tb_cpx *)malloc(sizeof(tb_cpx) * n); 
-            twiddle_factors(W, 32 - log2_32(n), n); 
-            fft_fn(FORWARD_FFT, in, out, W, n); 
-            free(W)
-        );
+    for (i = 0; i < NO_TESTS; ++i) {        
+        START_TIME;
+        W = (cpx *)malloc(sizeof(cpx) * n);
+        twiddle_factors(W, 32 - log2_32(n), n);
+        fft_template(fn, FORWARD_FFT, in, out, W, n);
+        free(W);
+        STOP_TIME(measures[i]);
     }
     free(in);
     free(out);
     return avg(measures, NO_TESTS);
 }
 
-double test_time_dft_2d(fft2d_function fft2d, fft_function fft_fn, const int n)
+double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, const int n)
 {
     int i, x, y;
     char filename[30];
     unsigned char *image;
-    tb_cpx **cpxImg, **cpxImgRef;
+    cpx **cpxImg, **cpxImgRef;
     double measures[NO_TESTS];
 
     cpxImg = get_seq2d(n);
@@ -174,14 +139,17 @@ double test_time_dft_2d(fft2d_function fft2d, fft_function fft_fn, const int n)
     for (i = 0; i < NO_TESTS; ++i)
     {
         copy_seq2d(cpxImgRef, cpxImg, n);
-        MEASURE_TIME(measures[i], fft2d(FORWARD_FFT, fft_fn, cpxImg, n); fft2d(INVERSE_FFT, fft_fn, cpxImg, n));
+        START_TIME;
+        fft2d(dif, FORWARD_FFT, cpxImg, n);
+        fft2d(dif, INVERSE_FFT, cpxImg, n);
+        STOP_TIME(measures[i]);
     }
     free(image);
     free_seq2d(cpxImg, n);
     return avg(measures, NO_TESTS);
 }
 
-double test_cmp_time(fft_function fn, fft_function ref)
+double test_cmp_time(dif_fn fn, dif_fn ref)
 {
     int n;
     double time, time_ref, diff, rel, sum, sum_ref;
@@ -203,12 +171,12 @@ double test_cmp_time(fft_function fn, fft_function ref)
     return rel / 22;
 }
 
-unsigned char test_image(fft2d_function fft2d, fft_function fft_fn, char *filename, const int n)
+unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n)
 {
     int res, w, m, i;
     char file[30];
     unsigned char *image, *imImage, *imImage2, *greyImage;
-    tb_cpx **cpxImg;
+    cpx **cpxImg;
 
     sprintf_s(file, 30, "img/%s/%u.ppm", filename, n);
     printf("Read: %s\n", file);
@@ -233,8 +201,8 @@ unsigned char test_image(fft2d_function fft2d, fft_function fft_fn, char *filena
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
-    fft2d(FORWARD_FFT, fft_fn, cpxImg, n);
-    
+    fft2d(dif, FORWARD_FFT, cpxImg, n);
+
     // Test to apply filter...
     filter_blur(4, cpxImg, n);
 
@@ -244,7 +212,7 @@ unsigned char test_image(fft2d_function fft2d, fft_function fft_fn, char *filena
     writeppm("img_out/img01-magnitude.ppm", n, n, imImage2);
 
     /* Run inverse 2D FFT on complex values */
-    fft2d(INVERSE_FFT, fft_fn, cpxImg, n);
+    fft2d(dif, INVERSE_FFT, cpxImg, n);
     cpx_to_img(cpxImg, imImage, n, 0);
     printf("Write img02-fftToImage.ppm\n");
     writeppm("img_out/img02-fftToImage.ppm", n, n, imImage);
@@ -261,10 +229,10 @@ unsigned char test_image(fft2d_function fft2d, fft_function fft_fn, char *filena
     return res;
 }
 
-unsigned char test_transpose(transpose_function fn, const int b, const int n)
+unsigned char test_transpose(transpose_fn fn, const int b, const int n)
 {
     int x, y, res;
-    tb_cpx **in;
+    cpx **in;
     in = get_seq2d(n, 2);
     fn(in, b, n);
     res = 1;
@@ -281,41 +249,41 @@ unsigned char test_transpose(transpose_function fn, const int b, const int n)
     return res;
 }
 
-double test_time_transpose(transpose_function trans_fn, const int b, const int n)
+double test_time_transpose(transpose_fn trans_fn, const int b, const int n)
 {
     int i;
     double measures[NO_TESTS];
-    tb_cpx **in;
+    cpx **in;
     in = get_seq2d(n, 2);
     for (i = 0; i < NO_TESTS; ++i) {
-        MEASURE_TIME(measures[i], 
-            trans_fn(in, b, n)
-        );
+        START_TIME;
+        trans_fn(in, b, n);
+        STOP_TIME(measures[i]);
     }
     free_seq2d(in, n);
     return avg(measures, NO_TESTS);
 }
 
-double test_time_twiddle(twiddle_function fn, const int n)
+double test_time_twiddle(twiddle_fn fn, const int n)
 {
     int i, lead;
     double measures[NO_TESTS];
-    tb_cpx *w;
+    cpx *w;
     lead = 32 - log2_32(n);
-    w = get_seq(n);    
+    w = get_seq(n);
     for (i = 0; i < NO_TESTS; ++i) {
-        MEASURE_TIME(measures[i], 
-            fn(w, lead, n)
-        );
+        START_TIME;
+        fn(w, lead, n);
+        STOP_TIME(measures[i]);
     }
     free(w);
     return avg(measures, NO_TESTS);
 }
 
-unsigned char test_twiddle(twiddle_function fn, twiddle_function ref, const int n)
+unsigned char test_twiddle(twiddle_fn fn, twiddle_fn ref, const int n)
 {
     int lead, i, res;
-    tb_cpx *w, *w_ref;
+    cpx *w, *w_ref;
     lead = 32 - log2_32(n);
     w = get_seq(n);
     w_ref = get_seq(n);
@@ -336,71 +304,54 @@ unsigned char test_twiddle(twiddle_function fn, twiddle_function ref, const int 
     return res;
 }
 
-tb_cpx *makeRefTW(double dir, int n)
+double test_time_reverse(bit_reverse_fn fn, const int n)
 {
-    int i;
-    tb_cpx *ref;
-    ref = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
-    double ang = dir * (M_2_PI / n);
-    for (i = 0; i < n; ++i) {
-        ref[i].r = cos(ang * i);
-        ref[i].i = sin(ang * i);
+    int i, lead;
+    double measures[NO_TESTS];
+    cpx *w;
+    lead = 32 - log2_32(n);
+    w = get_seq(n);
+    for (i = 0; i < NO_TESTS; ++i) {
+        START_TIME;
+        fn(w, -1, n, lead);
+        STOP_TIME(measures[i]);
     }
-    bit_reverse(ref, FORWARD_FFT, n, 32 - log2_32(n));
-    return ref;
+    free(w);
+    return avg(measures, NO_TESTS);
 }
 
-void test_twiddle_delux()
+void test_complete_fft(char *name, dif_fn fn)
 {
     int n;
-    tb_cpx *W, *ref;
-    n = 16;
-    W = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
-    twiddle_factors(W, 32 - log2_32(n), n);
-    console_print(W, n);
-    console_separator(1);
-    console_print(ref = makeRefTW(-1.0, n), n);
-    free(ref);
-    console_separator(3);
-    twiddle_factors_inverse(W, n);
-    console_print(W, n);
-    console_separator(1);
-    console_print(ref = makeRefTW(1.0, n), n);
-    free(ref);
-    console_separator(1);
-}
-
-void test_complete_fft(char *name, fft_function fn)
-{
-    int n, i;
-    tb_cpx *in, *ref, *W;
+    cpx *in, *ref, *W;
     n = 16;
     in = get_seq(n);
     in[1].r = 1;
     ref = get_seq(n, in);
     printf("\n%s\n", name);
 
-    W = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
+    W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, 32 - log2_32(n), n);
-    fn(FORWARD_FFT, in, in, W, n);
+    fft_template(fn, FORWARD_FFT, in, in, W, n);
 
     twiddle_factors_inverse(W, n);
-    console_print(in, n);
-    console_separator(1);  
-    fn(INVERSE_FFT, in, in, W, n);
+    
+    //console_print(in, n);
+    console_separator(1);
+    fft_template(fn, INVERSE_FFT, in, in, W, n);
     free(W);
 
-    console_print(ref, n);
+    //console_print(ref, n);
     console_separator(1);
     checkError(in, ref, n, 1);
     console_separator(1);
-    console_print(in, n);
+    //console_print(in, n);
     console_separator(1);
 
     /*
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-        printf("%d\t%.1f\n", i, test_time_dft(fn, i));
+    printf("%d\t%.1f\n", i, test_time_dft(fn, i));
     }
     */
 
@@ -408,31 +359,31 @@ void test_complete_fft(char *name, fft_function fn)
     free(ref);
 }
 
-void test_complete_fft2d(char *name, fft2d_function fn)
+void test_complete_fft2d(char *name, fft2d_fn fn)
 {
     int n, i;
-    tb_cpx **in, **ref;
-    fft_function fft;
-    fft = tb_fft;
+    cpx **in, **ref;
+    dif_fn body;
+    body = fft_body;
     n = 512;
-    in = get_seq2d(n, 1);    
+    in = get_seq2d(n, 1);
     ref = get_seq2d(n, in);
 
-    fn(FORWARD_FFT, fft, in, n);
-    fn(INVERSE_FFT, fft, in, n);
+    fn(body, FORWARD_FFT, in, n);
+    fn(body, INVERSE_FFT, in, n);
     printf("\n%s\n", name);
     checkError(in, ref, n, 1);
 
     printf("Length\tTime\n");
     for (i = 4; i < 4096; i *= 2) {
-        printf("%d\t%.1f\n", i, test_time_dft_2d(fn, fft, i));
+        printf("%d\t%.1f\n", i, test_time_dft_2d(fn, body, i));
     }
 
     free(in);
     free(ref);
 }
 
-void kiss_fft(double dir, tb_cpx *in, tb_cpx *out, const int n)
+void kiss_fft(double dir, cpx *in, cpx *out, const int n)
 {
     kiss_fft_cfg cfg = kiss_fft_alloc(n, (dir == INVERSE_FFT), NULL, NULL);
     kiss_fft(cfg, in, out);

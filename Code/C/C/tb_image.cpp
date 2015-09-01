@@ -6,7 +6,7 @@
 //#include "ppm.h"
 #include "imglib.h"
 
-void min_rng_avg(double *m, double *r, double *avg, tb_cpx **com, const int n)
+void min_rng_avg(double *m, double *r, double *avg, cpx **com, const int n)
 {
     int x, y;
     double mi, ma, mag;
@@ -38,7 +38,7 @@ void cpPixel(const int px, const int px2, unsigned char *in, unsigned char *out)
     out[p + 2] = in[p2 + 2];
 }
 
-void img_to_cpx(unsigned char *img, tb_cpx **com, const int n)
+void img_to_cpx(unsigned char *img, cpx **com, const int n)
 {
     double r, g, b, intensity;
     int px, x, y;
@@ -57,7 +57,7 @@ void img_to_cpx(unsigned char *img, tb_cpx **com, const int n)
     }
 }
 
-void cpx_to_img(tb_cpx **com, unsigned char *img, const int n, unsigned char mag)
+void cpx_to_img(cpx **com, unsigned char *img, const int n, unsigned char mag)
 {
     int px, x, y;
     double magnitude, val, amin, range, avg, scale, avg_pos;

@@ -19,7 +19,7 @@ unsigned int reverseBitsLowMem(int x, const int l)
     return((x >> 16) | (x << 16)) >> (32 - l);
 }
 
-int cpx_equal(tb_cpx *c1, tb_cpx *c2, const int n)
+int cpx_equal(cpx *c1, cpx *c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -29,7 +29,7 @@ int cpx_equal(tb_cpx *c1, tb_cpx *c2, const int n)
     return 1;
 }
 
-int cpx_equal(tb_cpx **c1, tb_cpx **c2, const int n)
+int cpx_equal(cpx **c1, cpx **c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -39,7 +39,7 @@ int cpx_equal(tb_cpx **c1, tb_cpx **c2, const int n)
     return 1;
 }
 
-double cpx_diff(tb_cpx a, tb_cpx b)
+double cpx_diff(cpx a, cpx b)
 {
     double re, im;
     re = abs((double)a.r - (double)b.r);
@@ -47,7 +47,7 @@ double cpx_diff(tb_cpx a, tb_cpx b)
     return max(re, im);
 }
 
-double cpx_diff(tb_cpx *a, tb_cpx *b, const int n)
+double cpx_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double m_diff;
@@ -57,7 +57,7 @@ double cpx_diff(tb_cpx *a, tb_cpx *b, const int n)
     return m_diff;
 }
 
-double cpx_diff(tb_cpx **a, tb_cpx **b, const int n)
+double cpx_diff(cpx **a, cpx **b, const int n)
 {
     int i;
     double m_diff;
@@ -67,7 +67,7 @@ double cpx_diff(tb_cpx **a, tb_cpx **b, const int n)
     return m_diff;
 }
 
-double cpx_avg_diff(tb_cpx *a, tb_cpx *b, const int n)
+double cpx_avg_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double sum;
@@ -77,7 +77,7 @@ double cpx_avg_diff(tb_cpx *a, tb_cpx *b, const int n)
     return sum / n;
 }
 
-double cpx_avg_diff(tb_cpx **a, tb_cpx **b, const int n)
+double cpx_avg_diff(cpx **a, cpx **b, const int n)
 {
     int i, j;
     double sum;

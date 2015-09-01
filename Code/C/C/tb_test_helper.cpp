@@ -2,7 +2,7 @@
 
 #define ERROR_MARGIN 0.0001
 
-int checkError(tb_cpx *seq, tb_cpx *ref, const int n, int print)
+int checkError(cpx *seq, cpx *ref, const int n, int print)
 {
     int j;
     double re, im, i_val, r_val;
@@ -17,7 +17,7 @@ int checkError(tb_cpx *seq, tb_cpx *ref, const int n, int print)
     return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
-int checkError(tb_cpx **seq, tb_cpx **ref, const int n, int print)
+int checkError(cpx **seq, cpx **ref, const int n, int print)
 {
     int x, y;
     double re, im, i_val, r_val;
@@ -34,7 +34,7 @@ int checkError(tb_cpx **seq, tb_cpx **ref, const int n, int print)
     return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
-int equal(tb_cpx a, tb_cpx b)
+int equal(cpx a, cpx b)
 {
     return a.r == b.r && a.i == b.i;
 }
@@ -59,20 +59,20 @@ int cmp(unsigned char *a, unsigned char *b, const int n)
 
 double avg(double m[], int n)
 {
-    int i, cnt, start;
+    int i, cnt, end;
     double sum;
     qsort(m, n, sizeof(double), cmp);
     sum = 0.0;
     cnt = 0;
-    start = n > 5 ? n - 5 : (3 * n) / 4;
-    for (i = start; i < n; ++i) {
+    end = n < 5 ? n - 1 : 5;
+    for (i = 0; i < end; ++i) {
         sum += m[i];
         ++cnt;
     }
-    return (sum / cnt);
+    return (sum / (double)cnt);
 }
 
-double abs_diff(tb_cpx a, tb_cpx b)
+double abs_diff(cpx a, cpx b)
 {
     double r, i;
     r = a.r - b.r;
@@ -80,16 +80,16 @@ double abs_diff(tb_cpx a, tb_cpx b)
     return sqrt(r * r + i * i);
 }
 
-tb_cpx *get_seq(const int n)
+cpx *get_seq(const int n)
 {
     return get_seq(n, 0);
 }
 
-tb_cpx *get_seq(const int n, const int sinus)
+cpx *get_seq(const int n, const int sinus)
 {
     int i;
-    tb_cpx *seq;
-    seq = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
+    cpx *seq;
+    seq = (cpx *)malloc(sizeof(cpx) * n);
     for (i = 0; i < n; ++i) {
         seq[i].r = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
         seq[i].i = 0.f;
@@ -97,11 +97,11 @@ tb_cpx *get_seq(const int n, const int sinus)
     return seq;
 }
 
-tb_cpx *get_seq(const int n, tb_cpx *src)
+cpx *get_seq(const int n, cpx *src)
 {
     int i;
-    tb_cpx *seq;
-    seq = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
+    cpx *seq;
+    seq = (cpx *)malloc(sizeof(cpx) * n);
     for (i = 0; i < n; ++i) {
         seq[i].r = src[i].r;
         seq[i].i = src[i].i;
@@ -109,16 +109,16 @@ tb_cpx *get_seq(const int n, tb_cpx *src)
     return seq;
 }
 
-tb_cpx **get_seq2d(const int n)
+cpx **get_seq2d(const int n)
 {
     return get_seq2d(n, 0);
 }
 
-tb_cpx **get_seq2d(const int n, const int type)
+cpx **get_seq2d(const int n, const int type)
 {
     int i, x, y;
-    tb_cpx **seq;
-    seq = (tb_cpx **)malloc(sizeof(tb_cpx *) * n);
+    cpx **seq;
+    seq = (cpx **)malloc(sizeof(cpx *) * n);
     if (type == 0 || type == 1) {
         for (i = 0; i < n; ++i) {
             seq[i] = get_seq(n, type);
@@ -126,7 +126,7 @@ tb_cpx **get_seq2d(const int n, const int type)
     }
     else {
         for (y = 0; y < n; ++y) {
-            seq[y] = (tb_cpx *)malloc(sizeof(tb_cpx) * n);
+            seq[y] = (cpx *)malloc(sizeof(cpx) * n);
             for (x = 0; x < n; ++x) {
                 seq[y][x] = { (float)x, (float)y };
             }
@@ -135,18 +135,18 @@ tb_cpx **get_seq2d(const int n, const int type)
     return seq;
 }
 
-tb_cpx **get_seq2d(const int n, tb_cpx **src)
+cpx **get_seq2d(const int n, cpx **src)
 {
     int i;
-    tb_cpx **seq;
-    seq = (tb_cpx **)malloc(sizeof(tb_cpx *) * n);
+    cpx **seq;
+    seq = (cpx **)malloc(sizeof(cpx *) * n);
     for (i = 0; i < n; ++i) {
         seq[i] = get_seq(n, src[i]);
     }
     return seq;
 }
 
-void copy_seq2d(tb_cpx **from, tb_cpx **to, const int n)
+void copy_seq2d(cpx **from, cpx **to, const int n)
 {
     int i, j;
     for (i = 0; i < n; ++i) {
@@ -162,7 +162,7 @@ unsigned char *get_empty_img(const int w, const int h)
     return (unsigned char *)malloc(sizeof(unsigned char) * w * h * 3);
 }
 
-void free_seq2d(tb_cpx **seq, const int n)
+void free_seq2d(cpx **seq, const int n)
 {
     int i;
     for (i = 0; i < n; ++i)

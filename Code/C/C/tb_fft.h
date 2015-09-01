@@ -3,12 +3,18 @@
 
 #include "tb_definitions.h"
 
-void tb_fft(const double dir, tb_cpx *x, tb_cpx *X, tb_cpx *W, const int n);
-void tb_fft_alt(const double dir, tb_cpx *x, tb_cpx *X, tb_cpx *W, const int n);
-void tb_fft_real(const double dir, tb_cpx *x, tb_cpx *X, tb_cpx *W, const int n);
-void tb_fft_omp(const double dir, tb_cpx *x, tb_cpx *X, tb_cpx *W, const int n);
+void fft_template(PARAMS_FFT);
 
-void tb_fft2d(const double dir, fft_function fn, tb_cpx **seq2d, const int n);
-void tb_fft2d_omp(const double dir, fft_function fn, tb_cpx **seq2d, const int n);
+void tb_fft2d(PARAMS_FFT2D);
+void tb_fft2d_omp(PARAMS_FFT2D);
+
+void fft_body(PARAMS_BUTTERFLY);
+void fft_body_omp(PARAMS_BUTTERFLY);
+
+void fft_body_alt1(PARAMS_BUTTERFLY);
+void fft_body_alt1_omp(PARAMS_BUTTERFLY);
+
+void fft_body_alt2(PARAMS_BUTTERFLY);
+void fft_body_alt2_omp(PARAMS_BUTTERFLY);
 
 #endif

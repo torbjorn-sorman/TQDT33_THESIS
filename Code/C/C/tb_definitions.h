@@ -3,14 +3,21 @@
 
 #include "kiss_fft.h"
 
-typedef kiss_fft_cpx tb_cpx;
-typedef void(*fft_function)(const double, tb_cpx*, tb_cpx*, tb_cpx*, const int);
-typedef void(*fft2d_function)(const double, fft_function, tb_cpx**, const int);
-typedef void(*transpose_function)(tb_cpx**, const int, const int);
-typedef void(*twiddle_function)(tb_cpx*, const int, const int);
+#define PARAMS_FFT dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n
+#define PARAMS_FFT2D dif_fn dif, const double dir, cpx** seq, const int n
+#define PARAMS_BUTTERFLY cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n
+#define PARAMS_TWIDDLE cpx *W, const int lead, const int n
 
-#define M_2_PI 6.28318530718
-#define M_PI 3.14159265359
+typedef kiss_fft_cpx cpx;
+typedef void(*dif_fn)(PARAMS_BUTTERFLY);
+typedef void(*fft_fn)(PARAMS_FFT);
+typedef void(*fft2d_fn)(PARAMS_FFT2D);
+typedef void(*transpose_fn)(cpx**, const int, const int);
+typedef void(*twiddle_fn)(PARAMS_TWIDDLE);
+typedef void(*bit_reverse_fn)(cpx*, const double, const int, const int);
+
+#define M_2_PI 6.28318530718f
+#define M_PI 3.14159265359f
 
 #define FORWARD_FFT -1.0
 #define INVERSE_FFT 1.0

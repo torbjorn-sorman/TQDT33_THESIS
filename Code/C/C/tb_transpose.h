@@ -3,9 +3,9 @@
 
 #include "tb_definitions.h"
 
-void transpose(tb_cpx **seq, const int b, const int n);
-void transpose_openmp(tb_cpx **seq, const int b, const int n);
-void transpose_block(tb_cpx **seq, const int b, const int n);
-void transpose_block_openmp(tb_cpx **seq, const int b, const int n);
+void transpose(cpx **seq, const int b, const int n);
+void transpose_openmp(cpx **seq, const int b, const int n);
+void transpose_block(cpx **seq, const int b, const int n);
+void transpose_block_openmp(cpx **seq, const int b, const int n);
 
 #endif

@@ -29,17 +29,21 @@ static const unsigned int revTbl256[] =
     0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
 };
 
-#define reverseBits(X,L) (((revTbl256[X & 0xff] << 24) | (revTbl256[(X >> 8) & 0xff] << 16) | (revTbl256[(X >> 16) & 0xff] << 8) | (revTbl256[(X >> 24) & 0xff])) >> L)
+#define BIT_REVERSE(X,L) (((revTbl256[(X) & 0xff] << 24) | (revTbl256[((X) >> 8) & 0xff] << 16) | (revTbl256[((X) >> 16) & 0xff] << 8) | (revTbl256[((X) >> 24) & 0xff])) >> (L))
+
+#define CPX_ADD(R,A,B) (((R).r) = (((A).r) + ((B).r))); (((R).i) = (((A).i) + ((B).i)))
+#define CPX_SUB(R,A,B) (((R).r) = (((A).r) - ((B).r))); (((R).i) = (((A).i) - ((B).i)))
+#define CPX_MUL(R,A,B) (((R).r) = ((((A).r) * ((B).r)) - (((A).i) * ((B).i)))); (((R).i) = ((((A).r) * ((B).i)) + (((A).i) * ((B).r))))
 
 unsigned int reverseBitsLowMem(int x, const int l);
 int log2_32(int value);
-int cpx_equal(tb_cpx a, tb_cpx b);
-int cpx_equal(tb_cpx *a, tb_cpx *b, const int n);
-int cpx_equal(tb_cpx **a, tb_cpx **b, const int n);
-double cpx_diff(tb_cpx a, tb_cpx b);
-double cpx_diff(tb_cpx *a, tb_cpx *b, const int n);
-double cpx_diff(tb_cpx **a, tb_cpx **b, const int n);
-double cpx_avg_diff(tb_cpx *a, tb_cpx *b, const int n);
-double cpx_avg_diff(tb_cpx **a, tb_cpx **b, const int n);
+int cpx_equal(cpx a, cpx b);
+int cpx_equal(cpx *a, cpx *b, const int n);
+int cpx_equal(cpx **a, cpx **b, const int n);
+double cpx_diff(cpx a, cpx b);
+double cpx_diff(cpx *a, cpx *b, const int n);
+double cpx_diff(cpx **a, cpx **b, const int n);
+double cpx_avg_diff(cpx *a, cpx *b, const int n);
+double cpx_avg_diff(cpx **a, cpx **b, const int n);
 
 #endif

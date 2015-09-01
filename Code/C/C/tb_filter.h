@@ -3,7 +3,7 @@
 
 #include "tb_definitions.h"
 
-void filter_edge(const int val, tb_cpx **seq, const int n);
-void filter_blur(const int val, tb_cpx **seq, const int n);
+void filter_edge(const int val, cpx **seq, const int n);
+void filter_blur(const int val, cpx **seq, const int n);
 
 #endif

@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-void filter_edge(const int val, tb_cpx **seq, const int n)
+void filter_edge(const int val, cpx **seq, const int n)
 {
     int x, y;
     for (y = 0; y < val; ++y) {
@@ -25,7 +25,7 @@ void filter_edge(const int val, tb_cpx **seq, const int n)
     }
 }
 
-void filter_blur(const int val, tb_cpx **seq, const int n)
+void filter_blur(const int val, cpx **seq, const int n)
 {
     int x, y, e;
     e = n - val;
@@ -37,18 +37,18 @@ void filter_blur(const int val, tb_cpx **seq, const int n)
 }
 
 
-tb_cpx action(tb_cpx e)
+cpx action(cpx e)
 {
     return{ 0.f, 0.f };
 }
 
-void do_filter(tb_cpx **seq, int n)
+void do_filter(cpx **seq, int n)
 {
     int x, y, r, xr, mr;
     mr = n / 4;
     r = n > mr ? mr : n;
     for (y = 0; y < r; ++y) {
-        xr = sqrt(r * r - y * y);
+        xr = (int)round(sqrt(r * r - y * y));
         for (x = 0; x < xr; ++x) {
             seq[y][x] = action(seq[y][x]);
         }
@@ -57,7 +57,7 @@ void do_filter(tb_cpx **seq, int n)
         }
     }
     for (y = n - r; y < n; ++y) {
-        xr = sqrt(r * r - (n - y) * (n - y));
+        xr = (int)round(sqrt(r * r - (n - y) * (n - y)));
         for (x = 0; x < xr; ++x) {
             seq[y][x] = action(seq[y][x]);
         }
@@ -67,7 +67,7 @@ void do_filter(tb_cpx **seq, int n)
     }
 }
 
-int within(float r, tb_cpx p, tb_cpx ref)
+int within(float r, cpx p, cpx ref)
 {
     float x, y;
     x = p.r - ref.r;
@@ -75,13 +75,13 @@ int within(float r, tb_cpx p, tb_cpx ref)
     return sqrt(x*x + y*y) <= r;
 }
 
-void do_another_filter(tb_cpx **seq, int n)
+void do_another_filter(cpx **seq, int n)
 {
-    int x, y, r, xr, mr;
+    int x, y;
     float radius;
-    tb_cpx center;
-    center = { n * 0.5, n * 0.5 };
-    radius = n * 0.15;
+    cpx center;
+    center = { n * 0.5f, n * 0.5f };
+    radius = n * 0.15f;
 
     fft_shift(seq, n);
     for (y = 0; y < n; ++y) {

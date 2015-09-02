@@ -10,6 +10,7 @@
 #include "tb_math.h"
 #include "tb_print.h"
 #include "tb_filter.h"
+#include "cgp_fft.h"
 
 #define NO_TESTS 50
 #define MAX_LENGTH 1048576
@@ -105,16 +106,51 @@ double test_time_dft(dif_fn fn, const int n)
     int i;
     double measures[NO_TESTS];
     cpx *in, *out, *W;
-
-
     in = get_seq(n, 1);
     out = get_seq(n);
-    for (i = 0; i < NO_TESTS; ++i) {        
+    for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
         W = (cpx *)malloc(sizeof(cpx) * n);
         twiddle_factors(W, 32 - log2_32(n), n);
-        fft_template(fn, FORWARD_FFT, in, out, W, n);
+        fft_template(fn, FORWARD_FFT, in, in, W, n);
         free(W);
+        STOP_TIME(measures[i]);
+    }
+    free(in);
+    free(out);
+    return avg(measures, NO_TESTS);
+}
+
+double test_time_const_geom(const int n)
+{
+    int i;
+    double measures[NO_TESTS];
+    cpx *in, *out, *W;
+    in = get_seq(n, 1);
+    out = get_seq(n);
+    for (i = 0; i < NO_TESTS; ++i) {
+        START_TIME;
+        W = (cpx *)malloc(sizeof(cpx) * n);
+        twiddle_factors(W, 32 - log2_32(n), n);
+        fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+        free(W);
+        STOP_TIME(measures[i]);
+    }
+    free(in);
+    free(out);
+    return avg(measures, NO_TESTS);
+}
+
+double test_time_ext(void(*fn)(const double, cpx *, cpx *, const int), const int n)
+{
+    int i;
+    double measures[NO_TESTS];
+    cpx *in, *out;
+    in = get_seq(n, 1);
+    out = get_seq(n);
+    for (i = 0; i < NO_TESTS; ++i) {
+        START_TIME;
+        fn(FORWARD_FFT, in, out, n);
         STOP_TIME(measures[i]);
     }
     free(in);
@@ -313,7 +349,7 @@ double test_time_reverse(bit_reverse_fn fn, const int n)
     w = get_seq(n);
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
-        fn(w, -1, n, lead);
+        fn(w, -1, lead, n);
         STOP_TIME(measures[i]);
     }
     free(w);
@@ -322,9 +358,9 @@ double test_time_reverse(bit_reverse_fn fn, const int n)
 
 void test_complete_fft(char *name, dif_fn fn)
 {
-    int n;
+    int i, n;
     cpx *in, *ref, *W;
-    n = 8;
+    n = 8192;
     in = get_seq(n);
     in[1].r = 1;
     ref = get_seq(n, in);
@@ -334,29 +370,113 @@ void test_complete_fft(char *name, dif_fn fn)
     twiddle_factors(W, 32 - log2_32(n), n);
     fft_template(fn, FORWARD_FFT, in, in, W, n);
 
+    //printf("\nINV\n");
+
     twiddle_factors_inverse(W, n);
-    
-    console_print(in, n);
-    console_separator(1);
     fft_template(fn, INVERSE_FFT, in, in, W, n);
+    free(W);        
+    
+    checkError(in, ref, n, 1);
+    /*
+    console_separator();
+    console_print(ref, n);
+    console_newline();
+    console_print(in, n);
+    console_separator();
+    */
+    
+    free(in);
+    free(ref);
+
+    printf("Length\tTime\n");
+    for (i = 4; i < MAX_LENGTH; i *= 2) {
+        printf("%d\t%.1f\n", i, test_time_dft(fn, i));
+    } 
+}
+
+void test_complete_fft_cg(char *name)
+{
+    int i, n;
+    cpx *in, *out, *ref, *W;
+    n = 16;
+    in = get_seq(n);
+    in[1].r = 1;
+    out = get_seq(n);
+    ref = get_seq(n, in);
+    printf("\n%s\n", name);
+    
+    W = (cpx *)malloc(sizeof(cpx) * n);
+    twiddle_factors(W, n);    
+    fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+     
+    /*
+    console_newline(1);
+    console_print(out, n);
+    printf("\nINV\n");
+    console_newline(1);
+    */
+    twiddle_factors_inverse(W, n / 2);
+    fft_const_geom(INVERSE_FFT, &out, &in, W, n);
     free(W);
 
-    console_print(ref, n);
-    console_separator(1);
     checkError(in, ref, n, 1);
-    console_separator(1);
+    /*
+    console_separator();
+    console_print(ref, n);
+    console_newline();
     console_print(in, n);
-    console_separator(1);
+    console_separator();
+    
+    */
+    free(in);
+    free(ref);
+    /*
+    printf("Length\tTime\n");
+    for (i = 4; i < MAX_LENGTH; i *= 2) {
+        printf("%d\t%.1f\n", i, test_time_const_geom(i));
+    }
+    */
+}
+
+
+void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const int))
+{
+    int i, n;
+    cpx *in, *out, *ref;
+    n = 16;
+    in = get_seq(n);
+    in[1].r = 1;
+    out = get_seq(n);
+    ref = get_seq(n, in);
+    printf("\n%s\n", name);
+
+    fn(FORWARD_FFT, in, out, n);
+    /*
+    console_newline(1);
+    console_print(out, n);    
+    console_newline(1);
+    
+    fn(INVERSE_FFT, in, out, n);
+
+    checkError(in, ref, n, 1);
+    
+    console_separator();
+    console_print(ref, n);
+    console_newline();
+    console_print(in, n);
+    console_separator();
+    */
+    free(in);
+    free(out);
+    free(ref);
 
     /*
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-    printf("%d\t%.1f\n", i, test_time_dft(fn, i));
+        printf("%d\t%.1f\n", i, test_time_ext(fn, i));
     }
     */
 
-    free(in);
-    free(ref);
 }
 
 void test_complete_fft2d(char *name, fft2d_fn fn)
@@ -388,4 +508,27 @@ void kiss_fft(double dir, cpx *in, cpx *out, const int n)
     kiss_fft_cfg cfg = kiss_fft_alloc(n, (dir == INVERSE_FFT), NULL, NULL);
     kiss_fft(cfg, in, out);
     free(cfg);
+}
+
+void cgp_fft(double dir, cpx *in, cpx *out, const int n)
+{
+    double *re, *im;
+    int i, n_threads;
+    n_threads = 1;
+    re = (double *)malloc(sizeof(double) * n);
+    im = (double *)malloc(sizeof(double) * n);
+    for (i = 0; i < n; ++i) {
+        re[i] = (double)in[i].r;
+        im[i] = (double)in[i].i;
+    }
+
+    cgp_fft_openmp(&re, &im, n, log2_32(n), n_threads, dir);
+
+    for (i = 0; i < n; ++i) {
+        out[i].r = (float)re[i];
+        out[i].i = (float)im[i];
+    }
+
+    free(re);
+    free(im);
 }

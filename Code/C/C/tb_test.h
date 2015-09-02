@@ -17,10 +17,13 @@ double test_time_reverse(bit_reverse_fn fn, const int n);
 double test_cmp_time(dif_fn fn, dif_fn ref);
 
 void test_complete_fft(char *name, dif_fn fn);
+void test_complete_fft_cg(char *name);
 void test_complete_fft2d(char *name, fft2d_fn fn);
 
+void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const int));
 
 /* External libraries to compare with. */
 void kiss_fft(double dir, cpx *in, cpx *out, const int n);
+void cgp_fft(double dir, cpx *in, cpx *out, const int n);
 
 #endif

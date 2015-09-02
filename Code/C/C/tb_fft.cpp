@@ -15,9 +15,7 @@ void fft_template(PARAMS_FFT)
     dist = (n / 2);
     lead = 32 - bit;
     --bit;
-    console_print(in, n);
     dif(in, out, W, bit, dist, dist2, n);
-    console_print(in, n);
     while (bit-- > 0)
     {
         dist2 = dist;
@@ -95,8 +93,8 @@ void fft_body(PARAMS_BUTTERFLY)
         end = dist + start;
         for (l = start; l < end; ++l) {
             u = l + dist;
-            tmp = in[l];
             p = (u >> bit);
+            tmp = in[l];
             real = in[u].r * W[p].r - in[u].i * W[p].i;
             imag = in[u].i * W[p].r + in[u].r * W[p].i;
             out[l].r = tmp.r - real;
@@ -247,39 +245,104 @@ void fft_body_alt2_omp(PARAMS_BUTTERFLY)
     free(offset);
 }
 
-void fft_body_const_geom(PARAMS_BUTTERFLY)
+
+// Must be supplied with two buffers
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n)
 {
-    int i, start, end, l, u, p, n2;
-    float imag, real;
+    int bit, steps;
+    unsigned int mask;
+    cpx *tmp;
+    bit = log2_32(n);
+    const int lead = 32 - bit;
+    steps = --bit;
+    mask = 0xffffffff << (steps - bit);
+    fft_body_const_geom(dir, *in, *out, W, bit, mask, n);
+    while (bit-- > 0)
+    {
+        tmp = *in;
+        *in = *out;
+        *out = tmp;
+        mask = 0xffffffff << (steps - bit);
+        fft_body_const_geom(dir, *in, *out, W, bit, mask, n);
+    }
+    bit_reverse(*out, dir, lead, n);
+}
+
+void fft_body_const_geom(const double dir, cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n)
+{
+    int i, l, u, p, n2;
+    float sinv, cosv;
+    float ang;
     cpx tmp;
-    n2 = n / 2;
-    console_print(in, n);
-    for (i = 0; i < n; ++i){        
+    ang = dir * M_2_PI / n;
+    n2 = n / 2;    
+    for (i = 0; i < n; ++i){
         l = i / 2;
         u = n2 + l;
-        p = (l >> bit);
+
+        //p = ((i + 1) >> bit) | 1;
+        //p = (u >> bit);
+        //p = (i >> (4 - bit)) << (3 - bit);
+        p = l & mask;
+        //p = i & (4 - bit);
+        //p &= ~(1 << bit);
         /*
-        //cpx add
+        
+        0   0   0   0
+        1   0   0   0
+        2   2   0   0
+        3   2   0   0
+        4   4   4   0
+        5   4   4   0
+        6   6   4   0
+        7   6   4   0
+
+
+        
+        */
+        
+
+        sinv = W[p].i;//sin(ang * p);
+        cosv = W[p].r;//cos(ang * p);
+
+        printf("p: %d\tin: %d, %d\tout: %d, %d\t(%f, %f)\n", p, i, i + 1, l, u, W[p].r, W[p].i);
+
+        //tmp.r = (W[p].i * in[u].i) - (W[p].r * in[u].r);
+        //tmp.i = (W[p].r * in[u].i) - (W[p].i * in[u].r);
+
+        //tmp.r = (sinv * in[u].i) - (cosv * in[u].r);
+        //tmp.i = (cosv * in[u].i) - (sinv * in[u].r);
+
         out[i].r = in[l].r + in[u].r;
         out[i].i = in[l].i + in[u].i;
-        // cpx sub
-        out[i + 1].r = in[l].r - in[u].r;
-        out[i + 1].i = in[l].i - in[u].i;
-        // cpx mul
-        out[i + 1].r = W[p].r * in[u].r - W[p].i * in[u].i;
-        out[i + 1].i = W[p].r * in[u].i + W[p].i * in[u].r;
-        */
+        ++i;
+        out[i].r = (cosv * (in[l].r - in[u].r)) - (sinv * (in[l].i - in[u].i));
+        out[i].i = (sinv * (in[l].r - in[u].r)) + (cosv * (in[l].i - in[u].i));
+    }
+    printf("\n");
+}
 
-        //printf("(%f, %f) och (%f, %f)\n", in[l].r, in[l].i, in[u].r, in[u].i);
-        printf("%d: %d och %d, %d\n", i, l, u, p);
+void fft_body_const_geom_backup(const double dir, cpx *in, cpx *out, cpx *W, int bit, const int n)
+{
+    int i, l, u, p, n2;
+    cpx tmp;
+    n2 = n / 2;
+    for (i = 0; i < n; ++i){
+        l = i / 2;
+        u = n2 + l;
 
-        tmp = in[l];
-        real = in[u].r * W[p].r - in[u].i * W[p].i;
-        imag = in[u].i * W[p].r + in[u].r * W[p].i;
-        printf("re: %f im: %f\n", real, imag);
-        out[i].r = tmp.r - real;
-        out[i].i = tmp.i - imag;
-        out[++i].r = tmp.r + real;
-        out[i].i = tmp.i + imag;
+        p = ((i + 1) >> bit) | 1;
+
+        tmp.r = (W[p].i * in[u].i) - (W[p].r * in[u].r);
+        tmp.i = (W[p].r * in[u].i) - (W[p].i * in[u].r);
+
+        //real = in[u].r * W[p].r - in[u].i * W[p].i;
+        //imag = in[u].i * W[p].r + in[u].r * W[p].i;
+
+        out[i].r = in[l].r + tmp.r;
+        out[i].i = in[l].i + tmp.i;
+        ++i;
+        out[i].r = in[l].r - tmp.r;
+        out[i].i = in[l].i - tmp.i;
     }
 }

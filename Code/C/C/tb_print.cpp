@@ -27,6 +27,11 @@ void console_print(const int a, const int b)
     printf("%u\t%u\n", a, b);
 }
 
+void console_newline()
+{
+    console_newline(1);
+}
+
 void console_newline(const int n)
 {
     if (console_no_print != 0)
@@ -34,6 +39,11 @@ void console_newline(const int n)
     int i;
     for (i = 0; i < n; ++i)
         printf("\n");
+}
+
+void console_separator()
+{
+    console_separator(1);
 }
 
 void console_separator(const int n)

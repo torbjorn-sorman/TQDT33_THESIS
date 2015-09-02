@@ -3,6 +3,8 @@
 
 #include "tb_definitions.h"
 
+void twiddle_factors(cpx *W, const int n);
+
 void twiddle_factors_alt(PARAMS_TWIDDLE);
 void twiddle_factors_alt_omp(PARAMS_TWIDDLE);
 

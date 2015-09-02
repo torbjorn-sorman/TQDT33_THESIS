@@ -81,6 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cgp_fft.cpp" />
     <ClCompile Include="imglib.cpp" />
     <ClCompile Include="kiss_fft.c" />
     <ClCompile Include="main.cpp" />
@@ -93,9 +94,11 @@
     <ClCompile Include="tb_test.cpp" />
     <ClCompile Include="tb_test_helper.cpp" />
     <ClCompile Include="tb_transpose.cpp" />
+    <ClCompile Include="test_seq.cpp" />
     <ClCompile Include="wiki_fft.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cgp_fft.h" />
     <ClInclude Include="imglib.h" />
     <ClInclude Include="kissfft.hh" />
     <ClInclude Include="kiss_fft.h" />
@@ -109,6 +112,7 @@
     <ClInclude Include="tb_test.h" />
     <ClInclude Include="tb_test_helper.h" />
     <ClInclude Include="tb_transpose.h" />
+    <ClInclude Include="test_seq.h" />
     <ClInclude Include="wiki_fft.h" />
     <ClInclude Include="_kiss_fft_guts.h" />
   </ItemGroup>

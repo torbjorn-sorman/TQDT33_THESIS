@@ -5,6 +5,23 @@
 #include "tb_math.h"
 #include "tb_print.h"
 
+void twiddle_factors(cpx *W, const int n)
+{
+    int i, n2, n4;
+    float w_ang;
+    w_ang = -M_2_PI / n;
+    n2 = n / 2;
+    n4 = n / 4;
+    for (i = 0; i < n2; ++i) {
+        W[i].r = cos(w_ang * i);
+        W[i + n2].r = -W[i].r;
+    }
+    for (i = 0; i < n2; ++i) {
+        W[i].i = W[i + n4].r;
+        W[i + n2].i = -W[i].i;
+    }
+}
+
 void twiddle_factors_alt(PARAMS_TWIDDLE)
 {
     int i, n2, n4;

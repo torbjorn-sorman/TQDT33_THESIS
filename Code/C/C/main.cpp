@@ -17,48 +17,13 @@ int main()
 {
     int size;
     double time;
-    size = 4096;
+    size = 1048576;
     time = 0.0;
 
-    test_complete_fft("CONST GEOM", fft_body_const_geom);
+    test_complete_fft_cg("CONST GEOM");
 
-    /*
-    twiddle_fn tw_ref = twiddle_factors_s;
-    
-    test_twiddle(twiddle_factors_alt, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_alt, size);
-    printf("Time twiddle_factors_alt:\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors, size);
-    printf("Time twiddle_factors:\t\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors_s, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_s, size);
-    printf("Time twiddle_factors_s:\t\t%.1f\n", time);
-
-    console_separator(1);
-
-    test_twiddle(twiddle_factors_alt, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_alt_omp, size);
-    printf("Time twiddle_factors_alt_omp:\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors_omp, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_omp, size);
-    printf("Time twiddle_factors_omp:\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors_s_omp, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_s_omp, size);
-    printf("Time twiddle_factors_s_omp:\t%.1f\n", time);
+    test_complete_ext("CGP FFT", cgp_fft);        
    
-    console_separator(1);
-
-    time = test_time_reverse(bit_reverse, size);
-    printf("Time bit_reverse:\t\t%.1f\n", time);
-
-    time = test_time_reverse(bit_reverse_omp, size);
-    printf("Time bit_reverse_omp:\t\t%.1f\n", time);
-   */
     printf("\n... done!\n");
     getchar();
     return 0;

@@ -1,21 +1,25 @@
+#ifdef _OPENMP
+#include <omp.h> 
+#endif
+
 #include "test_seq.h"
 
 #include "tb_fft.h"
 #include "tb_fft_helper.h"
 #include "tb_test.h"
 #include "tb_print.h"
+#include "tb_test.h"
 
 void test_seq_fft()
 {
+#ifdef _OPENMP  
+    printf("Running on max threads: %d\n", omp_get_max_threads());
+#else
+    printf("Running on single thread/core.\n");
+#endif;
     test_complete_fft("REGULAR", fft_body);
-    test_complete_fft("REGULAR ALT1", fft_body_alt1);
-    test_complete_fft("REGULAR ALT2", fft_body_alt1);
-    test_complete_fft_cg("CONST GEOM", 0);
-
-    test_complete_fft("REGULAR", fft_body_omp);
-    test_complete_fft("REGULAR ALT1", fft_body_alt1_omp);
-    test_complete_fft("REGULAR ALT2", fft_body_alt2_omp);
-    test_complete_fft_cg("CONST GEOM OMP", 1);
+    test_complete_fft_cg("CONST GEOM");
+    //test_complete_ext("CPG FFT", cgp_fft);
 }
 
 void test_seq_twiddle(int size)
@@ -37,25 +41,4 @@ void test_seq_twiddle(int size)
     time = test_time_twiddle(twiddle_factors_s, size);
     printf("Time twiddle_factors_s:\t\t%.1f\n", time);
 
-    console_separator(1);
-
-    test_twiddle(twiddle_factors_alt, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_alt_omp, size);
-    printf("Time twiddle_factors_alt_omp:\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors_omp, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_omp, size);
-    printf("Time twiddle_factors_omp:\t%.1f\n", time);
-
-    test_twiddle(twiddle_factors_s_omp, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_s_omp, size);
-    printf("Time twiddle_factors_s_omp:\t%.1f\n", time);
-
-    console_separator(1);
-
-    time = test_time_reverse(bit_reverse, size);
-    printf("Time bit_reverse:\t\t%.1f\n", time);
-
-    time = test_time_reverse(bit_reverse_omp, size);
-    printf("Time bit_reverse_omp:\t\t%.1f\n", time);
 }

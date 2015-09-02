@@ -3,21 +3,13 @@
 
 #include "tb_definitions.h"
 
-void fft_template(PARAMS_FFT);
+void fft_template(dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n);
 
-void tb_fft2d(PARAMS_FFT2D);
-void tb_fft2d_omp(PARAMS_FFT2D);
+void tb_fft2d(dif_fn dif, const double dir, cpx** seq, const int n);
 
-void fft_body(PARAMS_BUTTERFLY);
-void fft_body_omp(PARAMS_BUTTERFLY);
-
-void fft_body_alt1(PARAMS_BUTTERFLY);
-void fft_body_alt1_omp(PARAMS_BUTTERFLY);
-
-void fft_body_alt2(PARAMS_BUTTERFLY);
-
-void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int omp, const int n);
-
-void fft_body_const_geom(cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n);
+void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n);
+void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n);
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n);
+void fft_body_const_geom(cpx*, cpx*, cpx*, unsigned int, const int);
 
 #endif

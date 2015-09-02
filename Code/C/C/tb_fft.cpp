@@ -1,13 +1,15 @@
 #include "tb_fft.h"
 
-#include <omp.h>
+#ifdef _OPENMP
+#include <omp.h> 
+#endif
 
 #include "tb_math.h"
 #include "tb_transpose.h"
 #include "tb_print.h"
 #include "tb_fft_helper.h"
 
-void fft_template(PARAMS_FFT)
+void fft_template(dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n)
 {
     int bit, dist, dist2, lead;
     bit = log2_32(n);
@@ -25,42 +27,20 @@ void fft_template(PARAMS_FFT)
     bit_reverse(out, dir, lead, n);
 }
 
-void tb_fft2d(PARAMS_FFT2D)
-{
-    int row;
-    const int block_size = n < 16 ? n : n / 2;
-    cpx *W;
-    W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, 32 - log2_32(n), n);
-    if (dir == INVERSE_FFT)
-        twiddle_factors_inverse_omp(W, n);
-
-    for (row = 0; row < n; ++row)
-        fft_template(dif, dir, seq[row], seq[row], W, n);
-    transpose_block(seq, block_size, n);
-
-    for (row = 0; row < n; ++row)
-        fft_template(dif, dir, seq[row], seq[row], W, n);
-    transpose_block(seq, block_size, n);
-
-    if (W != NULL)
-        free(W);
-}
-
-void tb_fft2d_omp(PARAMS_FFT2D)
+void tb_fft2d(dif_fn dif, const double dir, cpx** seq, const int n)
 {
     int row, col;
     cpx tmp, *W;
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors_omp(W, 32 - log2_32(n), n);
+    twiddle_factors(W, 32 - log2_32(n), n);
     if (dir == INVERSE_FFT)
-        twiddle_factors_inverse_omp(W, n);
+        twiddle_factors_inverse(W, n);
 
-#pragma omp parallel for private(row) shared(W, dif, dir, seq, n)
+#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row) shared(W, dif, dir, seq, n)
     for (row = 0; row < n; ++row) {
         fft_template(dif, dir, seq[row], seq[row], W, n);
     }
-#pragma omp parallel for private(row, col, tmp) shared(n, seq)
+#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row, col, tmp) shared(n, seq)
     for (row = 0; row < n; ++row) {
         for (col = row + 1; col < n; ++col) {
             tmp = seq[row][col];
@@ -68,11 +48,11 @@ void tb_fft2d_omp(PARAMS_FFT2D)
             seq[col][row] = tmp;
         }
     }
-#pragma omp parallel for private(row) shared(W, dif, dir, seq, n)
+#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row) shared(W, dif, dir, seq, n)
     for (row = 0; row < n; ++row) {
         fft_template(dif, dir, seq[row], seq[row], W, n);
     }
-#pragma omp parallel for private(row, col, tmp) shared(n, seq)
+#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row, col, tmp) shared(n, seq)
     for (row = 0; row < n; ++row) {
         for (col = row + 1; col < n; ++col) {
             tmp = seq[row][col];
@@ -84,11 +64,12 @@ void tb_fft2d_omp(PARAMS_FFT2D)
         free(W);
 }
 
-void fft_body(PARAMS_BUTTERFLY)
+void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n)
 {
     int start, end, l, u, p;
     float imag, real;
     cpx tmp;
+#pragma omp parallel for schedule(static, 1) private(start, end, l, u, p, imag, real, tmp) shared(in, out, W, bit, dist, dist2, n)
     for (start = 0; start < n; start += dist2) {
         end = dist + start;
         for (l = start; l < end; ++l) {
@@ -105,61 +86,14 @@ void fft_body(PARAMS_BUTTERFLY)
     }
 }
 
-void fft_body_omp(PARAMS_BUTTERFLY)
+void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n)
 {
-    int start, end, l, u, p;
-    float imag, real;
-    cpx tmp;
-#pragma omp parallel for private(start, end, l, u, p, imag, real, tmp) shared(in, out, W, bit, dist, dist2, n)
-    for (start = 0; start < n; start += dist2) {
-        end = dist + start;
-        for (l = start; l < end; ++l) {
-            u = l + dist;
-            tmp = in[l];
-            p = (u >> bit);
-            real = in[u].r * W[p].r - in[u].i * W[p].i;
-            imag = in[u].i * W[p].r + in[u].r * W[p].i;
-            out[l].r = tmp.r - real;
-            out[l].i = tmp.i - imag;
-            out[u].r = tmp.r + real;
-            out[u].i = tmp.i + imag;
-        }
-    }
-}
-
-void fft_body_alt1(PARAMS_BUTTERFLY)
-{
-    int i, l, u, p, offset, step, n2;
-    float imag, real;
-    cpx tmp;
-    offset = 0;
-    step = dist;
-    n2 = n / 2;
-    for (i = 0; i < n2; ++i)
-    {
-        if (i >= step) {
-            offset += dist2;
-            step += dist2;
-        }
-        l = (i & ~(1 << bit)) + offset;
-        u = l + dist;
-        tmp = in[l];
-        p = (u >> bit);
-        real = in[u].r * W[p].r - in[u].i * W[p].i;
-        imag = in[u].i * W[p].r + in[u].r * W[p].i;
-        out[l].r = tmp.r - real;
-        out[l].i = tmp.i - imag;
-        out[u].r = tmp.r + real;
-        out[u].i = tmp.i + imag;
-    }
-}
-
-void fft_body_alt1_omp(PARAMS_BUTTERFLY)
-{
-    int i, l, u, p, *offset, *step, threads, tid, n2;
+    int i, l, u, p, n2;
     float imag, real;
     cpx tmp;
     n2 = n / 2;
+#ifdef _OPENMP
+    int *offset, *step, tid, threads;
     threads = omp_get_max_threads();
     offset = (int *)malloc(sizeof(int) * threads);
     step = (int *)malloc(sizeof(int) * threads);
@@ -168,14 +102,28 @@ void fft_body_alt1_omp(PARAMS_BUTTERFLY)
         tid = omp_get_thread_num();
         offset[tid] = (((tid * n2) / threads) / dist2) * dist2;
         step[tid] = dist + offset[tid];
-#pragma omp for
+#pragma omp for schedule(static, n2 / omp_get_num_threads())
+#else
+    int offset, step;
+    offset = 0;
+    step = 0;
+#endif
         for (i = 0; i < n2; ++i)
         {
+#ifdef _OPENMP
             if (i >= step[tid]) {
                 offset[tid] += dist2;
                 step[tid] += dist2;
             }
             l = (i & ~(1 << bit)) + offset[tid];
+            // offset[tid] += (i >= (dist + offset[tid])) * dist2;
+#else
+            if (i >= step) {
+                offset += dist2;
+                step += dist2;
+            }
+            l = (i & ~(1 << bit)) + offset;
+#endif
             u = l + dist;
             tmp = in[l];
             p = (u >> bit);
@@ -186,105 +134,50 @@ void fft_body_alt1_omp(PARAMS_BUTTERFLY)
             out[u].r = tmp.r + real;
             out[u].i = tmp.i + imag;
         }
+#ifdef _OPENMP
     }
     free(offset);
     free(step);
+#endif
 }
-
-void fft_body_alt2(PARAMS_BUTTERFLY)
-{
-    int i, l, u, p, offset, n2;
-    float imag, real;
-    cpx tmp;
-    n2 = n / 2;
-    offset = 0;
-    for (i = 0; i < n2; ++i)
-    {
-        offset += (i >= (dist + offset)) * dist2;
-        l = (i & ~(1 << bit)) + offset;
-        u = l + dist;
-        tmp = in[l];
-        p = (u >> bit);
-        real = in[u].r * W[p].r - in[u].i * W[p].i;
-        imag = in[u].i * W[p].r + in[u].r * W[p].i;
-        out[l].r = tmp.r - real;
-        out[l].i = tmp.i - imag;
-        out[u].r = tmp.r + real;
-        out[u].i = tmp.i + imag;
-    }
-}
-
-void fft_body_alt2_omp(PARAMS_BUTTERFLY)
-{
-    int i, l, u, p, *offset, threads, tid, n2;
-    float imag, real;
-    cpx tmp;
-    n2 = (n / 2);
-    threads = omp_get_max_threads();
-    offset = (int *)malloc(sizeof(int) * threads);
-#pragma omp parallel private(l, u, p, imag, real, tmp, tid) shared(in, out, W, bit, dist, dist2, offset, threads, n2)
-    {
-        tid = omp_get_thread_num();
-        offset[tid] = (((tid * n2) / threads) / dist2) * dist2;
-#pragma omp for
-        for (i = 0; i < n2; ++i)
-        {
-            offset[tid] += (i >= (dist + offset[tid])) * dist2;
-            l = (i & ~(1 << bit)) + offset[tid];
-            u = l + dist;
-            tmp = in[l];
-            p = (u >> bit);
-            real = in[u].r * W[p].r - in[u].i * W[p].i;
-            imag = in[u].i * W[p].r + in[u].r * W[p].i;
-            out[l].r = tmp.r - real;
-            out[l].i = tmp.i - imag;
-            out[u].r = tmp.r + real;
-            out[u].i = tmp.i + imag;
-        }
-    }
-    free(offset);
-}
-
 
 // Must be supplied with two buffers
-void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int omp, const int n)
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n)
 {
     int bit, steps;
     unsigned int mask;
     cpx *tmp;
-    void(*fn)(cpx*, cpx*, cpx*, int, unsigned int, const int);
     bit = log2_32(n);
     const int lead = 32 - bit;
-    fn = omp ? fft_body_const_geom_omp : fft_body_const_geom;
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
-    fn(*in, *out, W, bit, mask, n);
+    fft_body_const_geom(*in, *out, W, mask, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        fn(*in, *out, W, bit, mask, n);
+        fft_body_const_geom(*in, *out, W, mask, n);
     }
     bit_reverse(*out, dir, lead, n);
 }
 
-void fft_body_const_geom(cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n)
+void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n)
 {
     int i, l, u, p, n2;
     cpx tmp;
-    n2 = n / 2;    
-    for (i = 0; i < n; ++i) {
+    n2 = n / 2;
+#pragma omp parallel for schedule(static, n2 / omp_get_num_threads()) private(i, l, u, p, tmp) shared(in, out, W, mask, n, n2)
+    for (i = 0; i < n; i += 2) {
         l = i / 2;
         u = n2 + l;
         p = l & mask;
         tmp.r = (in[l].r - in[u].r);
         tmp.i = (in[l].i - in[u].i);
         out[i].r = in[l].r + in[u].r;
-        out[i].i = in[l].i + in[u].i;
-        ++i;
-        out[i].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
-        out[i].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
+        out[i].i = in[l].i + in[u].i;        
+        out[i + 1].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
+        out[i + 1].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
     }
 }

@@ -16,14 +16,14 @@ double test_time_dft_2d(fft2d_fn fn2d, dif_fn fn, const int n);
 double test_time_transpose(transpose_fn fn, const int b, const int n);
 double test_time_twiddle(twiddle_fn fn, const int n);
 double test_time_reverse(bit_reverse_fn fn, const int n);
-double test_tome_const_geom(void(*fn)(const double, cpx**, cpx**, cpx*, const int), const int);
+double test_time_const_geom(const int);
 double test_cmp_time(dif_fn fn, dif_fn ref);
 
 void test_complete_fft(char *name, dif_fn fn);
-void test_complete_fft_cg(char *name, const int omp);
-void test_complete_fft2d(char *name, fft2d_fn fn);
-
+void test_complete_fft_cg(char *name);
 void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const int));
+
+void test_complete_fft2d(char *name, fft2d_fn fn);
 
 /* External libraries to compare with. */
 void kiss_fft(double dir, cpx *in, cpx *out, const int n);

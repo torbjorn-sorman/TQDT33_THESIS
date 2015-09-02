@@ -247,102 +247,44 @@ void fft_body_alt2_omp(PARAMS_BUTTERFLY)
 
 
 // Must be supplied with two buffers
-void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n)
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int omp, const int n)
 {
     int bit, steps;
     unsigned int mask;
     cpx *tmp;
+    void(*fn)(cpx*, cpx*, cpx*, int, unsigned int, const int);
     bit = log2_32(n);
     const int lead = 32 - bit;
+    fn = omp ? fft_body_const_geom_omp : fft_body_const_geom;
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
-    fft_body_const_geom(dir, *in, *out, W, bit, mask, n);
+    fn(*in, *out, W, bit, mask, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        fft_body_const_geom(dir, *in, *out, W, bit, mask, n);
+        fn(*in, *out, W, bit, mask, n);
     }
     bit_reverse(*out, dir, lead, n);
 }
 
-void fft_body_const_geom(const double dir, cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n)
+void fft_body_const_geom(cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n)
 {
     int i, l, u, p, n2;
-    float sinv, cosv;
-    float ang;
     cpx tmp;
-    ang = dir * M_2_PI / n;
     n2 = n / 2;    
-    for (i = 0; i < n; ++i){
+    for (i = 0; i < n; ++i) {
         l = i / 2;
         u = n2 + l;
-
-        //p = ((i + 1) >> bit) | 1;
-        //p = (u >> bit);
-        //p = (i >> (4 - bit)) << (3 - bit);
         p = l & mask;
-        //p = i & (4 - bit);
-        //p &= ~(1 << bit);
-        /*
-        
-        0   0   0   0
-        1   0   0   0
-        2   2   0   0
-        3   2   0   0
-        4   4   4   0
-        5   4   4   0
-        6   6   4   0
-        7   6   4   0
-
-
-        
-        */
-        
-
-        sinv = W[p].i;//sin(ang * p);
-        cosv = W[p].r;//cos(ang * p);
-
-        printf("p: %d\tin: %d, %d\tout: %d, %d\t(%f, %f)\n", p, i, i + 1, l, u, W[p].r, W[p].i);
-
-        //tmp.r = (W[p].i * in[u].i) - (W[p].r * in[u].r);
-        //tmp.i = (W[p].r * in[u].i) - (W[p].i * in[u].r);
-
-        //tmp.r = (sinv * in[u].i) - (cosv * in[u].r);
-        //tmp.i = (cosv * in[u].i) - (sinv * in[u].r);
-
+        tmp.r = (in[l].r - in[u].r);
+        tmp.i = (in[l].i - in[u].i);
         out[i].r = in[l].r + in[u].r;
         out[i].i = in[l].i + in[u].i;
         ++i;
-        out[i].r = (cosv * (in[l].r - in[u].r)) - (sinv * (in[l].i - in[u].i));
-        out[i].i = (sinv * (in[l].r - in[u].r)) + (cosv * (in[l].i - in[u].i));
-    }
-    printf("\n");
-}
-
-void fft_body_const_geom_backup(const double dir, cpx *in, cpx *out, cpx *W, int bit, const int n)
-{
-    int i, l, u, p, n2;
-    cpx tmp;
-    n2 = n / 2;
-    for (i = 0; i < n; ++i){
-        l = i / 2;
-        u = n2 + l;
-
-        p = ((i + 1) >> bit) | 1;
-
-        tmp.r = (W[p].i * in[u].i) - (W[p].r * in[u].r);
-        tmp.i = (W[p].r * in[u].i) - (W[p].i * in[u].r);
-
-        //real = in[u].r * W[p].r - in[u].i * W[p].i;
-        //imag = in[u].i * W[p].r + in[u].r * W[p].i;
-
-        out[i].r = in[l].r + tmp.r;
-        out[i].i = in[l].i + tmp.i;
-        ++i;
-        out[i].r = in[l].r - tmp.r;
-        out[i].i = in[l].i - tmp.i;
+        out[i].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
+        out[i].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
     }
 }

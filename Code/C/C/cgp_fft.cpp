@@ -109,13 +109,11 @@ inline void fft_df_openmp(void *vdf) {
             twf = df->e * k;
             cf = cos(twf);
             sf = sin(twf);
-            printf("K: %d, %f\n", k, df->e);
         }
+
         k++;
 
         nh = j + df->half_n;
-        printf("k: %d\tin: %d, %d\tout: %d, %d\t(%f, %f)\n", k - 1, ni, ni + 1, j, nh, cf, sf);
-
 
         df->wre[ni] = df->rre[j] + df->rre[nh];
         df->wim[ni] = df->rim[j] + df->rim[nh];
@@ -124,7 +122,6 @@ inline void fft_df_openmp(void *vdf) {
         df->wim[ni] = sf*(df->rre[j] - df->rre[nh]) + cf*(df->rim[j] - df->rim[nh]);
         ni++;
     }
-    printf("\n");
     //swap read/write storage spaces to prep for next stage
     tmp = df->rre;
     df->rre = df->wre;

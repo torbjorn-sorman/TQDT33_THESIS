@@ -23,6 +23,11 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 #define START_TIME QPF(&Frequency); QPC(&StartingTime)
 #define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
+double simple(const unsigned int limit)
+{
+    return 0.0;
+}
+
 unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
 {
     int n;
@@ -121,7 +126,7 @@ double test_time_dft(dif_fn fn, const int n)
     return avg(measures, NO_TESTS);
 }
 
-double test_time_const_geom(const int n)
+double test_time_const_geom(void(*fn)(const double, cpx**, cpx**, cpx*, const int), const int n)
 {
     int i;
     double measures[NO_TESTS];
@@ -131,8 +136,8 @@ double test_time_const_geom(const int n)
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
         W = (cpx *)malloc(sizeof(cpx) * n);
-        twiddle_factors(W, 32 - log2_32(n), n);
-        fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+        twiddle_factors(W, n);
+        fn(FORWARD_FFT, &in, &out, W, n);
         free(W);
         STOP_TIME(measures[i]);
     }
@@ -394,20 +399,22 @@ void test_complete_fft(char *name, dif_fn fn)
     } 
 }
 
-void test_complete_fft_cg(char *name)
+void test_complete_fft_cg(char *name, const int omp)
 {
     int i, n;
     cpx *in, *out, *ref, *W;
-    n = 16;
+    n = 8192;
     in = get_seq(n);
     in[1].r = 1;
     out = get_seq(n);
     ref = get_seq(n, in);
     printf("\n%s\n", name);
     
+    void(*fn)(const double, cpx**, cpx**, cpx*, const int) = omp == 0 ? fft_const_geom : fft_const_geom_omp;
+
     W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, n);    
-    fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+    fn(FORWARD_FFT, &in, &out, W, n);
      
     /*
     console_newline(1);
@@ -416,7 +423,7 @@ void test_complete_fft_cg(char *name)
     console_newline(1);
     */
     twiddle_factors_inverse(W, n / 2);
-    fft_const_geom(INVERSE_FFT, &out, &in, W, n);
+    fn(INVERSE_FFT, &out, &in, W, n);
     free(W);
 
     checkError(in, ref, n, 1);
@@ -430,12 +437,12 @@ void test_complete_fft_cg(char *name)
     */
     free(in);
     free(ref);
-    /*
+    
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-        printf("%d\t%.1f\n", i, test_time_const_geom(i));
+        printf("%d\t%.1f\n", i, test_time_const_geom(fn, i));
     }
-    */
+    
 }
 
 
@@ -470,13 +477,11 @@ void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const i
     free(out);
     free(ref);
 
-    /*
+    
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
         printf("%d\t%.1f\n", i, test_time_ext(fn, i));
-    }
-    */
-
+    }    
 }
 
 void test_complete_fft2d(char *name, fft2d_fn fn)
@@ -522,7 +527,7 @@ void cgp_fft(double dir, cpx *in, cpx *out, const int n)
         im[i] = (double)in[i].i;
     }
 
-    cgp_fft_openmp(&re, &im, n, log2_32(n), n_threads, dir);
+    cgp_fft_openmp(&re, &im, n, log2_32(n), n_threads, (int)dir);
 
     for (i = 0; i < n; ++i) {
         out[i].r = (float)re[i];

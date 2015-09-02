@@ -15,12 +15,9 @@ void fft_body_alt1(PARAMS_BUTTERFLY);
 void fft_body_alt1_omp(PARAMS_BUTTERFLY);
 
 void fft_body_alt2(PARAMS_BUTTERFLY);
-void fft_body_alt2_omp(PARAMS_BUTTERFLY);
 
-void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n);
-void fft_const_geom_omp(const double dir, cpx **in, cpx **out, cpx *W, const int n);
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int omp, const int n);
 
-void fft_body_const_geom(const double dir, cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n);
-void fft_body_const_geom_omp(cpx *in, cpx *out, cpx *W, int bit, const int n);
+void fft_body_const_geom(cpx *in, cpx *out, cpx *W, int bit, unsigned int mask, const int n);
 
 #endif

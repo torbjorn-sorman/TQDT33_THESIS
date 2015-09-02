@@ -1,13 +1,21 @@
 #include "test_seq.h"
 
+#include "tb_fft.h"
 #include "tb_fft_helper.h"
 #include "tb_test.h"
 #include "tb_print.h"
 
-void test_seq_fft(int size)
+void test_seq_fft()
 {
-    double time;
-    time = 0.0;
+    test_complete_fft("REGULAR", fft_body);
+    test_complete_fft("REGULAR ALT1", fft_body_alt1);
+    test_complete_fft("REGULAR ALT2", fft_body_alt1);
+    test_complete_fft_cg("CONST GEOM", 0);
+
+    test_complete_fft("REGULAR", fft_body_omp);
+    test_complete_fft("REGULAR ALT1", fft_body_alt1_omp);
+    test_complete_fft("REGULAR ALT2", fft_body_alt2_omp);
+    test_complete_fft_cg("CONST GEOM OMP", 1);
 }
 
 void test_seq_twiddle(int size)

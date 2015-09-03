@@ -75,7 +75,7 @@ int within(float r, cpx p, cpx ref)
     return sqrt(x*x + y*y) <= r;
 }
 
-void do_another_filter(cpx **seq, int n)
+void do_another_filter(cpx **seq, int n_threads, int n)
 {
     int x, y;
     float radius;
@@ -83,7 +83,7 @@ void do_another_filter(cpx **seq, int n)
     center = { n * 0.5f, n * 0.5f };
     radius = n * 0.15f;
 
-    fft_shift(seq, n);
+    fft_shift(seq, n_threads, n);
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
             if (within(radius, seq[y][x], center)) {
@@ -91,5 +91,5 @@ void do_another_filter(cpx **seq, int n)
             }
         }
     }
-    fft_shift(seq, n);
+    fft_shift(seq, n_threads, n);
 }

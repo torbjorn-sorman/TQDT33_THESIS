@@ -9,7 +9,7 @@
 #include "tb_print.h"
 #include "tb_fft_helper.h"
 
-void fft_template(dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n)
+void fft_template(dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, int n_threads, const int n)
 {
     int bit, dist, dist2, lead;
     bit = log2_32(n);
@@ -17,30 +17,30 @@ void fft_template(dif_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const
     dist = (n / 2);
     lead = 32 - bit;
     --bit;
-    dif(in, out, W, bit, dist, dist2, n);
+    dif(in, out, W, bit, dist, dist2, n_threads, n);
     while (bit-- > 0)
     {
         dist2 = dist;
         dist = dist >> 1;
-        dif(out, out, W, bit, dist, dist2, n);
+        dif(out, out, W, bit, dist, dist2, n_threads, n);
     }
-    bit_reverse(out, dir, lead, n);
+    bit_reverse(out, dir, lead, n_threads, n);
 }
 
-void tb_fft2d(dif_fn dif, const double dir, cpx** seq, const int n)
+void tb_fft2d(dif_fn dif, const double dir, cpx** seq, int n_threads, const int n)
 {
     int row, col;
     cpx tmp, *W;
     W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, 32 - log2_32(n), n);
     if (dir == INVERSE_FFT)
-        twiddle_factors_inverse(W, n);
+        twiddle_factors_inverse(W, n_threads, n);
 
-#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row) shared(W, dif, dir, seq, n)
+#pragma omp parallel for schedule(static, n / n_threads) private(row) shared(W, dif, dir, seq, n)
     for (row = 0; row < n; ++row) {
-        fft_template(dif, dir, seq[row], seq[row], W, n);
+        fft_template(dif, dir, seq[row], seq[row], W, n_threads, n);
     }
-#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row, col, tmp) shared(n, seq)
+#pragma omp parallel for schedule(static, n / n_threads) private(row, col, tmp) shared(n, seq)
     for (row = 0; row < n; ++row) {
         for (col = row + 1; col < n; ++col) {
             tmp = seq[row][col];
@@ -48,11 +48,11 @@ void tb_fft2d(dif_fn dif, const double dir, cpx** seq, const int n)
             seq[col][row] = tmp;
         }
     }
-#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row) shared(W, dif, dir, seq, n)
+#pragma omp parallel for schedule(static, n / n_threads) private(row) shared(W, dif, dir, seq, n)
     for (row = 0; row < n; ++row) {
-        fft_template(dif, dir, seq[row], seq[row], W, n);
+        fft_template(dif, dir, seq[row], seq[row], W, n_threads, n);
     }
-#pragma omp parallel for schedule(static, n / omp_get_num_threads()) private(row, col, tmp) shared(n, seq)
+#pragma omp parallel for schedule(static, n / n_threads) private(row, col, tmp) shared(n, seq)
     for (row = 0; row < n; ++row) {
         for (col = row + 1; col < n; ++col) {
             tmp = seq[row][col];
@@ -64,7 +64,7 @@ void tb_fft2d(dif_fn dif, const double dir, cpx** seq, const int n)
         free(W);
 }
 
-void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n)
+void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n)
 {
     int start, end, l, u, p;
     float imag, real;
@@ -86,7 +86,7 @@ void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int
     }
 }
 
-void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n)
+void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n)
 {
     int i, l, u, p, n2;
     float imag, real;
@@ -102,7 +102,7 @@ void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, cons
         tid = omp_get_thread_num();
         offset[tid] = (((tid * n2) / threads) / dist2) * dist2;
         step[tid] = dist + offset[tid];
-#pragma omp for schedule(static, n2 / omp_get_num_threads())
+#pragma omp for schedule(static, n2 / n_threads)
 #else
     int offset, step;
     offset = 0;
@@ -142,7 +142,7 @@ void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, cons
 }
 
 // Must be supplied with two buffers
-void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n)
+void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, int n_threads, const int n)
 {
     int bit, steps;
     unsigned int mask;
@@ -151,24 +151,24 @@ void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n)
     const int lead = 32 - bit;
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
-    fft_body_const_geom(*in, *out, W, mask, n);
+    fft_body_const_geom(*in, *out, W, mask, n_threads, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        fft_body_const_geom(*in, *out, W, mask, n);
+        fft_body_const_geom(*in, *out, W, mask, n_threads, n);
     }
-    bit_reverse(*out, dir, lead, n);
+    bit_reverse(*out, dir, lead, n_threads, n);
 }
 
-void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n)
+void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, int n_threads, const int n)
 {
     int i, l, u, p, n2;
     cpx tmp;
     n2 = n / 2;
-#pragma omp parallel for schedule(static, n2 / omp_get_num_threads()) private(i, l, u, p, tmp) shared(in, out, W, mask, n, n2)
+#pragma omp parallel for schedule(static, n2 / n_threads) private(i, l, u, p, tmp) shared(in, out, W, mask, n, n2)
     for (i = 0; i < n; i += 2) {
         l = i / 2;
         u = n2 + l;

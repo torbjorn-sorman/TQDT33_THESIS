@@ -10,35 +10,35 @@
 #include "tb_print.h"
 #include "tb_test.h"
 
-void test_seq_fft()
+void test_seq_fft(int n_threads)
 {
 #ifdef _OPENMP  
     printf("Running on max threads: %d\n", omp_get_max_threads());
 #else
     printf("Running on single thread/core.\n");
 #endif;
-    test_complete_fft("REGULAR", fft_body);
-    test_complete_fft_cg("CONST GEOM");
-    //test_complete_ext("CPG FFT", cgp_fft);
+    test_complete_fft("REGULAR", fft_body, n_threads);
+    test_complete_fft_cg("CONST GEOM", n_threads);
+    //test_complete_ext("CPG FFT", cgp_fft, n_threads);
 }
 
-void test_seq_twiddle(int size)
+void test_seq_twiddle(int n_threads, int size)
 {
     double time;
     time = 0.0;
 
     twiddle_fn tw_ref = twiddle_factors_s;
 
-    test_twiddle(twiddle_factors_alt, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_alt, size);
+    test_twiddle(twiddle_factors_alt, tw_ref, n_threads, size);
+    time = test_time_twiddle(twiddle_factors_alt, n_threads, size);
     printf("Time twiddle_factors_alt:\t%.1f\n", time);
 
-    test_twiddle(twiddle_factors, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors, size);
+    test_twiddle(twiddle_factors, tw_ref, n_threads, size);
+    time = test_time_twiddle(twiddle_factors, n_threads, size);
     printf("Time twiddle_factors:\t\t%.1f\n", time);
 
-    test_twiddle(twiddle_factors_s, tw_ref, size);
-    time = test_time_twiddle(twiddle_factors_s, size);
+    test_twiddle(twiddle_factors_s, tw_ref, n_threads, size);
+    time = test_time_twiddle(twiddle_factors_s, n_threads, size);
     printf("Time twiddle_factors_s:\t\t%.1f\n", time);
 
 }

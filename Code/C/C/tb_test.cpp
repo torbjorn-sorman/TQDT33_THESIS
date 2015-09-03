@@ -29,10 +29,19 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 
 double simple(const unsigned int limit)
 {
-    return 0.0;
+    int n;
+    unsigned int i;
+    double r;
+    n = 0;
+    START_TIME;
+    for (i = 0; i < limit; ++i) {
+        n += 4;
+    }
+    STOP_TIME(r);
+    return r;
 }
 
-unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
+unsigned char test_equal_dft(dif_fn fn, dif_fn ref, int n_threads, const int inplace)
 {
     int n;
     unsigned char res = 1;
@@ -46,8 +55,8 @@ unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
         {
             fft_out = get_seq(n);
             dft_out = get_seq(n);
-            fft_template(ref, FORWARD_FFT, in, dft_out, W, n);
-            fft_template(fn, FORWARD_FFT, in, fft_out, W, n);
+            fft_template(ref, FORWARD_FFT, in, dft_out, W, n_threads, n);
+            fft_template(fn, FORWARD_FFT, in, fft_out, W, n_threads, n);
             res = checkError(dft_out, fft_out, n, 1);
             free(dft_out);
             free(fft_out);
@@ -55,8 +64,8 @@ unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
         else
         {
             in2 = get_seq(n, in);
-            fft_template(ref, FORWARD_FFT, in, in, W, n);
-            fft_template(fn, FORWARD_FFT, in2, in2, W, n);
+            fft_template(ref, FORWARD_FFT, in, in, W, n_threads, n);
+            fft_template(fn, FORWARD_FFT, in2, in2, W, n_threads, n);
             res = checkError(in, in2, n, 1);
             free(W);
             free(in2);
@@ -68,7 +77,7 @@ unsigned char test_equal_dft(dif_fn fn, dif_fn ref, const int inplace)
     return res;
 }
 
-unsigned char test_equal_dft2d(fft2d_fn fft_2d, dif_fn dif, dif_fn ref, const int inplace)
+unsigned char test_equal_dft2d(fft2d_fn fft_2d, dif_fn dif, dif_fn ref, int n_threads, const int inplace)
 {
     int n, m, size;
     unsigned char *image, *imImage, *imImageRef;
@@ -84,14 +93,14 @@ unsigned char test_equal_dft2d(fft2d_fn fft_2d, dif_fn dif, dif_fn ref, const in
     img_to_cpx(image, cpxImg, size);
     img_to_cpx(image, cpxImgRef, size);
 
-    fft_2d(dif, FORWARD_FFT, cpxImg, size);
-    fft_2d(ref, FORWARD_FFT, cpxImgRef, size);
+    fft_2d(dif, FORWARD_FFT, cpxImg, n_threads, size);
+    fft_2d(ref, FORWARD_FFT, cpxImgRef, n_threads, size);
 
     printf("Max Fw error: %f\n", cpx_diff(cpxImg, cpxImgRef, size));
     printf("Avg Fw error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, size));
 
-    fft_2d(dif, INVERSE_FFT, cpxImg, size);
-    fft_2d(ref, INVERSE_FFT, cpxImgRef, size);
+    fft_2d(dif, INVERSE_FFT, cpxImg, n_threads, size);
+    fft_2d(ref, INVERSE_FFT, cpxImgRef, n_threads, size);
 
     printf("Max Inv error: %f\n", cpx_diff(cpxImg, cpxImgRef, size));
     printf("Avg Inv error: %f\n", cpx_avg_diff(cpxImg, cpxImgRef, size));
@@ -110,7 +119,7 @@ unsigned char test_equal_dft2d(fft2d_fn fft_2d, dif_fn dif, dif_fn ref, const in
     return 1;
 }
 
-double test_time_dft(dif_fn fn, const int n)
+double test_time_dft(dif_fn fn, int n_threads, const int n)
 {
     int i;
     double measures[NO_TESTS];
@@ -120,8 +129,8 @@ double test_time_dft(dif_fn fn, const int n)
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
         W = (cpx *)malloc(sizeof(cpx) * n);
-        twiddle_factors(W, 32 - log2_32(n), n);
-        fft_template(fn, FORWARD_FFT, in, in, W, n);
+        twiddle_factors(W, 32 - log2_32(n), n_threads, n);
+        fft_template(fn, FORWARD_FFT, in, in, W, n_threads, n);
         free(W);
         STOP_TIME(measures[i]);
     }
@@ -130,7 +139,7 @@ double test_time_dft(dif_fn fn, const int n)
     return avg(measures, NO_TESTS);
 }
 
-double test_time_const_geom(const int n)
+double test_time_const_geom(int n_threads, const int n)
 {
     int i;
     double measures[NO_TESTS];
@@ -140,8 +149,8 @@ double test_time_const_geom(const int n)
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
         W = (cpx *)malloc(sizeof(cpx) * n);
-        twiddle_factors(W, n);
-        fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+        twiddle_factors(W, n_threads, n);
+        fft_const_geom(FORWARD_FFT, &in, &out, W, n_threads, n);
         free(W);
         STOP_TIME(measures[i]);
     }
@@ -150,7 +159,7 @@ double test_time_const_geom(const int n)
     return avg(measures, NO_TESTS);
 }
 
-double test_time_ext(void(*fn)(const double, cpx *, cpx *, const int), const int n)
+double test_time_ext(void(*fn)(const double, cpx *, cpx *, int, const int), int n_threads, const int n)
 {
     int i;
     double measures[NO_TESTS];
@@ -159,7 +168,7 @@ double test_time_ext(void(*fn)(const double, cpx *, cpx *, const int), const int
     out = get_seq(n);
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
-        fn(FORWARD_FFT, in, out, n);
+        fn(FORWARD_FFT, in, out, n_threads, n);
         STOP_TIME(measures[i]);
     }
     free(in);
@@ -167,7 +176,7 @@ double test_time_ext(void(*fn)(const double, cpx *, cpx *, const int), const int
     return avg(measures, NO_TESTS);
 }
 
-double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, const int n)
+double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, int n_threads, const int n)
 {
     int i, x, y;
     char filename[30];
@@ -185,8 +194,8 @@ double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, const int n)
     {
         copy_seq2d(cpxImgRef, cpxImg, n);
         START_TIME;
-        fft2d(dif, FORWARD_FFT, cpxImg, n);
-        fft2d(dif, INVERSE_FFT, cpxImg, n);
+        fft2d(dif, FORWARD_FFT, cpxImg, n_threads, n);
+        fft2d(dif, INVERSE_FFT, cpxImg, n_threads, n);
         STOP_TIME(measures[i]);
     }
     free(image);
@@ -194,18 +203,18 @@ double test_time_dft_2d(fft2d_fn fft2d, dif_fn dif, const int n)
     return avg(measures, NO_TESTS);
 }
 
-double test_cmp_time(dif_fn fn, dif_fn ref)
+double test_cmp_time(dif_fn fn, dif_fn ref, int n_threads)
 {
     int n;
     double time, time_ref, diff, rel, sum, sum_ref;
     rel = DBL_MIN;
     sum = sum_ref = 0.0;
     printf("\trel.\tdiff.\ttime\tref\tN\n");
-    time = test_time_dft(fn, 512);
-    time_ref = test_time_dft(ref, 512);
+    time = test_time_dft(fn, n_threads, 512);
+    time_ref = test_time_dft(ref, n_threads, 512);
     for (n = 8; n < MAX_LENGTH; n *= 2) {
-        time = test_time_dft(fn, n);
-        time_ref = test_time_dft(ref, n);
+        time = test_time_dft(fn, n_threads, n);
+        time_ref = test_time_dft(ref, n_threads, n);
         diff = time_ref - time;
         sum += time;
         sum_ref += time_ref;
@@ -216,7 +225,7 @@ double test_cmp_time(dif_fn fn, dif_fn ref)
     return rel / 22;
 }
 
-unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n)
+unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, int n_threads, const int n)
 {
     int res, w, m, i;
     char file[30];
@@ -246,7 +255,7 @@ unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n
     /* Run 2D FFT on complex values.
     * Map absolute values of complex to pixels and store to file.
     */
-    fft2d(dif, FORWARD_FFT, cpxImg, n);
+    fft2d(dif, FORWARD_FFT, cpxImg, n_threads, n);
 
     // Test to apply filter...
     filter_blur(1024, cpxImg, n);
@@ -257,7 +266,7 @@ unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n
     writeppm("img_out/img01-magnitude.ppm", n, n, imImage2);
 
     /* Run inverse 2D FFT on complex values */
-    fft2d(dif, INVERSE_FFT, cpxImg, n);
+    fft2d(dif, INVERSE_FFT, cpxImg, n_threads, n);
     cpx_to_img(cpxImg, imImage, n, 0);
     printf("Write img02-fftToImage.ppm\n");
     writeppm("img_out/img02-fftToImage.ppm", n, n, imImage);
@@ -274,12 +283,12 @@ unsigned char test_image(fft2d_fn fft2d, dif_fn dif, char *filename, const int n
     return res;
 }
 
-unsigned char test_transpose(transpose_fn fn, const int b, const int n)
+unsigned char test_transpose(transpose_fn fn, const int b, int n_threads, const int n)
 {
     int x, y, res;
     cpx **in;
     in = get_seq2d(n, 2);
-    fn(in, b, n);
+    fn(in, b, n_threads, n);
     res = 1;
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
@@ -294,7 +303,7 @@ unsigned char test_transpose(transpose_fn fn, const int b, const int n)
     return res;
 }
 
-double test_time_transpose(transpose_fn trans_fn, const int b, const int n)
+double test_time_transpose(transpose_fn trans_fn, const int b, int n_threads, const int n)
 {
     int i;
     double measures[NO_TESTS];
@@ -302,14 +311,14 @@ double test_time_transpose(transpose_fn trans_fn, const int b, const int n)
     in = get_seq2d(n, 2);
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
-        trans_fn(in, b, n);
+        trans_fn(in, b, n_threads, n);
         STOP_TIME(measures[i]);
     }
     free_seq2d(in, n);
     return avg(measures, NO_TESTS);
 }
 
-double test_time_twiddle(twiddle_fn fn, const int n)
+double test_time_twiddle(twiddle_fn fn, int n_threads, const int n)
 {
     int i, lead;
     double measures[NO_TESTS];
@@ -318,14 +327,14 @@ double test_time_twiddle(twiddle_fn fn, const int n)
     w = get_seq(n);
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
-        fn(w, lead, n);
+        fn(w, lead, n_threads, n);
         STOP_TIME(measures[i]);
     }
     free(w);
     return avg(measures, NO_TESTS);
 }
 
-unsigned char test_twiddle(twiddle_fn fn, twiddle_fn ref, const int n)
+unsigned char test_twiddle(twiddle_fn fn, twiddle_fn ref, int n_threads, const int n)
 {
     int lead, i, res;
     cpx *w, *w_ref;
@@ -333,8 +342,8 @@ unsigned char test_twiddle(twiddle_fn fn, twiddle_fn ref, const int n)
     w = get_seq(n);
     w_ref = get_seq(n);
 
-    fn(w, lead, n);
-    ref(w_ref, lead, n);
+    fn(w, lead, n_threads, n);
+    ref(w_ref, lead, n_threads, n);
 
     res = 1;
     for (i = 0; i < n; ++i) {
@@ -349,7 +358,7 @@ unsigned char test_twiddle(twiddle_fn fn, twiddle_fn ref, const int n)
     return res;
 }
 
-double test_time_reverse(bit_reverse_fn fn, const int n)
+double test_time_reverse(bit_reverse_fn fn, int n_threads, const int n)
 {
     int i, lead;
     double measures[NO_TESTS];
@@ -358,14 +367,14 @@ double test_time_reverse(bit_reverse_fn fn, const int n)
     w = get_seq(n);
     for (i = 0; i < NO_TESTS; ++i) {
         START_TIME;
-        fn(w, -1, lead, n);
+        fn(w, -1, lead, n_threads, n);
         STOP_TIME(measures[i]);
     }
     free(w);
     return avg(measures, NO_TESTS);
 }
 
-void test_complete_fft(char *name, dif_fn fn)
+void test_complete_fft(char *name, dif_fn fn, int n_threads)
 {
     int i, n;
     double tm;
@@ -378,12 +387,12 @@ void test_complete_fft(char *name, dif_fn fn)
 
     W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, 32 - log2_32(n), n);
-    fft_template(fn, FORWARD_FFT, in, in, W, n);
+    fft_template(fn, FORWARD_FFT, in, in, W, n_threads, n);
 
     //printf("\nINV\n");
 
-    twiddle_factors_inverse(W, n);
-    fft_template(fn, INVERSE_FFT, in, in, W, n);
+    twiddle_factors_inverse(W, n_threads, n);
+    fft_template(fn, INVERSE_FFT, in, in, W, n_threads, n);
     free(W);
 
     checkError(in, ref, n, 1);
@@ -403,14 +412,14 @@ void test_complete_fft(char *name, dif_fn fn)
 
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-        printf("%d\t%.1f\n", i, tm = test_time_dft(fn, i));
+        printf("%d\t%.1f\n", i, tm = test_time_dft(fn, n_threads, i));
         fprintf_s(f, "%f\n", tm);
     }
 
     fclose(f);
 }
 
-void test_complete_fft_cg(char *name)
+void test_complete_fft_cg(char *name, int n_threads)
 {
     int i, n;
     double tm;
@@ -423,8 +432,8 @@ void test_complete_fft_cg(char *name)
     printf("\n%s\n", name);
 
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, n);
-    fft_const_geom(FORWARD_FFT, &in, &out, W, n);
+    twiddle_factors(W, n_threads, n);
+    fft_const_geom(FORWARD_FFT, &in, &out, W, n_threads, n);
 
     /*
     console_newline(1);
@@ -432,8 +441,8 @@ void test_complete_fft_cg(char *name)
     printf("\nINV\n");
     console_newline(1);
     */
-    twiddle_factors_inverse(W, n / 2);
-    fft_const_geom(INVERSE_FFT, &out, &in, W, n);
+    twiddle_factors_inverse(W, n_threads, n / 2);
+    fft_const_geom(INVERSE_FFT, &out, &in, W, n_threads, n);
     free(W);
 
     checkError(in, ref, n, 1);
@@ -453,14 +462,14 @@ void test_complete_fft_cg(char *name)
 
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-        printf("%d\t%.1f\n", i, tm = test_time_const_geom(i));
+        printf("%d\t%.1f\n", i, tm = test_time_const_geom(i, n_threads));
         fprintf_s(f, "%f\n", tm);
     }
     fclose(f);
 }
 
 
-void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const int))
+void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, int, const int), int n_threads)
 {
     int i, n;
     double tm;
@@ -472,7 +481,7 @@ void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const i
     ref = get_seq(n, in);
     printf("\n%s\n", name);
 
-    fn(FORWARD_FFT, in, out, n);
+    fn(FORWARD_FFT, in, out, n_threads, n);
     /*
     console_newline(1);
     console_print(out, n);
@@ -497,13 +506,13 @@ void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const i
 
     printf("Length\tTime\n");
     for (i = 4; i < MAX_LENGTH; i *= 2) {
-        printf("%d\t%.1f\n", i, tm = test_time_ext(fn, i));
+        printf("%d\t%.1f\n", i, tm = test_time_ext(fn, n_threads, i));
         fprintf_s(f, "%f\n", tm);
     }
     fclose(f);
 }
 
-void test_complete_fft2d(char *name, fft2d_fn fn)
+void test_complete_fft2d(char *name, int n_threads, fft2d_fn fn)
 {
     int n, i;
     cpx **in, **ref;
@@ -513,14 +522,14 @@ void test_complete_fft2d(char *name, fft2d_fn fn)
     in = get_seq2d(n, 1);
     ref = get_seq2d(n, in);
 
-    fn(body, FORWARD_FFT, in, n);
-    fn(body, INVERSE_FFT, in, n);
+    fn(body, FORWARD_FFT, in, n_threads, n);
+    fn(body, INVERSE_FFT, in, n_threads, n);
     printf("\n%s\n", name);
     checkError(in, ref, n, 1);
 
     printf("Length\tTime\n");
     for (i = 4; i < 4096; i *= 2) {
-        printf("%d\t%.1f\n", i, test_time_dft_2d(fn, body, i));
+        printf("%d\t%.1f\n", i, test_time_dft_2d(fn, body, n_threads, i));
     }
 
     free(in);

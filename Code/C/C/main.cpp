@@ -18,7 +18,7 @@
 
 int main()
 {
-    const unsigned int size = 2147483648 / 2;
+    const unsigned int size = 1048576; // 6744
     double time;
     time = 0.0;
 
@@ -26,7 +26,7 @@ int main()
     omp_set_num_threads(4);
 #endif
 
-    test_seq_fft();
+    printf("Time: %f\n", simple(size));
    
     printf("\n... done!\n");
     getchar();

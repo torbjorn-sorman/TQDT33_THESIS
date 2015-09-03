@@ -133,14 +133,14 @@ inline void fft_df_openmp(void *vdf) {
 }
 
 
-void cgp_fft_openmp(double **rei, double **imi, int n, int n_stages, int n_threads, int i) {
+void cgp_fft_openmp(double **rei, double **imi, int n, int n_stages, const int no_threads, int i) {
     FFT_DF *df;
     void *tmp;
-    int loop, t;
+    int loop, t, n_threads;
     double *re, *im;
     double *rex, *imx; //auxillary storage
 
-
+    n_threads = no_threads;
     re = *rei;
     im = *imi;
 

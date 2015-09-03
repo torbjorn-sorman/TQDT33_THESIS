@@ -18,16 +18,20 @@
 
 int main()
 {
-    const unsigned int size = 1048576; // 6744
+    const unsigned int size = 1048576;
+    int n_threads;
     double time;
     time = 0.0;
 
 #ifdef _OPENMP
     omp_set_num_threads(4);
+    n_threads = omp_get_max_threads();
+#else
+    n_threads = 1;
 #endif
 
-    printf("Time: %f\n", simple(size));
-   
+    test_seq_fft(n_threads);
+
     printf("\n... done!\n");
     getchar();
     return 0;

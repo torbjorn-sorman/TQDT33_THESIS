@@ -75,7 +75,7 @@ int within(float r, cpx p, cpx ref)
     return sqrt(x*x + y*y) <= r;
 }
 
-void do_another_filter(cpx **seq, int n_threads, int n)
+void do_another_filter(cpx **seq, const int n_threads, int n)
 {
     int x, y;
     float radius;

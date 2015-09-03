@@ -10,19 +10,20 @@
 #include "tb_print.h"
 #include "tb_test.h"
 
-void test_seq_fft(int n_threads)
+void test_seq_fft(const int n_threads)
 {
 #ifdef _OPENMP  
     printf("Running on max threads: %d\n", omp_get_max_threads());
 #else
     printf("Running on single thread/core.\n");
 #endif;
-    test_complete_fft("REGULAR", fft_body, n_threads);
+    //test_complete_fft("REGULAR", fft_body, n_threads);
     test_complete_fft_cg("CONST GEOM", n_threads);
+    test_complete_fft_cg_no_twiddle("CONST GEOM NO TWIDDLE", n_threads);
     //test_complete_ext("CPG FFT", cgp_fft, n_threads);
 }
 
-void test_seq_twiddle(int n_threads, int size)
+void test_seq_twiddle(const int n_threads, int size)
 {
     double time;
     time = 0.0;

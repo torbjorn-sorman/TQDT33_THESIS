@@ -4,13 +4,13 @@
 
 #include "tb_math.h"
 
-int log2_32(int value)
+__inline int log2_32(int value)
 {
     value |= value >> 1; value |= value >> 2; value |= value >> 4; value |= value >> 8; value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-unsigned int reverseBitsLowMem(int x, const int l)
+__inline unsigned int reverseBitsLowMem(int x, const int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
@@ -19,7 +19,7 @@ unsigned int reverseBitsLowMem(int x, const int l)
     return((x >> 16) | (x << 16)) >> (32 - l);
 }
 
-int cpx_equal(cpx *c1, cpx *c2, const int n)
+__inline int cpx_equal(cpx *c1, cpx *c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -29,7 +29,7 @@ int cpx_equal(cpx *c1, cpx *c2, const int n)
     return 1;
 }
 
-int cpx_equal(cpx **c1, cpx **c2, const int n)
+__inline int cpx_equal(cpx **c1, cpx **c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -39,7 +39,7 @@ int cpx_equal(cpx **c1, cpx **c2, const int n)
     return 1;
 }
 
-double cpx_diff(cpx a, cpx b)
+__inline double cpx_diff(cpx a, cpx b)
 {
     double re, im;
     re = abs((double)a.r - (double)b.r);
@@ -47,7 +47,7 @@ double cpx_diff(cpx a, cpx b)
     return max(re, im);
 }
 
-double cpx_diff(cpx *a, cpx *b, const int n)
+__inline double cpx_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double m_diff;
@@ -57,7 +57,7 @@ double cpx_diff(cpx *a, cpx *b, const int n)
     return m_diff;
 }
 
-double cpx_diff(cpx **a, cpx **b, const int n)
+__inline double cpx_diff(cpx **a, cpx **b, const int n)
 {
     int i;
     double m_diff;
@@ -67,7 +67,7 @@ double cpx_diff(cpx **a, cpx **b, const int n)
     return m_diff;
 }
 
-double cpx_avg_diff(cpx *a, cpx *b, const int n)
+__inline double cpx_avg_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double sum;
@@ -77,7 +77,7 @@ double cpx_avg_diff(cpx *a, cpx *b, const int n)
     return sum / n;
 }
 
-double cpx_avg_diff(cpx **a, cpx **b, const int n)
+__inline double cpx_avg_diff(cpx **a, cpx **b, const int n)
 {
     int i, j;
     double sum;

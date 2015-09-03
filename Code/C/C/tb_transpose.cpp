@@ -4,7 +4,7 @@
 
 #include "tb_transpose.h"
 
-void transpose(cpx **seq, const int b, int n_threads, const int n)
+void transpose(cpx **seq, const int b, const int n_threads, const int n)
 {
     int x, y;
     cpx tmp;
@@ -18,7 +18,7 @@ void transpose(cpx **seq, const int b, int n_threads, const int n)
     }
 }
 
-void transpose_block(cpx **seq, const int b, int n_threads, const int n)
+void transpose_block(cpx **seq, const int b, const int n_threads, const int n)
 {
     int blx, bly, x, y;
     cpx tmp;

@@ -25,6 +25,24 @@
     <Filter Include="Header Files\tb">
       <UniqueIdentifier>{14ee92fa-0a32-405b-a45e-05aee3883a64}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\tb\test">
+      <UniqueIdentifier>{10a7e284-f648-48d9-ac43-6d0636ed1e1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tb\test">
+      <UniqueIdentifier>{45b5eacd-aac2-481f-88e1-ef02088d95c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tb\output">
+      <UniqueIdentifier>{622ccedb-00f7-45da-8f53-0ba5e26c0f7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tb\output">
+      <UniqueIdentifier>{30b0c7b0-3c31-4414-8026-ee3dc0f1ef74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tb\fft">
+      <UniqueIdentifier>{7648811d-02d4-4efc-81c8-1b704ca077fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tb\fft">
+      <UniqueIdentifier>{054eb1ce-703d-42ff-9381-b3c89eda565d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -36,19 +54,7 @@
     <ClCompile Include="tb_fft_helper.cpp">
       <Filter>Source Files\tb</Filter>
     </ClCompile>
-    <ClCompile Include="tb_image.cpp">
-      <Filter>Source Files\tb</Filter>
-    </ClCompile>
     <ClCompile Include="tb_math.cpp">
-      <Filter>Source Files\tb</Filter>
-    </ClCompile>
-    <ClCompile Include="tb_print.cpp">
-      <Filter>Source Files\tb</Filter>
-    </ClCompile>
-    <ClCompile Include="tb_test.cpp">
-      <Filter>Source Files\tb</Filter>
-    </ClCompile>
-    <ClCompile Include="tb_test_helper.cpp">
       <Filter>Source Files\tb</Filter>
     </ClCompile>
     <ClCompile Include="tb_transpose.cpp">
@@ -63,14 +69,29 @@
     <ClCompile Include="imglib.cpp">
       <Filter>Source Files\ext</Filter>
     </ClCompile>
-    <ClCompile Include="tb_filter.cpp">
-      <Filter>Source Files\tb</Filter>
-    </ClCompile>
     <ClCompile Include="cgp_fft.cpp">
       <Filter>Source Files\ext</Filter>
     </ClCompile>
+    <ClCompile Include="tb_test_helper.cpp">
+      <Filter>Source Files\tb\test</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_test.cpp">
+      <Filter>Source Files\tb\test</Filter>
+    </ClCompile>
     <ClCompile Include="test_seq.cpp">
-      <Filter>Source Files\tb</Filter>
+      <Filter>Source Files\tb\test</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_filter.cpp">
+      <Filter>Source Files\tb\output</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_image.cpp">
+      <Filter>Source Files\tb\output</Filter>
+    </ClCompile>
+    <ClCompile Include="tb_print.cpp">
+      <Filter>Source Files\tb\output</Filter>
+    </ClCompile>
+    <ClCompile Include="fft_regular.cpp">
+      <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -95,19 +116,7 @@
     <ClInclude Include="tb_fft_helper.h">
       <Filter>Header Files\tb</Filter>
     </ClInclude>
-    <ClInclude Include="tb_image.h">
-      <Filter>Header Files\tb</Filter>
-    </ClInclude>
     <ClInclude Include="tb_math.h">
-      <Filter>Header Files\tb</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_print.h">
-      <Filter>Header Files\tb</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_test.h">
-      <Filter>Header Files\tb</Filter>
-    </ClInclude>
-    <ClInclude Include="tb_test_helper.h">
       <Filter>Header Files\tb</Filter>
     </ClInclude>
     <ClInclude Include="tb_transpose.h">
@@ -116,14 +125,29 @@
     <ClInclude Include="imglib.h">
       <Filter>Header Files\ext</Filter>
     </ClInclude>
-    <ClInclude Include="tb_filter.h">
-      <Filter>Header Files\tb</Filter>
-    </ClInclude>
     <ClInclude Include="cgp_fft.h">
       <Filter>Header Files\ext</Filter>
     </ClInclude>
+    <ClInclude Include="tb_test.h">
+      <Filter>Header Files\tb\test</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_test_helper.h">
+      <Filter>Header Files\tb\test</Filter>
+    </ClInclude>
     <ClInclude Include="test_seq.h">
-      <Filter>Header Files\tb</Filter>
+      <Filter>Header Files\tb\test</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_filter.h">
+      <Filter>Header Files\tb\output</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_image.h">
+      <Filter>Header Files\tb\output</Filter>
+    </ClInclude>
+    <ClInclude Include="tb_print.h">
+      <Filter>Header Files\tb\output</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_regular.h">
+      <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

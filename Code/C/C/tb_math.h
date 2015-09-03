@@ -35,15 +35,15 @@ static const unsigned int revTbl256[] =
 #define CPX_SUB(R,A,B) (((R).r) = (((A).r) - ((B).r))); (((R).i) = (((A).i) - ((B).i)))
 #define CPX_MUL(R,A,B) (((R).r) = ((((A).r) * ((B).r)) - (((A).i) * ((B).i)))); (((R).i) = ((((A).r) * ((B).i)) + (((A).i) * ((B).r))))
 
-unsigned int reverseBitsLowMem(int x, const int l);
-int log2_32(int value);
-int cpx_equal(cpx a, cpx b);
-int cpx_equal(cpx *a, cpx *b, const int n);
-int cpx_equal(cpx **a, cpx **b, const int n);
-double cpx_diff(cpx a, cpx b);
-double cpx_diff(cpx *a, cpx *b, const int n);
-double cpx_diff(cpx **a, cpx **b, const int n);
-double cpx_avg_diff(cpx *a, cpx *b, const int n);
-double cpx_avg_diff(cpx **a, cpx **b, const int n);
+__inline unsigned int reverseBitsLowMem(int x, const int l);
+__inline int log2_32(int value);
+__inline int cpx_equal(cpx a, cpx b);
+__inline int cpx_equal(cpx *a, cpx *b, const int n);
+__inline int cpx_equal(cpx **a, cpx **b, const int n);
+__inline double cpx_diff(cpx a, cpx b);
+__inline double cpx_diff(cpx *a, cpx *b, const int n);
+__inline double cpx_diff(cpx **a, cpx **b, const int n);
+__inline double cpx_avg_diff(cpx *a, cpx *b, const int n);
+__inline double cpx_avg_diff(cpx **a, cpx **b, const int n);
 
 #endif

@@ -5,6 +5,13 @@
 
 double simple(const unsigned int limit);
 
+void validate_fft(fft_func fn, const int n_threads);
+
+void time_fft(char *name, fft_func fn, const int n_threads);
+
+void test_fft(char *name, fft_func fn, const int n_threads);
+
+/*
 unsigned char test_equal_dft(fft_body_fn fn, fft_body_fn ref, const int inplace, const int n_threads);
 unsigned char test_equal_dft2d(fft2d_fn fn2d, fft_body_fn fn, fft_body_fn ref, const int inplace, const int n_threads);
 unsigned char test_image(fft2d_fn fn2d, fft_body_fn fn, char *filename, const int n_threads, const int n);
@@ -25,9 +32,10 @@ void test_complete_fft_cg_no_twiddle(char *name, const int n_threads);
 void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, const int n_threads, const int), const int n_threads);
 
 void test_complete_fft2d(char *name, fft2d_fn fn, const int n_threads);
+*/
 
 /* External libraries to compare with. */
-void kiss_fft(double dir, cpx *in, cpx *out, const int n_threads, const int n);
-void cgp_fft(double dir, cpx *in, cpx *out, const int n_threads, const int n);
+void kiss_fft(double dir, cpx **in, cpx **out, const int n_threads, const int n);
+void cgp_fft(double dir, cpx **in, cpx **out, const int n_threads, const int n);
 
 #endif

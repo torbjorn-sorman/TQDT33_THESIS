@@ -16,8 +16,8 @@
 #include "tb_filter.h"
 #include "cgp_fft.h"
 
-#define NO_TESTS 50
-#define MAX_LENGTH 2097152
+#define NO_TESTS 32
+#define MAX_LENGTH 2097152 / 2
 
 LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 
@@ -27,19 +27,63 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 #define START_TIME QPF(&Frequency); QPC(&StartingTime)
 #define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
-double simple(const unsigned int limit)
+void validate_fft(fft_func fn, const int n_threads)
 {
     int n;
-    unsigned int i;
-    double r;
-    n = 0;
-    START_TIME;
-    for (i = 0; i < limit; ++i) {
-        n += 4;
+    cpx *in, *out, *ref;
+    for (n = 4; n <= MAX_LENGTH; n *= 2) {
+        in = get_seq(n, 1);
+        out = get_seq(n);
+        ref = get_seq(n, in);
+        fn(FORWARD_FFT, &in, &out, n_threads, n);
+        fn(INVERSE_FFT, &in, &out, n_threads, n);
+        checkError(in, ref, n, 1);
+        free(in);
+        free(out);
+        free(ref);
     }
-    STOP_TIME(r);
-    return r;
 }
+
+double timing(fft_func fn, const int n_threads, const int n)
+{
+    int i;
+    double measures[NO_TESTS];
+    cpx *in, *out;
+    for (i = 0; i < NO_TESTS; ++i) {
+        in = get_seq(n, 1);
+        out = get_seq(n);
+
+        START_TIME;
+        fn(FORWARD_FFT, &in, &out, n_threads, n);
+        STOP_TIME(measures[i]);
+
+        free(in);
+        free(out);
+    }
+    return avg(measures, NO_TESTS);
+}
+
+void time_fft(char *name, fft_func fn, const int n_threads)
+{
+    int n;
+    double time;
+    FILE *f;
+    fopen_s(&f, name, "w");
+    printf("Length\tTime\n");
+    for (n = 4; n <= MAX_LENGTH; n *= 2) {
+        printf("%d\t%.1f\n", n, time = timing(fn, n_threads, n));
+        fprintf_s(f, "%0.f\n", time);
+    }
+    fclose(f);
+}
+
+void test_fft(char *name, fft_func fn, const int n_threads)
+{
+    printf("\n%s\n", name);
+    validate_fft(fn, n_threads);
+    time_fft(name, fn, n_threads);
+}
+/*
 
 unsigned char test_equal_dft(fft_body_fn fn, fft_body_fn ref, const int n_threads, const int inplace)
 {
@@ -261,17 +305,18 @@ unsigned char test_image(fft2d_fn fft2d, fft_body_fn dif, char *filename, const 
     imImage2 = get_empty_img(n, n);
     cpxImg = get_seq2d(n);
 
-    /* Set real values from image values.
-    * Store the real-value version of the image.
-    */
+    // Set real values from image values.
+    // Store the real-value version of the image.
+    
+
     img_to_cpx(image, cpxImg, n);
     writeppm("img_out/img00-org.ppm", n, n, image);
     cpx_to_img(cpxImg, greyImage, n, 0);
     printf("Write img00-grey.ppm\n");
     writeppm("img_out/img00-grey.ppm", n, n, greyImage);
-    /* Run 2D FFT on complex values.
-    * Map absolute values of complex to pixels and store to file.
-    */
+    // Run 2D FFT on complex values.
+    // Map absolute values of complex to pixels and store to file.
+    
     fft2d(dif, FORWARD_FFT, cpxImg, n_threads, n);
 
     // Test to apply filter...
@@ -282,7 +327,7 @@ unsigned char test_image(fft2d_fn fft2d, fft_body_fn dif, char *filename, const 
     printf("Write img01-magnitude.ppm\n");
     writeppm("img_out/img01-magnitude.ppm", n, n, imImage2);
 
-    /* Run inverse 2D FFT on complex values */
+    // Run inverse 2D FFT on complex values
     fft2d(dif, INVERSE_FFT, cpxImg, n_threads, n);
     cpx_to_img(cpxImg, imImage, n, 0);
     printf("Write img02-fftToImage.ppm\n");
@@ -505,7 +550,7 @@ void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, int, co
     printf("\n%s\n", name);
 
     fn(FORWARD_FFT, in, out, n_threads, n);
-    /*
+    ///*
     console_newline(1);
     console_print(out, n);
     console_newline(1);
@@ -519,7 +564,7 @@ void test_complete_ext(char *name, void(*fn)(const double, cpx *, cpx *, int, co
     console_newline();
     console_print(in, n);
     console_separator();
-    */
+    //
     free(in);
     free(out);
     free(ref);
@@ -558,30 +603,31 @@ void test_complete_fft2d(char *name, const int n_threads, fft2d_fn fn)
     free(in);
     free(ref);
 }
+*/
 
-void kiss_fft(double dir, cpx *in, cpx *out, const int n_threads, const int n)
+void kiss_fft(double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
     kiss_fft_cfg cfg = kiss_fft_alloc(n, (dir == INVERSE_FFT), NULL, NULL);
-    kiss_fft(cfg, in, out);
+    kiss_fft(cfg, *in, *out);
     free(cfg);
 }
 
-void cgp_fft(double dir, cpx *in, cpx *out, const int n_threads, const int n)
+void cgp_fft(double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
     double *re, *im;
     int i;
     re = (double *)malloc(sizeof(double) * n);
     im = (double *)malloc(sizeof(double) * n);
     for (i = 0; i < n; ++i) {
-        re[i] = (double)in[i].r;
-        im[i] = (double)in[i].i;
+        re[i] = (double)(*in)[i].r;
+        im[i] = (double)(*in)[i].i;
     }
 
     cgp_fft_openmp(&re, &im, n, log2_32(n), n_threads, (int)dir);
 
     for (i = 0; i < n; ++i) {
-        out[i].r = (float)re[i];
-        out[i].i = (float)im[i];
+        (*out)[i].r = (float)re[i];
+        (*out)[i].i = (float)im[i];
     }
 
     free(re);

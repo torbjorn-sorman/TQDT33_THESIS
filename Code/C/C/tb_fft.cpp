@@ -8,7 +8,7 @@
 #include "tb_transpose.h"
 #include "tb_print.h"
 #include "tb_fft_helper.h"
-
+/*
 __inline void fft_template(fft_body_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n_threads, const int n)
 {
     int bit, dist, dist2, lead;
@@ -284,3 +284,4 @@ __inline void fft_body_const_geom(cpx *in, cpx *out, float w_angle, unsigned int
     }
 #pragma warning(default:4700)
 }
+*/

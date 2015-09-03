@@ -10,6 +10,7 @@
 #include "tb_print.h"
 #include "tb_fft_helper.h"
 #include "test_seq.h"
+#include "fft_regular.h"
 
 #ifdef _OPENMP
 #include <omp.h> 
@@ -18,7 +19,7 @@
 
 int main()
 {
-    const unsigned int size = 1048576;
+    const unsigned int n = 1048576;
     int n_threads;
     double time;
     time = 0.0;
@@ -30,7 +31,7 @@ int main()
     n_threads = 1;
 #endif
 
-    test_seq_fft(n_threads);
+    test_fft("Regular FFT", fft_regular, n_threads);
 
     printf("\n... done!\n");
     getchar();

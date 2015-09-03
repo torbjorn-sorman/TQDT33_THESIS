@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define TWOPI (2.0 * 3.1415926535897932384626433832795)
 
 //Gold-Rader bit reversal
-inline void bit_reverse(double *re, double *im, int n) {
+__inline void bit_reverse(double *re, double *im, int n) {
     int n2, i, loop;
     double tn;
 
@@ -85,7 +85,7 @@ Since there is never any access contention between processes
 and each stage completes before starting the next
 there is no need for mutual exclusion to protect our data.
 */
-inline void fft_df_openmp(void *vdf) {
+__inline void fft_df_openmp(void *vdf) {
     FFT_DF *df;
     void *tmp;
     int tp, nh, ni, j, k, start_seg, end_seg, inc;

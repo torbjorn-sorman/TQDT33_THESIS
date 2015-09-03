@@ -7,7 +7,7 @@
 #include "tb_math.h"
 #include "tb_print.h"
 
-__inline void twiddle_factors(cpx *W, const double dir, const int n_threads, const int n)
+void twiddle_factors(cpx *W, const double dir, const int n_threads, const int n)
 {
     int i, n2, n4;
     float w_ang;
@@ -29,26 +29,7 @@ __inline void twiddle_factors(cpx *W, const double dir, const int n_threads, con
     }
 }
 
-__inline void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threads, const int n)
-{
-    int i, n2, n4, _3n4;
-    float tmp, w_angle;
-    w_angle = dir * M_2_PI / n;
-    n2 = n / 2;
-    n4 = n / 4;
-    _3n4 = n2 + n4;
-#pragma omp parallel for schedule(static, n2 / n_threads) private(i, tmp) shared(W, n2, n4, _3n4, n, w_angle)    
-    for (i = n4; i < _3n4; ++i) {
-        W[i].r = cos(w_angle * i);
-        tmp = -W[i].r;
-        W[(i + n2) % n].r = tmp;
-        W[i - n4].i = W[i].r;
-        W[i + n4].i = tmp;
-    }
-    bit_reverse(W, FORWARD_FFT, lead, n_threads, n);
-}
-
-__inline void twiddle_factors_alt(cpx *W, const double dir, const int lead, const int n_threads, const int n)
+void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threads, const int n)
 {
     int i, n2, n4;
     float w_ang;
@@ -68,7 +49,7 @@ __inline void twiddle_factors_alt(cpx *W, const double dir, const int lead, cons
     bit_reverse(W, FORWARD_FFT, lead, n_threads, n);
 }
 
-__inline void twiddle_factors_s(cpx *W, const double dir, const int lead, const int n_threads, const int n)
+void twiddle_factors_s(cpx *W, const double dir, const int lead, const int n_threads, const int n)
 {
     int i;
     float w_ang, a;
@@ -90,7 +71,7 @@ __inline void twiddle_factors_inverse(cpx *W, int n_threads, const int n)
         W[i].i = -W[i].i;
 }
 
-__inline void bit_reverse(cpx *x, const double dir, const int lead, const int n_threads, const int n)
+void bit_reverse(cpx *x, const double dir, const int lead, const int n_threads, const int n)
 {
     int i, p;
     cpx tmp_cpx;
@@ -115,7 +96,7 @@ __inline void bit_reverse(cpx *x, const double dir, const int lead, const int n_
     }
 }
 
-__inline void fft_shift(cpx **seq, const int n_threads, const int n)
+void fft_shift(cpx **seq, const int n_threads, const int n)
 {
     int x, y, n2;
     cpx tmp;
@@ -135,7 +116,7 @@ __inline void fft_shift(cpx **seq, const int n_threads, const int n)
     }
 }
 
-__inline void fft_shift_alt(cpx **seq, const int n_threads, const int n)
+void fft_shift_alt(cpx **seq, const int n_threads, const int n)
 {
     int x, y, n2;
     cpx tmp;

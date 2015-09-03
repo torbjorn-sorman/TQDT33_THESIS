@@ -4,7 +4,7 @@
 
 #include "tb_math.h"
 
-__inline int log2_32(int value)
+int log2_32(int value)
 {
     value |= value >> 1; value |= value >> 2; value |= value >> 4; value |= value >> 8; value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];

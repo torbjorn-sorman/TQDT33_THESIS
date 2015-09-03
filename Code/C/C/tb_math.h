@@ -35,8 +35,8 @@ static const unsigned int revTbl256[] =
 #define CPX_SUB(R,A,B) (((R).r) = (((A).r) - ((B).r))); (((R).i) = (((A).i) - ((B).i)))
 #define CPX_MUL(R,A,B) (((R).r) = ((((A).r) * ((B).r)) - (((A).i) * ((B).i)))); (((R).i) = ((((A).r) * ((B).i)) + (((A).i) * ((B).r))))
 
-__inline unsigned int reverseBitsLowMem(int x, const int l);
-__inline int log2_32(int value);
+unsigned int reverseBitsLowMem(int x, const int l);
+int log2_32(int value);
 __inline int cpx_equal(cpx a, cpx b);
 __inline int cpx_equal(cpx *a, cpx *b, const int n);
 __inline int cpx_equal(cpx **a, cpx **b, const int n);

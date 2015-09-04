@@ -3,8 +3,8 @@
 #include "tb_math.h"
 #include "tb_fft_helper.h"
 
-__forceinline void fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n);
-__forceinline void fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n);
+void _fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n);
+void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n);
 
 /* Both 'in' and 'out' will be used and the values in 'in' will not be preserved. */
 void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
@@ -17,25 +17,27 @@ void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, 
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, lead, n_threads, n);
-    fft_body(*in, *out, W, mask, n_threads, n);
+    twiddle_factors(W, dir, n_threads, n);
+
+    _fft_body(*in, *out, W, mask, n_threads, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        fft_body(*in, *out, W, mask, n_threads, n);
+        _fft_body(*in, *out, W, mask, n_threads, n);
     }
     bit_reverse(*out, dir, lead, n_threads, n);
 }
 
-__forceinline void fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n)
+void _fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n)
 {
-    int i, l, u, p, n2;
+    int i, l, u, p, n2, chunk;
     cpx tmp;
     n2 = n / 2;
-#pragma omp parallel for schedule(static, n2 / n_threads) private(i, l, u, p, tmp) shared(in, out, W, mask, n, n2)
+    chunk = n2 / n_threads;
+#pragma omp parallel for schedule(static, chunk) private(i, l, u, p, tmp) shared(in, out, W, mask, n, n2)
     for (i = 0; i < n; i += 2) {
         l = i / 2;
         u = n2 + l;
@@ -62,27 +64,28 @@ void fft_const_geom_2(const double dir, cpx **in, cpx **out, const int n_threads
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
     w_angle = (float)dir * M_2_PI / n;
-    fft_body(*in, *out, w_angle, mask, n_threads, n);
+    _fft_body(*in, *out, w_angle, mask, n_threads, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        fft_body(*in, *out, w_angle, mask, n_threads, n);
+        _fft_body(*in, *out, w_angle, mask, n_threads, n);
     }
     bit_reverse(*out, dir, lead, n_threads, n);
 }
 
 #pragma warning(disable:4700) 
-__forceinline void fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n)
+void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n)
 {
-    int i, l, u, p, n2, old;
+    int i, l, u, p, n2, old, chunk;
     float cv, sv;
     cpx tmp;
     n2 = n / 2;
     old = -1;
-#pragma omp parallel for schedule(static, n2 / n_threads) private(i, l, u, p, tmp, cv, sv, old) shared(in, out, w_angle, mask, n, n2)
+    chunk = n2 / n_threads;
+#pragma omp parallel for schedule(static, chunk) private(i, l, u, p, tmp, cv, sv, old) shared(in, out, w_angle, mask, n, n2)
     for (i = 0; i < n; i += 2) {
         l = i / 2;
         u = n2 + l;

@@ -9,7 +9,7 @@
 #include "tb_print.h"
 #include "tb_fft_helper.h"
 /*
-__inline void fft_template(fft_body_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n_threads, const int n)
+ void fft_template(fft_body_fn dif, const double dir, cpx *in, cpx *out, cpx *W, const int n_threads, const int n)
 {
     int bit, dist, dist2, lead;
     bit = log2_32(n);
@@ -70,7 +70,7 @@ void tb_fft2d(fft_body_fn dif, const double dir, cpx** seq, const int n_threads,
         free(W);
 }
 
-__inline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
+ void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
 {
     int start, end, l, u, p;
     float imag, real;
@@ -132,7 +132,7 @@ __inline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, 
 #endif
 }
 
-__inline void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
+ void fft_body_alt1(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
 {
     int i, l, u, p, n2;
     float imag, real;
@@ -187,7 +187,7 @@ free(step);
 }
 
 // Must be supplied with two buffers
-__inline void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n_threads, const int n)
+ void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, const int n_threads, const int n)
 {
     int bit, steps;
     unsigned int mask;
@@ -208,7 +208,7 @@ __inline void fft_const_geom(const double dir, cpx **in, cpx **out, cpx *W, cons
     bit_reverse(*out, dir, lead, n_threads, n);
 }
 
-__inline void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n)
+ void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads, const int n)
 {
     int i, l, u, p, n2;
     cpx tmp;
@@ -230,7 +230,7 @@ __inline void fft_body_const_geom(cpx *in, cpx *out, cpx *W, unsigned int mask, 
 }
 
 // Must be supplied with two buffers
-__inline void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
+ void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
     int bit, steps;
     unsigned int mask;
@@ -256,7 +256,7 @@ __inline void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_
 
 // If old == p evaluates to true the first round, that call will not calculate the correct values.
 #pragma warning(disable:4700) 
-__inline void fft_body_const_geom(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n)
+ void fft_body_const_geom(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n_threads, const int n)
 {
     int i, l, u, p, n2, old;
     float cv, sv;

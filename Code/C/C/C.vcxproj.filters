@@ -96,6 +96,9 @@
     <ClCompile Include="fft_const_geom.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
+    <ClCompile Include="fft_tobb.cpp">
+      <Filter>Source Files\tb\fft</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">
@@ -153,6 +156,9 @@
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
     <ClInclude Include="fft_const_geom.h">
+      <Filter>Header Files\tb\fft</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_tobb.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
   </ItemGroup>

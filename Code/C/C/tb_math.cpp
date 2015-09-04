@@ -10,7 +10,7 @@ int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-__inline unsigned int reverseBitsLowMem(int x, const int l)
+ unsigned int reverseBitsLowMem(int x, const int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
@@ -19,7 +19,7 @@ __inline unsigned int reverseBitsLowMem(int x, const int l)
     return((x >> 16) | (x << 16)) >> (32 - l);
 }
 
-__inline int cpx_equal(cpx *c1, cpx *c2, const int n)
+ int cpx_equal(cpx *c1, cpx *c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -29,7 +29,7 @@ __inline int cpx_equal(cpx *c1, cpx *c2, const int n)
     return 1;
 }
 
-__inline int cpx_equal(cpx **c1, cpx **c2, const int n)
+ int cpx_equal(cpx **c1, cpx **c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -39,7 +39,7 @@ __inline int cpx_equal(cpx **c1, cpx **c2, const int n)
     return 1;
 }
 
-__inline double cpx_diff(cpx a, cpx b)
+ double cpx_diff(cpx a, cpx b)
 {
     double re, im;
     re = abs((double)a.r - (double)b.r);
@@ -47,7 +47,7 @@ __inline double cpx_diff(cpx a, cpx b)
     return max(re, im);
 }
 
-__inline double cpx_diff(cpx *a, cpx *b, const int n)
+ double cpx_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double m_diff;
@@ -57,7 +57,7 @@ __inline double cpx_diff(cpx *a, cpx *b, const int n)
     return m_diff;
 }
 
-__inline double cpx_diff(cpx **a, cpx **b, const int n)
+ double cpx_diff(cpx **a, cpx **b, const int n)
 {
     int i;
     double m_diff;
@@ -67,7 +67,7 @@ __inline double cpx_diff(cpx **a, cpx **b, const int n)
     return m_diff;
 }
 
-__inline double cpx_avg_diff(cpx *a, cpx *b, const int n)
+ double cpx_avg_diff(cpx *a, cpx *b, const int n)
 {
     int i;
     double sum;
@@ -77,7 +77,7 @@ __inline double cpx_avg_diff(cpx *a, cpx *b, const int n)
     return sum / n;
 }
 
-__inline double cpx_avg_diff(cpx **a, cpx **b, const int n)
+ double cpx_avg_diff(cpx **a, cpx **b, const int n)
 {
     int i, j;
     double sum;

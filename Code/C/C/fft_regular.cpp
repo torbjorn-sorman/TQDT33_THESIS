@@ -7,8 +7,9 @@
 #include "tb_math.h"
 #include "tb_fft_helper.h"
 
-__forceinline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n);
-__forceinline void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int dist);
+void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n);
+void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int dist);
+void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n);
 
 void fft_regular(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
@@ -29,11 +30,11 @@ void fft_regular(const double dir, cpx **in, cpx **out, const int n_threads, con
         dist = dist >> 1;
         fft_body(*out, *out, W, bit, dist, dist2, n_threads, n);
     }
-    bit_reverse(*out, dir, lead, n_threads, n);    
+    bit_reverse(*out, dir, lead, n_threads, n);
     free(W);
 }
 
-__forceinline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
+void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
 {
     int chunk, lower, upper;
 #ifdef _OPENMP
@@ -41,10 +42,9 @@ __forceinline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int di
     float real, imag;
     cpx tmp;
     chunk = (n / dist2) / n_threads;
-    //chunk = chunk > 0 ? chunk : 1;
     if (chunk > 0) {
         int start, end;
-#pragma omp parallel for schedule(static, chunk) private(start, end) shared(in, out, W, bit, dist, dist2, n)
+#pragma omp parallel for schedule(static, chunk) private(start, end) shared(in, out, W, bit, dist, dist2, n)        
         for (start = 0; start < n; start += dist2) {
             end = dist + start;
             fft_inner_body(in, out, W, start, end, bit, dist);            
@@ -77,7 +77,7 @@ __forceinline void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int di
 #endif
 }
 
-__forceinline void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int dist)
+void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int dist)
 {
     int l, u, p;
     float real, imag;
@@ -92,5 +92,28 @@ __forceinline void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end,
         out[l].i = tmp.i - imag;
         out[u].r = tmp.r + real;
         out[u].i = tmp.i + imag;
+    }
+}
+
+void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n)
+{
+    int start, end, l, u, p, chunk;
+    float imag, real;
+    cpx tmp;
+    chunk = (n / dist2) / n_threads;
+#pragma omp parallel for schedule(static, chunk) private(start, end, l, u, p, imag, real, tmp) shared(in, out, W, bit, dist, dist2, n)
+    for (start = 0; start < n; start += dist2) {
+        end = dist + start;
+        for (l = start; l < end; ++l) {
+            u = l + dist;
+            p = (u >> bit);
+            tmp = in[l];
+            real = in[u].r * W[p].r - in[u].i * W[p].i;
+            imag = in[u].i * W[p].r + in[u].r * W[p].i;
+            out[l].r = tmp.r - real;
+            out[l].i = tmp.i - imag;
+            out[u].r = tmp.r + real;
+            out[u].i = tmp.i + imag;
+        }
     }
 }

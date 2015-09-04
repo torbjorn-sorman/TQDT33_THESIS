@@ -36,7 +36,7 @@ void validate_fft(fft_func fn, const int n_threads)
         out = get_seq(n);
         ref = get_seq(n, in);
         fn(FORWARD_FFT, &in, &out, n_threads, n);
-        fn(INVERSE_FFT, &in, &out, n_threads, n);
+        fn(INVERSE_FFT, &out, &in, n_threads, n);
         checkError(in, ref, n, 1);
         free(in);
         free(out);

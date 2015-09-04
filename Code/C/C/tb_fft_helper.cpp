@@ -54,6 +54,62 @@ void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threa
     bit_reverse(W, FORWARD_FFT, lead, n_threads, n);
 }
 
+void twiddle_factors_short(cpx *W, const double dir, const int lead, const int n_threads, const int n)
+{
+    int i, n2, n4, n8, chunk;
+    float w_ang;
+    w_ang = -M_2_PI / n;
+    n2 = n / 2;
+    n4 = n / 4;
+    n8 = n / 8;
+    chunk = n4 / n_threads;
+
+    /*
+
+    0 - 1
+    1 - 3
+    2 - 5
+    3 - 7
+
+    0 - 0
+    1 - 1
+    2 - 2
+    3 - 3
+    4 - (-0)
+    5 - (-1)
+    6 - (-2)
+    7 - (-3)
+
+    *//*
+#pragma omp parallel shared(W, n4, n8, w_ang)
+    {
+#pragma omp for schedule(static, chunk) private(i) 
+        for (i = 0; i <= n4; ++i) {            
+            W[i].r = cos(w_ang * (i * 2 + 1));
+            W[i + n4].r = -W[i].r;
+        }        
+#pragma omp for schedule(static, chunk) private(i)  
+        for (i = 0; i <= n4; ++i) {
+            W[i].i = -dir * W[i + n8].r;
+            W[i + n4].i = -W[i].i;
+        }
+    }*/
+#pragma omp parallel shared(W, n2, w_ang)
+    {
+#pragma omp for schedule(static, chunk) private(i) 
+        for (i = 0; i < n2; ++i) {
+            W[i].r = cos(w_ang * i);
+            W[i + n2].r = -W[i].r;
+        }
+#pragma omp for schedule(static, chunk) private(i)  
+        for (i = 0; i < n2; ++i) {
+            W[i].i = -dir * W[i + n4].r;
+            W[i + n2].i = -W[i].i;
+        }
+    }
+    //bit_reverse(W, FORWARD_FFT, lead + 1, n_threads, (n / 2));
+}
+
 void twiddle_factors_s(cpx *W, const double dir, const int lead, const int n_threads, const int n)
 {
     int i, chunk;

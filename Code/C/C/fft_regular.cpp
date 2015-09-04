@@ -6,15 +6,17 @@
 
 #include "tb_math.h"
 #include "tb_fft_helper.h"
+#include "tb_print.h"
 
 void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n);
 void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int dist);
-void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n);
+//void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n);
 
 void fft_regular(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
     int bit, dist, dist2, lead;
     cpx *W;
+
     bit = log2_32(n);
     dist2 = n;
     dist = (n / 2);
@@ -22,9 +24,14 @@ void fft_regular(const double dir, cpx **in, cpx **out, const int n_threads, con
     --bit;
     W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, lead, n_threads, n);
+    //cpx *Ws = (cpx *)malloc(sizeof(cpx) * n);
+    //twiddle_factors_short(Ws, dir, lead, n_threads, n);
+
+    //console_print_cmp(W, Ws, n);
+    //getchar();
+    //mask = 0xffffffff << (steps - bit);
 
     fft_body(*in, *out, W, bit, dist, dist2, n_threads, n);
-
     while (bit-- > 0) {
         dist2 = dist;
         dist = dist >> 1;
@@ -36,9 +43,9 @@ void fft_regular(const double dir, cpx **in, cpx **out, const int n_threads, con
 
 void fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n)
 {
-    int chunk, lower, upper;
-#ifdef _OPENMP
-    int l, u, p;
+    int lower, upper;
+#ifdef _OPENMP    
+    int l, u, p, chunk;
     float real, imag;
     cpx tmp;
     chunk = (n / dist2) / n_threads;
@@ -95,6 +102,7 @@ void fft_inner_body(cpx *in, cpx *out, cpx *W, int start, int end, int bit, int 
     }
 }
 
+/*
 void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_threads, const int n)
 {
     int start, end, l, u, p, chunk;
@@ -117,3 +125,4 @@ void fft_body2(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, int n_th
         }
     }
 }
+*/

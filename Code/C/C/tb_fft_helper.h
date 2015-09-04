@@ -5,6 +5,7 @@
 
 void twiddle_factors(cpx *W, const double dir, const int n_threads, const int n);
 void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threads, const int n);
+void twiddle_factors_short(cpx *W, const double dir, const int lead, const int n_threads, const int n);
 void twiddle_factors_s(cpx *W, const double dir, const int lead, const int n_threads, const int n);
 
 /* Twiddle Factors Inverse take an already calculated twiddle factor list and invert the imaginary values */

@@ -13,6 +13,7 @@
 
 #include "fft_regular.h"
 #include "fft_reg.h"
+#include "fft_reg_omp.h"
 #include "fft_const_geom.h"
 #include "fft_tobb.h"
 
@@ -35,9 +36,9 @@ int main()
     n_threads = 1;
 #endif
 
-    //test_fft("Constant Geometry FFT", fft_const_geom, n_threads);
+    test_fft("Reg OMP FFT", fft_reg_omp, n_threads);
+    test_fft("Constant Geometry FFT", fft_const_geom, n_threads);
     test_fft("Reg FFT", fft_reg, n_threads);
-    //test_fft("Regular FFT", fft_regular, n_threads);
     //test_fft("Tobb FFT", fft_tobb, n_threads);
 
     printf("\n... done!\n");

@@ -16,31 +16,29 @@ void twiddle_factors(cpx *W, const double dir, const int n_threads, const int n)
     n4 = n / 4;
     chunk = n2 / n_threads;
     chunk2 = n4 / n_threads;
-#pragma omp parallel shared(W, n2, n4, w_ang, chunk, chunk2)
+#pragma omp parallel shared(W, dir, n2, n4, w_ang, chunk, chunk2)
     {
 #pragma omp for schedule(static, chunk) private(i)
         for (i = 0; i < n2; ++i) {
             W[i].r = cos(w_ang * i);
         }
-        /* The next part: Expirement with mem locality. */
-        // (1024 * 1024) / (sizeof(float) * 2) = 131072 // (i) and (i + n4) fits in L2 cache of size 1024 if aligned in mem.
-        /*if (n4 >= 131072) {
-#pragma omp for schedule(static, chunk2) private(i)  
-            for (i = 0; i < n4; ++i) {
-                W[i].i = -dir * W[i + n4].r;
-            }
-#pragma omp for schedule(static, chunk2) private(i)  
-            for (i = 0; i < n4; ++i) {
-                W[i + n4].i = dir * W[i].r;
-            }
-        } 
-        else {*/
+#pragma omp barrier
+        if (dir == FORWARD_FFT) {
 #pragma omp for schedule(static, chunk2) private(i, tmp)  
-            for (i = 0; i < n4; ++i) {                
-                W[i].i = -dir * W[tmp = i + n4].r;
-                W[tmp].i = dir * W[i].r;
+            for (i = 0; i < n4; ++i) {
+                tmp = i + n4;
+                W[i].i = W[tmp].r;
+                W[tmp].i = -W[i].r;
             }
-        //}
+        }
+        else {
+#pragma omp for schedule(static, chunk2) private(i, tmp)  
+            for (i = 0; i < n4; ++i) {
+                tmp = i + n4;
+                W[i].i = -W[tmp].r;
+                W[tmp].i = W[i].r;
+            }
+        }
     }
 }
 
@@ -60,6 +58,7 @@ void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threa
             W[i].r = cos(w_ang * i);
             W[i + n2].r = -W[i].r;
         }
+#pragma omp barrier
 #pragma omp for schedule(static, chunk) private(i)  
         for (i = 0; i < n4; ++i) {
             W[i].i = -dir * W[i + n4].r;
@@ -99,7 +98,7 @@ void bit_reverse(cpx *x, const double dir, const int lead, const int n_threads, 
     int i, p, chunk;
     cpx tmp_cpx;
     chunk = n / n_threads;
-#pragma omp parallel shared(x, lead, n)
+#pragma omp parallel
     {
 #pragma omp for schedule(static, chunk) private(i, p, tmp_cpx)
         for (i = 0; i <= n; ++i) {
@@ -111,6 +110,7 @@ void bit_reverse(cpx *x, const double dir, const int lead, const int n_threads, 
             }
         }
         if (dir == INVERSE_FFT) {
+#pragma omp barrier
 #pragma omp for schedule(static, chunk) private(i)
             for (i = 0; i < n; ++i) {
                 x[i].r = x[i].r / (float)n;

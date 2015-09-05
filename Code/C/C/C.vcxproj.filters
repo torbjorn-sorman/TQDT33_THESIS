@@ -102,6 +102,9 @@
     <ClCompile Include="fft_reg.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
+    <ClCompile Include="fft_reg_omp.cpp">
+      <Filter>Source Files\tb\fft</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">
@@ -165,6 +168,9 @@
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
     <ClInclude Include="fft_reg.h">
+      <Filter>Header Files\tb\fft</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_reg_omp.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
   </ItemGroup>

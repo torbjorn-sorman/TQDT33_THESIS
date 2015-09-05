@@ -38,9 +38,8 @@ void fft_body(cpx *in, cpx *out, cpx *W, const unsigned mask, int dist, int dist
 #ifdef _OPENMP    
     int l, u, p, chunk;
     cpx tmp;
-    chunk = n / dist2;
-    if (chunk > n_threads) {
-        chunk = chunk / n_threads;
+    if (count > n_threads) {
+        chunk = count / n_threads;
 #pragma omp parallel for schedule(static, chunk) private(lower, upper) shared(in, out, W, mask, dist, dist2, n, count)                
         for (lower = 0; lower < n; lower += dist2) {
             upper = dist + lower;

@@ -1,6 +1,10 @@
 
 #include "fft_tobb.h"
 
+#ifdef _OPENMP
+#include <omp.h> 
+#endif
+
 #include "tb_math.h"
 #include "tb_fft_helper.h"
 
@@ -32,7 +36,7 @@ void fft_tobb(const double dir, cpx **in, cpx **out, const int n_threads, const 
 
 void _fft_body(cpx *in, cpx *out, cpx *W, int bit, int dist, int dist2, const int n_threads, const int n2)
 {
-    int n, l, u, p;
+    int i, n, l, u, p;
     float imag, real;
     cpx tmp;
     /* START OMP CONDITIONAL */

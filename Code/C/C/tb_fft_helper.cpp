@@ -9,27 +9,42 @@
 
 void twiddle_factors(cpx *W, const double dir, const int n_threads, const int n)
 {
-    int i, n2, n4, chunk;
+    int i, n2, n4, chunk, chunk2, tmp;
     float w_ang;
     w_ang = -M_2_PI / n;
     n2 = n / 2;
     n4 = n / 4;
     chunk = n2 / n_threads;
-#pragma omp parallel shared(W, n2, w_ang)
+    chunk2 = n4 / n_threads;
+#pragma omp parallel shared(W, n2, n4, w_ang, chunk, chunk2)
     {
 #pragma omp for schedule(static, chunk) private(i)
         for (i = 0; i < n2; ++i) {
             W[i].r = cos(w_ang * i);
-            W[i + n2].r = -W[i].r;
         }
-#pragma omp for schedule(static, chunk) private(i)  
-        for (i = 0; i < n2; ++i) {
-            W[i].i = -dir * W[i + n4].r;
-            W[i + n2].i = -W[i].i;
-        }
+        /* The next part: Expirement with mem locality. */
+        // (1024 * 1024) / (sizeof(float) * 2) = 131072 // (i) and (i + n4) fits in L2 cache of size 1024 if aligned in mem.
+        /*if (n4 >= 131072) {
+#pragma omp for schedule(static, chunk2) private(i)  
+            for (i = 0; i < n4; ++i) {
+                W[i].i = -dir * W[i + n4].r;
+            }
+#pragma omp for schedule(static, chunk2) private(i)  
+            for (i = 0; i < n4; ++i) {
+                W[i + n4].i = dir * W[i].r;
+            }
+        } 
+        else {*/
+#pragma omp for schedule(static, chunk2) private(i, tmp)  
+            for (i = 0; i < n4; ++i) {                
+                W[i].i = -dir * W[tmp = i + n4].r;
+                W[tmp].i = dir * W[i].r;
+            }
+        //}
     }
 }
 
+/* To be replaced */
 void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threads, const int n)
 {
     int i, n2, n4, chunk;
@@ -38,7 +53,7 @@ void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threa
     n2 = n / 2;
     n4 = n / 4;
     chunk = n2 / n_threads;
-#pragma omp parallel shared(W, n2, w_ang)
+#pragma omp parallel shared(W, n2, n4, w_ang)
     {
 #pragma omp for schedule(static, chunk) private(i) 
         for (i = 0; i < n2; ++i) {
@@ -46,7 +61,7 @@ void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threa
             W[i + n2].r = -W[i].r;
         }
 #pragma omp for schedule(static, chunk) private(i)  
-        for (i = 0; i < n2; ++i) {
+        for (i = 0; i < n4; ++i) {
             W[i].i = -dir * W[i + n4].r;
             W[i + n2].i = -W[i].i;
         }
@@ -54,78 +69,23 @@ void twiddle_factors(cpx *W, const double dir, const int lead, const int n_threa
     bit_reverse(W, FORWARD_FFT, lead, n_threads, n);
 }
 
-void twiddle_factors_short(cpx *W, const double dir, const int lead, const int n_threads, const int n)
+// Better locality
+void twiddle_factors_s(cpx *W, const double dir, const int n_threads, const int n)
 {
-    int i, n2, n4, n8, chunk;
-    float w_ang;
-    w_ang = -M_2_PI / n;
-    n2 = n / 2;
-    n4 = n / 4;
-    n8 = n / 8;
-    chunk = n4 / n_threads;
-
-    /*
-
-    0 - 1
-    1 - 3
-    2 - 5
-    3 - 7
-
-    0 - 0
-    1 - 1
-    2 - 2
-    3 - 3
-    4 - (-0)
-    5 - (-1)
-    6 - (-2)
-    7 - (-3)
-
-    *//*
-#pragma omp parallel shared(W, n4, n8, w_ang)
-    {
-#pragma omp for schedule(static, chunk) private(i) 
-        for (i = 0; i <= n4; ++i) {            
-            W[i].r = cos(w_ang * (i * 2 + 1));
-            W[i + n4].r = -W[i].r;
-        }        
-#pragma omp for schedule(static, chunk) private(i)  
-        for (i = 0; i <= n4; ++i) {
-            W[i].i = -dir * W[i + n8].r;
-            W[i + n4].i = -W[i].i;
-        }
-    }*/
-#pragma omp parallel shared(W, n2, w_ang)
-    {
-#pragma omp for schedule(static, chunk) private(i) 
-        for (i = 0; i < n2; ++i) {
-            W[i].r = cos(w_ang * i);
-            W[i + n2].r = -W[i].r;
-        }
-#pragma omp for schedule(static, chunk) private(i)  
-        for (i = 0; i < n2; ++i) {
-            W[i].i = -dir * W[i + n4].r;
-            W[i + n2].i = -W[i].i;
-        }
-    }
-    //bit_reverse(W, FORWARD_FFT, lead + 1, n_threads, (n / 2));
-}
-
-void twiddle_factors_s(cpx *W, const double dir, const int lead, const int n_threads, const int n)
-{
-    int i, chunk;
+    int i, chunk, n2;
     float w_ang, a;
     w_ang = dir * M_2_PI / n;
     chunk = n / n_threads;
-#pragma omp parallel for schedule(static, chunk) private(i, a) shared(W, lead, n, w_ang)  
-    for (i = 0; i < n; ++i) {
-        a = (w_ang * i);
+    n2 = n / 2;
+#pragma omp parallel for schedule(static, chunk) private(i, a) shared(W, n, n2, w_ang)  
+    for (i = 0; i < n2; ++i) {
+        a = w_ang * i;
         W[i].r = cos(a);
         W[i].i = sin(a);
     }
-    bit_reverse(W, FORWARD_FFT, lead, n_threads, n);
 }
 
-void twiddle_factors_inverse(cpx *W, int n_threads, const int n)
+void twiddle_factors_fast_inverse(cpx *W, int n_threads, const int n)
 {
     int i, chunk;
     chunk = n / n_threads;

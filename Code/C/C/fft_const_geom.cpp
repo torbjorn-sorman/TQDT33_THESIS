@@ -30,7 +30,7 @@ void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, 
         _fft_body(*in, *out, W, mask, n_threads, n);
     }
     bit_reverse(*out, dir, lead, n_threads, n);
-    console_newline(2);
+    //console_newline(2);
     //console_print(*out, n);
 }
 
@@ -45,18 +45,13 @@ void _fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n_threads
         l = i / 2;
         u = n2 + l;
         p = l & mask;
-
-        printf("p: %d\n", p);
-
         tmp.r = in[l].r - in[u].r;
         tmp.i = in[l].i - in[u].i;
-
         out[i].r = in[l].r + in[u].r;
         out[i].i = in[l].i + in[u].i;
         out[i + 1].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
         out[i + 1].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
     }
-    printf("\n");
 }
 
 void fft_const_geom_2(const double dir, cpx **in, cpx **out, const int n_threads, const int n)

@@ -13,26 +13,19 @@ void fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int 
 
 void fft_reg(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
-    int bit, steps, dist, dist2;
-    unsigned int mask;
+    int dist;
+    unsigned int steps, lim;
     cpx *W;
-    bit = log2_32(n);
-    const int lead = 32 - bit;
-    bit -= 1;
-    steps = bit;
-
-    dist2 = n;
+    lim = log2_32(n);
+    const int lead = 32 - lim;
     dist = (n / 2);
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n_threads, n);    
-
-    mask = 0xffffffff << (steps - bit);
-    fft_body(*in, *out, W, mask, dist, dist2, n_threads, n);
-    while (bit-- >= 0) {
-        dist2 = dist;
+    twiddle_factors(W, dir, n_threads, n);
+    steps = 0;  
+    fft_body(*in, *out, W, 0xffffffff << steps, dist, n >> steps, n_threads, n);
+    while (++steps < lim) {
         dist = dist >> 1;
-        mask = 0xffffffff << (steps - bit);
-        fft_body(*out, *out, W, mask, dist, dist2, n_threads, n);
+        fft_body(*out, *out, W, 0xffffffff << steps, dist, n >> steps, n_threads, n);
     }
     bit_reverse(*out, dir, lead, n_threads, n);
     free(W);
@@ -41,63 +34,52 @@ void fft_reg(const double dir, cpx **in, cpx **out, const int n_threads, const i
 void fft_body(cpx *in, cpx *out, cpx *W, const unsigned mask, int dist, int dist2, const int n_threads, const int n)
 {
     int lower, upper, count;
+    count = n / dist2;
 #ifdef _OPENMP    
     int l, u, p, chunk;
-    float real, imag;
     cpx tmp;
-    chunk = (n / dist2) / n_threads;
-    if (chunk > 0) {
-        int start, end;
-#pragma omp parallel for schedule(static, chunk) private(start, end) shared(in, out, W, bit, dist, dist2, n)        
-        for (start = 0; start < n; start += dist2) {
-            end = dist + start;
-            fft_inner_body(in, out, W, start, end, bit, dist);            
+    chunk = n / dist2;
+    if (chunk > n_threads) {
+        chunk = chunk / n_threads;
+#pragma omp parallel for schedule(static, chunk) private(lower, upper) shared(in, out, W, mask, dist, dist2, n, count)                
+        for (lower = 0; lower < n; lower += dist2) {
+            upper = dist + lower;
+            fft_inner_body(in, out, W, lower, upper, mask, dist, count);
         }
     }
     else
     {
-        chunk = (dist > n_threads) ? (dist / n_threads) : dist;
+        chunk = dist / n_threads;
         for (lower = 0; lower < n; lower += dist2) {
             upper = dist + lower;
-#pragma omp parallel for schedule(static, chunk) private(l, u, p, real, imag, tmp) shared(in, out, W, bit, dist, lower, upper)
+#pragma omp parallel for schedule(static, chunk) private(l, u, p, tmp) shared(in, out, W, mask, dist, lower, upper, chunk, count)
             for (l = lower; l < upper; ++l) {
                 u = l + dist;
-                p = (u >> bit);
-                tmp = in[l];
-                real = in[u].r * W[p].r - in[u].i * W[p].i;
-                imag = in[u].i * W[p].r + in[u].r * W[p].i;
-                out[l].r = tmp.r - real;
-                out[l].i = tmp.i - imag;
-                out[u].r = tmp.r + real;
-                out[u].i = tmp.i + imag;
+                p = ((l - lower) * count) & mask;
+                tmp.r = in[l].r - in[u].r;
+                tmp.i = in[l].i - in[u].i;
+                out[l].r = in[l].r + in[u].r;
+                out[l].i = in[l].i + in[u].i;
+                out[u].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
+                out[u].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
             }
         }
     }
 #else
-    count = n / dist2;//n / dist2;
     for (lower = 0; lower < n; lower += dist2) {
         upper = dist + lower;
         fft_inner_body(in, out, W, lower, upper, mask, dist, count);
     }
-    //printf("\n");
 #endif
 }
 
 void fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const unsigned int mask, const int dist, const int mul)
 {
-    int l, u, p, cnt;
-    //float real, imag;
+    int l, u, p;
     cpx tmp;
-    cnt = -mul;
     for (l = lower; l < upper; ++l) {
         u = l + dist;
-        
-        // do better?
-        //p = ((l - lower) * mul) & mask;
-        p = (cnt += mul) & mask;
-
-        //printf("p: %d\n", p);
-
+        p = ((l - lower) * mul) & mask;
         tmp.r = in[l].r - in[u].r;
         tmp.i = in[l].i - in[u].i;
         out[l].r = in[l].r + in[u].r;

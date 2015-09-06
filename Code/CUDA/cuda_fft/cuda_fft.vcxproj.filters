@@ -11,6 +11,9 @@
     <CudaCompile Include="fft_test.cu">
       <Filter>fft</Filter>
     </CudaCompile>
+    <CudaCompile Include="fft_const_geo.cu">
+      <Filter>fft</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="fft">
@@ -26,6 +29,9 @@
     </ClInclude>
     <ClInclude Include="definitions.cuh" />
     <ClInclude Include="fft_test.cuh">
+      <Filter>fft</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_const_geo.cuh">
       <Filter>fft</Filter>
     </ClInclude>
   </ItemGroup>

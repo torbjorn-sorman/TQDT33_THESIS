@@ -39,10 +39,11 @@ double cpx_diff(cpx **a, cpx **b, const int n);
 double cpx_avg_diff(cpx *a, cpx *b, const int n);
 double cpx_avg_diff(cpx **a, cpx **b, const int n);
 
-__global__ void twiddle_factors(cpx *W, const double dir, const int n);
+__global__ void twiddle_factors(cpx *W, const float dir, const int n);
 __global__ void twiddle_factors_fast_inverse(cpx *W);
-__global__ void bit_reverse(cpx *x, const double dir, const int lead, const int n);
+__global__ void bit_reverse(cpx *seq, const float dir, const int lead, const int n);
+__global__ void bit_reverse(cpx *in, cpx *out, const float dir, const int lead, const int n);
 
-__device__ unsigned int bitReverse32(int x, const int l);
+__device__ unsigned int bitReverse32(unsigned int x, const int l);
 
 #endif

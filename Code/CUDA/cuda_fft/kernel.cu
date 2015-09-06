@@ -8,7 +8,7 @@
 
 #include "definitions.cuh"
 #include "fft_test.cuh"
-#include "fft_const_geom.cuh"
+#include "fft_const_geo.cuh"
 #include "fft_helper.cuh"
 
 #define NO_TESTS 32
@@ -22,47 +22,34 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 #define START_TIME QPF(&Frequency); QPC(&StartingTime)
 #define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
-cudaError_t fftCuda(float direction, cpx *in, cpx *out, int n);
+cudaError_t fftCuda(float direction, cpx *in, cpx *out, double measures[], int n);
+
+
 
 int main()
 {
     int n;
-    double measures[2];
+    double measures[20];
     cpx *in, *out, *ref;
     cudaError_t cudaStatus;
-
-    n = 8;
-    in = get_seq(n, 1);
-    ref = get_seq(n, in);
-    out = get_seq(n);
-
-    printf("Go go go!\n");
-    getchar();
-
-    printf("Forward\n");
-    START_TIME;
-    cudaStatus = fftCuda(-1.f, in, out, n);
-    STOP_TIME(measures[0]);
     
-    console_print(in, n);
-
-    printf("Inverse\n");
-    START_TIME;
-    //cudaStatus = fftCuda(1.f, out, in, n);
-    STOP_TIME(measures[1]);
-
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        getchar();
-        return 1;
+    for (n = 4; n < 256; n *= 2) {        
+        in = get_seq(n, 1);
+        ref = get_seq(n, in);
+        out = get_seq(n);
+        //printf("\nN: %d\n", n);
+        cudaStatus = fftCuda(-1.f, in, out, measures, n);
+        printf("%.0f\n", avg(measures, 20));
+        if (cudaStatus != cudaSuccess)
+            fprintf(stderr, "fftCuda Forward failed!\n");
+        cudaStatus = fftCuda(1.f, out, in, measures, n);
+        if (cudaStatus != cudaSuccess)
+            fprintf(stderr, "fftCuda Inverse failed!\n");
+        checkError(in, ref, n, 1);
+        free(in);
+        free(out);
+        free(ref);
     }
-
-    printf("Happened: %f & %f\n", measures[0], measures[1]);
-    checkError(in, ref, n, 1);
-
-    free(in);
-    free(out);
-    free(ref);
 
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
@@ -78,69 +65,40 @@ int main()
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t fftCuda(float direction, cpx *in, cpx *out, int n)
+cudaError_t fftCuda(float direction, cpx *in, cpx *out, double measures[], int n)
 {
+    unsigned int bufferswitch;
     cpx *dev_in = 0;
     cpx *dev_out = 0;
     cpx *dev_W = 0;
     
-    cudaError_t cudaStatus;
-        
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
-    }
-
-    printf("Got device!\n");
+    cudaError_t cudaStatus = cudaSetDevice(0);
 
     cudaStatus = cudaMalloc((void**)&dev_in, n * sizeof(cpx));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
     cudaStatus = cudaMalloc((void**)&dev_out, n * sizeof(cpx));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
     cudaStatus = cudaMalloc((void**)&dev_W, (n / 2) * sizeof(cpx));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
     cudaStatus = cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
+    
+    fft_const_geo(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+    cudaDeviceSynchronize();
 
-    fft_const_geom(direction, dev_in, dev_out, dev_W, n);
-        
-    // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "Last error: %s\n", cudaGetErrorString(cudaStatus));
         goto Error;
     }
 
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
+    cudaStatus = cudaMemcpy(out, (bufferswitch == 1) ? dev_out : dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+        fprintf(stderr, "cudaMemcpy dev_out -> out failed!");
         goto Error;
     }
 
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+    for (int i = 0; i < 20; ++i) {
+        START_TIME;
+        fft_const_geo(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+        cudaDeviceSynchronize();
+        STOP_TIME(measures[i]);
     }
 
 Error:
@@ -148,7 +106,7 @@ Error:
     cudaFree(dev_out);
     cudaFree(dev_W);
 
-    return cudaStatus;
+    return cudaDeviceSynchronize();
 }
 
 /*

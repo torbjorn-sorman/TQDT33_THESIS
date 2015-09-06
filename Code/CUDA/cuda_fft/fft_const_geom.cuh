@@ -4,6 +4,6 @@
 #include "cuda_runtime.h"
 #include "definitions.cuh"
 
-__host__ void fft_const_geom(const double dir, cpx *in, cpx *out, cpx *W, const int n);
+__host__ void fft_const_geom(const float dir, cpx *in, cpx *out, cpx *W, unsigned int *buf, const int n);
 
 #endif

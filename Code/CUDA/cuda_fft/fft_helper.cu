@@ -86,7 +86,7 @@ double cpx_avg_diff(cpx **a, cpx **b, const int n)
     return sum / (n * n);
 }
 
-__global__ void twiddle_factors(cpx *W, const double dir, const int n)
+__global__ void twiddle_factors(cpx *W, const float dir, const int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     float ang = dir * (M_2_PI / n) * i;
@@ -101,10 +101,10 @@ __global__ void twiddle_factors_fast_inverse(cpx *W)
     W[i].y = -W[i].y;
 }
 
-__global__ void bit_reverse(cpx *x, const double dir, const int lead, const int n)
+__global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n)
 {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int p = bitReverse32(i, lead);
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int p = bitReverse32(i, lead);
     cpx tmp;
     if (i < p) {
         tmp = x[i];
@@ -117,11 +117,25 @@ __global__ void bit_reverse(cpx *x, const double dir, const int lead, const int 
     }
 }
 
-__device__ unsigned int bitReverse32(int x, const int l)
+__global__ void bit_reverse(cpx *in, cpx *out, const float dir, const int lead, const int n)
+{
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int p = bitReverse32(i, lead);
+    if (dir > 0) {
+        out[p].x = in[i].x / (float)n;
+        out[p].y = in[i].y / (float)n;
+    }
+    else {
+        out[p].x = in[i].x;
+        out[p].y = in[i].y;
+    }
+}
+
+__device__ unsigned int bitReverse32(unsigned int x, const int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
     x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
     x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
-    return((x >> 16) | (x << 16)) >> (32 - l);
+    return((x >> 16) | (x << 16)) >> l;
 }

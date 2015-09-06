@@ -154,6 +154,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="fft_const_geo.cu" />
     <CudaCompile Include="fft_const_geom.cu" />
     <CudaCompile Include="fft_helper.cu" />
     <CudaCompile Include="kernel.cu" />
@@ -161,6 +162,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="definitions.cuh" />
+    <ClInclude Include="fft_const_geo.cuh" />
     <ClInclude Include="fft_const_geom.cuh" />
     <ClInclude Include="fft_helper.cuh" />
     <ClInclude Include="fft_test.cuh" />

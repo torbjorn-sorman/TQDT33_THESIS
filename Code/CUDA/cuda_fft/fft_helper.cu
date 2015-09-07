@@ -1,6 +1,8 @@
+#include <stdio.h>
+#include <device_launch_parameters.h>
+
 #include "fft_helper.cuh"
 #include "math.h"
-#include <stdio.h>
 
 int log2_32(int value)
 {
@@ -8,14 +10,14 @@ int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-void console_print(cpx *seq, const int n)
+void console_print(cuFloatComplex *seq, const int n)
 {
     int i;
     for (i = 0; i < n; ++i)
         printf("%f\t%f\n", seq[i].x, seq[i].y);
 }
 
-int cpx_equal(cpx *c1, cpx *c2, const int n)
+int cuFloatComplex_equal(cuFloatComplex *c1, cuFloatComplex *c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
@@ -25,17 +27,17 @@ int cpx_equal(cpx *c1, cpx *c2, const int n)
     return 1;
 }
 
-int cpx_equal(cpx **c1, cpx **c2, const int n)
+int cuFloatComplex_equal(cuFloatComplex **c1, cuFloatComplex **c2, const int n)
 {
     int i;
     for (i = 0; i < n; ++i) {
-        if (cpx_equal(c1[i], c2[i], n) == 0)
+        if (cuFloatComplex_equal(c1[i], c2[i], n) == 0)
             return 0;
     }
     return 1;
 }
 
-double cpx_diff(cpx a, cpx b)
+double cuFloatComplex_diff(cuFloatComplex a, cuFloatComplex b)
 {
     double re, im;
     re = abs((double)a.x - (double)b.x);
@@ -43,69 +45,68 @@ double cpx_diff(cpx a, cpx b)
     return fmaxf(re, im);
 }
 
-double cpx_diff(cpx *a, cpx *b, const int n)
+double cuFloatComplex_diff(cuFloatComplex *a, cuFloatComplex *b, const int n)
 {
     int i;
     double m_diff;
     m_diff = -1;
     for (i = 0; i < n; ++i)
-        m_diff = fmaxf(m_diff, cpx_diff(a[i], b[i]));
+        m_diff = fmaxf(m_diff, cuFloatComplex_diff(a[i], b[i]));
     return m_diff;
 }
 
-double cpx_diff(cpx **a, cpx **b, const int n)
+double cuFloatComplex_diff(cuFloatComplex **a, cuFloatComplex **b, const int n)
 {
     int i;
     double m_diff;
     m_diff = -1;
     for (i = 0; i < n; ++i)
-        m_diff = fmaxf(m_diff, cpx_diff(a[i], b[i], n));
+        m_diff = fmaxf(m_diff, cuFloatComplex_diff(a[i], b[i], n));
     return m_diff;
 }
 
-double cpx_avg_diff(cpx *a, cpx *b, const int n)
+double cuFloatComplex_avg_diff(cuFloatComplex *a, cuFloatComplex *b, const int n)
 {
     int i;
     double sum;
     sum = 0.0;
     for (i = 0; i < n; ++i)
-        sum += cpx_diff(a[i], b[i]);
+        sum += cuFloatComplex_diff(a[i], b[i]);
     return sum / n;
 }
 
-double cpx_avg_diff(cpx **a, cpx **b, const int n)
+double cuFloatComplex_avg_diff(cuFloatComplex **a, cuFloatComplex **b, const int n)
 {
     int i, j;
     double sum;
     sum = 0.0;
     for (i = 0; i < n; ++i) {
         for (j = 0; j < n; ++j) {
-            sum += cpx_diff(a[i][j], b[i][j]);
+            sum += cuFloatComplex_diff(a[i][j], b[i][j]);
         }
     }
     return sum / (n * n);
 }
 
-__global__ void twiddle_factors(cpx *W, const float dir, const int n)
+__global__ void twiddle_factors(cuFloatComplex *W, const float angle, const int n)
 {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    float ang = dir * (M_2_PI / n) * i;
-    W[i].x = cosf(ang);
-    W[i].y = sinf(ang);
-    W[i + n / 4].y = dir * W[i].x;
+    int i = (blockIdx.x * blockDim.x + threadIdx.x);
+    sincosf(angle * i, &W[i].y, &W[i].x);
 }
 
-__global__ void twiddle_factors_fast_inverse(cpx *W)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    W[i].y = -W[i].y;
-}
-
-__global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n)
+__global__ void bit_reverse(cuFloatComplex *in, cuFloatComplex *out, const float scale, const int lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = bitReverse32(i, lead);
-    cpx tmp;
+    out[p].x = in[i].x * scale;
+    out[p].y = in[i].y * scale;
+}
+
+__global__ void bit_reverse(cuFloatComplex *x, const float dir, const int lead, const int n)
+{
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int p = bitReverse32(i, lead);
+    cuFloatComplex tmp;
     if (i < p) {
         tmp = x[i];
         x[i] = x[p];
@@ -114,20 +115,6 @@ __global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n
     if (dir > 0) {
         x[i].x = x[i].x / (float)n;
         x[i].y = x[i].y / (float)n;
-    }
-}
-
-__global__ void bit_reverse(cpx *in, cpx *out, const float dir, const int lead, const int n)
-{
-    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int p = bitReverse32(i, lead);
-    if (dir > 0) {
-        out[p].x = in[i].x / (float)n;
-        out[p].y = in[i].y / (float)n;
-    }
-    else {
-        out[p].x = in[i].x;
-        out[p].y = in[i].y;
     }
 }
 

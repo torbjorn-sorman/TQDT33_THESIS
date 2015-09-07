@@ -2,37 +2,46 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="fft_const_geom.cu">
-      <Filter>fft</Filter>
-    </CudaCompile>
     <CudaCompile Include="fft_helper.cu">
-      <Filter>fft</Filter>
+      <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="fft_test.cu">
-      <Filter>fft</Filter>
+      <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="fft_const_geo.cu">
-      <Filter>fft</Filter>
+    <CudaCompile Include="FFTRegular.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="FFTConstantGeom.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="FFTTobb.cu">
+      <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="fft">
+    <Filter Include="Source Files">
       <UniqueIdentifier>{08036838-7f23-4d7b-a036-32e68e32b1db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{201d2a83-e80e-4b17-b58e-9c85b2ae8e14}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fft_const_geom.cuh">
-      <Filter>fft</Filter>
-    </ClInclude>
-    <ClInclude Include="fft_helper.cuh">
-      <Filter>fft</Filter>
-    </ClInclude>
     <ClInclude Include="definitions.cuh" />
     <ClInclude Include="fft_test.cuh">
-      <Filter>fft</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fft_const_geo.cuh">
-      <Filter>fft</Filter>
+    <ClInclude Include="fft_helper.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFTConstantGeom.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFTRegular.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFTTobb.cuh">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,14 +7,14 @@
 
 #define ERROR_MARGIN 0.0001
 
-int checkError(cpx *seq, cpx *ref, const int n, int print)
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, float refScale, const int n, int print)
 {
     int j;
     double re, im, i_val, r_val;
     re = im = 0.0;
     for (j = 0; j < n; ++j) {
-        r_val = abs(seq[j].x - ref[j].x);
-        i_val = abs(seq[j].y - ref[j].y);
+        r_val = abs(refScale * seq[j].x - ref[j].x);
+        i_val = abs(refScale * seq[j].y - ref[j].y);
         re = re > r_val ? re : r_val;
         im = im > i_val ? im : i_val;
     }
@@ -22,16 +22,26 @@ int checkError(cpx *seq, cpx *ref, const int n, int print)
     return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
-cpx *get_seq(const int n)
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n, int print)
+{
+    return checkError(seq, ref, 1.f, n, print);
+}
+
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n)
+{
+    return checkError(seq, ref, n, 0);
+}
+
+cuFloatComplex *get_seq(const int n)
 {
     return get_seq(n, 0);
 }
 
-cpx *get_seq(const int n, const int sinus)
+cuFloatComplex *get_seq(const int n, const int sinus)
 {
     int i;
-    cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n);
+    cuFloatComplex *seq;
+    seq = (cuFloatComplex *)malloc(sizeof(cuFloatComplex) * n);
     for (i = 0; i < n; ++i) {
         seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
         seq[i].y = 0.f;
@@ -39,11 +49,11 @@ cpx *get_seq(const int n, const int sinus)
     return seq;
 }
 
-cpx *get_seq(const int n, cpx *src)
+cuFloatComplex *get_seq(const int n, cuFloatComplex *src)
 {
     int i;
-    cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n);
+    cuFloatComplex *seq;
+    seq = (cuFloatComplex *)malloc(sizeof(cuFloatComplex) * n);
     for (i = 0; i < n; ++i) {
         seq[i].x = src[i].x;
         seq[i].y = src[i].y;

@@ -1,15 +1,18 @@
-
-#include <Windows.h>
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "math.h"
-
 #include <stdio.h>
+#include <Windows.h>
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+#include <math.h>
+
+#include <cufft.h>
 
 #include "definitions.cuh"
 #include "fft_test.cuh"
-#include "fft_const_geo.cuh"
 #include "fft_helper.cuh"
+
+#include "FFTConstantGeom.cuh"
+#include "FFTRegular.cuh"
+#include "FFTTobb.cuh"
 
 #define NO_TESTS 32
 #define MAX_LENGTH 2097152 / 2
@@ -22,34 +25,74 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 #define START_TIME QPF(&Frequency); QPC(&StartingTime)
 #define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
-cudaError_t fftCuda(float direction, cpx *in, cpx *out, double measures[], int n);
+cudaError_t FFT_CUDA(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n);
+cudaError_t FFT_ConstantGeometry(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, cuFloatComplex *W, double measures[], int n);
+cudaError_t FFT_ConstantGeometry2(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n);
+cudaError_t FFT_Tobb(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n);
 
+unsigned int power(unsigned int base, int exp)
+{
+    if (exp == 0)
+        return 1;
+    unsigned int value = base;
+    for (int i = 0; i < exp; ++i) {
+        value *= base;
+    }
+    return value;
+}
 
+unsigned int power2(int exp)
+{
+    return power(2, exp);
+}
 
 int main()
 {
     int n;
     double measures[20];
-    cpx *in, *out, *ref;
+    cuFloatComplex *in, *out, *ref_in, *ref_out, *W;
     cudaError_t cudaStatus;
     
-    for (n = 4; n < 256; n *= 2) {        
+    printf("\tcuFFT\ttbFFT\ttbFFT\n");
+    for (n = power2(2); n < power2(19); n *= 2) {
         in = get_seq(n, 1);
-        ref = get_seq(n, in);
+        ref_in = get_seq(n, in);
         out = get_seq(n);
-        //printf("\nN: %d\n", n);
-        cudaStatus = fftCuda(-1.f, in, out, measures, n);
-        printf("%.0f\n", avg(measures, 20));
-        if (cudaStatus != cudaSuccess)
-            fprintf(stderr, "fftCuda Forward failed!\n");
-        cudaStatus = fftCuda(1.f, out, in, measures, n);
-        if (cudaStatus != cudaSuccess)
-            fprintf(stderr, "fftCuda Inverse failed!\n");
-        checkError(in, ref, n, 1);
+        ref_out = get_seq(n);
+        W = get_seq(n);
+        
+        // cuFFT
+        cudaStatus = FFT_CUDA(FFT_FORWARD, ref_in, ref_out, measures, n);
+        printf("%d:\t%.0f", n, avg(measures, 20));
+        cudaStatus = FFT_CUDA(FFT_INVERSE, ref_out, ref_in, measures, n);
+        
+        cudaStatus = FFT_ConstantGeometry2(FFT_FORWARD, in, out, measures, n);
+        printf("\t%.0f", avg(measures, 20));
+        cudaStatus = FFT_ConstantGeometry2(FFT_INVERSE, out, in, measures, n);        
+        if (checkError(in, ref_in, (float)n, n, 0) == 1) printf("!");
+
+        free(in);
+        in = get_seq(n, 1);
+        cudaStatus = FFT_ConstantGeometry(FFT_FORWARD, in, out, W, measures, n);
+        printf("\t%.0f", avg(measures, 20));
+        cudaStatus = FFT_ConstantGeometry(FFT_INVERSE, out, in, W, measures, n);
+        if (checkError(in, ref_in, (float)n, n, 0) == 1) printf("!");
+
+        free(in);
+        in = get_seq(n, 1);
+        cudaStatus = FFT_Tobb(FFT_FORWARD, in, out, measures, n);
+        printf("\t%.0f", avg(measures, 20));
+        cudaStatus = FFT_Tobb(FFT_INVERSE, out, in, measures, n);
+        if (checkError(in, ref_in, (float)n, n, 0) == 1) printf("!");
+                
+        printf("\n");
         free(in);
         free(out);
-        free(ref);
+        free(W);
+        free(ref_in);
+        free(ref_out);
     }
+    printf("\n");
 
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
@@ -64,48 +107,118 @@ int main()
     return 0;
 }
 
+cudaError_t FFT_CUDA(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n)
+{
+    cufftHandle plan;
+    cuFloatComplex *dev_in;
+    cuFloatComplex *dev_out;
+    cudaMalloc((void**)&dev_in, sizeof(cuFloatComplex) * n);
+    cudaMalloc((void**)&dev_out, sizeof(cuFloatComplex) * n);
+    cudaMemcpy(dev_in, in, n * sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
+    cufftPlan1d(&plan, n, CUFFT_C2C, 1);        
+
+    cufftExecC2C(plan, dev_in, dev_out, direction);
+    cudaDeviceSynchronize();    
+    
+    cudaMemcpy(out, dev_out, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);    
+    for (int i = 0; i < 20; ++i) {
+        START_TIME;
+        cufftExecC2C(plan, dev_in, dev_out, direction);
+        cudaDeviceSynchronize();
+        STOP_TIME(measures[i]);
+    }
+    cufftDestroy(plan);
+    cudaFree(dev_in);
+    cudaFree(dev_out);
+    return cudaDeviceSynchronize();
+}
+
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t fftCuda(float direction, cpx *in, cpx *out, double measures[], int n)
+cudaError_t FFT_ConstantGeometry(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, cuFloatComplex *W, double measures[], int n)
 {
     unsigned int bufferswitch;
-    cpx *dev_in = 0;
-    cpx *dev_out = 0;
-    cpx *dev_W = 0;
-    
+    cuFloatComplex *dev_in = 0;
+    cuFloatComplex *dev_out = 0;
+    cuFloatComplex *dev_W = 0;
+
     cudaError_t cudaStatus = cudaSetDevice(0);
 
-    cudaStatus = cudaMalloc((void**)&dev_in, n * sizeof(cpx));
-    cudaStatus = cudaMalloc((void**)&dev_out, n * sizeof(cpx));
-    cudaStatus = cudaMalloc((void**)&dev_W, (n / 2) * sizeof(cpx));
-    cudaStatus = cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    
-    fft_const_geo(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+    cudaStatus = cudaMalloc((void**)&dev_in, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMalloc((void**)&dev_out, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMalloc((void**)&dev_W, (n / 2) * sizeof(cuFloatComplex));
+    cudaStatus = cudaMemcpy(dev_in, in, n * sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
+
+    FFTConstGeom(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
     cudaDeviceSynchronize();
-
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "Last error: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(out, (bufferswitch == 1) ? dev_out : dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy dev_out -> out failed!");
-        goto Error;
-    }
+        
+    cudaStatus = cudaMemcpy(out, (bufferswitch == 1) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(in, (bufferswitch == 0) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(W, dev_W, (n / 2) * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < 20; ++i) {
         START_TIME;
-        fft_const_geo(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+        FFTConstGeom(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
         cudaDeviceSynchronize();
         STOP_TIME(measures[i]);
     }
 
-Error:
     cudaFree(dev_in);
     cudaFree(dev_out);
     cudaFree(dev_W);
 
+    return cudaDeviceSynchronize();
+}
+
+// Helper function for using CUDA to add vectors in parallel.
+cudaError_t FFT_ConstantGeometry2(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n)
+{
+    unsigned int bufferswitch;
+    cuFloatComplex *dev_in = 0;
+    cuFloatComplex *dev_out = 0;
+    cudaError_t cudaStatus = cudaSetDevice(0);
+    cudaStatus = cudaMalloc((void**)&dev_in, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMalloc((void**)&dev_out, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMemcpy(dev_in, in, n * sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
+    FFTConstGeom2(direction, dev_in, dev_out, &bufferswitch, n);
+    cudaDeviceSynchronize();
+    cudaStatus = cudaMemcpy(out, (bufferswitch == 1) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(in, (bufferswitch == 0) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    for (int i = 0; i < 20; ++i) {
+        START_TIME;
+        FFTConstGeom2(direction, dev_in, dev_out, &bufferswitch, n);
+        cudaDeviceSynchronize();
+        STOP_TIME(measures[i]);
+    }
+    cudaFree(dev_in);
+    cudaFree(dev_out);
+    return cudaDeviceSynchronize();
+}
+
+// Helper function for using CUDA to add vectors in parallel.
+cudaError_t FFT_Tobb(fftDirection direction, cuFloatComplex *in, cuFloatComplex *out, double measures[], int n)
+{
+    unsigned int bufferswitch;
+    cuFloatComplex *dev_in = 0;
+    cuFloatComplex *dev_out = 0;
+    cuFloatComplex *dev_W = 0;
+    cudaError_t cudaStatus = cudaSetDevice(0);
+    cudaStatus = cudaMalloc((void**)&dev_in, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMalloc((void**)&dev_out, n * sizeof(cuFloatComplex));
+    cudaStatus = cudaMalloc((void**)&dev_W, (n / 2) * sizeof(cuFloatComplex));
+    cudaStatus = cudaMemcpy(dev_in, in, n * sizeof(cuFloatComplex), cudaMemcpyHostToDevice);
+    FFTTobb(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+    cudaDeviceSynchronize();
+    cudaStatus = cudaMemcpy(out, (bufferswitch == 1) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(in, (bufferswitch == 0) ? dev_out : dev_in, n * sizeof(cuFloatComplex), cudaMemcpyDeviceToHost);
+    for (int i = 0; i < 20; ++i) {
+        START_TIME;
+        FFTTobb(direction, dev_in, dev_out, dev_W, &bufferswitch, n);
+        cudaDeviceSynchronize();
+        STOP_TIME(measures[i]);
+    }
+    cudaFree(dev_in);
+    cudaFree(dev_out);
+    cudaFree(dev_W);
     return cudaDeviceSynchronize();
 }
 

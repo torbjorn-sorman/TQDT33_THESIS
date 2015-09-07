@@ -7,7 +7,10 @@
 
 #define BIT_REVERSE(X,L) (((revTbl256[(X) & 0xff] << 24) | (revTbl256[((X) >> 8) & 0xff] << 16) | (revTbl256[((X) >> 16) & 0xff] << 8) | (revTbl256[((X) >> 24) & 0xff])) >> (L))
 
-static int tab32[32] = { 0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31 };
+static int tab32[32] = { 
+    0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31 
+};
+
 static const unsigned int revTbl256[] = {
     0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
     0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8, 0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
@@ -29,20 +32,20 @@ static const unsigned int revTbl256[] = {
 
 __host__ int log2_32(int value);
 
-void console_print(cpx *seq, const int n);
-int cpx_equal(cpx a, cpx b);
-int cpx_equal(cpx *a, cpx *b, const int n);
-int cpx_equal(cpx **a, cpx **b, const int n);
-double cpx_diff(cpx a, cpx b);
-double cpx_diff(cpx *a, cpx *b, const int n);
-double cpx_diff(cpx **a, cpx **b, const int n);
-double cpx_avg_diff(cpx *a, cpx *b, const int n);
-double cpx_avg_diff(cpx **a, cpx **b, const int n);
+void console_print(cuFloatComplex *seq, const int n);
+int cuFloatComplex_equal(cuFloatComplex a, cuFloatComplex b);
+int cuFloatComplex_equal(cuFloatComplex *a, cuFloatComplex *b, const int n);
+int cuFloatComplex_equal(cuFloatComplex **a, cuFloatComplex **b, const int n);
+double cuFloatComplex_diff(cuFloatComplex a, cuFloatComplex b);
+double cuFloatComplex_diff(cuFloatComplex *a, cuFloatComplex *b, const int n);
+double cuFloatComplex_diff(cuFloatComplex **a, cuFloatComplex **b, const int n);
+double cuFloatComplex_avg_diff(cuFloatComplex *a, cuFloatComplex *b, const int n);
+double cuFloatComplex_avg_diff(cuFloatComplex **a, cuFloatComplex **b, const int n);
 
-__global__ void twiddle_factors(cpx *W, const float dir, const int n);
-__global__ void twiddle_factors_fast_inverse(cpx *W);
-__global__ void bit_reverse(cpx *seq, const float dir, const int lead, const int n);
-__global__ void bit_reverse(cpx *in, cpx *out, const float dir, const int lead, const int n);
+__global__ void twiddle_factors(cuFloatComplex *W, const float angle, const int n);
+__global__ void bit_reverse(cuFloatComplex *in, cuFloatComplex *out, const float scale, const int lead);
+
+__global__ void bit_reverse(cuFloatComplex *seq, fftDirection dir, const int lead, const int n);
 
 __device__ unsigned int bitReverse32(unsigned int x, const int l);
 

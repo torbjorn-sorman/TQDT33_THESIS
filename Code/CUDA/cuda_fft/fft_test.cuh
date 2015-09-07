@@ -3,10 +3,13 @@
 
 #include "definitions.cuh"
 
-int checkError(cpx *seq, cpx *ref, const int n, int print);
-cpx *get_seq(const int n);
-cpx *get_seq(const int n, const int sinus);
-cpx *get_seq(const int n, cpx *src);
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, float refScale, const int n, int print);
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n, int print);
+int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n);
+
+cuFloatComplex *get_seq(const int n);
+cuFloatComplex *get_seq(const int n, const int sinus);
+cuFloatComplex *get_seq(const int n, cuFloatComplex *src);
 double avg(double m[], int n);
 
 #endif

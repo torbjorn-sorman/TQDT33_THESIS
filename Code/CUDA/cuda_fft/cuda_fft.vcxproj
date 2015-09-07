@@ -81,7 +81,8 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
@@ -89,7 +90,14 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <PtxAsOptionV>true</PtxAsOptionV>
+      <Include>
+      </Include>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
+    <CudaLink>
+      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cufft.lib</AdditionalDependencies>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -100,7 +108,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64"</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
@@ -108,7 +117,12 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64"</Include>
     </CudaCompile>
+    <CudaLink>
+      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cufft.lib</AdditionalDependencies>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -154,16 +168,18 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="fft_const_geo.cu" />
-    <CudaCompile Include="fft_const_geom.cu" />
+    <CudaCompile Include="FFTRegular.cu" />
+    <CudaCompile Include="FFTConstantGeom.cu" />
+    <CudaCompile Include="FFTTobb.cu" />
     <CudaCompile Include="fft_helper.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="fft_test.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="definitions.cuh" />
-    <ClInclude Include="fft_const_geo.cuh" />
-    <ClInclude Include="fft_const_geom.cuh" />
+    <ClInclude Include="FFTConstantGeom.cuh" />
+    <ClInclude Include="FFTRegular.cuh" />
+    <ClInclude Include="FFTTobb.cuh" />
     <ClInclude Include="fft_helper.cuh" />
     <ClInclude Include="fft_test.cuh" />
   </ItemGroup>

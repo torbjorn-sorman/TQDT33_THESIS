@@ -17,7 +17,6 @@
 #include "cgp_fft.h"
 
 #define NO_TESTS 32
-#define MAX_LENGTH 2097152 / 2
 
 LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 
@@ -27,11 +26,10 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 #define START_TIME QPF(&Frequency); QPC(&StartingTime)
 #define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
 
-void validate_fft(fft_func fn, const int n_threads)
+void validate_fft(fft_func fn, const int n_threads, const unsigned int max_elements)
 {
-    int n;
     cpx *in, *out, *ref;
-    for (n = 4; n <= MAX_LENGTH; n *= 2) {
+    for (unsigned int n = 4; n <= max_elements; n *= 2) {
         in = get_seq(n, 1);
         out = get_seq(n);
         ref = get_seq(n, in);
@@ -46,10 +44,9 @@ void validate_fft(fft_func fn, const int n_threads)
 
 double timing(fft_func fn, const int n_threads, const int n)
 {
-    int i;
     double measures[NO_TESTS];
     cpx *in, *out;
-    for (i = 0; i < NO_TESTS; ++i) {
+    for (int i = 0; i < NO_TESTS; ++i) {
         in = get_seq(n, 1);
         out = get_seq(n);
 
@@ -63,25 +60,76 @@ double timing(fft_func fn, const int n_threads, const int n)
     return avg(measures, NO_TESTS);
 }
 
-void time_fft(char *name, fft_func fn, const int n_threads)
+double timing(twiddle_func fn, const int n_threads, const int n)
+{
+    double measures[NO_TESTS];
+    cpx *W;
+    for (int i = 0; i < NO_TESTS; ++i) {
+        W = get_seq(n, 1);
+        START_TIME;
+        fn(W, FORWARD_FFT, n);
+        STOP_TIME(measures[i]);
+        free(W);
+    }
+    return avg(measures, NO_TESTS);
+}
+
+void mtime(char *name, fft_func fn, const int n_threads, int file, const unsigned int max_elements)
+{
+    double time;
+    if (file) {
+        char filename[64] = "";
+        FILE *f;
+        strcat_s(filename, "out/");
+        strcat_s(filename, name);
+        strcat_s(filename, ".txt");
+        fopen_s(&f, filename, "w");
+        printf("Length\tTime\n");
+        for (unsigned int n = 4; n <= max_elements; n *= 2) {
+            printf("%d\t%.1f\n", n, time = timing(fn, n_threads, n));
+            fprintf_s(f, "%0.f\n", time);
+        }
+        printf("Filename: %s\n", filename);
+        fclose(f);
+    }
+    else {
+        for (unsigned int n = 4; n <= max_elements; n *= 2) {
+            timing(fn, n_threads, n);
+        }
+    }
+}
+
+void mtime(char *name, twiddle_func fn, const int n_threads, int file, const unsigned int max_elements)
 {
     int n;
     double time;
-    FILE *f;
-    fopen_s(&f, name, "w");
-    printf("Length\tTime\n");
-    for (n = 4; n <= MAX_LENGTH; n *= 2) {
-        printf("%d\t%.1f\n", n, time = timing(fn, n_threads, n));
-        fprintf_s(f, "%0.f\n", time);
+    if (file) {
+        char filename[64] = "";
+        FILE *f;
+        strcat_s(filename, "out/");
+        strcat_s(filename, name);
+        strcat_s(filename, ".txt");
+        fopen_s(&f, name, "w");
+        printf("Length\tTime\n");
+        for (unsigned int n = 4; n <= max_elements; n *= 2) {
+            printf("%d\t%.1f\n", n, time = timing(fn, n_threads, n));
+            fprintf_s(f, "%0.f\n", time);
+        }
+        printf("Filename: %s\n", filename);
+        fclose(f);
     }
-    fclose(f);
+    else {
+        for (n = 4; n <= max_elements; n *= 2) {
+            timing(fn, n_threads, n);
+        }
+    }
 }
 
-void test_fft(char *name, fft_func fn, const int n_threads)
+void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned int max_elem)
 {
     printf("\n%s\n", name);
-    validate_fft(fn, n_threads);
-    time_fft(name, fn, n_threads);
+    validate_fft(fn, n_threads, max_elem);
+    mtime(name, fn, n_threads, file, max_elem);
 }
 /*
 

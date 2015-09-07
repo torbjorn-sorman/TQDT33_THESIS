@@ -3,7 +3,7 @@
 
 #include "tb_definitions.h"
 
-void fft_const_geom(const double dir, cpx **in, cpx **out, const int n_threads, const int n);
-void fft_const_geom_2(const double dir, cpx **in, cpx **out, const int n_threads, const int n);
+void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n);
+void fft_const_geom_2(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n);
 
 #endif

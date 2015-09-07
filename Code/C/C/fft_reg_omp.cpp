@@ -11,7 +11,7 @@
 void fft_body(cpx *in, cpx *out, cpx *W, const unsigned mask, int dist, int dist2, const int n_threads, const int n);
 void fft_inner_body_(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const unsigned int mask, const int dist, const int cnt);
 
-void fft_reg_omp(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
+void fft_reg_omp(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
     int dist, dist2;
     int lower, upper, start, end, count;
@@ -24,7 +24,7 @@ void fft_reg_omp(const double dir, cpx **in, cpx **out, const int n_threads, con
 
     dist = (n / 2);
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n_threads, n);
+    twiddle_factors(W, dir, n);
     steps = 0;
     mask = 0xffffffff << steps;
     dist2 = n;
@@ -71,7 +71,7 @@ void fft_reg_omp(const double dir, cpx **in, cpx **out, const int n_threads, con
             }
 #pragma omp barrier
             if (count > n_threads) {
-                printf("hej count > 4 !\n");
+                //printf("hej count > 4 !\n");
                 chunk = count / n_threads;
 #pragma omp for schedule(static, chunk) private(start, end)
                 for (start = 0; start < n; start += dist2) {
@@ -108,8 +108,7 @@ void fft_reg_omp(const double dir, cpx **in, cpx **out, const int n_threads, con
         }
 #pragma omp barrier
     }
-    printf("%f, %d, %d, %d\n", dir, lead, n_threads, n);
-    bit_reverse((*out), dir, lead, n_threads, n);
+    bit_reverse((*out), dir, lead, n);
     free(W);
 }
 

@@ -84,7 +84,6 @@
     <ClCompile Include="cgp_fft.cpp" />
     <ClCompile Include="fft_const_geom.cpp" />
     <ClCompile Include="fft_reg.cpp" />
-    <ClCompile Include="fft_regular.cpp" />
     <ClCompile Include="fft_reg_omp.cpp" />
     <ClCompile Include="fft_tobb.cpp" />
     <ClCompile Include="imglib.cpp" />
@@ -106,7 +105,6 @@
     <ClInclude Include="cgp_fft.h" />
     <ClInclude Include="fft_const_geom.h" />
     <ClInclude Include="fft_reg.h" />
-    <ClInclude Include="fft_regular.h" />
     <ClInclude Include="fft_reg_omp.h" />
     <ClInclude Include="fft_tobb.h" />
     <ClInclude Include="imglib.h" />

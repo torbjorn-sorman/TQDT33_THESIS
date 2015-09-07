@@ -83,7 +83,7 @@ void do_another_filter(cpx **seq, const int n_threads, int n)
     center = { n * 0.5f, n * 0.5f };
     radius = n * 0.15f;
 
-    fft_shift(seq, n_threads, n);
+    fft_shift(seq, n);
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
             if (within(radius, seq[y][x], center)) {
@@ -91,5 +91,5 @@ void do_another_filter(cpx **seq, const int n_threads, int n)
             }
         }
     }
-    fft_shift(seq, n_threads, n);
+    fft_shift(seq, n);
 }

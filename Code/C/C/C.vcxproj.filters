@@ -90,9 +90,6 @@
     <ClCompile Include="tb_print.cpp">
       <Filter>Source Files\tb\output</Filter>
     </ClCompile>
-    <ClCompile Include="fft_regular.cpp">
-      <Filter>Source Files\tb\fft</Filter>
-    </ClCompile>
     <ClCompile Include="fft_const_geom.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
@@ -157,9 +154,6 @@
     </ClInclude>
     <ClInclude Include="tb_print.h">
       <Filter>Header Files\tb\output</Filter>
-    </ClInclude>
-    <ClInclude Include="fft_regular.h">
-      <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
     <ClInclude Include="fft_const_geom.h">
       <Filter>Header Files\tb\fft</Filter>

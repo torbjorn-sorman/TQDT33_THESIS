@@ -8,82 +8,109 @@
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
-void fft_body(cpx *in, cpx *out, cpx *W, const unsigned mask, int dist, int dist2, const int n_threads, const int n);
-void fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const unsigned int mask, const int dist, const int cnt);
+__inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n);
+__inline void _fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int cnt);
+__inline void _fft_reg(fft_direction dir, cpx *seq, cpx *W, const int n_threads, const int n);
 
-void fft_reg(const double dir, cpx **in, cpx **out, const int n_threads, const int n)
+void fft_reg(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
-    int dist;
-    unsigned int steps, lim;
+    int dist, dist2;
     cpx *W;
-    lim = log2_32(n);
-    const int lead = 32 - lim;
+    dist2 = n;
     dist = (n / 2);
     W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n_threads, n);
-    steps = 0;  
-    fft_body(*in, *out, W, 0xffffffff << steps, dist, n >> steps, n_threads, n);
-    while (++steps < lim) {
+    twiddle_factors(W, dir, n);
+    _fft_body(*in, *out, W, dist, dist2, n_threads, n);
+    while ((dist2 = dist) > 1) {
         dist = dist >> 1;
-        fft_body(*out, *out, W, 0xffffffff << steps, dist, n >> steps, n_threads, n);
+        _fft_body(*out, *out, W, dist, dist2, n_threads, n);
     }
-    bit_reverse(*out, dir, lead, n_threads, n);
+    bit_reverse(*out, dir, 32 - log2_32(n), n);
     free(W);
 }
 
-void fft_body(cpx *in, cpx *out, cpx *W, const unsigned mask, int dist, int dist2, const int n_threads, const int n)
+_inline void _do_rows(fft_direction dir, cpx** seq, cpx *W, const int n_threads, const int n)
 {
-    int lower, upper, count;
-    count = n / dist2;
-#ifdef _OPENMP    
-    int l, u, p, chunk;
-    cpx tmp;
-    if (count > n_threads) {
-        chunk = count / n_threads;
-#pragma omp parallel for schedule(static, chunk) private(lower, upper) shared(in, out, W, mask, dist, dist2, n, count)                
-        for (lower = 0; lower < n; lower += dist2) {
-            upper = dist + lower;
-            fft_inner_body(in, out, W, lower, upper, mask, dist, count);
+#pragma omp parallel for schedule(static)
+    for (int row = 0; row < n; ++row) {
+        _fft_reg(dir, seq[row], W, n_threads, n);
+    }
+}
+
+void fft2d_reg(fft_direction dir, cpx** seq, const int n_threads, const int n)
+{
+    cpx *W = (cpx *)malloc(sizeof(cpx) * n);
+    twiddle_factors(W, dir, n);
+
+    _do_rows(dir, seq, W, n_threads, n);
+    transpose(seq, n);
+    _do_rows(dir, seq, W, n_threads, n);
+    transpose(seq, n);
+
+    free(W);
+}
+
+_inline void _fft_reg(fft_direction dir, cpx *seq, cpx *W, const int n_threads, const int n)
+{
+    int dist, dist2;
+    dist2 = n;
+    dist = (n / 2);
+    _fft_body(seq, seq, W, dist, dist2, n_threads, n);
+    while ((dist2 = dist) > 1) {
+        dist = dist >> 1;
+        _fft_body(seq, seq, W, dist, dist2, n_threads, n);
+    }
+    bit_reverse(seq, dir, 32 - log2_32(n), n);
+}
+
+__inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n)
+{
+    const int count = n / dist2;
+#ifdef _OPENMP        
+    if (count >= n_threads) {
+#pragma omp parallel for schedule(static)              
+        for (int lower = 0; lower < n; lower += dist2) {
+            _fft_inner_body(in, out, W, lower, dist + lower, dist, count);
         }
     }
     else
     {
-        chunk = dist / n_threads;
-        for (lower = 0; lower < n; lower += dist2) {
+        int u, p, upper;
+        float tmp_r, tmp_i;
+        for (int lower = 0; lower < n; lower += dist2) {
             upper = dist + lower;
-#pragma omp parallel for schedule(static, chunk) private(l, u, p, tmp) shared(in, out, W, mask, dist, lower, upper, chunk, count)
-            for (l = lower; l < upper; ++l) {
+#pragma omp parallel for schedule(static) private(u, p, tmp_r, tmp_i)
+            for (int l = lower; l < upper; ++l) {
                 u = l + dist;
-                p = ((l - lower) * count) & mask;
-                tmp.r = in[l].r - in[u].r;
-                tmp.i = in[l].i - in[u].i;
+                p = (l - lower) * count;
+                tmp_r = in[l].r - in[u].r;
+                tmp_i = in[l].i - in[u].i;
                 out[l].r = in[l].r + in[u].r;
                 out[l].i = in[l].i + in[u].i;
-                out[u].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
-                out[u].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
+                out[u].r = (W[p].r * tmp_r) - (W[p].i * tmp_i);
+                out[u].i = (W[p].i * tmp_r) + (W[p].r * tmp_i);
             }
         }
     }
 #else
-    for (lower = 0; lower < n; lower += dist2) {
-        upper = dist + lower;
-        fft_inner_body(in, out, W, lower, upper, mask, dist, count);
+    for (int lower = 0; lower < n; lower += dist2) {
+        fft_inner_body(in, out, W, lower, dist + lower, dist, count);
     }
 #endif
 }
 
-void fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const unsigned int mask, const int dist, const int mul)
+__inline void _fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int mul)
 {
-    int l, u, p;
-    cpx tmp;
-    for (l = lower; l < upper; ++l) {
+    int u, p;
+    float tmp_r, tmp_i;
+    for (int l = lower; l < upper; ++l) {
         u = l + dist;
-        p = ((l - lower) * mul) & mask;
-        tmp.r = in[l].r - in[u].r;
-        tmp.i = in[l].i - in[u].i;
+        p = (l - lower) * mul;
+        tmp_r = in[l].r - in[u].r;
+        tmp_i = in[l].i - in[u].i;
         out[l].r = in[l].r + in[u].r;
-        out[l].i = in[l].i + in[u].i;        
-        out[u].r = (W[p].r * tmp.r) - (W[p].i * tmp.i);
-        out[u].i = (W[p].i * tmp.r) + (W[p].r * tmp.i);
+        out[l].i = in[l].i + in[u].i;
+        out[u].r = (W[p].r * tmp_r) - (W[p].i * tmp_i);
+        out[u].i = (W[p].i * tmp_r) + (W[p].r * tmp_i);
     }
 }

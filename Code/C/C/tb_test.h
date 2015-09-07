@@ -5,11 +5,14 @@
 
 double simple(const unsigned int limit);
 
-void validate_fft(fft_func fn, const int n_threads);
+void validate_fft(fft_func fn, const int n_threads, const unsigned int max_elements);
+double timing(fft_func fn, const int n_threads, const int n);
+double timing(twiddle_func fn, const int n_threads, const int n);
 
-void time_fft(char *name, fft_func fn, const int n_threads);
+void mtime(char *name, fft_func fn, const int n_threads, int toFile, const unsigned int max_elements);
+void mtime(char *name, twiddle_func fn, const int n_threads, int toFile, const unsigned int max_elements);
 
-void test_fft(char *name, fft_func fn, const int n_threads);
+void test_fft(char *name, fft_func fn, const int n_threads, int toFile, const unsigned int max_elements);
 
 /*
 unsigned char test_equal_dft(fft_body_fn fn, fft_body_fn ref, const int inplace, const int n_threads);

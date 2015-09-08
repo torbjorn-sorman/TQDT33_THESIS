@@ -17,6 +17,9 @@
     <CudaCompile Include="FFTTobb.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="FFTConstGeom.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -41,6 +44,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FFTTobb.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFTConstGeom.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

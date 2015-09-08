@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <stdio.h>
+#include <cuda_runtime.h>
 
 #include "math.h"
 
@@ -7,7 +8,46 @@
 
 #define ERROR_MARGIN 0.0001
 
-int checkError(cuFloatComplex *seq, cuFloatComplex *ref, float refScale, const int n, int print)
+static LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
+
+void startTimer()
+{
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
+}
+
+double stopTimer()
+{
+    QueryPerformanceCounter(&EndingTime);
+    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; 
+    ElapsedMicroseconds.QuadPart *= 1000000; 
+    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart; 
+    return (double)ElapsedMicroseconds.QuadPart;
+}
+
+// Useful functions for debugging
+void console_print(cpx *seq, const int n)
+{
+    for (int i = 0; i < n; ++i) printf("%f\t%f\n", seq[i].x, seq[i].y);
+}
+
+unsigned int power(const unsigned int base, const unsigned int exp)
+{
+    if (exp == 0)
+        return 1;
+    unsigned int value = base;
+    for (int i = 1; i < exp; ++i) {
+        value *= base;
+    }
+    return value;
+}
+
+unsigned int power2(const unsigned int exp)
+{
+    return power(2, exp);
+}
+
+int checkError(cpx *seq, cpx *ref, float refScale, const int n, int print)
 {
     int j;
     double re, im, i_val, r_val;
@@ -22,26 +62,26 @@ int checkError(cuFloatComplex *seq, cuFloatComplex *ref, float refScale, const i
     return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
-int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n, int print)
+int checkError(cpx *seq, cpx *ref, const int n, int print)
 {
     return checkError(seq, ref, 1.f, n, print);
 }
 
-int checkError(cuFloatComplex *seq, cuFloatComplex *ref, const int n)
+int checkError(cpx *seq, cpx *ref, const int n)
 {
     return checkError(seq, ref, n, 0);
 }
 
-cuFloatComplex *get_seq(const int n)
+cpx *get_seq(const int n)
 {
     return get_seq(n, 0);
 }
 
-cuFloatComplex *get_seq(const int n, const int sinus)
+cpx *get_seq(const int n, const int sinus)
 {
     int i;
-    cuFloatComplex *seq;
-    seq = (cuFloatComplex *)malloc(sizeof(cuFloatComplex) * n);
+    cpx *seq;
+    seq = (cpx *)malloc(sizeof(cpx) * n);
     for (i = 0; i < n; ++i) {
         seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
         seq[i].y = 0.f;
@@ -49,11 +89,11 @@ cuFloatComplex *get_seq(const int n, const int sinus)
     return seq;
 }
 
-cuFloatComplex *get_seq(const int n, cuFloatComplex *src)
+cpx *get_seq(const int n, cpx *src)
 {
     int i;
-    cuFloatComplex *seq;
-    seq = (cuFloatComplex *)malloc(sizeof(cuFloatComplex) * n);
+    cpx *seq;
+    seq = (cpx *)malloc(sizeof(cpx) * n);
     for (i = 0; i < n; ++i) {
         seq[i].x = src[i].x;
         seq[i].y = src[i].y;
@@ -82,4 +122,37 @@ double avg(double m[], int n)
         ++cnt;
     }
     return (sum / (double)cnt);
+}
+
+void _cudaMalloc(size_t n, cpx **dev_in, cpx **dev_out, cpx **dev_W)
+{
+    *dev_in = 0;
+    cudaMalloc((void**)dev_in, n * sizeof(cpx));
+    *dev_out = 0;
+    cudaMalloc((void**)dev_out, n * sizeof(cpx));
+    if (dev_W != NULL) {
+        *dev_W = 0;
+        cudaMalloc((void**)dev_W, (n / 2) * sizeof(cpx));
+    }
+}
+
+void _cudaFree(cpx **dev_in, cpx **dev_out, cpx **dev_W)
+{
+    cudaFree(*dev_in);
+    cudaFree(*dev_out);
+    if (dev_W != NULL) cudaFree(*dev_W);
+}
+
+void _fftTestSeq(size_t n, cpx **in, cpx **ref, cpx **out)
+{
+    *in = get_seq(n, 1);
+    *ref = get_seq(n, *in);
+    *out = get_seq(n);
+}
+
+void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
+{
+    free(*in);
+    free(*ref);
+    free(*out);
 }

@@ -3,14 +3,15 @@
 #include <cuda_runtime.h>
 
 #include "math.h"
-#include "FFTConstantGeom.cuh"
+#include "FFTConstGeom.cuh"
 #include "fft_helper.cuh"
 #include "fft_test.cuh"
 
-__global__ void _FFTConstantGeomBody(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2);
+__global__ void _FFTBody(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2);
+__global__ void _FFTBody(cpx *in, cpx *out, const float w_angle, unsigned int mask, const int n2);
 __host__ __inline void _setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size);
 
-__host__ int FFTConstantGeom_Validate(const size_t n)
+__host__ int FFTConstGeom_Validate(const size_t n)
 {
     int result;
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
@@ -19,8 +20,8 @@ __host__ int FFTConstantGeom_Validate(const size_t n)
     _cudaMalloc(n, &dev_in, &dev_out, &dev_W);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
 
-    FFTConstantGeom(FFT_FORWARD, &dev_in, &dev_out, dev_W, n);
-    FFTConstantGeom(FFT_INVERSE, &dev_out, &dev_in, dev_W, n);
+    FFTConstGeom(FFT_FORWARD, &dev_in, &dev_out, dev_W, n);
+    FFTConstGeom(FFT_INVERSE, &dev_out, &dev_in, dev_W, n);
     
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);    
     _cudaFree(&dev_in, &dev_out, &dev_W);
@@ -31,7 +32,7 @@ __host__ int FFTConstantGeom_Validate(const size_t n)
     return result != 1;
 }
 
-__host__ double FFTConstantGeom_Performance(const size_t n)
+__host__ double FFTConstGeom_Performance(const size_t n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
@@ -42,7 +43,7 @@ __host__ double FFTConstantGeom_Performance(const size_t n)
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        FFTConstantGeom(FFT_FORWARD, &dev_in, &dev_out, dev_W, n);
+        FFTConstGeom(FFT_FORWARD, &dev_in, &dev_out, dev_W, n);
         measures[i] = stopTimer();
     }
 
@@ -52,25 +53,28 @@ __host__ double FFTConstantGeom_Performance(const size_t n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void FFTConstantGeom(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
+__host__ void FFTConstGeom(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
 {
     int steps, depth, threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);
     const float scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
     const int n2 = (n / 2);
+    cpx *W;
 
     depth = log2_32(n);
+
+    _FFTBody<<<numBlocks, threadsPerBlock, 
 
     _setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors << < numBlocks, threadsPerBlock >> >(dev_W, w_angle, n);
     cudaDeviceSynchronize();
     
     steps = 0;
-    _FFTConstantGeomBody << < numBlocks, threadsPerBlock >> >(*dev_in, *dev_out, dev_W, 0xffffffff << steps, n2);
+    _FFTBody << < numBlocks, threadsPerBlock >> >(*dev_in, *dev_out, dev_W, 0xffffffff << steps, n2);
     cudaDeviceSynchronize();
     while (++steps < depth) {
         swap(dev_in, dev_out);        
-        _FFTConstantGeomBody << < numBlocks, threadsPerBlock >> >(*dev_in, *dev_out, dev_W, 0xffffffff << steps, n2);
+        _FFTBody << < numBlocks, threadsPerBlock >> >(*dev_in, *dev_out, dev_W, 0xffffffff << steps, n2);
         cudaDeviceSynchronize();
     }
 
@@ -80,7 +84,15 @@ __host__ void FFTConstantGeom(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx
     cudaDeviceSynchronize();
 }
 
-__global__ void _FFTConstantGeomBody(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2)
+__global__ void _Body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2)
+{
+    extern __shared__ cpx input[];
+    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+
+    //__syncthreads()
+}
+
+__global__ void _FFTBody(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2)
 {
     //__shared__ cpx input[256];
     int l = (blockIdx.x * blockDim.x + threadIdx.x);

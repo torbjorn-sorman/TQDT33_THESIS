@@ -4,7 +4,9 @@
 #include "cuda_runtime.h"
 #include "definitions.cuh"
 
-__host__ void FFTConstGeom(fftDirection dir, cuFloatComplex *dev_in, cuFloatComplex *dev_out, cuFloatComplex *dev_W, unsigned int *buf, const int n);
-__host__ void FFTConstGeom2(fftDirection dir, cuFloatComplex *dev_in, cuFloatComplex *dev_out, unsigned int *buf, const int n);
+__host__ void FFTConstantGeom(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n);
+
+__host__ int FFTConstantGeom_Validate(const size_t n);
+__host__ double FFTConstantGeom_Performance(const size_t n);
 
 #endif

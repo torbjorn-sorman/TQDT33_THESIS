@@ -4,20 +4,14 @@
 #include "fft_helper.cuh"
 #include "math.h"
 
-void console_print(cuFloatComplex *seq, const int n)
-{
-    int i;
-    for (i = 0; i < n; ++i)
-        printf("%f\t%f\n", seq[i].x, seq[i].y);
-}
-
 int log2_32(int value)
 {
     value |= value >> 1; value |= value >> 2; value |= value >> 4; value |= value >> 8; value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-__host__ cudaTextureObject_t specifyTexture(cuFloatComplex *dev_W)
+/* Doubtful this works... */
+__host__ cudaTextureObject_t specifyTexture(cpx *dev_W)
 {
     // Specify texture
     struct cudaResourceDesc resDesc;
@@ -42,13 +36,20 @@ __host__ cudaTextureObject_t specifyTexture(cuFloatComplex *dev_W)
     return texObj;
 }
 
-__global__ void twiddle_factors(cuFloatComplex *W, const float angle, const int n)
+__host__ void swap(cpx **in, cpx **out)
+{
+    cpx *tmp = *in;
+    *in = *out;
+    *out = tmp;
+}
+
+__global__ void twiddle_factors(cpx *W, const float angle, const int n)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     sincosf(angle * i, &W[i].y, &W[i].x);
 }
 
-__global__ void bit_reverse(cuFloatComplex *in, cuFloatComplex *out, const float scale, const int lead)
+__global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = bitReverse32(i, lead);
@@ -56,11 +57,11 @@ __global__ void bit_reverse(cuFloatComplex *in, cuFloatComplex *out, const float
     out[p].y = in[i].y * scale;
 }
 
-__global__ void bit_reverse(cuFloatComplex *x, const float dir, const int lead, const int n)
+__global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = bitReverse32(i, lead);
-    cuFloatComplex tmp;
+    cpx tmp;
     if (i < p) {
         tmp = x[i];
         x[i] = x[p];

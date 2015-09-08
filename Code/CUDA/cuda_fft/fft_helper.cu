@@ -4,12 +4,6 @@
 #include "fft_helper.cuh"
 #include "math.h"
 
-int log2_32(int value)
-{
-    value |= value >> 1; value |= value >> 2; value |= value >> 4; value |= value >> 8; value |= value >> 16;
-    return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
-}
-
 void console_print(cuFloatComplex *seq, const int n)
 {
     int i;
@@ -17,75 +11,35 @@ void console_print(cuFloatComplex *seq, const int n)
         printf("%f\t%f\n", seq[i].x, seq[i].y);
 }
 
-int cuFloatComplex_equal(cuFloatComplex *c1, cuFloatComplex *c2, const int n)
+int log2_32(int value)
 {
-    int i;
-    for (i = 0; i < n; ++i) {
-        if (c1[i].x != c2[i].x || c1[i].y != c2[i].y)
-            return 0;
-    }
-    return 1;
+    value |= value >> 1; value |= value >> 2; value |= value >> 4; value |= value >> 8; value |= value >> 16;
+    return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-int cuFloatComplex_equal(cuFloatComplex **c1, cuFloatComplex **c2, const int n)
+__host__ cudaTextureObject_t specifyTexture(cuFloatComplex *dev_W)
 {
-    int i;
-    for (i = 0; i < n; ++i) {
-        if (cuFloatComplex_equal(c1[i], c2[i], n) == 0)
-            return 0;
-    }
-    return 1;
-}
+    // Specify texture
+    struct cudaResourceDesc resDesc;
+    cudaMemset(&resDesc, 0, sizeof(resDesc));
+    resDesc.resType = cudaResourceTypeArray;
+    resDesc.res.linear.devPtr = dev_W;
+    //resDesc.res.array.array = cuArray; 
 
-double cuFloatComplex_diff(cuFloatComplex a, cuFloatComplex b)
-{
-    double re, im;
-    re = abs((double)a.x - (double)b.x);
-    im = abs((double)a.y - (double)b.y);
-    return fmaxf(re, im);
-}
+    // Specify texture object parameters 
+    struct cudaTextureDesc texDesc;
+    cudaMemset(&texDesc, 0, sizeof(texDesc));
+    texDesc.addressMode[0] = cudaAddressModeWrap;
+    texDesc.addressMode[1] = cudaAddressModeWrap;
+    texDesc.filterMode = cudaFilterModeLinear;
+    texDesc.readMode = cudaReadModeElementType;
+    texDesc.normalizedCoords = 1;
 
-double cuFloatComplex_diff(cuFloatComplex *a, cuFloatComplex *b, const int n)
-{
-    int i;
-    double m_diff;
-    m_diff = -1;
-    for (i = 0; i < n; ++i)
-        m_diff = fmaxf(m_diff, cuFloatComplex_diff(a[i], b[i]));
-    return m_diff;
-}
+    // Create texture object 
+    cudaTextureObject_t texObj = 0;
+    cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL);
 
-double cuFloatComplex_diff(cuFloatComplex **a, cuFloatComplex **b, const int n)
-{
-    int i;
-    double m_diff;
-    m_diff = -1;
-    for (i = 0; i < n; ++i)
-        m_diff = fmaxf(m_diff, cuFloatComplex_diff(a[i], b[i], n));
-    return m_diff;
-}
-
-double cuFloatComplex_avg_diff(cuFloatComplex *a, cuFloatComplex *b, const int n)
-{
-    int i;
-    double sum;
-    sum = 0.0;
-    for (i = 0; i < n; ++i)
-        sum += cuFloatComplex_diff(a[i], b[i]);
-    return sum / n;
-}
-
-double cuFloatComplex_avg_diff(cuFloatComplex **a, cuFloatComplex **b, const int n)
-{
-    int i, j;
-    double sum;
-    sum = 0.0;
-    for (i = 0; i < n; ++i) {
-        for (j = 0; j < n; ++j) {
-            sum += cuFloatComplex_diff(a[i][j], b[i][j]);
-        }
-    }
-    return sum / (n * n);
+    return texObj;
 }
 
 __global__ void twiddle_factors(cuFloatComplex *W, const float angle, const int n)

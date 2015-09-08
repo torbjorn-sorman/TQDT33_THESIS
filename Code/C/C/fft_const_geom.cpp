@@ -1,22 +1,15 @@
+#include <omp.h> 
 #include "fft_const_geom.h"
-
-#include "amp_math.h"
 
 #include "tb_math.h"
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
 
-__inline void _fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n);
-__inline void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n);
-__inline void _fft_const_geom(fft_direction dir, cpx **seq, cpx **buf, cpx *W, const int n);
-
-__inline void swap(cpx **in, cpx **out)
-{
-    cpx *tmp = *in;
-    *in = *out;
-    *out = tmp;
-}
+__inline void _fft_body(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n);
+__inline void _fft_body(cpx *in, cpx *out, const float w_angle, const unsigned int mask, const int n);
+__inline void _fft_const_geom(fft_direction dir, cpx **seq, cpx **buf, const cpx *W, const int n);
+__inline void swap(cpx **in, cpx **out);
 
 void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
@@ -28,7 +21,7 @@ void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads,
 
     steps = 0;
     _fft_body(*in, *out, W, 0xffffffff << steps, n);
-    while (++steps < depth) {    
+    while (++steps < depth) {
         swap(in, out);
         _fft_body(*in, *out, W, 0xffffffff << steps, n);
     }
@@ -37,34 +30,43 @@ void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads,
     free(W);
 }
 
-_inline void _do_rows(fft_direction dir, cpx** seq, cpx *W, const int n)
+_inline void _do_rows(fft_direction dir, cpx** seq, const cpx *W, cpx **buffers, const int n_threads, const int n)
 {
-    
-#pragma omp parallel for schedule(static)
-    for (int row = 0; row < n; ++row) {
-        //_fft_const_geom(dir, seq[row], seq[row], W, n);
+#pragma omp parallel
+    {
+        int tid = 0;
+#pragma omp for schedule(static) private(tid)
+        for (int row = 0; row < n; ++row) {
+            _fft_const_geom(dir, &seq[row], &buffers[tid = omp_get_thread_num()], W, n);
+            swap(&seq[row], &buffers[tid]);
+        }
     }
 }
 
-void fft2d_const_geom(fft_direction dir, cpx** seq, const int n)
+void fft2d_const_geom(fft_direction dir, cpx** seq, const int n_threads, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-
-    // TODO: create a buffer for each thread to use
-
-    _do_rows(dir, seq, W, n);
+    cpx** buffers = (cpx **)malloc(sizeof(cpx *) * n_threads);
+#pragma omp for schedule(static)
+    for (int i = 0; i < n_threads; ++i) {
+        buffers[i] = (cpx *)malloc(sizeof(cpx) * n);
+    }
+    _do_rows(dir, seq, W, buffers, n_threads, n);
     transpose(seq, n);
-    _do_rows(dir, seq, W, n);
+    _do_rows(dir, seq, W, buffers, n_threads, n);
     transpose(seq, n);
-
+#pragma omp for schedule(static)
+    for (int i = 0; i < n_threads; ++i) {
+        free(buffers[i]);
+    }
+    free(buffers);
     free(W);
 }
 
-void _fft_const_geom(fft_direction dir, cpx **in, cpx **out, cpx *W, const int n)
+_inline void _fft_const_geom(fft_direction dir, cpx **in, cpx **out, const cpx *W, const int n)
 {
     int steps, depth;
-    cpx *W;
     depth = log2_32(n);
     steps = 0;
     _fft_body(*in, *out, W, 0xffffffff << steps, n);
@@ -75,7 +77,7 @@ void _fft_const_geom(fft_direction dir, cpx **in, cpx **out, cpx *W, const int n
     bit_reverse(*out, dir, 32 - depth, n);
 }
 
-void _fft_body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n)
+_inline void _fft_body(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
 {
     int l, u, p, n2;
     float tmp_r, tmp_i;
@@ -118,7 +120,7 @@ void fft_const_geom_2(fft_direction dir, cpx **in, cpx **out, const int n_thread
 }
 
 #pragma warning(disable:4700) 
-void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
+_inline void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
 {
     int l, u, p, n2, old;
     float cv, sv, ang;
@@ -145,4 +147,11 @@ void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
         out[i + 1].i = (sv * tmp.r) + (cv * tmp.i);
     }
 #pragma warning(default:4700)
+}
+
+__inline void swap(cpx **in, cpx **out)
+{
+    cpx *tmp = *in;
+    *in = *out;
+    *out = tmp;
 }

@@ -13,6 +13,12 @@ void mtime(char *name, fft_func fn, const int n_threads, int toFile, const unsig
 void mtime(char *name, twiddle_func fn, const int n_threads, int toFile, const unsigned int max_elements);
 
 void test_fft(char *name, fft_func fn, const int n_threads, int toFile, const unsigned int max_elements);
+void test_fft2d(char *name, fft2d_func fn, const int n_threads, int file, const unsigned int max_elem);
+
+void test_fftw(unsigned int max_elem);
+void test_fftw2d(unsigned int max_elem);
+
+int test_image(fft2d_func fft2d, char *filename, const int n_threads, const int n);
 
 /*
 unsigned char test_equal_dft(fft_body_fn fn, fft_body_fn ref, const int inplace, const int n_threads);

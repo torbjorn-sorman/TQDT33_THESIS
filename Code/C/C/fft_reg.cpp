@@ -94,7 +94,7 @@ __inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const in
     }
 #else
     for (int lower = 0; lower < n; lower += dist2) {
-        fft_inner_body(in, out, W, lower, dist + lower, dist, count);
+        _fft_inner_body(in, out, W, lower, dist + lower, dist, count);
     }
 #endif
 }

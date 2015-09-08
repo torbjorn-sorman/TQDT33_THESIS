@@ -12,7 +12,6 @@
 #include "test_seq.h"
 
 #include "fft_reg.h"
-#include "fft_reg_omp.h"
 #include "fft_const_geom.h"
 #include "fft_tobb.h"
 
@@ -81,13 +80,19 @@ int main()
 
     //genBitmask("bitmask");
 
-    //test_omp();
-    //printf("time: %f\n", timing(twiddle_factors, 1, 8192));
-    test_fft("Reg FFT", fft_reg, n_threads, 1, n);
-    test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
-    test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
-    //test_fft("Const Geom FFT", fft_const_geom, n_threads);
+    //test_image(fft2d_tobb, "crevisio", n_threads, 4096);
+
+    //test_fft2d("FFT Constant Geometry 2D", fft2d_const_geom, n_threads, 1, 4096);
+    //test_fft2d("FFT Regular 2D", fft2d_reg, n_threads, 1, 4096);
+    //test_fft2d("FFT Tobb 2D", fft2d_tobb, n_threads, 1, 4096);
+
+    //test_fftw(power2(19));
+    //test_fftw2d(power2(11));
     
+    test_fft("Reg FFT", fft_reg, n_threads, 1, n);
+    //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
+    //test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
+      
     //printf("\n... done!\n");
     getchar();
     return 0;

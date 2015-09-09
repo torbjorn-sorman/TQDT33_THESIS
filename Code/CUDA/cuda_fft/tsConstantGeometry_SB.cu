@@ -58,13 +58,6 @@ __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_ou
     sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
     _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
 #endif
-    /* 
-        Max shared memory/cache available is 65536 (64KB), default shared Mem preference is 49152 (48KB) with 16KB as cache.
-        If whole sequence is to fit in the shared memory:
-        2 * n + n2 (not in place)
-        n + n2 (in place)
-        n (no twiddle)
-    */
     cudaDeviceSynchronize();
 }
 
@@ -108,7 +101,7 @@ __global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scal
 
 __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
 {
-    extern __shared__ cpx mem[]; // sizeof(cpx) * (n + n + n/n)  
+    extern __shared__ cpx mem[]; 
     cpx w, in_lower, in_upper;
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     int in_low = n2 + tid;

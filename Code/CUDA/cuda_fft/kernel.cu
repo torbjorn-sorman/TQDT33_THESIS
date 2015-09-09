@@ -12,6 +12,7 @@
 #include "tsConstantGeometry_SB.cuh"
 #include "tsRegular.cuh"
 #include "tsTobb.cuh"
+#include "tsTobb_SB.cuh"
 
 __host__ double cuFFT_Performance(const int n);
 
@@ -47,7 +48,7 @@ int main()
     printDevProp(prop);
 
     printf("\tcuFFT\ttbFFT\ttbFFT\n");
-    for (unsigned int n = power2(2); n < power2(16); n *= 2) {        
+    for (unsigned int n = power2(2); n < power2(12); n *= 2) {        
         printf("\n%d:", n);
 
         // cuFFT
@@ -55,7 +56,7 @@ int main()
 
         // Regular (not working, used as ref)
         printf("\t%.0f", tsRegular_Performance(n));
-        if (tsRegular_Validate(n) == 0) printf("!");        
+        if (tsRegular_Validate(n) == 0) printf("!");
 
         // Regular
         printf("\t%.0f", tsTobb_Performance(n));
@@ -63,6 +64,14 @@ int main()
 
         // Const geom
         printf("\t%.0f", tsConstantGeometry_Performance(n));
+        if (tsConstantGeometry_Validate(n) == 0) printf("!");
+
+        // Regular
+        printf("\t%.0f", tsTobb_SB_Performance(n));
+        if (tsTobb_Validate(n) == 0) printf("!");
+
+        // Const geom
+        printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
         if (tsConstantGeometry_Validate(n) == 0) printf("!");
     }
     printf("\nDone...");
@@ -73,10 +82,9 @@ int main()
 __host__ double cuFFT_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
-    cpx *dev_in = 0;
-    cpx *dev_out = 0;
-    cudaMalloc((void**)&dev_in, sizeof(cpx) * n);
-    cudaMalloc((void**)&dev_out, sizeof(cpx) * n);
+    cpx *dev_in,*dev_out;
+    fftMalloc(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
+
     cufftHandle plan;
     cufftPlan1d(&plan, n, CUFFT_C2C, 1);
     for (int i = 0; i < 20; ++i) {
@@ -86,18 +94,15 @@ __host__ double cuFFT_Performance(const int n)
         measures[i] = stopTimer();
     }
     cufftDestroy(plan);
-    cudaFree(dev_in);
-    cudaFree(dev_out);
+    fftResultAndFree(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     return avg(measures, NUM_PERFORMANCE);
 }
 
 __host__ double cuFFT_2D_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
-    cpx *dev_in = 0;
-    cpx *dev_out = 0;
-    cudaMalloc((void**)&dev_in, sizeof(cpx) * n * n);
-    cudaMalloc((void**)&dev_out, sizeof(cpx) * n * n);
+    cpx *dev_in, *dev_out;
+    fftMalloc(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     cufftHandle plan;
     cufftPlan2d(&plan, n, n, CUFFT_C2C);
     for (int i = 0; i < 20; ++i) {
@@ -107,7 +112,6 @@ __host__ double cuFFT_2D_Performance(const int n)
         measures[i] = stopTimer();
     }
     cufftDestroy(plan);
-    cudaFree(dev_in);
-    cudaFree(dev_out);
+    fftResultAndFree(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     return avg(measures, NUM_PERFORMANCE);
 }

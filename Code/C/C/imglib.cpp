@@ -36,6 +36,7 @@ image get_ppm(FILE *pf)
         }
         return img;
     }
+    return NULL;
 }
 
 void output_ppm(FILE *fd, image img)

@@ -145,6 +145,8 @@ void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
 void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
 {
     _cudaMalloc(n, dev_in, dev_out, dev_W);
+    if (in == NULL && ref == NULL && out == NULL)
+        return;
     _fftTestSeq(n, in, ref, out);
 }
 
@@ -167,6 +169,8 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
     int result;
     _cudaFree(dev_in, dev_out, dev_W);
     cudaDeviceSynchronize();
+    if (in == NULL && ref == NULL && out == NULL)
+        return;
     result = checkError(*in, *ref, n);
     _fftFreeSeq(in, out, ref);
     return result;

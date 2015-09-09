@@ -103,7 +103,7 @@ __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float an
     int lower;
     cpx w, in_lower, in_upper;
 
-    /* Move (bit-reversed?) Global to Shared */
+    /* Move Global to Shared */
     globalToShared(n, tid, 32 - depth, mem, in);
 
     // Sync, as long as one block, not needed(?)
@@ -123,6 +123,6 @@ __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float an
         SYNC_THREADS;
     }
 
-    /* Move (bit-reversed?) Shared to Global */
+    /* Move Shared to Global */
     sharedToGlobal(n, tid, scale, 32 - depth, mem, out);
 }

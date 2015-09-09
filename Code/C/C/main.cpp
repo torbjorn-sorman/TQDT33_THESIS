@@ -89,7 +89,20 @@ int main()
     //test_fftw(power2(19));
     //test_fftw2d(power2(11));
     
-    test_fft("Reg FFT", fft_reg, n_threads, 1, n);
+    
+    printf("\tNo \tYes\tLow\n");
+    int n1, n2, n3, lim;
+    lim = 65536;//49152;
+    for (int i = 4; i < power2(15); i *= 2) {
+        n1 = sizeof(cpx) * (2 * i + i / 2);
+        n2 = sizeof(cpx) * (i + i / 2);
+        n3 = sizeof(cpx) * i;
+        if (n1 <= lim) printf("%d:\t%d\t%d\t%d\n", i, n1, n2, n3);
+        else if (n2 <= lim) printf("%d:\t\t%d\t%d\n", i, n2, n3);
+        else if (n3 <= lim) printf("%d:\t\t\t%d\n", i, n3);
+    }
+
+    //test_fft("Reg FFT", fft_reg, n_threads, 1, n);
     //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
     //test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
       

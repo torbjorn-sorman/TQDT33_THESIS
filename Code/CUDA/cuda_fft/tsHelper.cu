@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <device_launch_parameters.h>
 
-#include "fft_helper.cuh"
+#include "tsHelper.cuh"
 #include "math.h"
 
 int log2_32(int value)
@@ -43,16 +43,31 @@ __host__ void swap(cpx **in, cpx **out)
     *out = tmp;
 }
 
+__host__ void _setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size)
+{
+    if (size > MAX_BLOCK_SIZE) {
+        *numBlocks = size / MAX_BLOCK_SIZE;
+        *threadsPerBlock = MAX_BLOCK_SIZE;
+    }
+    else {
+        *numBlocks = 1;
+        *threadsPerBlock = size;
+    }
+}
+
 __global__ void twiddle_factors(cpx *W, const float angle, const int n)
 {
-    int i = (blockIdx.x * blockDim.x + threadIdx.x);
-    sincosf(angle * i, &W[i].y, &W[i].x);
+    int i = (blockIdx.x * blockDim.x + threadIdx.x);    
+    SIN_COS_F(angle * i, &W[i].y, &W[i].x);
 }
 
 __global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int p = bitReverse32(i, lead);
+    //unsigned int p = bitReverse32(i, lead);
+    //unsigned int p = __brev(i) >> lead;
+    unsigned int p = BIT_REVERSE(i, lead);
+
     out[p].x = in[i].x * scale;
     out[p].y = in[i].y * scale;
 }
@@ -60,7 +75,9 @@ __global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead
 __global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int p = bitReverse32(i, lead);
+    //unsigned int p = bitReverse32(i, lead);
+    //unsigned int p = __brev(i) >> lead;
+    unsigned int p = BIT_REVERSE(i, lead);
     cpx tmp;
     if (i < p) {
         tmp = x[i];

@@ -1,10 +1,9 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <cuda_runtime.h>
-
 #include "math.h"
 
-#include "fft_test.cuh"
+#include "tsTest.cuh"
 
 #define ERROR_MARGIN 0.0001
 
@@ -124,16 +123,29 @@ double avg(double m[], int n)
     return (sum / (double)cnt);
 }
 
-void _cudaMalloc(size_t n, cpx **dev_in, cpx **dev_out, cpx **dev_W)
+void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W)
 {
     *dev_in = 0;
-    cudaMalloc((void**)dev_in, n * sizeof(cpx));
     *dev_out = 0;
+    cudaMalloc((void**)dev_in, n * sizeof(cpx));
     cudaMalloc((void**)dev_out, n * sizeof(cpx));
     if (dev_W != NULL) {
         *dev_W = 0;
         cudaMalloc((void**)dev_W, (n / 2) * sizeof(cpx));
     }
+}
+
+void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
+{
+    *in = get_seq(n, 1);
+    *ref = get_seq(n, *in);
+    *out = get_seq(n);
+}
+
+void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
+{
+    _cudaMalloc(n, dev_in, dev_out, dev_W);
+    _fftTestSeq(n, in, ref, out);
 }
 
 void _cudaFree(cpx **dev_in, cpx **dev_out, cpx **dev_W)
@@ -143,16 +155,19 @@ void _cudaFree(cpx **dev_in, cpx **dev_out, cpx **dev_W)
     if (dev_W != NULL) cudaFree(*dev_W);
 }
 
-void _fftTestSeq(size_t n, cpx **in, cpx **ref, cpx **out)
-{
-    *in = get_seq(n, 1);
-    *ref = get_seq(n, *in);
-    *out = get_seq(n);
-}
-
 void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
 {
     free(*in);
     free(*ref);
     free(*out);
+}
+
+int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
+{
+    int result;
+    _cudaFree(dev_in, dev_out, dev_W);
+    cudaDeviceSynchronize();
+    result = checkError(*in, *ref, n);
+    _fftFreeSeq(in, out, ref);
+    return result;
 }

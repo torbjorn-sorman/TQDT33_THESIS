@@ -5,18 +5,47 @@
 
 #include <cufft.h>
 
-#include "definitions.cuh"
-#include "fft_test.cuh"
-#include "fft_helper.cuh"
+#include "tsDefinitions.cuh"
+#include "tsTest.cuh"
 
-#include "FFTConstGeom.cuh"
-#include "FFTRegular.cuh"
-#include "FFTTobb.cuh"
+#include "tsConstantGeometry.cuh"
+#include "tsConstantGeometry_SB.cuh"
+#include "tsRegular.cuh"
+#include "tsTobb.cuh"
 
 __host__ double cuFFT_Performance(const size_t n);
 
+// Print device properties
+void printDevProp(cudaDeviceProp devProp)
+{
+    printf("Major revision number:         %d\n", devProp.major);
+    printf("Minor revision number:         %d\n", devProp.minor);
+    printf("Name:                          %s\n", devProp.name);
+    printf("Total global memory:           %u\n", devProp.totalGlobalMem);
+    printf("Total shared memory per block: %u\n", devProp.sharedMemPerBlock);
+    printf("Total registers per block:     %d\n", devProp.regsPerBlock);
+    printf("Warp size:                     %d\n", devProp.warpSize);
+    printf("Maximum memory pitch:          %u\n", devProp.memPitch);
+    printf("Maximum threads per block:     %d\n", devProp.maxThreadsPerBlock);
+    for (int i = 0; i < 3; ++i)
+        printf("Maximum dimension %d of block:  %d\n", i, devProp.maxThreadsDim[i]);
+    for (int i = 0; i < 3; ++i)
+        printf("Maximum dimension %d of grid:   %d\n", i, devProp.maxGridSize[i]);
+    printf("Clock rate:                    %d\n", devProp.clockRate);
+    printf("Total constant memory:         %u\n", devProp.totalConstMem);
+    printf("Texture alignment:             %u\n", devProp.textureAlignment);
+    printf("Concurrent copy and execution: %s\n", (devProp.deviceOverlap ? "Yes" : "No"));
+    printf("Number of multiprocessors:     %d\n", devProp.multiProcessorCount);
+    printf("Kernel execution timeout:      %s\n", (devProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
+    return;
+}
+
 int main()
 {    
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    printDevProp(prop);
+
     printf("\tcuFFT\ttbFFT\ttbFFT\n");
     for (int n = power2(2); n < power2(16); n *= 2) {        
         printf("\n%d:", n);
@@ -25,16 +54,16 @@ int main()
         printf("\t%.0f", cuFFT_Performance(n));
 
         // Regular (not working, used as ref)
-        printf("\t%.0f", FFTRegular_Performance(n));
-        if (FFTRegular_Validate(n) == 0) printf("!");        
+        printf("\t%.0f", tsRegular_Performance(n));
+        if (tsRegular_Validate(n) == 0) printf("!");        
 
         // Regular
-        printf("\t%.0f", FFTTobb_Performance(n));
-        if (FFTTobb_Validate(n) == 0) printf("!");
+        printf("\t%.0f", tsTobb_Performance(n));
+        if (tsTobb_Validate(n) == 0) printf("!");
 
         // Const geom
-        printf("\t%.0f", FFTConstGeom_Performance(n));
-        if (FFTConstGeom_Validate(n) == 0) printf("!");
+        printf("\t%.0f", tsConstantGeometry_Performance(n));
+        if (tsConstantGeometry_Validate(n) == 0) printf("!");
     }
     printf("\nDone...");
     getchar();

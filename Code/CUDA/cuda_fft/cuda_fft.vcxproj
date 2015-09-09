@@ -168,22 +168,24 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="FFTConstGeom.cu" />
-    <CudaCompile Include="FFTRegular.cu" />
-    <CudaCompile Include="FFTConstantGeom.cu" />
-    <CudaCompile Include="FFTTobb.cu" />
-    <CudaCompile Include="fft_helper.cu" />
+    <CudaCompile Include="tsConstantGeometry_SB.cu" />
+    <CudaCompile Include="tsRegular.cu" />
+    <CudaCompile Include="tsConstantGeometry.cu" />
+    <CudaCompile Include="tsTobb.cu" />
+    <CudaCompile Include="tsHelper.cu" />
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="fft_test.cu" />
+    <CudaCompile Include="tsTest.cu" />
+    <CudaCompile Include="tsTobb_SB.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="definitions.cuh" />
-    <ClInclude Include="FFTConstantGeom.cuh" />
-    <ClInclude Include="FFTConstGeom.cuh" />
-    <ClInclude Include="FFTRegular.cuh" />
-    <ClInclude Include="FFTTobb.cuh" />
-    <ClInclude Include="fft_helper.cuh" />
-    <ClInclude Include="fft_test.cuh" />
+    <ClInclude Include="tsDefinitions.cuh" />
+    <ClInclude Include="tsConstantGeometry.cuh" />
+    <ClInclude Include="tsConstantGeometry_SB.cuh" />
+    <ClInclude Include="tsRegular.cuh" />
+    <ClInclude Include="tsTobb.cuh" />
+    <ClInclude Include="tsHelper.cuh" />
+    <ClInclude Include="tsTest.cuh" />
+    <ClInclude Include="tsTobb_SB.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

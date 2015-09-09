@@ -1,9 +1,8 @@
-#ifndef FFT_HELPER_CU
-#define FFT_HELPER_CU
+#ifndef TSHELPER_CUH
+#define TSHELPER_CUH
 
 #include "cuda_runtime.h"
-
-#include "definitions.cuh"
+#include "tsDefinitions.cuh"
 
 // Fast bit-reversal
 static int tab32[32] = { 
@@ -17,6 +16,7 @@ __host__ int log2_32(int value);
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);
 
 __host__ void swap(cpx **in, cpx **out);
+__host__ void _setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size);
 
 // Kernel functions
 __global__ void twiddle_factors(cpx *W, const float angle, const int n);

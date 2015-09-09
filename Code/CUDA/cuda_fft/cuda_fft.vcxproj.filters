@@ -2,22 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="fft_helper.cu">
+    <CudaCompile Include="tsConstantGeometry.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="fft_test.cu">
+    <CudaCompile Include="tsConstantGeometry_SB.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="FFTRegular.cu">
+    <CudaCompile Include="tsHelper.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="FFTConstantGeom.cu">
+    <CudaCompile Include="tsTest.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="FFTTobb.cu">
+    <CudaCompile Include="tsRegular.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="FFTConstGeom.cu">
+    <CudaCompile Include="tsTobb.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsTobb_SB.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -30,23 +33,26 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="definitions.cuh" />
-    <ClInclude Include="fft_test.cuh">
+    <ClInclude Include="tsConstantGeometry_SB.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fft_helper.cuh">
+    <ClInclude Include="tsConstantGeometry.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FFTConstantGeom.cuh">
+    <ClInclude Include="tsHelper.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FFTRegular.cuh">
+    <ClInclude Include="tsTest.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FFTTobb.cuh">
+    <ClInclude Include="tsDefinitions.cuh" />
+    <ClInclude Include="tsRegular.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FFTConstGeom.cuh">
+    <ClInclude Include="tsTobb.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tsTobb_SB.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

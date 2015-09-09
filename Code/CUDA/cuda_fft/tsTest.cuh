@@ -1,7 +1,7 @@
-#ifndef FFT_TEST_CUH
-#define FFT_TEST_CUH
+#ifndef TSTEST_CUH
+#define TSTEST_CUH
 
-#include "definitions.cuh"
+#include "tsDefinitions.cuh"
 #include <Windows.h>
 
 /* Performance measure on Windows, result in micro seconds */
@@ -26,9 +26,7 @@ cpx *get_seq(const int n, cpx *src);
 
 double avg(double m[], int n);
 
-void _cudaMalloc(size_t n, cpx **dev_in, cpx **dev_out, cpx **dev_W);
-void _cudaFree(cpx **dev_in, cpx **dev_out, cpx **dev_W);
-void _fftTestSeq(size_t n, cpx **in, cpx **ref, cpx **out);
-void _fftFreeSeq(cpx **in, cpx **ref, cpx **out);
+void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
+int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
 
 #endif

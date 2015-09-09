@@ -35,7 +35,7 @@ unsigned int power(const unsigned int base, const unsigned int exp)
     if (exp == 0)
         return 1;
     unsigned int value = base;
-    for (int i = 1; i < exp; ++i) {
+    for (unsigned int i = 1; i < exp; ++i) {
         value *= base;
     }
     return value;

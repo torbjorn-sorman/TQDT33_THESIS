@@ -8,10 +8,10 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
-__global__ void _kernel48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
+__global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
+__global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
 
-__host__ int tsConstantGeometry_SB_Validate(const size_t n)
+__host__ int tsConstantGeometry_SB_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -24,7 +24,7 @@ __host__ int tsConstantGeometry_SB_Validate(const size_t n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_SB_Performance(const size_t n)
+__host__ double tsConstantGeometry_SB_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -50,11 +50,13 @@ __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_ou
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
 #ifdef PRECALC_TWIDDLE
-    const int sharedMem = min(sizeof(cpx) * (n + n / 2), SHARED_MEM_SIZE);
-    _kernel KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
+    int sharedMem = sizeof(cpx) * (n + n / 2);
+    sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
+    _kernelCGSB KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
 #else
-    const int sharedMem = min(sizeof(cpx) * n, SHARED_MEM_SIZE);
-    _kernel48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
+    int sharedMem = sizeof(cpx) * n;
+    sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
+    _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
 #endif
     /* 
         Max shared memory/cache available is 65536 (64KB), default shared Mem preference is 49152 (48KB) with 16KB as cache.
@@ -66,7 +68,7 @@ __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_ou
     cudaDeviceSynchronize();
 }
 
-__global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2)
+__global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scale, int depth, const unsigned int lead, const int n2)
 {
     extern __shared__ cpx mem[]; // sizeof(cpx) * (n + n + n/n)  
     cpx in_lower, in_upper;
@@ -79,9 +81,9 @@ __global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, i
     /* Twiddle factors */
     SIN_COS_F(angle * tid, &mem[tid].y, &mem[tid].x);
 
-    /* Move (bit-reversed?) Global to Shared */
-    mem[n2 + tid * 2] = in[tid * 2];
-    mem[n2 + tid * 2 + 1] = in[tid * 2 + 1];
+    /* Move Global to Shared */
+    globalToShared(2 * n2, tid, lead, mem, in);
+
     // Sync, as long as one block, not needed(?)
     SYNC_THREADS;
 
@@ -99,13 +101,12 @@ __global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, i
         // Sync, as long as one block, not needed(?)
         SYNC_THREADS;
     }
+
     /* Move Shared to Global (index bit-reversed) */
-    sharedToGlobal(n2 * 2, tid, mem, out);
-    out[tid * 2] = cuCmulf(mem[n2 + BIT_REVERSE(tid * 2, lead)], scale);
-    out[tid * 2 + 1] = cuCmulf(mem[n2 + BIT_REVERSE(tid * 2 + 1, lead)], scale);
+    sharedToGlobal(n2 * 2, tid, scale, lead, mem, out);
 }
 
-__global__ void _kernel48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2)
+__global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
 {
     extern __shared__ cpx mem[]; // sizeof(cpx) * (n + n + n/n)  
     cpx w, in_lower, in_upper;
@@ -116,8 +117,8 @@ __global__ void _kernel48K(cpx *in, cpx *out, const float angle, const cpx scale
     int ii = i + 1;
 
     /* Move (bit-reversed?) Global to Shared */
-    mem[tid * 2] = in[tid * 2];
-    mem[tid * 2 + 1] = in[tid * 2 + 1];
+    globalToShared(n2 * 2, tid, lead, mem, in);
+
     // Sync, as long as one block, not needed(?)
     SYNC_THREADS;
 
@@ -138,6 +139,5 @@ __global__ void _kernel48K(cpx *in, cpx *out, const float angle, const cpx scale
     }
 
     /* Move Shared to Global (index bit-reversed) */
-    out[tid * 2] = cuCmulf(mem[BIT_REVERSE(tid * 2, lead)], scale);
-    out[tid * 2 + 1] = cuCmulf(mem[BIT_REVERSE(tid * 2 + 1, lead)], scale);
+    sharedToGlobal(n2 * 2, tid, scale, lead, mem, out);
 }

@@ -26,13 +26,46 @@ __global__ void bit_reverse(cpx *seq, fftDirection dir, const int lead, const in
 // Device functions, callable by kernels
 __device__ unsigned int bitReverse32(unsigned int x, const int l);
 
-__host__ __device__ static __inline__ void globalToShared(int n, int tid, int offset, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void globalToShared(int n, int tid, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, int offset, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global);
-__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global);
+__device__ static __inline__ void globalToShared(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
+{
+#ifdef BIT_REVERSED_OUTPUT
+#ifdef PRECALC_TWIDDLE
+    shared[tid + n / 2] = global[tid];
+    shared[tid + n] = global[tid + n / 2];
+#else
+    shared[tid] = global[tid];
+    shared[tid + n / 2] = global[tid + n / 2];
+#endif
+#else
+#ifdef PRECALC_TWIDDLE
+    shared[n / 2 + BIT_REVERSE(tid, lead)] = global[tid];
+    shared[n / 2 + BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
+#else
+    shared[BIT_REVERSE(tid, lead)] = global[tid];
+    shared[BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
+#endif
+#endif
+}
+
+__device__ static __inline__ void sharedToGlobal(int n, int tid, cpx scale, unsigned int lead, cpx *shared, cpx *global)
+{
+#ifdef BIT_REVERSED_OUTPUT
+#ifdef PRECALC_TWIDDLE
+    global[tid] = cuCmulf(shared[n / 2 + BIT_REVERSE(tid, lead)], scale);
+    global[tid + n / 2] = cuCmulf(shared[n / 2 + BIT_REVERSE(tid + n / 2, lead)], scale);
+#else
+    global[tid] = cuCmulf(shared[BIT_REVERSE(tid, lead)], scale);
+    global[tid + n / 2] = cuCmulf(shared[BIT_REVERSE(tid + n / 2, lead)], scale);
+#endif
+#else
+#ifdef PRECALC_TWIDDLE
+    global[tid] = cuCmulf(shared[offset + tid], scale);
+    global[tid + n / 2] = cuCmulf(shared[n + tid], scale);
+#else
+    global[tid] = cuCmulf(shared[tid], scale);
+    global[tid + n / 2] = cuCmulf(shared[tid + n / 2], scale);
+#endif
+#endif
+}
 
 #endif

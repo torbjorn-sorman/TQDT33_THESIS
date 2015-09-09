@@ -8,7 +8,7 @@
 
 __global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2);
 
-__host__ int tsConstantGeometry_Validate(const size_t n)
+__host__ int tsConstantGeometry_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
@@ -21,7 +21,7 @@ __host__ int tsConstantGeometry_Validate(const size_t n)
     return fftResultAndFree(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_Performance(const size_t n)
+__host__ double tsConstantGeometry_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
@@ -38,7 +38,7 @@ __host__ double tsConstantGeometry_Performance(const size_t n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsConstantGeometry(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
+__host__ void tsConstantGeometry(const fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
 {
     int steps, depth, threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);

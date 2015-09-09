@@ -13,7 +13,7 @@
 #include "tsRegular.cuh"
 #include "tsTobb.cuh"
 
-__host__ double cuFFT_Performance(const size_t n);
+__host__ double cuFFT_Performance(const int n);
 
 // Print device properties
 void printDevProp(cudaDeviceProp devProp)
@@ -70,7 +70,7 @@ int main()
     return 0;
 }
 
-__host__ double cuFFT_Performance(const size_t n)
+__host__ double cuFFT_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in = 0;
@@ -91,7 +91,7 @@ __host__ double cuFFT_Performance(const size_t n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ double cuFFT_2D_Performance(const size_t n)
+__host__ double cuFFT_2D_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in = 0;

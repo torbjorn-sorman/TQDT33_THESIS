@@ -6,7 +6,7 @@
 
 __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n);
 
-__host__ int tsConstantGeometry_SB_Validate(const size_t n);
-__host__ double tsConstantGeometry_SB_Performance(const size_t n);
+__host__ int tsConstantGeometry_SB_Validate(const int n);
+__host__ double tsConstantGeometry_SB_Performance(const int n);
 
 #endif

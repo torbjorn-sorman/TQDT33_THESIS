@@ -8,7 +8,7 @@
 
 __global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist, const int dist2, const int n2);
 
-__host__ int tsTobb_Validate(const size_t n)
+__host__ int tsTobb_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
@@ -21,7 +21,7 @@ __host__ int tsTobb_Validate(const size_t n)
     return fftResultAndFree(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out) != 1;
 }
 
-__host__ double tsTobb_Performance(const size_t n)
+__host__ double tsTobb_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;

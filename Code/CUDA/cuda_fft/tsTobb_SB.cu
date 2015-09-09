@@ -6,10 +6,10 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernel(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n);
-__global__ void _kernel48K(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n);
+__global__ void _kernelTSB(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n);
+__global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n);
 
-__host__ int tsTobb_SB_Validate(const size_t n)
+__host__ int tsTobb_SB_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -22,7 +22,7 @@ __host__ int tsTobb_SB_Validate(const size_t n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsTobb_SB_Performance(const size_t n)
+__host__ double tsTobb_SB_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -47,64 +47,18 @@ __host__ void tsTobb_SB(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
 #ifdef PRECALC_TWIDDLE
-    const int sharedMem = min(sizeof(cpx) * (n + n / 2), SHARED_MEM_SIZE);
-    _kernel KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
+    int sharedMem = sizeof(cpx) * (n + n / 2);
+    sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
+    _kernelTSB KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
 #else
-    const int sharedMem = min(sizeof(cpx) * n, SHARED_MEM_SIZE);
-    _kernel48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
+    int sharedMem = sizeof(cpx) * n;
+    sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
+    _kernelTSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
 #endif
     cudaDeviceSynchronize();
 }
 
-__host__ __device__ static __inline__ void globalToShared(int n, int tid, int offset, cpx *shared, cpx *global)
-{
-    shared[offset + tid] = global[tid];
-    shared[offset + n / 2 + tid] = global[n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void globalToShared(int n, int tid, cpx *shared, cpx *global)
-{
-    shared[tid] = global[tid];
-    shared[n / 2 + tid] = global[n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global)
-{
-    shared[offset + BIT_REVERSE(tid, lead)] = global[tid];
-    shared[offset + BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
-{
-    shared[BIT_REVERSE(tid, lead)] = global[tid];
-    shared[BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, int offset, cpx *shared, cpx *global)
-{
-    global[tid] = shared[offset + tid];
-    global[n / 2 + tid] = shared[offset + n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, cpx *shared, cpx *global)
-{
-    global[tid] = shared[tid];
-    global[n / 2 + tid] = shared[n / 2 + tid];
-}
-
-__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global)
-{
-    global[tid] = shared[offset + BIT_REVERSE(tid, lead)];
-    global[n / 2 + tid] = shared[offset + BIT_REVERSE(tid + n / 2, lead)];
-}
-
-__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
-{
-    global[tid] = shared[BIT_REVERSE(tid, lead)];
-    global[n / 2 + tid] = shared[BIT_REVERSE(tid + n / 2, lead)];
-}
-
-__global__ void _kernel(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n)
+__global__ void _kernelTSB(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n)
 {
     extern __shared__ cpx mem[];
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
@@ -137,11 +91,10 @@ __global__ void _kernel(cpx *in, cpx *out, const int depth, const float angle, c
     }
 
     /* Move (bit-reversed?) Shared to Global */
-    out[tid * 2] = cuCmulf(mem[offset + BIT_REVERSE(tid * 2, 32 - depth)], scale);
-    out[tid * 2 + 1] = cuCmulf(mem[offset + BIT_REVERSE(tid * 2 + 1, 32 - depth)], scale);
+    sharedToGlobal(n, tid, scale, 32 - depth, mem, out);
 }
 
-__global__ void _kernel48K(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n)
+__global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n)
 {
     extern __shared__ cpx mem[];
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
@@ -151,7 +104,7 @@ __global__ void _kernel48K(cpx *in, cpx *out, const int depth, const float angle
     cpx w, in_lower, in_upper;
 
     /* Move (bit-reversed?) Global to Shared */
-    globalToShared(n, tid, mem, in);
+    globalToShared(n, tid, 32 - depth, mem, in);
 
     // Sync, as long as one block, not needed(?)
     SYNC_THREADS;
@@ -171,6 +124,5 @@ __global__ void _kernel48K(cpx *in, cpx *out, const int depth, const float angle
     }
 
     /* Move (bit-reversed?) Shared to Global */
-    out[tid * 2] = cuCmulf(mem[BIT_REVERSE(tid * 2, 32 - depth)], scale);
-    out[tid * 2 + 1] = cuCmulf(mem[BIT_REVERSE(tid * 2 + 1, 32 - depth)], scale);
+    sharedToGlobal(n, tid, scale, 32 - depth, mem, out);
 }

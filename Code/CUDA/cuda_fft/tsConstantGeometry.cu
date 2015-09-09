@@ -10,7 +10,6 @@ __global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int
 
 __host__ int tsConstantGeometry_Validate(const size_t n)
 {
-    int result;
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
 
@@ -48,7 +47,7 @@ __host__ void tsConstantGeometry(fftDirection dir, cpx **dev_in, cpx **dev_out, 
 
     depth = log2_32(n);
 
-    _setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
+    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors KERNEL_ARGS2(numBlocks, threadsPerBlock)(dev_W, w_angle, n);
     cudaDeviceSynchronize();
     
@@ -61,7 +60,7 @@ __host__ void tsConstantGeometry(fftDirection dir, cpx **dev_in, cpx **dev_out, 
         cudaDeviceSynchronize();
     }
 
-    _setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);    
+    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);    
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, 32 - depth);
     swap(dev_in, dev_out);
     cudaDeviceSynchronize();

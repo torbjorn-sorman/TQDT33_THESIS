@@ -43,7 +43,7 @@ __host__ void swap(cpx **in, cpx **out)
     *out = tmp;
 }
 
-__host__ void _setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size)
+__host__ void setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size)
 {
     if (size > MAX_BLOCK_SIZE) {
         *numBlocks = size / MAX_BLOCK_SIZE;
@@ -97,4 +97,52 @@ __device__ unsigned int bitReverse32(unsigned int x, const int l)
     x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
     x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
     return((x >> 16) | (x << 16)) >> l;
+}
+
+__host__ __device__ static __inline__ void globalToShared(int n, int tid, int offset, cpx *shared, cpx *global)
+{
+    shared[offset + tid] = global[tid];
+    shared[offset + n / 2 + tid] = global[n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void globalToShared(int n, int tid, cpx *shared, cpx *global)
+{
+    shared[tid] = global[tid];
+    shared[n / 2 + tid] = global[n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global)
+{
+    shared[offset + BIT_REVERSE(tid, lead)] = global[tid];
+    shared[offset + BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void globalToSharedBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
+{
+    shared[BIT_REVERSE(tid, lead)] = global[tid];
+    shared[BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, int offset, cpx *shared, cpx *global)
+{
+    global[tid] = shared[offset + tid];
+    global[n / 2 + tid] = shared[offset + n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, cpx *shared, cpx *global)
+{
+    global[tid] = shared[tid];
+    global[n / 2 + tid] = shared[n / 2 + tid];
+}
+
+__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, int offset, unsigned int lead, cpx *shared, cpx *global)
+{
+    global[tid] = shared[offset + BIT_REVERSE(tid, lead)];
+    global[n / 2 + tid] = shared[offset + BIT_REVERSE(tid + n / 2, lead)];
+}
+
+__host__ __device__ static __inline__ void sharedToGlobalBOR(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
+{
+    global[tid] = shared[BIT_REVERSE(tid, lead)];
+    global[n / 2 + tid] = shared[BIT_REVERSE(tid + n / 2, lead)];
 }

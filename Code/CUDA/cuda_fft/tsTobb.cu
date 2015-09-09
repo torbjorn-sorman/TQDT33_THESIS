@@ -10,7 +10,6 @@ __global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask
 
 __host__ int tsTobb_Validate(const size_t n)
 {
-    int result;
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
 
@@ -49,7 +48,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     bit = log2_32(n);
     const int lead = 32 - bit;
 
-    _setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
+    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors KERNEL_ARGS2(numBlocks, threadsPerBlock)(dev_W, w_angle, n);
     cudaDeviceSynchronize();
     
@@ -68,7 +67,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
         cudaDeviceSynchronize();
     }
 
-    _setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
+    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, lead);
     swap(dev_in, dev_out);
     cudaDeviceSynchronize();

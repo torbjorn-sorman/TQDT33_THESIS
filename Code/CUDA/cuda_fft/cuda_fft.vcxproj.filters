@@ -23,6 +23,9 @@
     <CudaCompile Include="tsTobb_SB.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry_DP.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -53,6 +56,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tsTobb_SB.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tsConstantGeometry_DP.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

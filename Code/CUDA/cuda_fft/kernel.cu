@@ -47,7 +47,7 @@ int main()
     printDevProp(prop);
 
     printf("\tcuFFT\ttbFFT\ttbFFT\n");
-    for (int n = power2(2); n < power2(16); n *= 2) {        
+    for (unsigned int n = power2(2); n < power2(16); n *= 2) {        
         printf("\n%d:", n);
 
         // cuFFT

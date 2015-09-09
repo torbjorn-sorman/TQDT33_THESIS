@@ -168,6 +168,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="tsConstantGeometry_DP.cu" />
     <CudaCompile Include="tsConstantGeometry_SB.cu" />
     <CudaCompile Include="tsRegular.cu" />
     <CudaCompile Include="tsConstantGeometry.cu" />
@@ -178,6 +179,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="tsTobb_SB.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="tsConstantGeometry_DP.cuh" />
     <ClInclude Include="tsDefinitions.cuh" />
     <ClInclude Include="tsConstantGeometry.cuh" />
     <ClInclude Include="tsConstantGeometry_SB.cuh" />

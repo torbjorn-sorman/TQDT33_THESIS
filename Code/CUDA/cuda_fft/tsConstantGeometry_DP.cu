@@ -4,27 +4,27 @@
 #include <device_functions.h>
 
 #include "math.h"
-#include "tsConstantGeometry_SB.cuh"
+#include "tsConstantGeometry_DP.cuh"
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
 __global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
 __global__ void _kernel48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
 
-__host__ int tsConstantGeometry_SB_Validate(const size_t n)
+__host__ int tsConstantGeometry_DP_Validate(const size_t n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
 
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    tsConstantGeometry_SB(FFT_FORWARD, &dev_in, &dev_out, n);
-    tsConstantGeometry_SB(FFT_INVERSE, &dev_out, &dev_in, n);    
+    tsConstantGeometry_DP(FFT_FORWARD, &dev_in, &dev_out, n);
+    tsConstantGeometry_DP(FFT_INVERSE, &dev_out, &dev_in, n);    
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_SB_Performance(const size_t n)
+__host__ double tsConstantGeometry_DP_Performance(const size_t n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -33,7 +33,7 @@ __host__ double tsConstantGeometry_SB_Performance(const size_t n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        tsConstantGeometry_SB(FFT_FORWARD, &dev_in, &dev_out, n);
+        tsConstantGeometry_DP(FFT_FORWARD, &dev_in, &dev_out, n);
         measures[i] = stopTimer();
     }
 
@@ -41,7 +41,7 @@ __host__ double tsConstantGeometry_SB_Performance(const size_t n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
+__host__ void tsConstantGeometry_DP(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
     int threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);
@@ -100,7 +100,6 @@ __global__ void _kernel(cpx *in, cpx *out, const float angle, const cpx scale, i
         SYNC_THREADS;
     }
     /* Move Shared to Global (index bit-reversed) */
-    sharedToGlobal(n2 * 2, tid, mem, out);
     out[tid * 2] = cuCmulf(mem[n2 + BIT_REVERSE(tid * 2, lead)], scale);
     out[tid * 2 + 1] = cuCmulf(mem[n2 + BIT_REVERSE(tid * 2 + 1, lead)], scale);
 }

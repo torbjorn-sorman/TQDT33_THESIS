@@ -180,7 +180,7 @@ void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned i
 {
     printf("\n%s\n", name);
     validate(fn, n_threads, max_elem);
-    mtime(name, fn, n_threads, file, max_elem);
+    //mtime(name, fn, n_threads, file, max_elem);
 }
 
 void test_fft2d(char *name, fft2d_func fn, const int n_threads, int file, unsigned int max_elem)

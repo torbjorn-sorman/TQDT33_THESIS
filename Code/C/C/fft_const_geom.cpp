@@ -6,10 +6,9 @@
 #include "tb_print.h"
 
 
-__inline void _fft_body(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n);
-__inline void _fft_body(cpx *in, cpx *out, const float w_angle, const unsigned int mask, const int n);
+__inline void _fft_cgbody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n);
+__inline void _fft_cgbody(cpx *in, cpx *out, const float w_angle, const unsigned int mask, const int n);
 __inline void _fft_const_geom(fft_direction dir, cpx **seq, cpx **buf, const cpx *W, const int n);
-__inline void swap(cpx **in, cpx **out);
 
 void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
@@ -20,10 +19,10 @@ void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads,
     twiddle_factors(W, dir, n);
 
     steps = 0;
-    _fft_body(*in, *out, W, 0xffffffff << steps, n);
+    _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
     while (++steps < depth) {
         swap(in, out);
-        _fft_body(*in, *out, W, 0xffffffff << steps, n);
+        _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
     }
 
     bit_reverse(*out, dir, 32 - depth, n);
@@ -69,15 +68,15 @@ _inline void _fft_const_geom(fft_direction dir, cpx **in, cpx **out, const cpx *
     int steps, depth;
     depth = log2_32(n);
     steps = 0;
-    _fft_body(*in, *out, W, 0xffffffff << steps, n);
+    _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
     while (++steps < depth) {
         swap(in, out);
-        _fft_body(*in, *out, W, 0xffffffff << steps, n);
+        _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
     }
     bit_reverse(*out, dir, 32 - depth, n);
 }
 
-_inline void _fft_body(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
+_inline void _fft_cgbody(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
 {
     int l, u, p, n2;
     float tmp_r, tmp_i;
@@ -107,20 +106,20 @@ void fft_const_geom_2(fft_direction dir, cpx **in, cpx **out, const int n_thread
     steps = --bit;
     mask = 0xffffffff << (steps - bit);
     w_angle = dir * M_2_PI / n;
-    _fft_body(*in, *out, w_angle, mask, n);
+    _fft_cgbody(*in, *out, w_angle, mask, n);
     while (bit-- > 0)
     {
         tmp = *in;
         *in = *out;
         *out = tmp;
         mask = 0xffffffff << (steps - bit);
-        _fft_body(*in, *out, w_angle, mask, n);
+        _fft_cgbody(*in, *out, w_angle, mask, n);
     }
     bit_reverse(*out, dir, lead, n);
 }
 
 #pragma warning(disable:4700) 
-_inline void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
+_inline void _fft_cgbody(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
 {
     int l, u, p, n2, old;
     float cv, sv, ang;
@@ -147,11 +146,4 @@ _inline void _fft_body(cpx *in, cpx *out, float w_angle, unsigned int mask, cons
         out[i + 1].i = (sv * tmp.r) + (cv * tmp.i);
     }
 #pragma warning(default:4700)
-}
-
-__inline void swap(cpx **in, cpx **out)
-{
-    cpx *tmp = *in;
-    *in = *out;
-    *out = tmp;
 }

@@ -9,7 +9,7 @@
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
-__inline void _fft_body(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2);
+__inline void _fft_tbbody(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2);
 __inline void _fft_tobb(fft_direction dir, cpx *seq, cpx *W, const int n);
 
 void fft_tobb(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
@@ -28,12 +28,12 @@ void fft_tobb(fft_direction dir, cpx **in, cpx **out, const int n_threads, const
     dist = n2;
     --bit;
     
-    _fft_body(*in, *out, W, bit, steps, dist, dist2, n2);
+    _fft_tbbody(*in, *out, W, bit, steps, dist, dist2, n2);
     while (bit-- > 0)
     {
         dist2 = dist;
         dist = dist >> 1;
-        _fft_body(*out, *out, W, bit, ++steps, dist, dist2, n2);
+        _fft_tbbody(*out, *out, W, bit, ++steps, dist, dist2, n2);
     }
     bit_reverse(*out, dir, lead, n);
     free(W);
@@ -73,17 +73,17 @@ __inline void _fft_tobb(fft_direction dir, cpx *seq, cpx *W, const int n)
     dist = n2;
     --bit;
 
-    _fft_body(seq, seq, W, bit, steps, dist, dist2, n2);
+    _fft_tbbody(seq, seq, W, bit, steps, dist, dist2, n2);
     while (bit-- > 0)
     {
         dist2 = dist;
         dist = dist >> 1;
-        _fft_body(seq, seq, W, bit, ++steps, dist, dist2, n2);
+        _fft_tbbody(seq, seq, W, bit, ++steps, dist, dist2, n2);
     }
     bit_reverse(seq, dir, lead, n);
 }
 
-__inline void _fft_body(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2)
+__inline void _fft_tbbody(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2)
 {
     const unsigned int pmask = (dist - 1) << steps;
     const unsigned int lmask = 0xFFFFFFFF << bit;

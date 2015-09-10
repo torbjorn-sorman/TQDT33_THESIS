@@ -70,7 +70,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <OpenMPSupport>true</OpenMPSupport>
+      <OpenMPSupport>false</OpenMPSupport>
       <AdditionalIncludeDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -86,6 +86,7 @@
   <ItemGroup>
     <ClCompile Include="cgp_fft.cpp" />
     <ClCompile Include="fft_const_geom.cpp" />
+    <ClCompile Include="fft_fixed.cpp" />
     <ClCompile Include="fft_reg.cpp" />
     <ClCompile Include="fft_tobb.cpp" />
     <ClCompile Include="imglib.cpp" />
@@ -106,6 +107,7 @@
   <ItemGroup>
     <ClInclude Include="cgp_fft.h" />
     <ClInclude Include="fft_const_geom.h" />
+    <ClInclude Include="fft_fixed.h" />
     <ClInclude Include="fft_reg.h" />
     <ClInclude Include="fft_tobb.h" />
     <ClInclude Include="imglib.h" />

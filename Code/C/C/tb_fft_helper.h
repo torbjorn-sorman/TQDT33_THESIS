@@ -16,6 +16,13 @@ void transpose_block(cpx **seq, const int b, const int n);
 void transpose_block2(cpx **seq, const int b, const int n);
 void transpose_block3(cpx **seq, const int b, const int n);
 
+__inline static void swap(cpx **in, cpx **out)
+{
+    cpx *tmp = *in;
+    *in = *out;
+    *out = tmp;
+}
+
 /*  */
 
 void fft_shift(cpx **seq, const int n);

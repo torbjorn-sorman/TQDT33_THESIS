@@ -8,8 +8,8 @@
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
-__inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n);
-__inline void _fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int cnt);
+__inline void _fft_rbody(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n);
+__inline void _fft_inner_rbody(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int cnt);
 __inline void _fft_reg(fft_direction dir, cpx *seq, cpx *W, const int n_threads, const int n);
 
 void fft_reg(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
@@ -20,10 +20,10 @@ void fft_reg(fft_direction dir, cpx **in, cpx **out, const int n_threads, const 
     dist = (n / 2);
     W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-    _fft_body(*in, *out, W, dist, dist2, n_threads, n);
+    _fft_rbody(*in, *out, W, dist, dist2, n_threads, n);
     while ((dist2 = dist) > 1) {
         dist = dist >> 1;
-        _fft_body(*out, *out, W, dist, dist2, n_threads, n);
+        _fft_rbody(*out, *out, W, dist, dist2, n_threads, n);
     }
     bit_reverse(*out, dir, 32 - log2_32(n), n);
     free(W);
@@ -55,22 +55,22 @@ _inline void _fft_reg(fft_direction dir, cpx *seq, cpx *W, const int n_threads, 
     int dist, dist2;
     dist2 = n;
     dist = (n / 2);
-    _fft_body(seq, seq, W, dist, dist2, n_threads, n);
+    _fft_rbody(seq, seq, W, dist, dist2, n_threads, n);
     while ((dist2 = dist) > 1) {
         dist = dist >> 1;
-        _fft_body(seq, seq, W, dist, dist2, n_threads, n);
+        _fft_rbody(seq, seq, W, dist, dist2, n_threads, n);
     }
     bit_reverse(seq, dir, 32 - log2_32(n), n);
 }
 
-__inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n)
+__inline void _fft_rbody(cpx *in, cpx *out, cpx *W, int dist, int dist2, const int n_threads, const int n)
 {
     const int count = n / dist2;
 #ifdef _OPENMP        
     if (count >= n_threads) {
 #pragma omp parallel for schedule(static)              
         for (int lower = 0; lower < n; lower += dist2) {
-            _fft_inner_body(in, out, W, lower, dist + lower, dist, count);
+            _fft_inner_rbody(in, out, W, lower, dist + lower, dist, count);
         }
     }
     else
@@ -94,12 +94,12 @@ __inline void _fft_body(cpx *in, cpx *out, cpx *W, int dist, int dist2, const in
     }
 #else
     for (int lower = 0; lower < n; lower += dist2) {
-        _fft_inner_body(in, out, W, lower, dist + lower, dist, count);
+        _fft_inner_rbody(in, out, W, lower, dist + lower, dist, count);
     }
 #endif
 }
 
-__inline void _fft_inner_body(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int mul)
+__inline void _fft_inner_rbody(cpx *in, cpx *out, const cpx *W, const int lower, const int upper, const int dist, const int mul)
 {
     int u, p;
     float tmp_r, tmp_i;

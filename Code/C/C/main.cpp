@@ -14,6 +14,7 @@
 #include "fft_reg.h"
 #include "fft_const_geom.h"
 #include "fft_tobb.h"
+#include "fft_fixed.h"
 
 #include <omp.h> 
 
@@ -53,7 +54,7 @@ unsigned int power(unsigned int base, int exp)
     if (exp == 0)
         return 1;
     unsigned int value = base;
-    for (int i = 0; i < exp; ++i) {
+    for (int i = 1; i < exp; ++i) {
         value *= base;
     }
     return value;
@@ -66,7 +67,7 @@ unsigned int power2(int exp)
 
 int main()
 {    
-    const unsigned int n = power2(19);
+    const unsigned int n = power2(3);
     int n_threads;
     double time;
     time = 0.0;
@@ -102,11 +103,12 @@ int main()
         else if (n3 <= lim) printf("%d:\t\t\t%d\n", i, n3);
     }
     */
-
-    test_fftw(n);
+    
+    //test_fftw(n);
     test_fft("Reg FFT", fft_reg, n_threads, 1, n);
-    test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
-    test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
+    //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
+    //test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
+    test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
       
     //printf("\n... done!\n");
     getchar();

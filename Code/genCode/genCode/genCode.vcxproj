@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3570239E-A341-4EED-B40D-3E031A685BB3}</ProjectGuid>
+    <ProjectGuid>{BA3E9AD6-CA34-4946-99C1-B1B1D030586F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>C</RootNamespace>
+    <RootNamespace>genCode</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -53,7 +53,6 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -70,64 +69,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <OpenMPSupport>false</OpenMPSupport>
-      <AdditionalIncludeDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <Profile>true</Profile>
-      <AdditionalLibraryDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cgp_fft.cpp" />
-    <ClCompile Include="fft_const_geom.cpp" />
-    <ClCompile Include="fft_fixed.cpp" />
-    <ClCompile Include="fft_reg.cpp" />
-    <ClCompile Include="fft_tobb.cpp" />
-    <ClCompile Include="genCode.cpp" />
-    <ClCompile Include="imglib.cpp" />
-    <ClCompile Include="kiss_fft.c" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="tb_fft.cpp" />
-    <ClCompile Include="tb_fft_helper.cpp" />
-    <ClCompile Include="tb_filter.cpp" />
-    <ClCompile Include="tb_image.cpp" />
-    <ClCompile Include="tb_math.cpp" />
-    <ClCompile Include="tb_print.cpp" />
-    <ClCompile Include="tb_test.cpp" />
-    <ClCompile Include="tb_test_helper.cpp" />
-    <ClCompile Include="tb_transpose.cpp" />
-    <ClCompile Include="test_seq.cpp" />
-    <ClCompile Include="wiki_fft.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="cgp_fft.h" />
-    <ClInclude Include="fft_const_geom.h" />
-    <ClInclude Include="fft_fixed.h" />
-    <ClInclude Include="fft_reg.h" />
-    <ClInclude Include="fft_tobb.h" />
-    <ClInclude Include="genCode.h" />
-    <ClInclude Include="imglib.h" />
-    <ClInclude Include="kissfft.hh" />
-    <ClInclude Include="kiss_fft.h" />
-    <ClInclude Include="tb_definitions.h" />
-    <ClInclude Include="tb_fft.h" />
-    <ClInclude Include="tb_fft_helper.h" />
-    <ClInclude Include="tb_filter.h" />
-    <ClInclude Include="tb_image.h" />
-    <ClInclude Include="tb_math.h" />
-    <ClInclude Include="tb_print.h" />
-    <ClInclude Include="tb_test.h" />
-    <ClInclude Include="tb_test_helper.h" />
-    <ClInclude Include="tb_transpose.h" />
-    <ClInclude Include="test_seq.h" />
-    <ClInclude Include="wiki_fft.h" />
-    <ClInclude Include="_kiss_fft_guts.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

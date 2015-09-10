@@ -10,6 +10,7 @@
 #include "tb_print.h"
 #include "tb_fft_helper.h"
 #include "test_seq.h"
+#include "genCode.h"
 
 #include "fft_reg.h"
 #include "fft_const_geom.h"
@@ -105,11 +106,15 @@ int main()
     */
     
     //test_fftw(n);
-    test_fft("Reg FFT", fft_reg, n_threads, 1, n);
+    //test_fft("Reg FFT", fft_reg, n_threads, 1, n);
     //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
     //test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
-    test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
+    //test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
       
+    printf("Started generating code...");
+    generator(4);
+
+    printf("\nComplete!\n");
     //printf("\n... done!\n");
     getchar();
     return 0;

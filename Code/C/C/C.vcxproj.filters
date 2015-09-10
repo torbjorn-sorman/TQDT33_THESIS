@@ -102,6 +102,9 @@
     <ClCompile Include="fft_fixed.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
+    <ClCompile Include="genCode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="fft_fixed.h">
       <Filter>Header Files\tb\fft</Filter>
+    </ClInclude>
+    <ClInclude Include="genCode.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

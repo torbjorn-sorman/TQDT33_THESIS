@@ -10,6 +10,9 @@
 
 __inline static void fft_x4(cpx *in, cpx *out);
 __inline static void fft_x4inv(cpx *in, cpx *out);
+__inline static void fft_x8(cpx *in, cpx *out);
+__inline static void fft_x8inv(cpx *in, cpx *out);
+
 __inline static void fft_x8(fft_direction dir, cpx **in, cpx **out, cpx *W);
 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
@@ -70,9 +73,10 @@ __inline static void fft_x4inv(cpx *in, cpx *out)
     out[2].i = (i0m2 - r1m3);
 }
 
-__inline static void fft_x8inv(cpx *in, cpx *out)
+__inline static void fft_x8(cpx *in, cpx *out)
 {
-    const int val = 0.70710678118;
+    const int val = 0.70710678118f;
+    /*
     W[0].r = cos(0) = 1;
     W[0].i = sin(0) = 0;
     W[1].r = cos(pi / 4) = val;
@@ -81,22 +85,123 @@ __inline static void fft_x8inv(cpx *in, cpx *out)
     W[2].i = sin(pi / 2) = 1;
     W[3].r = cos(3pi / 4) = -val;
     W[3].i = sin(3pi / 4) = val;
-    out[0].r = in[0].r + in[4].r;
-    out[0].i = in[0].i + in[4].i;
-    out[4].r = (W[0].r * in[0].r - in[4].r) - (W[0].i * in[0].i - in[4].i);
-    out[4].i = (W[0].i * in[0].r - in[4].r) + (W[0].r * in[0].i - in[4].i);
-    out[1].r = in[1].r + in[5].r;
-    out[1].i = in[1].i + in[5].i;
-    out[5].r = (W[1].r * in[1].r - in[5].r) - (W[1].i * in[1].i - in[5].i);
-    out[5].i = (W[1].i * in[1].r - in[5].r) + (W[1].r * in[1].i - in[5].i);
-    out[2].r = in[2].r + in[6].r;
-    out[2].i = in[2].i + in[6].i;
-    out[6].r = (W[2].r * in[2].r - in[6].r) - (W[2].i * in[2].i - in[6].i);
-    out[6].i = (W[2].i * in[2].r - in[6].r) + (W[2].r * in[2].i - in[6].i);
-    out[3].r = in[3].r + in[7].r;
-    out[3].i = in[3].i + in[7].i;
-    out[7].r = (W[3].r * in[3].r - in[7].r) - (W[3].i * in[3].i - in[7].i);
-    out[7].i = (W[3].i * in[3].r - in[7].r) + (W[3].r * in[3].i - in[7].i);
+    */
+    const float r0p4 = (in[0].r + in[4].r);
+    const float i0p4 = (in[0].i + in[4].i);
+    const float r0m4 = (in[0].r - in[4].r);
+    const float i0m4 = (in[0].i - in[4].i);
+    const float r1p5 = (in[1].r + in[5].r);
+    const float i1p5 = (in[1].i + in[5].i);
+    const float r1m5 = (in[1].r - in[5].r);
+    const float i1m5 = (in[1].i - in[5].i);
+    const float r2p6 = (in[2].r + in[6].r);
+    const float i2p6 = (in[2].i + in[6].i);
+    const float r2m6 = (in[2].r - in[6].r);
+    const float i2m6 = (in[2].i - in[6].i);
+    const float r3p7 = (in[3].r + in[7].r);
+    const float i3p7 = (in[3].i + in[7].i);
+    const float r3m7 = (in[3].r - in[7].r);
+    const float i3m7 = (in[3].i - in[7].i);
+    out[0].r = r0p4;
+    out[0].i = i0p4;
+    out[1].r = r1p5;
+    out[1].i = i1p5;
+    out[2].r = r2p6;
+    out[2].i = i2p6;
+    out[3].r = r3p7;
+    out[3].i = i3p7;
+    out[4].r = r0m4;
+    out[4].i = i0m4;
+    out[5].r = val * r1m5 - val * i1m5;
+    out[5].i = val * r1m5 + val * i1m5;
+    out[6].r = -i2m6;
+    out[6].i = r2m6;
+    out[7].r = -val * r3m7 - val * i3m7;
+    out[7].i = val * r3m7 + -val * i3m7;
+}
+
+__inline static void fft_x8inv(cpx *in, cpx *out)
+{
+    const int val = 0.70710678118f;
+
+    const float r0p4 = (in[0].r + in[4].r);
+    const float i0p4 = (in[0].i + in[4].i);
+    const float r0m4 = (in[0].r - in[4].r);
+    const float i0m4 = (in[0].i - in[4].i);
+    const float r1p5 = (in[1].r + in[5].r);
+    const float i1p5 = (in[1].i + in[5].i);
+    const float r1m5 = (in[1].r - in[5].r);
+    const float i1m5 = (in[1].i - in[5].i);
+    const float r2p6 = (in[2].r + in[6].r);
+    const float i2p6 = (in[2].i + in[6].i);
+    const float r2m6 = (in[2].r - in[6].r);
+    const float i2m6 = (in[2].i - in[6].i);
+    const float r3p7 = (in[3].r + in[7].r);
+    const float i3p7 = (in[3].i + in[7].i);
+    const float r3m7 = (in[3].r - in[7].r);
+    const float i3m7 = (in[3].i - in[7].i);
+
+    /*
+    W[0].r = cos(0) = 1;
+    W[0].i = sin(0) = 0;
+    W[1].r = cos(pi / 4) = val;
+    W[1].i = sin(pi / 4) = val;
+    W[2].r = cos(pi / 2) = 0;
+    W[2].i = sin(pi / 2) = 1;
+    W[3].r = cos(3pi / 4) = -val;
+    W[3].i = sin(3pi / 4) = val;
+    */
+    cpx *W;
+    out[0].r = (in[0].r + in[4].r);
+    out[0].i = (in[0].i + in[4].i);
+    out[4].r = (W[0].r * (in[0].r - in[4].r) - W[0].i * (in[0].i - in[4].i));
+    out[4].i = (W[0].i * (in[0].r - in[4].r) + W[0].r * (in[0].i - in[4].i));
+    out[1].r = (in[1].r + in[5].r);
+    out[1].i = (in[1].i + in[5].i);
+    out[5].r = (W[1].r * (in[1].r - in[5].r) - W[1].i * (in[1].i - in[5].i));
+    out[5].i = (W[1].i * (in[1].r - in[5].r) + W[1].r * (in[1].i - in[5].i));
+    out[2].r = (in[2].r + in[6].r);
+    out[2].i = (in[2].i + in[6].i);
+    out[6].r = (W[2].r * (in[2].r - in[6].r) - W[2].i * (in[2].i - in[6].i));
+    out[6].i = (W[2].i * (in[2].r - in[6].r) + W[2].r * (in[2].i - in[6].i));
+    out[3].r = (in[3].r + in[7].r);
+    out[3].i = (in[3].i + in[7].i);
+    out[7].r = (W[3].r * (in[3].r - in[7].r) - W[3].i * (in[3].i - in[7].i));
+    out[7].i = (W[3].i * (in[3].r - in[7].r) + W[3].r * (in[3].i - in[7].i));
+
+    out[0].r = (out[0].r + out[2].r);
+    out[0].i = (out[0].i + out[2].i);
+    out[2].r = (W[0].r * (out[0].r - out[2].r) - W[0].i * (out[0].i - out[2].i));
+    out[2].i = (W[0].i * (out[0].r - out[2].r) + W[0].r * (out[0].i - out[2].i));
+    out[1].r = (out[1].r + out[3].r);
+    out[1].i = (out[1].i + out[3].i);
+    out[3].r = (W[2].r * (out[1].r - out[3].r) - W[2].i * (out[1].i - out[3].i));
+    out[3].i = (W[2].i * (out[1].r - out[3].r) + W[2].r * (out[1].i - out[3].i));
+    out[4].r = (out[4].r + out[6].r);
+    out[4].i = (out[4].i + out[6].i);
+    out[6].r = (W[0].r * (out[4].r - out[6].r) - W[0].i * (out[4].i - out[6].i));
+    out[6].i = (W[0].i * (out[4].r - out[6].r) + W[0].r * (out[4].i - out[6].i));
+    out[5].r = (out[5].r + out[7].r);
+    out[5].i = (out[5].i + out[7].i);
+    out[7].r = (W[2].r * (out[5].r - out[7].r) - W[2].i * (out[5].i - out[7].i));
+    out[7].i = (W[2].i * (out[5].r - out[7].r) + W[2].r * (out[5].i - out[7].i));
+
+    out[0].r = (out[0].r + out[1].r);
+    out[0].i = (out[0].i + out[1].i);
+    out[1].r = (W[0].r * (out[0].r - out[1].r) - W[0].i * (out[0].i - out[1].i));
+    out[1].i = (W[0].i * (out[0].r - out[1].r) + W[0].r * (out[0].i - out[1].i));
+    out[2].r = (out[2].r + out[3].r);
+    out[2].i = (out[2].i + out[3].i);
+    out[3].r = (W[2].r * (out[2].r - out[3].r) - W[2].i * (out[2].i - out[3].i));
+    out[3].i = (W[2].i * (out[2].r - out[3].r) + W[2].r * (out[2].i - out[3].i));
+    out[4].r = (out[4].r + out[5].r);
+    out[4].i = (out[4].i + out[5].i);
+    out[5].r = (W[0].r * (out[4].r - out[5].r) - W[0].i * (out[4].i - out[5].i));
+    out[5].i = (W[0].i * (out[4].r - out[5].r) + W[0].r * (out[4].i - out[5].i));
+    out[6].r = (out[6].r + out[7].r);
+    out[6].i = (out[6].i + out[7].i);
+    out[7].r = (W[2].r * (out[6].r - out[7].r) - W[2].i * (out[6].i - out[7].i));
+    out[7].i = (W[2].i * (out[6].r - out[7].r) + W[2].r * (out[6].i - out[7].i));
 }
 
 __inline static void fft_x8(fft_direction dir, cpx **in, cpx **out, cpx *W)

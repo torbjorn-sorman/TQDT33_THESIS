@@ -103,23 +103,23 @@ __inline static void fft_x8(cpx *in, cpx *out)
     out[3].i = (in[3].i + in[7].i);
     out[7].r = (W[3].r * (in[3].r - in[7].r) - W[3].i * (in[3].i - in[7].i));
     out[7].i = (W[3].i * (in[3].r - in[7].r) + W[3].r * (in[3].i - in[7].i));
-
-    out[0].r = (out[0].r + out[2].r);
-    out[0].i = (out[0].i + out[2].i);
-    out[2].r = (W[0].r * (out[0].r - out[2].r) - W[0].i * (out[0].i - out[2].i));
-    out[2].i = (W[0].i * (out[0].r - out[2].r) + W[0].r * (out[0].i - out[2].i));
-    out[1].r = (out[1].r + out[3].r);
-    out[1].i = (out[1].i + out[3].i);
-    out[3].r = (W[2].r * (out[1].r - out[3].r) - W[2].i * (out[1].i - out[3].i));
-    out[3].i = (W[2].i * (out[1].r - out[3].r) + W[2].r * (out[1].i - out[3].i));
-    out[4].r = (out[4].r + out[6].r);
-    out[4].i = (out[4].i + out[6].i);
-    out[6].r = (W[0].r * (out[4].r - out[6].r) - W[0].i * (out[4].i - out[6].i));
-    out[6].i = (W[0].i * (out[4].r - out[6].r) + W[0].r * (out[4].i - out[6].i));
-    out[5].r = (out[5].r + out[7].r);
-    out[5].i = (out[5].i + out[7].i);
-    out[7].r = (W[2].r * (out[5].r - out[7].r) - W[2].i * (out[5].i - out[7].i));
-    out[7].i = (W[2].i * (out[5].r - out[7].r) + W[2].r * (out[5].i - out[7].i));
+    // done to here
+    out[0].r = ((in[0].r + in[4].r) + (in[2].r + in[6].r));
+    out[0].i = ((in[0].i + in[4].i) + (in[2].i + in[6].i));
+    out[2].r = (W[0].r * ((in[0].r + in[4].r) - (in[2].r + in[6].r)) - W[0].i * ((in[0].i + in[4].i) - (in[2].i + in[6].i)));
+    out[2].i = (W[0].i * ((in[0].r + in[4].r) - (in[2].r + in[6].r)) + W[0].r * ((in[0].i + in[4].i) - (in[2].i + in[6].i)));
+    out[1].r = ((in[1].r + in[5].r) + (in[3].r + in[7].r));
+    out[1].i = ((in[1].i + in[5].i) + (in[3].i + in[7].i));
+    out[3].r = (W[2].r * ((in[1].r + in[5].r) - (in[3].r + in[7].r)) - W[2].i * ((in[1].i + in[5].i) - (in[3].i + in[7].i)));
+    out[3].i = (W[2].i * ((in[1].r + in[5].r) - (in[3].r + in[7].r)) + W[2].r * ((in[1].i + in[5].i) - (in[3].i + in[7].i)));
+    out[4].r = ((W[0].r * (in[0].r - in[4].r) - W[0].i * (in[0].i - in[4].i)) + (W[2].r * (in[2].r - in[6].r) - W[2].i * (in[2].i - in[6].i)));
+    out[4].i = ((W[0].i * (in[0].r - in[4].r) + W[0].r * (in[0].i - in[4].i)) + (W[2].i * (in[2].r - in[6].r) + W[2].r * (in[2].i - in[6].i)));
+    out[6].r = (W[0].r * ((W[0].r * (in[0].r - in[4].r) - W[0].i * (in[0].i - in[4].i)) - (W[2].r * (in[2].r - in[6].r) - W[2].i * (in[2].i - in[6].i))) - W[0].i * ((W[0].i * (in[0].r - in[4].r) + W[0].r * (in[0].i - in[4].i)) - (W[2].i * (in[2].r - in[6].r) + W[2].r * (in[2].i - in[6].i))));
+    out[6].i = (W[0].i * ((W[0].r * (in[0].r - in[4].r) - W[0].i * (in[0].i - in[4].i)) - (W[2].r * (in[2].r - in[6].r) - W[2].i * (in[2].i - in[6].i))) + W[0].r * ((W[0].i * (in[0].r - in[4].r) + W[0].r * (in[0].i - in[4].i)) - (W[2].i * (in[2].r - in[6].r) + W[2].r * (in[2].i - in[6].i))));
+    out[5].r = ((W[1].r * (in[1].r - in[5].r) - W[1].i * (in[1].i - in[5].i)) + (W[3].r * (in[3].r - in[7].r) - W[3].i * (in[3].i - in[7].i)));
+    out[5].i = ((W[1].i * (in[1].r - in[5].r) + W[1].r * (in[1].i - in[5].i)) + (W[3].i * (in[3].r - in[7].r) + W[3].r * (in[3].i - in[7].i)));
+    out[7].r = (W[2].r * ((W[1].r * (in[1].r - in[5].r) - W[1].i * (in[1].i - in[5].i)) - (W[3].r * (in[3].r - in[7].r) - W[3].i * (in[3].i - in[7].i))) - W[2].i * ((W[1].i * (in[1].r - in[5].r) + W[1].r * (in[1].i - in[5].i)) - (W[3].i * (in[3].r - in[7].r) + W[3].r * (in[3].i - in[7].i))));
+    out[7].i = (W[2].i * ((W[1].r * (in[1].r - in[5].r) - W[1].i * (in[1].i - in[5].i)) - (W[3].r * (in[3].r - in[7].r) - W[3].i * (in[3].i - in[7].i))) + W[2].r * ((W[1].i * (in[1].r - in[5].r) + W[1].r * (in[1].i - in[5].i)) - (W[3].i * (in[3].r - in[7].r) + W[3].r * (in[3].i - in[7].i))));
 
     out[0].r = (out[0].r + out[1].r);
     out[0].i = (out[0].i + out[1].i);

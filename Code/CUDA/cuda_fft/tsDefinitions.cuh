@@ -30,6 +30,7 @@ typedef void(*bitReverseFunction)(cpx *seq, const double dir, const int lead, co
 #define SYNC_THREADS __syncthreads()
 #define BIT_REVERSE(x, l) ((__brev((x))) >> (l))
 #define SIN_COS_F(a, x, y) sincosf(a, x, y)
+#define FIND_FIRST_BIT(v) (__ffs(v))
 #else
 #define KERNEL_ARGS2(grid, block)
 #define KERNEL_ARGS3(grid, block, sh_mem)
@@ -37,6 +38,7 @@ typedef void(*bitReverseFunction)(cpx *seq, const double dir, const int lead, co
 #define SYNC_THREADS
 #define BIT_REVERSE(x, l) 0
 #define SIN_COS_F(a, x, y)
+#define FIND_FIRST_BIT(v)
 #endif
 
 #endif

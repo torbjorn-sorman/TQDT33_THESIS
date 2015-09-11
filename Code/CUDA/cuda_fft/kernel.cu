@@ -45,34 +45,33 @@ int main()
 {    
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
-    printDevProp(prop);
+    cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+    cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+    //printDevProp(prop);
 
-    printf("\tcuFFT\ttbFFT\ttbFFT\n");
+    printf("\n\tcuFFT\ttbFFT\ttbFFT\n");
     for (unsigned int n = power2(2); n < power2(12); n *= 2) {        
         printf("\n%d:", n);
-
+        
         // cuFFT
         printf("\t%.0f", cuFFT_Performance(n));
-
-        // Regular (not working, used as ref)
-        printf("\t%.0f", tsRegular_Performance(n));
-        if (tsRegular_Validate(n) == 0) printf("!");
-
-        // Regular
+                
+        // Tobb
         printf("\t%.0f", tsTobb_Performance(n));
         if (tsTobb_Validate(n) == 0) printf("!");
+        
+        // Tobb
+        printf("\t%.0f", tsTobb_SB_Performance(n));
+        if (tsTobb_SB_Validate(n) == 0) printf("!");
 
         // Const geom
-        printf("\t%.0f", tsConstantGeometry_Performance(n));
-        if (tsConstantGeometry_Validate(n) == 0) printf("!");
-
-        // Regular
-        printf("\t%.0f", tsTobb_SB_Performance(n));
-        if (tsTobb_Validate(n) == 0) printf("!");
-
+        //printf("\t%.0f", tsConstantGeometry_Performance(n));
+        //if (tsConstantGeometry_Validate(n) == 0) printf("!");
+        
         // Const geom
         printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
-        if (tsConstantGeometry_Validate(n) == 0) printf("!");
+        if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
+        
     }
     printf("\nDone...");
     getchar();

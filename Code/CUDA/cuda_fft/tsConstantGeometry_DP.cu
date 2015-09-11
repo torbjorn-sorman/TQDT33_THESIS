@@ -47,7 +47,6 @@ __host__ void tsConstantGeometry_DP(fftDirection dir, cpx **dev_in, cpx **dev_ou
     const float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);   
     const int depth = log2_32(n);
-    cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
 #ifdef PRECALC_TWIDDLE
     int sharedMem = sizeof(cpx) * (n + n / 2);

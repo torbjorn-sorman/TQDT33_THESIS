@@ -9,7 +9,7 @@ static int tab32[32] = {
     0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31 
 };
 
-__host__ __device__ static __inline__ int log2_32(int value)
+__host__ static __inline__ int log2_32(int value)
 {
     value |= value >> 1; 
     value |= value >> 2; 
@@ -17,6 +17,11 @@ __host__ __device__ static __inline__ int log2_32(int value)
     value |= value >> 8; 
     value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
+}
+
+__device__ static inline int log2(int v)
+{
+    return FIND_FIRST_BIT(v) - 1;
 }
 
 __host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
@@ -35,45 +40,35 @@ __host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, 
     return((x >> 16) | (x << 16)) >> l;
 }
 
-__host__ __device__ static __inline__ void globalToShared(int n, int tid, unsigned int lead, cpx *shared, cpx *global)
+#ifdef PRECALC_TWIDDLE
+#define GLOBAL_LOW low - offset
+#define GLOBAL_HIGH high - offset
+#define W_OFFSET(A, O) ((A) + (O))
+#else
+#define GLOBAL_LOW low
+#define GLOBAL_HIGH high
+#define W_OFFSET(A, O) (A)
+#endif
+
+__device__ static __inline__ void globalToShared(int low, int high, int offset, unsigned int lead, cpx *shared, cpx *global)
 {
 #ifdef BIT_REVERSED_OUTPUT
-#ifdef PRECALC_TWIDDLE
-    shared[tid + n / 2] = global[tid];
-    shared[tid + n] = global[tid + n / 2];
+    shared[low] = global[GLOBAL_LOW];
+    shared[high] = global[GLOBAL_HIGH];
 #else
-    shared[tid] = global[tid];
-    shared[tid + n / 2] = global[tid + n / 2];
-#endif
-#else
-#ifdef PRECALC_TWIDDLE
-    shared[n / 2 + BIT_REVERSE(tid, lead)] = global[tid];
-    shared[n / 2 + BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
-#else
-    shared[BIT_REVERSE(tid, lead)] = global[tid];
-    shared[BIT_REVERSE(tid + n / 2, lead)] = global[n / 2 + tid];
-#endif
+    shared[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_LOW];
+    shared[W_OFFSET(BIT_REVERSE(GLOBAL_HIGH, lead), offset)] = global[GLOBAL_HIGH];
 #endif
 }
 
-__host__ __device__ static __inline__ void sharedToGlobal(int n, int tid, cpx scale, unsigned int lead, cpx *shared, cpx *global)
+__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx scale, unsigned int lead, cpx *shared, cpx *global)
 {
 #ifdef BIT_REVERSED_OUTPUT
-#ifdef PRECALC_TWIDDLE
-    global[tid] = cuCmulf(shared[n / 2 + BIT_REVERSE(tid, lead)], scale);
-    global[tid + n / 2] = cuCmulf(shared[n / 2 + BIT_REVERSE(tid + n / 2, lead)], scale);
+    global[GLOBAL_LOW] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
+    global[GLOBAL_HIGH] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_HIGH, lead), offset)], scale);
 #else
-    global[tid] = cuCmulf(shared[BIT_REVERSE(tid, lead)], scale);
-    global[tid + n / 2] = cuCmulf(shared[BIT_REVERSE(tid + n / 2, lead)], scale);
-#endif
-#else
-#ifdef PRECALC_TWIDDLE
-    global[tid] = cuCmulf(shared[offset + tid], scale);
-    global[tid + n / 2] = cuCmulf(shared[n + tid], scale);
-#else
-    global[tid] = cuCmulf(shared[tid], scale);
-    global[tid + n / 2] = cuCmulf(shared[tid + n / 2], scale);
-#endif
+    global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
+    global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);
 #endif
 }
 

@@ -170,7 +170,7 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
     _cudaFree(dev_in, dev_out, dev_W);
     cudaDeviceSynchronize();
     if (in == NULL && ref == NULL && out == NULL)
-        return;
+        return 0;
     result = checkError(*in, *ref, n);
     _fftFreeSeq(in, out, ref);
     return result;

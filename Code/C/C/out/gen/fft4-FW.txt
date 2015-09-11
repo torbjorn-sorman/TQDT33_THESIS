@@ -1,0 +1,4 @@
+out[0] = (cpxAdd(cpxAdd(in[0], in[2]), cpxAdd(in[1], in[3])))/1.000000;
+out[2] = (cpxMul(cpxSub(cpxAdd(in[0], in[2]), cpxAdd(in[1], in[3])), make_cpx(1.000000, -0.000000)))/1.000000;
+out[1] = (cpxAdd(cpxMul(cpxSub(in[0], in[2]), make_cpx(1.000000, -0.000000)), cpxMul(cpxSub(in[1], in[3]), make_cpx(-0.000000, -1.000000))))/1.000000;
+out[3] = (cpxMul(cpxSub(cpxMul(cpxSub(in[0], in[2]), make_cpx(1.000000, -0.000000)), cpxMul(cpxSub(in[1], in[3]), make_cpx(-0.000000, -1.000000))), make_cpx(1.000000, -0.000000)))/1.000000;

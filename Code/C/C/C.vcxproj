@@ -28,6 +28,7 @@
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <CLRSupport>false</CLRSupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -109,9 +110,13 @@
     <ClInclude Include="cgp_fft.h" />
     <ClInclude Include="fft_const_geom.h" />
     <ClInclude Include="fft_fixed.h" />
+    <ClInclude Include="fft_generated_fixed.h" />
+    <ClInclude Include="fft_generated_fixed_const.h" />
+    <ClInclude Include="fft_generated_fixed_reg.h" />
     <ClInclude Include="fft_reg.h" />
     <ClInclude Include="fft_tobb.h" />
     <ClInclude Include="genCode.h" />
+    <ClInclude Include="genHelper.h" />
     <ClInclude Include="imglib.h" />
     <ClInclude Include="kissfft.hh" />
     <ClInclude Include="kiss_fft.h" />

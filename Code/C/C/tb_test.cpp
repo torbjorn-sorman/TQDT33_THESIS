@@ -180,7 +180,26 @@ void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned i
 {
     printf("\n%s\n", name);
     validate(fn, n_threads, max_elem);
-    //mtime(name, fn, n_threads, file, max_elem);
+    mtime(name, fn, n_threads, file, max_elem);
+}
+
+void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
+{
+    double measure;
+    cpx *in, *out;
+    for (int n = 4; n <= max_elem; n *= 2) {
+        in = get_seq(n, 1);
+        out = get_seq(n);
+        START_TIME;
+        for (int i = 0; i < 1000000; ++i) {
+            fn(FORWARD_FFT, &in, &out, n_threads, n);
+        }
+        STOP_TIME(measure);
+        free(in);
+        free(out);
+        printf("Time short %d\t%f\n", n, measure);
+    }
+    
 }
 
 void test_fft2d(char *name, fft2d_func fn, const int n_threads, int file, unsigned int max_elem)

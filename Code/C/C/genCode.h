@@ -1,6 +1,15 @@
 #ifndef GENCODE_h
 #define GENCODE_H 
 
-void generator(const int n);
+#include <string>
+#include <regex>
+#include <sstream>
+#include <algorithm>
+
+#include "tb_definitions.h"
+#include "genHelper.h"
+#include "tb_math.h"
+
+void createFixedSizeFFT(std::string name, int max_n);
 
 #endif

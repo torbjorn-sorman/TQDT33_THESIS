@@ -43,6 +43,12 @@
     <Filter Include="Header Files\tb\fft">
       <UniqueIdentifier>{054eb1ce-703d-42ff-9381-b3c89eda565d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\gen">
+      <UniqueIdentifier>{1d5a9a5a-eb2e-486a-b853-b4bbab28c291}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gen">
+      <UniqueIdentifier>{1757e133-cde5-4af6-a056-38556c4c8d32}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -103,7 +109,7 @@
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
     <ClCompile Include="genCode.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\gen</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -170,7 +176,19 @@
     <ClInclude Include="fft_fixed.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
+    <ClInclude Include="fft_generated_fixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="genCode.h">
+      <Filter>Header Files\gen</Filter>
+    </ClInclude>
+    <ClInclude Include="genHelper.h">
+      <Filter>Header Files\gen</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_generated_fixed_const.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fft_generated_fixed_reg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

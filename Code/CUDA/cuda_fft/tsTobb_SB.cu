@@ -89,14 +89,15 @@ __global__ void _kernelTSB(cpx *in, cpx *out, const int depth, const float angle
 __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float angle, const cpx scale, const int n)
 {
     __shared__ cpx shared[6144];
-    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    const int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    const int lead = 32 - depth;
     int bit = depth;
     int dist = n;
     int lower;
     cpx w, in_lower, in_upper;
 
     /* Move Global to Shared */
-    globalToShared(tid, tid + (n >> 1), 0, 32 - depth, shared, in);
+    globalToShared(tid, tid + (n >> 1), 0, lead, shared, in);
     
     /* Run FFT algorithm */
     for (int steps = 0; steps < depth; ++steps) {        
@@ -113,5 +114,5 @@ __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float an
     }
 
     /* Move Shared to Global */
-    sharedToGlobal(tid, tid + (n >> 1), 0, scale, 32 - depth, shared, out);
+    sharedToGlobal(tid, tid + (n >> 1), 0, scale, lead, shared, out);
 }

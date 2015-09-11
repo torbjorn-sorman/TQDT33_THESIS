@@ -61,11 +61,33 @@ __device__ static __inline__ void globalToShared(int low, int high, int offset, 
 #endif
 }
 
+__device__ static __inline__ void globalToShared(int low, int high, int offset, unsigned int lead, cpx *shared_low, cpx *shared_high, cpx *global)
+{
+#ifdef BIT_REVERSED_OUTPUT
+    shared_low[low] = global[GLOBAL_LOW];
+    shared_high[low] = global[GLOBAL_HIGH];
+#else
+    shared_low[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_LOW];
+    shared_high[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_HIGH];
+#endif
+}
+
 __device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx scale, unsigned int lead, cpx *shared, cpx *global)
 {
 #ifdef BIT_REVERSED_OUTPUT
     global[GLOBAL_LOW] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
     global[GLOBAL_HIGH] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_HIGH, lead), offset)], scale);
+#else
+    global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
+    global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);
+#endif
+}
+
+__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx scale, unsigned int lead, cpx *shared_low, cpx *shared_high, cpx *global)
+{
+#ifdef BIT_REVERSED_OUTPUT
+    global[GLOBAL_LOW] = cuCmulf(shared_low[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
+    global[GLOBAL_HIGH] = cuCmulf(shared_high[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
 #else
     global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
     global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);

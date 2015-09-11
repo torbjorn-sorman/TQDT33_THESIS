@@ -50,6 +50,7 @@ __host__ double tsConstantGeometry_SB_Performance(const int n)
 
 __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
+    
     int threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);   
@@ -99,9 +100,40 @@ __global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scal
 
 __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n)
 {
-    __shared__ cpx shared[6144]; 
+    __shared__ cpx shared_low[3071];
+    __shared__ cpx shared_mid[1];
+    __shared__ cpx shared_high[3071];
+    cpx w, in_lower, in_upper;    
+    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    cpx *output = tid < (n >> 1) ? shared_low : shared_high;
+    int in_high = (n >> 1) + tid;
+    int i = (tid << 1);
+    int ii = i + 1;
+
+    /* Move (bit-reversed?) Global to Shared */
+    globalToShared(tid, in_high, 0, lead, shared_low, shared_high, in);
+
+    /* Run FFT algorithm */
+    for (int steps = 0; steps < depth; ++steps) {
+        SYNC_THREADS;
+        in_lower = shared_low[tid];
+        in_upper = shared_high[tid];
+        SIN_COS_F(angle * ((tid & (0xffffffff << steps))), &w.y, &w.x);
+        SYNC_THREADS;
+        output[i] = cuCaddf(in_lower, in_upper);
+        output[ii] = cuCmulf(w, cuCsubf(in_lower, in_upper));
+    }
+
+    /* Move Shared to Global (index bit-reversed) */
+    SYNC_THREADS;
+    sharedToGlobal(tid, in_high, 0, scale, lead, shared_low, shared_high, out);
+}
+
+__global__ void _kernelCGSB48K_back(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n)
+{
+    __shared__ cpx shared[6144];
     cpx w, in_lower, in_upper;
-    int tid = (blockIdx.x * blockDim.x + threadIdx.x);    
+    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     int in_high = (n >> 1) + tid;
     int i = (tid << 1);
     int ii = i + 1;
@@ -110,17 +142,17 @@ __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx s
     globalToShared(tid, in_high, 0, lead, shared, in);
 
     /* Run FFT algorithm */
-    for (int steps = 0; steps < depth; ++steps) {        
+    for (int steps = 0; steps < depth; ++steps) {
         SYNC_THREADS;
         in_lower = shared[tid];
         in_upper = shared[in_high];
-        SIN_COS_F(angle * ((tid & (0xffffffff << steps))), &w.y, &w.x);        
+        SIN_COS_F(angle * ((tid & (0xffffffff << steps))), &w.y, &w.x);
         SYNC_THREADS;
         shared[i] = cuCaddf(in_lower, in_upper);
-        shared[ii] = cuCmulf(w, cuCsubf(in_lower, in_upper));                
+        shared[ii] = cuCmulf(w, cuCsubf(in_lower, in_upper));
     }
 
     /* Move Shared to Global (index bit-reversed) */
-    SYNC_THREADS;
+    //SYNC_THREADS;
     sharedToGlobal(tid, in_high, 0, scale, lead, shared, out);
 }

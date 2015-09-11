@@ -49,7 +49,7 @@ int main()
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
     //printDevProp(prop);
 
-    printf("\n\tcuFFT\ttbFFT\ttbFFT\n");
+    printf("\n\tcuFFT\tTobb\tTobbSB\tConstSB\n");
     for (unsigned int n = power2(2); n < power2(12); n *= 2) {        
         printf("\n%d:", n);
         

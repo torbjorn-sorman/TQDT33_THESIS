@@ -37,7 +37,7 @@ unsigned int power2(int exp)
     return power(2, exp);
 }
 
-#define GEN_CODE
+
 
 int main()
 {
@@ -49,16 +49,18 @@ int main()
     n_threads = 1;
 #endif
 
-    const unsigned int n = power2(2);
+    const unsigned int n = power2(3);
 
     //test_image(fft2d_tobb, "crevisio", n_threads, 4096);
 
     //test_fft2d("FFT Constant Geometry 2D", fft2d_const_geom, n_threads, 1, 4096);
     //test_fft2d("FFT Regular 2D", fft2d_reg, n_threads, 1, 4096);
     //test_fft2d("FFT Tobb 2D", fft2d_tobb, n_threads, 1, 4096);
-    
-    
-    test_fftw(n);    
+//#define GEN_CODE
+#ifdef GEN_CODE
+    createFixedSizeFFT("const", n);
+#else
+    //test_fftw(n);    
     //test_fft("Reg FFT", fft_reg, n_threads, 1, n);
     //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
     test_fft("Constant Geometry FFT", fft_const_geom, n_threads, 1, n);
@@ -66,9 +68,6 @@ int main()
 
     //test_short_fft(fft_fixed, n_threads, n);
     //test_short_fft(fft_const_geom, n_threads, n);
-
-#ifdef GEN_CODE
-    createFixedSizeFFT("const", n);
 #endif
 
     printf("\nComplete!\n");

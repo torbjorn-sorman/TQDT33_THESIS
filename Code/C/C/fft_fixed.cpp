@@ -23,29 +23,30 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
         else  {
             fft_x4inv(*in, *out);
         }
-        return;
     }
-    if (n == 8) {
+    else if (n == 8) {
         if (dir == FORWARD_FFT)
             fft_x8(*in, *out);
         else
             fft_x8inv(*in, *out);
-        return;
     }
-    if (n == 16) {
+    else if (n == 16) {
         if (dir == FORWARD_FFT)
             fft_x16(*in, *out);
         else
             fft_x16inv(*in, *out);
-        return;
     }
-    if (n == 32) {
+    else if (n == 32) {
         if (dir == FORWARD_FFT)
             fft_x32(*in, *out);
         else
             fft_x32inv(*in, *out);
-        return;
     }
+    console_separator(1);
+    console_print(*in, n);
+    console_newline(1);
+    console_print(*out, n);
+    console_separator(1);
 #endif
     // else
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);

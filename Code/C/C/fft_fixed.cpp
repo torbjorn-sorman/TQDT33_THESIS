@@ -8,14 +8,14 @@
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
-#include "fft_generated_fixed_reg.h"
-//#include "fft_generated_fixed_const.h"
+//#include "fft_generated_fixed_reg.h"
+#include "fft_generated_fixed_const.h"
 
 __inline static void fft_xn(fft_direction dir, cpx **in, cpx **out, cpx *W, const int n);
 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
-#ifdef GENERATED_FIXED_REG
+#ifdef GENERATED_FIXED_CONST
     if (n == 4) {
         if (dir == FORWARD_FFT) {
             fft_x4(*in, *out);
@@ -32,7 +32,6 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
             fft_x8inv(*in, *out);
         return;
     }
-    /*
     if (n == 16) {
         if (dir == FORWARD_FFT)
             fft_x16(*in, *out);
@@ -47,7 +46,6 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
             fft_x32inv(*in, *out);
         return;
     }
-    */
 #endif
     // else
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);

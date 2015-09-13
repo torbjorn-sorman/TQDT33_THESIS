@@ -65,19 +65,31 @@ __inline static expr *make_out_expr(int index, expr *e, double scale)
 }
 
 // converts expression tree to string
-__inline static std::string exprToString(expr *e, int useLocal)
+__inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reImg)
 {
     std::stringstream fmt;
     fmt << std::fixed;
+    std::string part = (reImg == CPX_REAL) ? "r" : "i";
+    std::string left, right;
+    if (e != NULL) {
+        if (e->left != NULL)
+            left = exprToString(e->left, useLocal, reImg);
+        if (e->right != NULL)
+            right = exprToString(e->right, useLocal, reImg);
+    }
     switch (e->op)
     {
-    case CPX_ADD: fmt << "cpxAdd(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_ADD:         
+        fmt << "(" << left << " + " << right << ")";
         break;
-    case CPX_SUB: fmt << "cpxSub(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_SUB:
+        fmt << "(" << left << " - " << right << ")";
         break;
-    case CPX_MUL: fmt << "cpxMul(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_MUL:
+        fmt << "((" << left << " * " << right << ") - (" << left << " * " << right << "))";
         break;
-    case CPX_MAKE: fmt << "make_cpx(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_MAKE: 
+        fmt << "(" << (reImg == CPX_REAL ? left : right) << ")";
         break;
     case CPX_REAL: fmt << e->value;
         break;
@@ -85,11 +97,12 @@ __inline static std::string exprToString(expr *e, int useLocal)
         break;
     case CPX_IN:
         if (useLocal == 0)
-            fmt << "in[" << e->index << "]";
+            fmt << "in[" << e->index << "]." << part;
         else
-            fmt << "in" << e->index;
+            fmt << "in" << e->index << "." << part;
         break;
-    case CPX_OUT: fmt << "out[" << e->index << "] = cpxMul(" << exprToString(e->left, useLocal) << ", make_cpx(" << e->value << ", 0.0))";
+    case CPX_OUT: 
+        fmt << "out[" << e->index << "]." << part << " = (" << left << " * " << e->value << ")";
         break;
     default: fmt << "";
         break;

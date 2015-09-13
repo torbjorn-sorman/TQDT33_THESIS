@@ -187,11 +187,11 @@ void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
 {
     double measure;
     cpx *in, *out;
-    for (int n = 4; n <= max_elem; n *= 2) {
+    for (unsigned int n = 4; n <= max_elem; n *= 2) {
         in = get_seq(n, 1);
         out = get_seq(n);
         START_TIME;
-        for (int i = 0; i < 1000000; ++i) {
+        for (int i = 0; i < 100000; ++i) {
             fn(FORWARD_FFT, &in, &out, n_threads, n);
         }
         STOP_TIME(measure);

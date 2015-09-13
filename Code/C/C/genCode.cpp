@@ -89,12 +89,13 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, const in
         }
     }
     for (int i = 0; i < n; ++i) {
-        fmt << "\t" << exprToString(output[i], useLocal).c_str() << ";\n";
+        fmt << "\t" << exprToString(output[i], useLocal, CPX_REAL).c_str() << ";\n";
+        fmt << "\t" << exprToString(output[i], useLocal, CPX_IMAG).c_str() << ";\n";
     }
     // Close function and return function budy
     fmt << "}\n\n";
 
-    printf("\n");
+    printf("%s\n", fmt.str().c_str());
     return fmt.str();
 }
 
@@ -117,8 +118,8 @@ void createFixedSizeFFT(std::string name, const int max_n)
 
     // Function declarations and bodies (__inline static void ...)
     for (int i = 4; i <= max_n; i *= 2) {
-        fprintf_s(f, "%s", generate_body(specs, FORWARD_FFT, i));
-        fprintf_s(f, "%s", generate_body(specs, INVERSE_FFT, i));
+        fprintf_s(f, "%s", generate_body(specs, FORWARD_FFT, i).c_str());
+        fprintf_s(f, "%s", generate_body(specs, INVERSE_FFT, i).c_str());
     }
 
     // End and close file.

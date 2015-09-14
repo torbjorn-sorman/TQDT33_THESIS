@@ -16,6 +16,7 @@ void test_fft(char *name, fft_func fn, const int n_threads, int toFile, const un
 void test_fft2d(char *name, fft2d_func fn, const int n_threads, int file, const unsigned int max_elem);
 
 void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem);
+void test_short_fftw(unsigned int max_elem);
 
 void test_fftw(unsigned int max_elem);
 void test_fftw2d(unsigned int max_elem);

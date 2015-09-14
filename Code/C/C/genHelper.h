@@ -75,8 +75,10 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
         if (e->left != NULL)
             left = exprToString(e->left, useLocal, reImg);
         if (e->right != NULL)
-            right = exprToString(e->right, useLocal, reImg);
+            right = exprToString(e->right, useLocal, reImg);        
     }
+    else
+        return "";
     switch (e->op)
     {
     case CPX_ADD:         
@@ -86,7 +88,16 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
         fmt << "(" << left << " - " << right << ")";
         break;
     case CPX_MUL:
-        fmt << "((" << left << " * " << right << ") - (" << left << " * " << right << "))";
+        if (reImg == CPX_REAL) {
+            std::string left_im = exprToString(e->left, useLocal, CPX_IMAG);            
+            std::string right_im = exprToString(e->right, useLocal, CPX_IMAG);
+            fmt << "((" << left << " * " << right << ") - (" << left_im << " * " << right_im << "))";
+        }
+        else {
+            std::string left_re = exprToString(e->left, useLocal, CPX_REAL);
+            std::string right_re = exprToString(e->right, useLocal, CPX_REAL);
+            fmt << "((" << left_re << " * " << right << ") + (" << left << " * " << right_re << "))";
+        }
         break;
     case CPX_MAKE: 
         fmt << "(" << (reImg == CPX_REAL ? left : right) << ")";
@@ -102,7 +113,44 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
             fmt << "in" << e->index << "." << part;
         break;
     case CPX_OUT: 
-        fmt << "out[" << e->index << "]." << part << " = (" << left << " * " << e->value << ")";
+        if (e->value == 1.0)
+            fmt << "out[" << e->index << "]." << part << " = " << left;
+        else
+            fmt << "out[" << e->index << "]." << part << " = " << left << " * " << e->value;
+        break;
+    default: fmt << "";
+        break;
+    }
+    return fmt.str();
+}
+
+
+// converts expression tree to string
+__inline static std::string exprToString(expr *e, int useLocal)
+{
+    std::stringstream fmt;
+    fmt << std::fixed;
+    switch (e->op)
+    {
+    case CPX_ADD: fmt << "cpxAdd(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+        break;
+    case CPX_SUB: fmt << "cpxSub(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+        break;
+    case CPX_MUL: fmt << "cpxMul(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+        break;
+    case CPX_MAKE: fmt << "make_cpx(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+        break;
+    case CPX_REAL: fmt << e->value;
+        break;
+    case CPX_IMAG: fmt << e->value;
+        break;
+    case CPX_IN:
+        if (useLocal == 0)
+            fmt << "in[" << e->index << "]";
+        else
+            fmt << "in" << e->index;
+        break;
+    case CPX_OUT: fmt << "out[" << e->index << "] = cpxMul(" << exprToString(e->left, useLocal) << ", make_cpx(" << e->value << ", 0.0))";
         break;
     default: fmt << "";
         break;

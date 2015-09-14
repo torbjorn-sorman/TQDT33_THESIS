@@ -5,11 +5,12 @@
 #include <regex>
 #include <sstream>
 #include <algorithm>
+#include <regex>
 
 #include "tb_definitions.h"
 #include "genHelper.h"
 #include "tb_math.h"
 
-void createFixedSizeFFT(std::string name, int max_n);
+void createFixedSizeFFT(std::string name, int max_n, int writeToFile);
 
 #endif

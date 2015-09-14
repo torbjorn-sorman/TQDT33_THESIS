@@ -144,16 +144,19 @@ std::string cleanup(std::string str)
     return clean_str;
 }
 
-std::string generate_body(algorithmSpec specs, fft_direction direction, const int n)
+std::string generate_body(algorithmSpec specs, fft_direction direction, const int no_rev, const int n)
 {
     int depth = log2_32(n);
     int lead = 32 - depth;
     expr **output = (expr **)malloc(sizeof(expr *) * n);
 
-    double scale = direction == FORWARD_FFT ? 1.0 : 1.0 / ((double)n);
+    double scale = ((direction == FORWARD_FFT) || no_rev) ? 1.0 : 1.0 / ((double)n);
     // Build the algorithm by recursivly traverse the path for each output.
     for (int i = 0; i < n; ++i) {
-        output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, n), scale);
+        if (no_rev)
+            output[i] = make_out_expr(i, _gen(direction, specs, i, depth, n), scale);
+        else
+            output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, n), scale);
     }    
 
     // Reorder, so that output is sequential
@@ -178,7 +181,7 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, const in
     return fmt.str();
 }
 
-void createFixedSizeFFT(std::string name, const int max_n, int writeToFile)
+void createFixedSizeFFT(std::string name, const int no_rev, const int max_n, int writeToFile)
 {
     algorithmSpec specs = (name.compare("const") == 0 ? specs_const : specs_reg);
 
@@ -200,8 +203,8 @@ void createFixedSizeFFT(std::string name, const int max_n, int writeToFile)
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);
             stream << "#define GENERATED_FIXED_"<< i << "\n\n";
-            stream << generate_body(specs, FORWARD_FFT, i).c_str() << "\n";
-            stream << generate_body(specs, INVERSE_FFT, i).c_str() << "\n";
+            stream << generate_body(specs, FORWARD_FFT, no_rev, i).c_str() << "\n";
+            stream << generate_body(specs, INVERSE_FFT, no_rev, i).c_str() << "\n";
             printf("done.\n");
         }
         fprintf_s(f, stream.str().c_str());
@@ -213,8 +216,8 @@ void createFixedSizeFFT(std::string name, const int max_n, int writeToFile)
     else {
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);            
-            generate_body(specs, FORWARD_FFT, i).c_str();
-            generate_body(specs, INVERSE_FFT, i).c_str();
+            generate_body(specs, FORWARD_FFT, no_rev, i).c_str();
+            generate_body(specs, INVERSE_FFT, no_rev, i).c_str();
             printf("done.\n");
         }
     }

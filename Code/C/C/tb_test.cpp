@@ -205,8 +205,7 @@ void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
         out = get_seq(n);
         START_TIME;
         for (int i = 0; i < 100000; ++i) {
-            fft_x4(in, out);
-            //fn(FORWARD_FFT, &in, &out, n_threads, n);
+            fn(FORWARD_FFT, &in, &out, n_threads, n);
         }
         STOP_TIME(measure);
         free(in);

@@ -73,7 +73,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <OpenMPSupport>false</OpenMPSupport>
+      <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -82,7 +82,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <Profile>true</Profile>
-      <AdditionalLibraryDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;G:\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -112,9 +112,8 @@
     <ClInclude Include="cgp_fft.h" />
     <ClInclude Include="fft_const_geom.h" />
     <ClInclude Include="fft_fixed.h" />
-    <ClInclude Include="fft_generated_fixed.h" />
     <ClInclude Include="fft_generated_fixed_const.h" />
-    <ClInclude Include="fft_generated_fixed_reg.h" />
+    <ClInclude Include="fft_generated_fixed.h" />
     <ClInclude Include="fft_reg.h" />
     <ClInclude Include="fft_tobb.h" />
     <ClInclude Include="genCode.h" />

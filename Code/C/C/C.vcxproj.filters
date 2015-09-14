@@ -176,9 +176,6 @@
     <ClInclude Include="fft_fixed.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
-    <ClInclude Include="fft_generated_fixed.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="genCode.h">
       <Filter>Header Files\gen</Filter>
     </ClInclude>
@@ -188,7 +185,7 @@
     <ClInclude Include="fft_generated_fixed_const.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fft_generated_fixed_reg.h">
+    <ClInclude Include="fft_generated_fixed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

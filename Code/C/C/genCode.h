@@ -11,6 +11,6 @@
 #include "genHelper.h"
 #include "tb_math.h"
 
-void createFixedSizeFFT(std::string name, int max_n, int writeToFile);
+void createFixedSizeFFT(std::string name, const int max_n, const int no_rev, const int writeToFile);
 
 #endif

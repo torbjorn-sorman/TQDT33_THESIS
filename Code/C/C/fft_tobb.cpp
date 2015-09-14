@@ -95,9 +95,6 @@ __inline void _fft_tbbody(cpx *in, cpx *out, cpx *W, int bit, int steps, int dis
         l = i + (i & lmask);
         u = l + dist;
         p = (i << steps) & pmask;
-
-        printf("i: %d\tbit: %d\tdist: %d\tlow: %d\thigh: %d\tlmask: %u\n", i, bit, dist, l, u, lmask);
-
         tmp_r = in[l].r - in[u].r;
         tmp_i = in[l].i - in[u].i;
         out[l].r = in[l].r + in[u].r;
@@ -105,6 +102,4 @@ __inline void _fft_tbbody(cpx *in, cpx *out, cpx *W, int bit, int steps, int dis
         out[u].r = (W[p].r * tmp_r) - (W[p].i * tmp_i);
         out[u].i = (W[p].i * tmp_r) + (W[p].r * tmp_i);
     }
-
-    printf("\n");
 }

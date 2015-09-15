@@ -93,6 +93,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Include>
       </Include>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -119,6 +120,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64"</Include>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64</AdditionalLibraryDirectories>
@@ -144,6 +146,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -166,6 +171,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <Optimization>InheritFromHost</Optimization>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

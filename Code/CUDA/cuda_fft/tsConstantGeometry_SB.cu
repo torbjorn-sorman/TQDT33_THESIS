@@ -8,7 +8,6 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, unsigned int lead, const int n);
 __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, unsigned int lead, const int n);
 
 __host__ int tsConstantGeometry_SB_Validate(const int n)
@@ -49,13 +48,7 @@ __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_ou
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     const int depth = log2_32(n);
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n / 2);
-#ifdef PRECALC_TWIDDLE
-    _kernelCGSB KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * (n + n / 2))(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n);
-#else
-    _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * (n + n / 32))(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n);
-#endif
-    if (cudaError_t error = cudaGetLastError())
-        printf("Error: %s Memsize: %d n: %d\n", cudaGetErrorString(error), sizeof(cpx) * n / numBlocks, n);
+    _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n);
     cudaDeviceSynchronize();
 }
 
@@ -84,36 +77,4 @@ __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx s
     /* Move Shared to Global (index bit-reversed) */
     SYNC_THREADS;
     sharedToGlobal(tid, in_high, 0, scale, lead, shared, out);
-}
-
-__global__ void _kernelCGSB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n)
-{
-    extern __shared__ cpx shared[];
-    cpx w, in_lower, in_upper;
-    const int tid = (blockIdx.x * blockDim.x + threadIdx.x);
-    const int n2 = (n >> 1);
-    const int in_low = n2 + tid;
-    const int in_high = n + tid;
-    const int i = n2 + (tid << 1);
-    const int ii = i + 1;
-
-    /* Twiddle factors */
-    SIN_COS_F(angle * tid, &shared[tid].y, &shared[tid].x);
-
-    /* Move Global to Shared */
-    globalToShared(in_low, in_high, n2, lead, shared, in);
-    
-    /* Run FFT algorithm */
-    for (int steps = 0; steps < depth; ++steps) {
-        SYNC_THREADS;
-        in_lower = shared[in_low];
-        in_upper = shared[in_high];
-        SYNC_THREADS;
-        w = shared[(tid & (0xffffffff << steps))];
-        cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
-    }
-
-    /* Move Shared to Global (index bit-reversed) */
-    SYNC_THREADS;
-    sharedToGlobal(in_low, in_high, n2, scale, lead, shared, out);
 }

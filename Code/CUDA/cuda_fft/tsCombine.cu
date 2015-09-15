@@ -8,32 +8,12 @@ __host__ int tsCombine_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
-    int mblock = (n > MAX_BLOCK_SIZE * 2) && 1;
-    
-    if (mblock) {
-        printf("\nIN:\n");
-        console_print(in, n);
-        printf("\n");
-    }
+
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
-
-    if (mblock) {
-        cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-        printf("\nOUT:\n");
-        console_print(out, n);
-        printf("\n");
-    }
-
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    /*
-    if (mblock) {
-        printf("\n");
-        console_print(in, 10);
-        printf("\n");
-    }
-    */
+
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
@@ -56,8 +36,8 @@ __host__ double tsCombine_Performance(const int n)
 
 __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
-    int threadsPerBlock, numBlocks;
-    const float w_angle = dir * (M_2_PI / n);
+    int threads, blocks;
+    float w_angle = dir * (M_2_PI / n);
     const int depth = log2_32(n);
     const int n2 = (n / 2);
     const int breakSize = log2_32(MAX_BLOCK_SIZE);
@@ -66,36 +46,28 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     int dist = n2;
 
     // Set number of blocks and threads
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
-    if (numBlocks > 1) {
-        //printf("lvl 1\n");
-        const float scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
+    setBlocksAndThreads(&blocks, &threads, n2);
+
+    if (blocks > 1) {
         // Sync at device level until 
-        _kernelAll KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
+        _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
         cudaDeviceSynchronize();
-        while (bit-- > breakSize) {
+        while (--bit > breakSize) {
             dist = dist >> 1;
             ++steps;
-            _kernelAll KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
+            _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
             cudaDeviceSynchronize();
         }
-        const int nBlock = n / numBlocks;
-        printf("\nblocks: %d\tang: %f\tbit: %d\tn2: %d\n", numBlocks, dir * (M_2_PI / nBlock), log2_32(nBlock), nBlock / 2);
-        
-        cpx *out = (cpx *)malloc(sizeof(cpx) * n);
-        cudaMemcpy(out, *dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-        console_print(out, n);
-
-
-        _kernelBlock KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * nBlock)(*dev_out, *dev_in, dir * (M_2_PI / nBlock), log2_32(nBlock), nBlock / 2);
+        const int nBlock = n / blocks;
+        w_angle = dir * (M_2_PI / nBlock);
+        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, bit + 1, nBlock / 2);
         cudaDeviceSynchronize();
-
-        setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
-        bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_in, *dev_out, scale, 32 - depth);      
+        setBlocksAndThreads(&blocks, &threads, n);
+        bit_reverse KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, (dir == FFT_FORWARD ? 1.f : 1.f / n), 32 - depth);
     }
     else {
         const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-        _kernelB KERNEL_ARGS3(1, threadsPerBlock, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n2);
+        _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n2);
     }
     cudaDeviceSynchronize();
 }
@@ -120,20 +92,20 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int dep
     cpx w, in_lower, in_upper;
     const int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     const int in_low = threadIdx.x;
-    const int in_high = n2 / 2 + in_low;
+    const int in_high = n2 + in_low;
+    const int global_low = in_low + (blockIdx.x * blockDim.x * 2);
+    const int global_high = in_high + (blockIdx.x * blockDim.x * 2);
     const int i = (in_low << 1);
     const int ii = i + 1;
         
     /* Move Global to Shared */
-    shared[in_low] = in[in_low + blockIdx.x * blockDim.x];
-    shared[in_high] = in[in_high + blockIdx.x * blockDim.x];
-
-    if (tid == n2 || tid == 0) {
-        printf("%d\t(%d, %d) -> (%d, %d)\t%d\t%d\n", tid, in_low, in_high, i, ii, blockIdx.x, blockIdx.x * blockDim.x);
-    }
+    shared[in_low] = in[global_low];
+    shared[in_high] = in[global_high];
 
     /* Run FFT algorithm */
     for (int steps = 0; steps < depth; ++steps) {
+        //if (tid == 0)
+            //printf("steps: %d\n", steps);
         SYNC_THREADS;
         in_lower = shared[in_low];
         in_upper = shared[in_high];
@@ -144,8 +116,8 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int dep
 
     /* Move Shared to Global */
     SYNC_THREADS;    
-    out[in_low + blockIdx.x * blockDim.x] = shared[in_low];
-    out[in_high + blockIdx.x * blockDim.x] = shared[in_high];
+    out[global_low] = shared[in_low];
+    out[global_high] = shared[in_high];
 }
 
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)

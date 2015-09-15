@@ -59,23 +59,12 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_in, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
     cudaDeviceSynchronize();
 
-    cpx *out = (cpx *)malloc(sizeof(cpx) * n);
-    cudaMemcpy(out, *dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    console_print(out, n);
-
     while (bit-- > 0) {
         dist = dist >> 1;
         ++steps;
         _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
         cudaDeviceSynchronize();
-
-        printf("\nblocks: %d\tang: %f\tbit: %d\tn2: %d\n", numBlocks, dir * (M_2_PI / n), log2_32(n), n / 2);
-        cpx *out = (cpx *)malloc(sizeof(cpx) * n);
-        cudaMemcpy(out, *dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-        console_print(out, n);
-
     }
-    printf("\n");
 
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, lead);

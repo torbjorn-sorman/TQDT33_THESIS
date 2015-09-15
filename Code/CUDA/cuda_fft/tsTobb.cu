@@ -6,7 +6,7 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist, const int dist2, const int n2);
+__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
 
 __host__ int tsTobb_Validate(const int n)
 {
@@ -53,19 +53,29 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     cudaDeviceSynchronize();
     
     steps = 0;
-    dist2 = n;
     dist = n2;
     --bit;
 
-    _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_in, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist, dist2, n2);
+    _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_in, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
     cudaDeviceSynchronize();
+
+    cpx *out = (cpx *)malloc(sizeof(cpx) * n);
+    cudaMemcpy(out, *dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+    console_print(out, n);
+
     while (bit-- > 0) {
-        dist2 = dist;
         dist = dist >> 1;
         ++steps;
-        _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist, dist2, n2);
+        _tsTobb_body KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_out, dev_W, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
         cudaDeviceSynchronize();
+
+        printf("\nblocks: %d\tang: %f\tbit: %d\tn2: %d\n", numBlocks, dir * (M_2_PI / n), log2_32(n), n / 2);
+        cpx *out = (cpx *)malloc(sizeof(cpx) * n);
+        cudaMemcpy(out, *dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+        console_print(out, n);
+
     }
+    printf("\n");
 
     setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, lead);
@@ -73,7 +83,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     cudaDeviceSynchronize();
 }
 
-__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist, const int dist2, const int n2)
+__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     int l = i + (i & lmask);

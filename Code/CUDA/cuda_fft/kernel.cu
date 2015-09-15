@@ -50,32 +50,33 @@ int main()
     //printDevProp(prop);
 
     printf("\n\tcuFFT\tTobb\tTobbSB\tConstSB\n");
-    for (unsigned int n = power2(2); n <= power2(12); n *= 2) {        
+    for (unsigned int n = power2(2); n <= power2(4); n *= 2) {        
         printf("\n%d:", n);
         
         // cuFFT
-        printf("\t%.0f", cuFFT_Performance(n));
+        //printf("\t%.0f", cuFFT_Performance(n));
                 
         // Tobb
-        printf("\t%.0f", tsTobb_Performance(n));
+        //printf("\t%.0f", tsTobb_Performance(n));
+        printf("\n");
         if (tsTobb_Validate(n) == 0) printf("!");
-        
-        // Tobb
-        printf("\t%.0f", tsTobb_SB_Performance(n));
-        if (tsTobb_SB_Validate(n) == 0) printf("!");
-        
-        // Const geom
-        printf("\t%.0f", tsConstantGeometry_Performance(n));
-        if (tsConstantGeometry_Validate(n) == 0) printf("!");
 
         // Const geom
-        printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
-        if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
+        //printf("\t%.0f", tsConstantGeometry_Performance(n));
+        //if (tsConstantGeometry_Validate(n) == 0) printf("!");
 
         // Combine
-        printf("\t%.0f", tsCombine_Performance(n));
+        //printf("\t%.0f", tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
-        
+
+        if (n <= MAX_BLOCK_SIZE * 2) {        
+            // Tobb
+            printf("\t%.0f", tsTobb_SB_Performance(n));
+            if (tsTobb_SB_Validate(n) == 0) printf("!");
+            // Const geom
+            printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
+            if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
+        }
     }
     printf("\nDone...");
     getchar();

@@ -70,7 +70,6 @@ __global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int
 {
     int l = (blockIdx.x * blockDim.x + threadIdx.x);
     int i = l * 2;
-    cpx tmp;
     cpx in_lower = in[l];
     cpx in_upper = in[n2 + l];
     cpx w = W[l & mask];

@@ -9,9 +9,10 @@
 #include "tb_print.h"
 
 #include "fft_generated_fixed.h"
-//#include "fft_generated_fixed_const.h"
+#include "fft_generated_fixed_const.h"
 
 __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const int n);
+__inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, const int n);
 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
@@ -26,7 +27,7 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
     }
 #endif
 #ifdef GENERATED_FIXED_8
-    else if (n == 8) {
+    if (n == 8) {
         if (dir == FORWARD_FFT)
             fft_x8(*in, *out);
         else
@@ -34,7 +35,7 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
     }
 #endif
 #ifdef GENERATED_FIXED_16
-    else if (n == 16) {
+    if (n == 16) {
         if (dir == FORWARD_FFT)
             fft_x16(*in, *out);
         else
@@ -42,7 +43,7 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
     }
 #endif
 #ifdef GENERATED_FIXED_32
-    else if (n == 32) {
+    if (n == 32) {
         if (dir == FORWARD_FFT)
             fft_x32(*in, *out);
         else
@@ -53,20 +54,15 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
         return;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-
     fft_xn(dir, *in, *out, W, n);
     bit_reverse(*out, dir, 32 - log2_32(n), n);
-
-    fft_xn(dir, *in, *out, W, n);
-    bit_reverse(*out, dir, 32 - log2_32(n), n);
-
     free(W);
-
 }
 
-__inline void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2);
+__inline static void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, const int bit, const int steps, const int dist, const int dist2, const int n2);
+__inline static void _fft_tbbody_f(cpx *in, cpx *out, const float ang, const int bit, const int steps, const int dist, const int dist2, const int n2);
 
-#define FIXED_4
+#define FIXED_8
 
 __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const int n)
 {
@@ -100,6 +96,7 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
         _fft_tbbody_f(out, out, W, bit, ++steps, dist, dist2, n2);
     }
     if (dir == FORWARD_FFT) {
+#pragma omp parallel for schedule(static)
         for (int i = 0; i < n; i += len) {
 #ifdef FIXED_4
             fft_fixed_x4(&(out[i]), &(out[i]));
@@ -117,6 +114,7 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
         }
     }
     else {
+#pragma omp parallel for schedule(static)
         for (int i = 0; i < n; i += len) {
 #ifdef FIXED_4
             fft_fixed_x4inv(&(out[i]), &(out[i]));
@@ -135,7 +133,7 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
     }
 }
 
-__inline void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, int bit, int steps, int dist, int dist2, const int n2)
+__inline static void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, const int bit, const int steps, const int dist, const int dist2, const int n2)
 {
     const unsigned int pmask = (dist - 1) << steps;
     const unsigned int lmask = 0xFFFFFFFF << bit;

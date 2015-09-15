@@ -1,11 +1,4 @@
-
-#ifdef _OPENMP
-#include <omp.h> 
-#endif
-
 #include "tb_fft_helper.h"
-#include "tb_math.h"
-#include "tb_print.h"
 
 void twiddle_factors(cpx *W, fft_direction dir, const int n)
 {
@@ -36,7 +29,6 @@ void twiddle_factors(cpx *W, fft_direction dir, const int n)
     }
 }
 
-// Better locality(?)
 void twiddle_factors_s(cpx *W, fft_direction dir, const int n)
 {
     int n2;
@@ -98,44 +90,6 @@ void transpose_block(cpx **seq, const int b, const int n)
 #pragma omp parallel for schedule(static) private(tmp)
     for (int bly = 0; bly < n; bly += b) {
         for (int blx = bly; blx < n; blx += b) {
-            for (int y = bly; y < b + bly; ++y) {
-                for (int x = blx; x < b + blx; ++x) {
-                    if (x > y) {
-                        tmp = seq[y][x];
-                        seq[y][x] = seq[x][y];
-                        seq[x][y] = tmp;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void transpose_block2(cpx **seq, const int b, const int n)
-{
-    cpx tmp;
-    for (int bly = 0; bly < n; bly += b) {
-#pragma omp parallel for schedule(static) private(tmp)
-        for (int blx = bly; blx < n; blx += b) {
-            for (int y = bly; y < b + bly; ++y) {
-                for (int x = blx; x < b + blx; ++x) {
-                    if (x > y) {
-                        tmp = seq[y][x];
-                        seq[y][x] = seq[x][y];
-                        seq[x][y] = tmp;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void transpose_block3(cpx **seq, const int b, const int n)
-{
-    cpx tmp;
-    for (int bly = 0; bly < n; bly += b) {
-        for (int blx = bly; blx < n; blx += b) {
-#pragma omp parallel for schedule(static) private(tmp)
             for (int y = bly; y < b + bly; ++y) {
                 for (int x = blx; x < b + blx; ++x) {
                     if (x > y) {

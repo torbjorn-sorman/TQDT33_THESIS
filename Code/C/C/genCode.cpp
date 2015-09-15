@@ -89,6 +89,7 @@ int find_redundant_parenthesis(std::string str, int *start, int *end)
     return 0;
 }
 
+// Remove uneccessary information
 std::string cleanup(std::string str)
 {
     std::string clean_str = str;
@@ -142,6 +143,24 @@ std::string cleanup(std::string str)
         clean_str.erase(e - 1, 1);
     }    
     return clean_str;
+}
+
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty())
+        return;
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
+
+void clrStream(std::stringstream &s1, std::stringstream &s2)
+{
+    s1.str("");
+    s1.clear();
+    s2.str("");
+    s2.clear();
 }
 
 std::string generate_body(algorithmSpec specs, fft_direction direction, const int no_rev, const int n)

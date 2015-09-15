@@ -14,9 +14,6 @@
     <CudaCompile Include="tsTest.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="tsRegular.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="tsTobb.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
@@ -52,9 +49,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tsDefinitions.cuh" />
-    <ClInclude Include="tsRegular.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="tsTobb.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>

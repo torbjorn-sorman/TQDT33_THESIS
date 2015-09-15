@@ -56,6 +56,18 @@ __device__ static __inline__ void cpx_add_sub_mul(cpx *out_lower, cpx *out_upper
 #define W_OFFSET(A, O) (A)
 #endif
 
+__device__ static __inline__ void globalToShared(int low, int high, int offset, cpx *shared, cpx *global)
+{
+    shared[low] = global[low + offset];
+    shared[high] = global[high + offset];
+}
+
+__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx *shared, cpx *global)
+{
+    global[low + offset] = shared[low];
+    global[high + offset] = shared[high];
+}
+
 __device__ static __inline__ void globalToShared(int low, int high, int offset, unsigned int lead, cpx *shared, cpx *global)
 {
 #ifdef BIT_REVERSED_OUTPUT

@@ -10,7 +10,6 @@
 
 #include "tsConstantGeometry.cuh"
 #include "tsConstantGeometry_SB.cuh"
-#include "tsRegular.cuh"
 #include "tsTobb.cuh"
 #include "tsTobb_SB.cuh"
 #include "tsCombine.cuh"

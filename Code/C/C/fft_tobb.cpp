@@ -29,8 +29,7 @@ void fft_tobb(fft_direction dir, cpx **in, cpx **out, const int n_threads, const
     --bit;
     
     _fft_tbbody(*in, *out, W, bit, steps, dist, dist2, n2);
-    while (bit-- > 0)
-    {
+    while (bit-- > 0) {
         dist2 = dist;
         dist = dist >> 1;
         _fft_tbbody(*out, *out, W, bit, ++steps, dist, dist2, n2);

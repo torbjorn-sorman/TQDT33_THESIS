@@ -37,13 +37,56 @@ static const unsigned int revTbl256[] =
 
 unsigned int reverseBitsLowMem(int x, const int l);
 int log2_32(int value);
- int cpx_equal(cpx a, cpx b);
- int cpx_equal(cpx *a, cpx *b, const int n);
- int cpx_equal(cpx **a, cpx **b, const int n);
- double cpx_diff(cpx a, cpx b);
- double cpx_diff(cpx *a, cpx *b, const int n);
- double cpx_diff(cpx **a, cpx **b, const int n);
- double cpx_avg_diff(cpx *a, cpx *b, const int n);
- double cpx_avg_diff(cpx **a, cpx **b, const int n);
+int cpx_equal(cpx a, cpx b);
+int cpx_equal(cpx *a, cpx *b, const int n);
+int cpx_equal(cpx **a, cpx **b, const int n);
+double cpx_diff(cpx a, cpx b);
+double cpx_diff(cpx *a, cpx *b, const int n);
+double cpx_diff(cpx **a, cpx **b, const int n);
+double cpx_avg_diff(cpx *a, cpx *b, const int n);
+double cpx_avg_diff(cpx **a, cpx **b, const int n);
+
+static _inline unsigned int power(const unsigned int base, const int exp)
+{
+    if (exp == 0)
+        return 1;
+    unsigned int value = base;
+    for (int i = 1; i < exp; ++i)
+        value *= base;
+    return value;
+}
+
+static _inline unsigned int power2(const int exp)
+{
+    return power(2, exp);
+}
+
+static __inline cpx make_cpx(float r, float i)
+{
+    cpx res;
+    res.r = r;
+    res.i = i;
+    return res;
+}
+
+static __inline cpx cpxAdd(cpx a, cpx b)
+{
+    return make_cpx(a.r + b.r,
+        a.i + b.i);
+}
+
+static __inline cpx cpxSub(cpx a, cpx b)
+{
+    return make_cpx(a.r - b.r,
+        a.i - b.i);
+}
+
+static __inline cpx cpxMul(cpx a, cpx b)
+{
+    return make_cpx(a.r * b.r -
+        a.i * b.i,
+        a.r * b.i +
+        a.i * b.r);
+}
 
 #endif

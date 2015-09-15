@@ -53,15 +53,10 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
         return;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-    /*
-    console_separator(1);
-    console_print(*in, n);
+
     fft_xn(dir, *in, *out, W, n);
     bit_reverse(*out, dir, 32 - log2_32(n), n);
-    console_newline(1);
-    console_print(*out, n);
-    console_separator(1);
-    */
+
     fft_xn(dir, *in, *out, W, n);
     bit_reverse(*out, dir, 32 - log2_32(n), n);
 

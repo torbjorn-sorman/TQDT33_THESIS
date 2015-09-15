@@ -61,7 +61,7 @@ __global__ void _kernelTSB(cpx *in, cpx *out, const int depth, const float angle
     int bit = depth;
     int dist = n;
     int lower;
-    cpx w, tmp, in_lower, in_upper;
+    cpx w, in_lower, in_upper;
 
     /* Twiddle factors */
     SIN_COS_F(angle * tid, &shared[tid].y, &shared[tid].x);
@@ -78,13 +78,8 @@ __global__ void _kernelTSB(cpx *in, cpx *out, const int depth, const float angle
         in_lower = shared[lower];
         in_upper = shared[lower + dist];
         SYNC_THREADS;
-        shared[lower].x = in_lower.x + in_upper.x;
-        shared[lower].y = in_lower.y + in_upper.y;
-        tmp.x = in_lower.x - in_upper.x;
-        tmp.y = in_lower.y - in_upper.y;
         w = shared[(tid << steps) & ((dist - 1) << steps)];
-        shared[lower + dist].x = tmp.x * w.x - tmp.y * w.y;
-        shared[lower + dist].y = tmp.x * w.y + tmp.y * w.x;
+        cpx_add_sub_mul(&(shared[lower]), &(shared[lower + dist]), in_lower, in_upper, w);
         SYNC_THREADS;
     }
 
@@ -100,14 +95,14 @@ __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float an
     int bit = depth;
     int dist = n;
     int lower;
-    cpx w, tmp, in_lower, in_upper;
+    cpx w, in_lower, in_upper;
 
     /* Move Global to Shared */
     globalToShared(tid, tid + (n >> 1), 0, lead, shared, in);
     SYNC_THREADS;
 
     /* Run FFT algorithm */
-    for (int steps = 0; steps < depth; ++steps) {
+    for (int steps = 0; steps < depth; ++steps) {   
         --bit;
         dist /= 2;
         lower = tid + (tid & (0xFFFFFFFF << bit));
@@ -115,12 +110,7 @@ __global__ void _kernelTSB48K(cpx *in, cpx *out, const int depth, const float an
         in_upper = shared[lower + dist];
         SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
         SYNC_THREADS;
-        shared[lower].x = in_lower.x + in_upper.x;
-        shared[lower].y = in_lower.y + in_upper.y;
-        tmp.x = in_lower.x - in_upper.x;
-        tmp.y = in_lower.y - in_upper.y;
-        shared[lower + dist].x = tmp.x * w.x - tmp.y * w.y;
-        shared[lower + dist].y = tmp.x * w.y + tmp.y * w.x;
+        cpx_add_sub_mul(&(shared[lower]), &(shared[lower + dist]), in_lower, in_upper, w);
         SYNC_THREADS;
     }
 

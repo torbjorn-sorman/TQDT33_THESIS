@@ -68,21 +68,11 @@ __host__ void tsConstantGeometry(const fftDirection dir, cpx **dev_in, cpx **dev
 
 __global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, const int n2)
 {
-    //__shared__ cpx input[256];
     int l = (blockIdx.x * blockDim.x + threadIdx.x);
     int i = l * 2;
     cpx tmp;
     cpx in_lower = in[l];
     cpx in_upper = in[n2 + l];
     cpx w = W[l & mask];
-    out[i].x = in_lower.x + in_upper.x;
-    out[i].y = in_lower.y + in_upper.y;
-    tmp.x = in_lower.x - in_upper.x;
-    tmp.y = in_lower.y - in_upper.y;
-    out[i + 1].x = tmp.x * w.x - tmp.y * w.y;
-    out[i + 1].y = tmp.x * w.y + tmp.y * w.x;
-    /*
-    out[i] = cuCaddf(in_lower, in_upper);
-    out[i + 1] = cuCmulf(twiddle, cuCsubf(in_lower, in_upper));
-    */
+    cpx_add_sub_mul(&(out[i]), &(out[i + 1]), in_lower, in_upper, w);
 }

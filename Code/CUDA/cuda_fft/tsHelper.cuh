@@ -40,6 +40,12 @@ __host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, 
     return((x >> 16) | (x << 16)) >> l;
 }
 
+__device__ static __inline__ void cpx_add_sub_mul(cpx *out_lower, cpx *out_upper, cpx in_lower, cpx in_upper, cpx w)
+{
+    (*out_lower) = cuCaddf(in_lower, in_upper);
+    (*out_upper) = cuCmulf(cuCsubf(in_lower, in_upper), w);
+}
+
 #ifdef PRECALC_TWIDDLE
 #define GLOBAL_LOW low - offset
 #define GLOBAL_HIGH high - offset

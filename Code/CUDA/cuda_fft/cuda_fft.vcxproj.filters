@@ -26,6 +26,9 @@
     <CudaCompile Include="tsConstantGeometry_DP.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="tsCombine.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -59,6 +62,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tsConstantGeometry_DP.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tsCombine.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

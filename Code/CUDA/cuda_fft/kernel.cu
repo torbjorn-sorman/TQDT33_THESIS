@@ -13,6 +13,7 @@
 #include "tsRegular.cuh"
 #include "tsTobb.cuh"
 #include "tsTobb_SB.cuh"
+#include "tsCombine.cuh"
 
 __host__ double cuFFT_Performance(const int n);
 
@@ -50,7 +51,7 @@ int main()
     //printDevProp(prop);
 
     printf("\n\tcuFFT\tTobb\tTobbSB\tConstSB\n");
-    for (unsigned int n = power2(2); n <= power2(11); n *= 2) {        
+    for (unsigned int n = power2(2); n <= power2(12); n *= 2) {        
         printf("\n%d:", n);
         
         // cuFFT
@@ -63,14 +64,18 @@ int main()
         // Tobb
         printf("\t%.0f", tsTobb_SB_Performance(n));
         if (tsTobb_SB_Validate(n) == 0) printf("!");
-
+        
         // Const geom
         printf("\t%.0f", tsConstantGeometry_Performance(n));
         if (tsConstantGeometry_Validate(n) == 0) printf("!");
-        
+
         // Const geom
         printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
         if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
+
+        // Combine
+        printf("\t%.0f", tsCombine_Performance(n));
+        if (tsCombine_Validate(n) == 0) printf("!");
         
     }
     printf("\nDone...");

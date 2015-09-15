@@ -81,12 +81,6 @@ __global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask
     int p = (i << steps) & pmask;
     cpx in_lower = in[l];
     cpx in_upper = in[u];
-    cpx w = W[p];
-    cpx tmp;
-    out[l].x = in_lower.x + in_upper.x;
-    out[l].y = in_lower.y + in_upper.y;
-    tmp.x = in_lower.x - in_upper.x;
-    tmp.y = in_lower.y - in_upper.y;
-    out[u].x = tmp.x * w.x - tmp.y * w.y;
-    out[u].y = tmp.x * w.y + tmp.y * w.x;
+    cpx w = W[p];    
+    cpx_add_sub_mul(&(out[l]), &(out[u]), in_lower, in_upper, w);
 }

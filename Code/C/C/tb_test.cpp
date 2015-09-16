@@ -1,7 +1,7 @@
 #include "tb_test.h"
 
-#define NO_TESTS 8
-#define NO_RUNS 100
+#define NO_TESTS 16
+#define NO_RUNS 1
 
 LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 
@@ -175,9 +175,9 @@ void mtime(char *name, twiddle_func fn, const int n_threads, int file, const uns
 
 void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned int max_elem)
 {
-    printf("\n%s\n", name);
+    if (file) printf("\n%s\n", name);
     validate(fn, n_threads, max_elem);
-    //mtime(name, fn, n_threads, file, max_elem);
+    mtime(name, fn, n_threads, file, max_elem);
 }
 
 void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)

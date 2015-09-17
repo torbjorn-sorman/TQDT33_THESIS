@@ -69,7 +69,6 @@ void fft_radix4(fft_direction dir, cpx **in, cpx **out, const int n_threads, con
 __inline void _fft_radix2(cpx *in, cpx *out, cpx *W, fft_direction dir, const int dist, const int dist2, const int n)
 {
     int u, p;
-    float tmp_r, tmp_i;
     cpx inLower, inUpper;
     const int mul = n / dist;
     for (int lower = 0; lower < n; lower += dist) {
@@ -93,7 +92,7 @@ static __inline void _sincosf(float a, float *y, float *x)
 
 __inline void _fft_radix4(cpx *in, cpx *out, cpx *W, fft_direction dir, const int dist, const int dist2, const int n)
 {
-    int i1, i2, i3, upper;
+    int i1, i2, i3;
     const cpx jmag = make_cpx(0.f, 1.f);
     const cpx jmag_neg = make_cpx(0.f, -1.f);
     cpx w1, w2, w3;

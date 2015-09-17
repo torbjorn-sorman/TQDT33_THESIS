@@ -34,10 +34,10 @@ int main()
     //test_fft2d("FFT Regular 2D", fft2d_reg, n_threads, 1, 4096);
     //test_fft2d("FFT Tobb 2D", fft2d_tobb, n_threads, 1, 4096);
     
-//#define GEN_CODE
+#define GEN_CODE
 
 #ifdef GEN_CODE
-    createFixedSizeFFT("const", 0, n, 1);
+    createFixedSizeFFT("const", n, GEN_BIT_REVERSE_ORDER, GEN_TO_FILE, GEN_TWIDDLE);
 #else
     
     //test_fft("Reg FFT", fft_reg, n_threads, 1, n);

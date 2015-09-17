@@ -11,6 +11,16 @@
 #include "tb_math.h"
 
 typedef enum {
+    GEN_NONE,
+    GEN_BIT_REVERSE_ORDER,
+    GEN_NORMAL_ORDER,
+    GEN_TWIDDLE,
+    GEN_WITH_VARIABLE_TWIDDLE,
+    GEN_TO_FILE,
+    GEN_NO_FILE
+} gen_flag;
+
+typedef enum {
     CPX_NONE,
     CPX_IN,
     CPX_OUT,
@@ -19,7 +29,8 @@ typedef enum {
     CPX_ADD,
     CPX_SUB,
     CPX_MUL,
-    CPX_MAKE
+    CPX_MAKE,
+    CPX_TWIDDLE
 } cpx_op_type;
 
 struct expr {
@@ -66,6 +77,11 @@ __inline static expr *make_out_expr(int index, expr *e, double scale)
     return mkExpr(CPX_OUT, index, e, NULL, scale);
 }
 
+__inline static expr* make_twiddle_expr(int p)
+{
+    return mkExpr(CPX_TWIDDLE, p, NULL, NULL, 0.0);
+}
+
 // converts expression tree to string
 __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reImg)
 {
@@ -104,6 +120,9 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
     case CPX_MAKE:
         fmt << "(" << (reImg == CPX_REAL ? left : right) << "f)";
         break;
+    case CPX_TWIDDLE:
+        fmt << "twiddle" << e->index;
+        break;
     case CPX_REAL: fmt << e->value;
         break;
     case CPX_IMAG: fmt << e->value;
@@ -141,6 +160,8 @@ __inline static std::string exprToString(expr *e, int useLocal)
         break;
     case CPX_MAKE: fmt << "make_cpx(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
         break;
+    case CPX_TWIDDLE: fmt << "twiddle" << e->index;
+        break;
     case CPX_REAL: fmt << e->value;
         break;
     case CPX_IMAG: fmt << e->value;
@@ -159,6 +180,6 @@ __inline static std::string exprToString(expr *e, int useLocal)
     return fmt.str();
 }
 
-void createFixedSizeFFT(std::string name, const int max_n, const int no_rev, const int writeToFile);
+void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_flag, gen_flag file_flag, gen_flag twiddle_flag);
 
 #endif

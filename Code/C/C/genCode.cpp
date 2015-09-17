@@ -23,7 +23,7 @@ void specs_reg(int index, int depth, int n, int *lower, int *upper, int *p, int 
 }
 
 // Generic generator for 2^k size and Constant and Regular
-expr *_gen(fft_direction dir, algorithmSpec algSpecs, int index, int depth, const int n)
+expr *_gen(fft_direction dir, algorithmSpec algSpecs, int index, int depth, gen_flag twiddle_flag, const int n)
 {
     // Atom (input value)
     if (depth == 0)
@@ -41,14 +41,18 @@ expr *_gen(fft_direction dir, algorithmSpec algSpecs, int index, int depth, cons
     double angle = ((dir * M_2_PI) * p) / (double)n;
 
     // Get input for this step
-    expr *low = _gen(dir, algSpecs, in_low, depth - 1, n);
-    expr *high = _gen(dir, algSpecs, in_high, depth - 1, n);
+    expr *low = _gen(dir, algSpecs, in_low, depth - 1, twiddle_flag, n);
+    expr *high = _gen(dir, algSpecs, in_high, depth - 1, twiddle_flag, n);
     
     // Make expression depending on if low or high (index value)
     if (addP)
         return make_expr(CPX_ADD, low, high);
-    else
+    else {
+        if (twiddle_flag == GEN_WITH_VARIABLE_TWIDDLE) {
+            return make_expr(CPX_MUL, make_expr(CPX_SUB, low, high), make_twiddle_expr(p));
+        }
         return make_expr(CPX_MUL, make_expr(CPX_SUB, low, high), make_cpx_expr(cos(angle), sin(angle)));
+    }
 }
 
 int find_start(std::string str)
@@ -69,10 +73,10 @@ int find_start(std::string str)
 int find_redundant_parenthesis(std::string str, int *start, int *end)
 {
     int cnt;
-    for (int i = 0; i < str.length() - 2; ++i) {
+    for (int i = 0; i < (int)str.length() - 2; ++i) {
         if (str[i] == '(' && str[i + 1] == '(') {
             cnt = 1;
-            for (int j = i + 2; j < str.length() - 1; ++j) {
+            for (int j = i + 2; j < (int)str.length() - 1; ++j) {
                 if (str[j] == '(') ++cnt;
                 if (str[j] == ')') {
                     --cnt;
@@ -163,19 +167,19 @@ void clrStream(std::stringstream &s1, std::stringstream &s2)
     s2.clear();
 }
 
-std::string generate_body(algorithmSpec specs, fft_direction direction, const int no_rev, const int n)
+std::string generate_body(algorithmSpec specs, fft_direction direction, gen_flag bit_order, gen_flag twiddle_flag, const int n)
 {
     int depth = log2_32(n);
     int lead = 32 - depth;
     expr **output = (expr **)malloc(sizeof(expr *) * n);
 
-    double scale = ((direction == FORWARD_FFT) || no_rev) ? 1.0 : 1.0 / ((double)n);
+    double scale = ((direction == FORWARD_FFT) || bit_order == GEN_NORMAL_ORDER) ? 1.0 : 1.0 / ((double)n);
     // Build the algorithm by recursivly traverse the path for each output.
     for (int i = 0; i < n; ++i) {
-        if (no_rev)
-            output[i] = make_out_expr(i, _gen(direction, specs, i, depth, n), scale);
+        if (bit_order == GEN_NORMAL_ORDER)
+            output[i] = make_out_expr(i, _gen(direction, specs, i, depth, twiddle_flag, n), scale);
         else
-            output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, n), scale);
+            output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, twiddle_flag, n), scale);
     }    
 
     // Reorder, so that output is sequential
@@ -201,11 +205,11 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, const in
     return fmt.str();
 }
 
-void createFixedSizeFFT(std::string name, const int no_rev, const int max_n, int writeToFile)
+void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_flag, gen_flag file_flag, gen_flag twiddle_flag)
 {
     algorithmSpec specs = (name.compare("const") == 0 ? specs_const : specs_reg);
 
-    if (writeToFile) {
+    if (file_flag == GEN_TO_FILE) {
         char filename[64];
         sprintf_s(filename, 64, "fft_generated_fixed_%s.h", name.c_str());
         FILE *f;
@@ -223,8 +227,8 @@ void createFixedSizeFFT(std::string name, const int no_rev, const int max_n, int
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);
             stream << "#define GENERATED_FIXED_"<< i << "\n\n";
-            stream << generate_body(specs, FORWARD_FFT, no_rev, i).c_str() << "\n";
-            stream << generate_body(specs, INVERSE_FFT, no_rev, i).c_str() << "\n";
+            stream << generate_body(specs, FORWARD_FFT, bit_order_flag, twiddle_flag, i).c_str() << "\n";
+            stream << generate_body(specs, INVERSE_FFT, bit_order_flag, twiddle_flag, i).c_str() << "\n";
             printf("done.\n");
         }
         fprintf_s(f, stream.str().c_str());
@@ -236,8 +240,8 @@ void createFixedSizeFFT(std::string name, const int no_rev, const int max_n, int
     else {
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);            
-            generate_body(specs, FORWARD_FFT, no_rev, i).c_str();
-            generate_body(specs, INVERSE_FFT, no_rev, i).c_str();
+            generate_body(specs, FORWARD_FFT, bit_order_flag, twiddle_flag, i).c_str();
+            generate_body(specs, INVERSE_FFT, bit_order_flag, twiddle_flag, i).c_str();
             printf("done.\n");
         }
     }

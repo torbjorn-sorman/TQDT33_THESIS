@@ -126,7 +126,6 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
     return fmt.str();
 }
 
-
 // converts expression tree to string
 __inline static std::string exprToString(expr *e, int useLocal)
 {

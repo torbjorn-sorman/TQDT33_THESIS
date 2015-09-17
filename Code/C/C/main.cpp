@@ -27,7 +27,7 @@ int main()
 #else
     const int n_threads = 1;
 #endif
-    const unsigned int n = power2(18);
+    const unsigned int n = power2(5);
 
     //test_image(fft2d_tobb, "crevisio", n_threads, 4096);
     //test_fft2d("FFT Constant Geometry 2D", fft2d_const_geom, n_threads, 1, 4096);
@@ -46,13 +46,13 @@ int main()
     test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
     //test_fftw(n);
     
-    /*
+    
     test_short_fftw(n);
     printf("\n");
     test_short_fft(fft_fixed, n_threads, n);
     printf("\n");
     test_short_fft(fft_const_geom, n_threads, n);
-    */
+    
 #endif
 
     printf("\nComplete!\n");

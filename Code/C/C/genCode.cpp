@@ -194,6 +194,7 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, const in
     for (int i = 0; i < n; ++i) {
         fmt << "\t" << cleanup(exprToString(output[i], 1, CPX_REAL)).c_str() << ";\n";
         fmt << "\t" << cleanup(exprToString(output[i], 1, CPX_IMAG)).c_str() << ";\n";
+        //fmt << "\t" << exprToString(output[i], 1).c_str() << ";\n";        
     }
     // Close function and return function budy
     fmt << "}\n\n";    

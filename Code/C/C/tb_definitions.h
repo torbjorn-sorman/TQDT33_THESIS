@@ -14,6 +14,7 @@ typedef void(*twiddle_func)(cpx *W, const float dir, const int n);
 typedef void(*bit_reverse_func)(cpx *seq, const float dir, const int lead, const int n);
 
 #define M_2_PI 6.28318530718f
+#define M_PI_2 1.57079632679f
 #define M_PI 3.14159265359f
 
 #define FORWARD_FFT -1.0f

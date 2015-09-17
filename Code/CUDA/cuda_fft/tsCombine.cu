@@ -1,7 +1,7 @@
 #include "tsCombine.cuh"
 
 __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
-__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int depth, const int n2);
+__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 
 __host__ int tsCombine_Validate(const int n)
@@ -39,8 +39,10 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     int threads, blocks;
     float w_angle = dir * (M_2_PI / n);
     const int depth = log2_32(n);
+    const int lead = 32 - depth;
     const int n2 = (n / 2);
     const int breakSize = log2_32(MAX_BLOCK_SIZE);
+    const cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     int steps = 0;
     int bit = depth - 1;
     int dist = n2;
@@ -60,14 +62,13 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
         }
         const int nBlock = n / blocks;
         w_angle = dir * (M_2_PI / nBlock);
-        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, bit + 1, nBlock / 2);
-        cudaDeviceSynchronize();
-        setBlocksAndThreads(&blocks, &threads, n);
-        bit_reverse KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, (dir == FFT_FORWARD ? 1.f : 1.f / n), 32 - depth);
+        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, scaleCpx, bit + 1, lead, nBlock / 2);
+        //cudaDeviceSynchronize();
+        //setBlocksAndThreads(&blocks, &threads, n);
+        //bit_reverse KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, (dir == FFT_FORWARD ? 1.f : 1.f / n), 32 - depth);
     }
     else {
-        const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-        _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n2);
+        _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scaleCpx, depth, lead, n2);
     }
     cudaDeviceSynchronize();
 }
@@ -86,15 +87,15 @@ __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned 
 }
 
 // Full usage of shared mem!
-__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int depth, const int n2)
+__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
 {
     extern __shared__ cpx shared[];
     cpx w, in_lower, in_upper;
-    const int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    const int offset = blockIdx.x * blockDim.x * 2;
     const int in_low = threadIdx.x;
     const int in_high = n2 + in_low;
-    const int global_low = in_low + (blockIdx.x * blockDim.x * 2);
-    const int global_high = in_high + (blockIdx.x * blockDim.x * 2);
+    const int global_low = in_low + offset;
+    const int global_high = in_high + offset;
     const int i = (in_low << 1);
     const int ii = i + 1;
         
@@ -104,8 +105,6 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int dep
 
     /* Run FFT algorithm */
     for (int steps = 0; steps < depth; ++steps) {
-        //if (tid == 0)
-            //printf("steps: %d\n", steps);
         SYNC_THREADS;
         in_lower = shared[in_low];
         in_upper = shared[in_high];
@@ -115,9 +114,14 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const int dep
     }
 
     /* Move Shared to Global */
-    SYNC_THREADS;    
-    out[global_low] = shared[in_low];
-    out[global_high] = shared[in_high];
+    SYNC_THREADS;
+    out[BIT_REVERSE(global_low, lead)] = cuCmulf(shared[in_low], scale);
+    out[BIT_REVERSE(global_high, lead)] = cuCmulf(shared[in_high], scale);
+
+    printf("(%d, %d) -> reversed(%d, %d) / (%d, %d)\n", in_low, in_high, BIT_REVERSE(global_low, lead), BIT_REVERSE(global_high, lead), global_low, global_high);
+
+    //out[global_low] = shared[in_low];
+    //out[global_high] = shared[in_high];
 }
 
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)

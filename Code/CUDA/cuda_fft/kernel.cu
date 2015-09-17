@@ -1,5 +1,5 @@
 
-#define PROFILER
+//#define PROFILER
 
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -51,7 +51,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 20
+#define RUNS 3
 
 int main()
 {    

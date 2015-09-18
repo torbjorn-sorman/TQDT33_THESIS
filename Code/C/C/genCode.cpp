@@ -100,7 +100,7 @@ std::string cleanup(std::string str)
     std::cmatch cm;    
     int start, end, rs, re;
     // Remove statements mul with zero     
-    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-?0\\.0{6}\\)\\))"))) {
+    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-?0\\.0{6}f\\)\\))"))) {
         start = find_start(cm.str()) + cm.position();
         end = cm.length() + cm.position() - start;
         clean_str.erase(start, end);
@@ -112,13 +112,13 @@ std::string cleanup(std::string str)
         clean_str.erase(start, end);
     }
     // Remove mul 1.000000   
-    while (std::regex_search(clean_str.c_str(), cm, std::regex("( \\* ((\\(1\\.0{6}\\))|(1\\.0{6}))\\))"))) {
+    while (std::regex_search(clean_str.c_str(), cm, std::regex("( \\* ((\\(1\\.0{6}f\\))|(1\\.0{6}f))\\))"))) {
         start = cm.position();
         end = cm.length() - 1;
         clean_str.erase(start, end);
     }
     // Alter sign when mul with -1.000000     
-    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-1\\.0{6}\\)\\))"))) {
+    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-1\\.0{6}f\\)\\))"))) {
         start = find_start(cm.str()) + cm.position();
         end = cm.length() + cm.position() - start;
         rs = start + 1;

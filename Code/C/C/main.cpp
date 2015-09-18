@@ -37,7 +37,8 @@ int main()
 #define GEN_CODE
 
 #ifdef GEN_CODE
-    createFixedSizeFFT("const", n, GEN_BIT_REVERSE_ORDER, GEN_TO_FILE, GEN_TWIDDLE);
+    //createFixedSizeFFT("const", n, GEN_BIT_REVERSE_ORDER, GEN_TO_FILE, GEN_TWIDDLE);
+    createFixedSizeFFT("const", n, GEN_BIT_REVERSE_ORDER, GEN_TO_FILE, GEN_WITH_VARIABLE_TWIDDLE);
 #else
     
     //test_fft("Reg FFT", fft_reg, n_threads, 1, n);

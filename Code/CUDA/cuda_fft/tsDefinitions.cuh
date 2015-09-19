@@ -18,7 +18,7 @@ typedef void(*bitReverseFunction)(cpx *seq, const double dir, const int lead, co
 #define FFT_INVERSE 1.0f
 
 #define SHARED_MEM_SIZE 49152 // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
-#define MAX_BLOCK_SIZE 4 //1024
+#define MAX_BLOCK_SIZE 1024
 
 //#define PRECALC_TWIDDLE
 #define BIT_REVERSED_OUTPUT

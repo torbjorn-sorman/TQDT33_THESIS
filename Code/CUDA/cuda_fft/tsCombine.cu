@@ -10,7 +10,7 @@ __host__ int tsCombine_Validate(const int n)
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
 
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
+    tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);    
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
@@ -33,6 +33,8 @@ __host__ double tsCombine_Performance(const int n)
     fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     return avg(measures, NUM_PERFORMANCE);
 }
+
+#define REVERSE_ON_OUT
 
 __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
@@ -62,10 +64,8 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
         }
         const int nBlock = n / blocks;
         w_angle = dir * (M_2_PI / nBlock);
-        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, scaleCpx, bit + 1, lead, nBlock / 2);
-        //cudaDeviceSynchronize();
-        //setBlocksAndThreads(&blocks, &threads, n);
-        //bit_reverse KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, (dir == FFT_FORWARD ? 1.f : 1.f / n), 32 - depth);
+        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, scaleCpx, bit + 1, lead, nBlock / 2);        
+        swap(dev_in, dev_out);
     }
     else {
         _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scaleCpx, depth, lead, n2);
@@ -117,11 +117,6 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx sca
     SYNC_THREADS;
     out[BIT_REVERSE(global_low, lead)] = cuCmulf(shared[in_low], scale);
     out[BIT_REVERSE(global_high, lead)] = cuCmulf(shared[in_high], scale);
-
-    printf("(%d, %d) -> reversed(%d, %d) / (%d, %d)\n", in_low, in_high, BIT_REVERSE(global_low, lead), BIT_REVERSE(global_high, lead), global_low, global_high);
-
-    //out[global_low] = shared[in_low];
-    //out[global_high] = shared[in_high];
 }
 
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)

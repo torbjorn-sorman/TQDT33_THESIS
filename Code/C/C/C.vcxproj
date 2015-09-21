@@ -112,6 +112,7 @@
     <ClInclude Include="fft_fixed.h" />
     <ClInclude Include="fft_generated_fixed_const.h" />
     <ClInclude Include="fft_generated_fixed.h" />
+    <ClInclude Include="fft_generated_fixed_const_w.h" />
     <ClInclude Include="fft_radix4.h" />
     <ClInclude Include="fft_reg.h" />
     <ClInclude Include="fft_tobb.h" />

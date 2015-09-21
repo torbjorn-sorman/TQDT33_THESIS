@@ -26,6 +26,8 @@ typedef enum {
     CPX_OUT,
     CPX_REAL,
     CPX_IMAG,
+    CPX_TWREAL,
+    CPX_TWIMAG,
     CPX_ADD,
     CPX_SUB,
     CPX_MUL,
@@ -57,6 +59,11 @@ __inline static expr* make_float_expr(cpx_op_type op, double val)
     return mkExpr(op, -1, NULL, NULL, val);
 }
 
+__inline static expr* make_index_expr(cpx_op_type op, int p)
+{
+    return mkExpr(op, p, NULL, NULL, 0.0);
+}
+
 __inline static expr* make_cpx_expr(double r, double i)
 {
     return mkExpr(CPX_MAKE, -1, make_float_expr(CPX_REAL, r), make_float_expr(CPX_IMAG, i), 0.0);
@@ -79,7 +86,7 @@ __inline static expr *make_out_expr(int index, expr *e, double scale)
 
 __inline static expr* make_twiddle_expr(int p)
 {
-    return mkExpr(CPX_TWIDDLE, p, NULL, NULL, 0.0);
+    return mkExpr(CPX_MAKE, -1, make_index_expr(CPX_TWREAL, p), make_index_expr(CPX_TWIMAG, p), 0.0);
 }
 
 // converts expression tree to string
@@ -118,14 +125,15 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
         }
         break;
     case CPX_MAKE:
-        fmt << "(" << (reImg == CPX_REAL ? left : right) << "f)";
+        fmt << "(" << (reImg == CPX_REAL ? left : right) << ")";
         break;
-    case CPX_TWIDDLE:
-        fmt << "twiddle" << e->index;
+    case CPX_REAL: fmt << e->value << "f";
         break;
-    case CPX_REAL: fmt << e->value;
+    case CPX_IMAG: fmt << e->value << "f";
         break;
-    case CPX_IMAG: fmt << e->value;
+    case CPX_TWREAL: fmt << "w" << e->index << ".r";
+        break;
+    case CPX_TWIMAG: fmt << "w" << e->index << ".i";
         break;
     case CPX_IN:
         if (useLocal == 0)
@@ -150,17 +158,24 @@ __inline static std::string exprToString(expr *e, int useLocal)
 {
     std::stringstream fmt;
     fmt << std::fixed;
+    std::string left, right;
+    if (e != NULL) {
+        if (e->left != NULL)
+            left = exprToString(e->left, useLocal);
+        if (e->right != NULL)
+            right = exprToString(e->right, useLocal);
+    }
     switch (e->op)
     {
-    case CPX_ADD: fmt << "cpxAdd(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_ADD: fmt << "cpxAdd(" << left << ", " << right << ")";
         break;
-    case CPX_SUB: fmt << "cpxSub(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_SUB: fmt << "cpxSub(" << left << ", " << right << ")";
         break;
-    case CPX_MUL: fmt << "cpxMul(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_MUL: fmt << "cpxMul(" << left << ", " << right << ")";
         break;
-    case CPX_MAKE: fmt << "make_cpx(" << exprToString(e->left, useLocal) << ", " << exprToString(e->right, useLocal) << ")";
+    case CPX_MAKE: fmt << "make_cpx(" << left << ", " << right << ")";
         break;
-    case CPX_TWIDDLE: fmt << "twiddle" << e->index;
+    case CPX_TWIDDLE: fmt << "w" << e->index;
         break;
     case CPX_REAL: fmt << e->value;
         break;
@@ -172,7 +187,7 @@ __inline static std::string exprToString(expr *e, int useLocal)
         else
             fmt << "in" << e->index;
         break;
-    case CPX_OUT: fmt << "out[" << e->index << "] = cpxMul(" << exprToString(e->left, useLocal) << ", make_cpx(" << e->value << ", 0.0))";
+    case CPX_OUT: fmt << "out[" << e->index << "] = cpxMul(" << left << ", make_cpx(" << e->value << ", 0.0))";
         break;
     default: fmt << "";
         break;

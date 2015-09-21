@@ -31,19 +31,19 @@ expr *_gen(fft_direction dir, algorithmSpec algSpecs, int index, int depth, gen_
 
     int in_low = 0;
     int in_high = 0;
-    int p = 0;    
+    int p = 0;
     int addP = 0;
 
     // Select input for this step
     algSpecs(index, depth, n, &in_low, &in_high, &p, &addP);
-        
+
     // Twiddle factor angle
     double angle = ((dir * M_2_PI) * p) / (double)n;
 
     // Get input for this step
     expr *low = _gen(dir, algSpecs, in_low, depth - 1, twiddle_flag, n);
     expr *high = _gen(dir, algSpecs, in_high, depth - 1, twiddle_flag, n);
-    
+
     // Make expression depending on if low or high (index value)
     if (addP)
         return make_expr(CPX_ADD, low, high);
@@ -84,8 +84,8 @@ int find_redundant_parenthesis(std::string str, int *start, int *end)
                         *start = i;
                         *end = j + 1;
                         return 1;
-                    }         
-                }   
+                    }
+                }
                 if (cnt < 1) break;
             }
         }
@@ -97,7 +97,7 @@ int find_redundant_parenthesis(std::string str, int *start, int *end)
 std::string cleanup(std::string str)
 {
     std::string clean_str = str;
-    std::cmatch cm;    
+    std::cmatch cm;
     int start, end, rs, re;
     // Remove statements mul with zero     
     while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-?0\\.0{6}f\\)\\))"))) {
@@ -108,7 +108,7 @@ std::string cleanup(std::string str)
     // Remove leading add/sub        
     while (std::regex_search(clean_str.c_str(), cm, std::regex("( [-+] )\\)"))) {
         start = cm.position();
-        end = cm.length() - 1;      
+        end = cm.length() - 1;
         clean_str.erase(start, end);
     }
     // Remove mul 1.000000   
@@ -132,7 +132,7 @@ std::string cleanup(std::string str)
         rs = start + 3;
         re = end - 6;
         std::string sign = (cm[2].compare("-") == 0 ? "+" : "-");
-        clean_str.replace(start, end, (" "+sign+" " + clean_str.substr(rs, re)).c_str());
+        clean_str.replace(start, end, (" " + sign + " " + clean_str.substr(rs, re)).c_str());
     }
     // Remove empty add            
     while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\( \\+ \\()"))) {
@@ -141,11 +141,11 @@ std::string cleanup(std::string str)
         clean_str.erase(start, end);
     }
     // Remove redundant parenthesis     
-    int s, e;    
+    int s, e;
     while (find_redundant_parenthesis(clean_str, &s, &e)) {
         clean_str.erase(s, 1);
         clean_str.erase(e - 1, 1);
-    }    
+    }
     return clean_str;
 }
 
@@ -180,20 +180,28 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, gen_flag
             output[i] = make_out_expr(i, _gen(direction, specs, i, depth, twiddle_flag, n), scale);
         else
             output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, twiddle_flag, n), scale);
-    }    
+    }
 
     // Reorder, so that output is sequential
-    std::sort(output, output + n, [](expr *a, expr *b){ return(a->index < b->index); });    
+    std::sort(output, output + n, [](expr *a, expr *b){ return(a->index < b->index); });
+
+    int doW = (twiddle_flag != GEN_TWIDDLE);
 
     // Write to string
-    std::stringstream fmt;    
-    
+    std::stringstream fmt;
+
     // Function declaration
-    fmt << "__inline static void fft_x" << n << (direction == INVERSE_FFT ? "inv" : "") << "(cpx *in, cpx *out)\n{\n";
-    
+    fmt << "__inline static void fft_x" << n << (direction == INVERSE_FFT ? "inv" : "") << (doW ? "w" : "") << "(cpx *in, cpx *out" << (doW ? ", cpx *W, int offset" : "") << ")\n{\n";
+
     // If useLocal then all input values are read to local values before operations.        
     for (int i = 0; i < n; ++i) {
         fmt << "\tcpx in" << i << " = in[" << i << "];\n";
+    }
+    // If no precalc twiddle.        
+    if (twiddle_flag == GEN_WITH_VARIABLE_TWIDDLE) {
+        for (int i = 0; i < (n / 2); ++i) {
+            fmt << "\tcpx w" << i << " = W[" << i << "];\n";
+        }
     }
     for (int i = 0; i < n; ++i) {
         fmt << "\t" << cleanup(exprToString(output[i], 1, CPX_REAL)).c_str() << ";\n";
@@ -201,8 +209,34 @@ std::string generate_body(algorithmSpec specs, fft_direction direction, gen_flag
         //fmt << "\t" << exprToString(output[i], 1).c_str() << ";\n";        
     }
     // Close function and return function budy
-    fmt << "}\n\n";    
+    fmt << "}\n\n";
     return fmt.str();
+}
+
+std::string createFn(const int n, gen_flag tw) {
+    int doW = (tw != GEN_TWIDDLE);
+    std::stringstream strm;
+    strm << "__inline static int fixed_size_fft(fft_direction dir, cpx *in, cpx *out";
+    if (doW) strm << ", cpx *W, int offset";
+    strm << ", const int n)\n";
+    strm << "{\n\t";
+    strm << "if (dir == FORWARD_FFT) {\n\t\t";
+    strm << "switch (n)\n\t\t{\n\t\t";
+    for (int i = 4; i <= n; i *= 2) {
+        strm << "case " << i << ":\n\t\t\tfft_x" << i << (doW ? "w" : "") << "(in, out";
+        if (doW) strm << ", W, offset";
+        strm << ");\treturn 1;\n\t\t";
+    }
+    strm << "default:\n\t\t\treturn 0;\n\t\t}\n";
+    strm << "\t}\n\telse {\n\t\tswitch (n)\n\t\t{\n\t\t";
+    for (int i = 4; i <= n; i *= 2) {
+        strm << "case " << i << ":\n\t\t\tfft_x" << i << "inv" << (doW ? "w" : "") << "(in, out";
+        if (doW) strm << ", W, offset";
+        strm << ");\treturn 1;\n\t\t";
+    }
+    strm << "default:\n\t\t\treturn 0;\n\t\t}\n\t}\n";
+    strm << "}\n";
+    return strm.str();
 }
 
 void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_flag, gen_flag file_flag, gen_flag twiddle_flag)
@@ -220,18 +254,20 @@ void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_fl
         fprintf_s(f, "#ifndef FFT_GENERATED_FIXED_%s_H\n", name.c_str());
         fprintf_s(f, "#define FFT_GENERATED_FIXED_%s_H\n\n", name.c_str());
         fprintf_s(f, "#include \"tb_definitions.h\"\n");
-        fprintf_s(f, "#include \"tb_fft_helper.h\"\n\n");    
+        fprintf_s(f, "#include \"tb_fft_helper.h\"\n\n");
 
         // Function declarations and bodies (__inline static void ...)
         std::stringstream stream;
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);
-            stream << "#define GENERATED_FIXED_"<< i << "\n\n";
+            stream << "#define GENERATED_FIXED_" << i << (twiddle_flag == GEN_TWIDDLE ? "" : "_TW") << "\n\n";
             stream << generate_body(specs, FORWARD_FFT, bit_order_flag, twiddle_flag, i).c_str() << "\n";
             stream << generate_body(specs, INVERSE_FFT, bit_order_flag, twiddle_flag, i).c_str() << "\n";
             printf("done.\n");
         }
         fprintf_s(f, stream.str().c_str());
+
+        fprintf_s(f, createFn(max_n, twiddle_flag).c_str());
 
         // End and close file.
         fprintf_s(f, "\n#endif");
@@ -239,7 +275,7 @@ void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_fl
     }
     else {
         for (int i = 4; i <= max_n; i *= 2) {
-            printf("Generating %d ...", i);            
+            printf("Generating %d ...", i);
             generate_body(specs, FORWARD_FFT, bit_order_flag, twiddle_flag, i).c_str();
             generate_body(specs, INVERSE_FFT, bit_order_flag, twiddle_flag, i).c_str();
             printf("done.\n");

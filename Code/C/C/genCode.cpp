@@ -95,10 +95,12 @@ std::string cleanup(std::string str)
 {
     std::string clean_str = str;
     std::cmatch cm;
-    int start, end, rs, re;
-    // Remove statements mul with zero             
-    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-?0\\.0{6}f\\)\\))"))) {
-        start = find_start(cm.str()) + cm.position();
+    int start, end, rs, re, range_start;
+    range_start = 0;        
+    
+    // Remove statements mul with zero
+    while (std::regex_search(clean_str.c_str(), cm, std::regex("(\\(\\(.*\\) \\* \\(-?0\\.0{6}f\\)\\))"), std::regex_constants::match_default)) {
+        start = find_start(cm.str()) + cm.position();        
         end = cm.length() + cm.position() - start;
         clean_str.erase(start, end);
     }
@@ -119,7 +121,7 @@ std::string cleanup(std::string str)
         start = find_start(cm.str()) + cm.position();
         end = cm.length() + cm.position() - start;
         rs = start + 1;
-        re = end - 16;
+        re = end - 17;
         clean_str.replace(start, end, ("( - " + clean_str.substr(rs, re) + ")").c_str());
     }
     // Remove multiple negative marks    
@@ -164,12 +166,14 @@ void clrStream(std::stringstream &s1, std::stringstream &s2)
     s2.clear();
 }
 
-void progress(int d, int len)
+void progress(int d, int len, int *divisor)
 {
+    *divisor = 1;
+    while (len / *divisor > 64) *divisor *= 2;
     for (int i = 0; i < d; ++i)
         printf("  ");
     printf("|");
-    for (int i = 0; i < len; ++i)
+    for (int i = 0; i < (len / *divisor); ++i)
         printf("-");
     printf("|\n");
     for (int i = 0; i < d; ++i)
@@ -187,57 +191,70 @@ std::string fnName(fft_direction d, gen_flag bitOrder, const int l)
     return fmt.str();
 }
 
-std::string generate_body(algorithmSpec specs, fft_direction direction, gen_flag bit_order, const int n)
+std::string createFunction(fft_direction direction, gen_flag bitOrder, std::string outStr[], const int n)
 {
-    int depth = log2_32(n);
-    int lead = 32 - depth;
-    expr **output = (expr **)malloc(sizeof(expr *) * n);
-    std::string *outStr = (std::string *)malloc(sizeof(std::string) * n * 2);
-    double scale = ((direction == FORWARD_FFT) || bit_order == GEN_NORMAL_ORDER) ? 1.0 : 1.0 / ((double)n);
-    // Build the algorithm by recursivly traverse the path for each output.
-    for (int i = 0; i < n; ++i) {
-        //if (bit_order == GEN_NORMAL_ORDER)
-            output[i] = make_out_expr(i, _gen(direction, specs, i, depth, n), 1.0);//scale);
-        //else
-            //output[i] = make_out_expr(BIT_REVERSE(i, lead), _gen(direction, specs, i, depth, n), scale);
-    }
-
-    progress(2, n);
-    for (int i = 0; i < n; ++i) {
-        printf(".");
-        outStr[i*2] = cleanup(exprToString(output[i], 1, CPX_REAL));
-        outStr[i*2 + 1] = cleanup(exprToString(output[i], 1, CPX_IMAG));     
-    }
-    printf("|\n");
-
-    // Reorder, so that output is sequential
-    //std::sort(output, output + n, [](expr *a, expr *b){ return(a->index < b->index); });
-    std::sort(outStr, outStr + n * 2, [](std::string a, std::string b){ 
-        printf("a: %s\n", a.c_str());
-        return std::stoi(a.substr(2, a.find("]"))) < std::stoi(b.substr(2, a.find("]")));
-    });
-
-    // Write to string
-    std::stringstream fmt;
-
-    // Function declaration
-
-    fmt << "__inline static void ";
-    fmt << fnName(direction, bit_order, n);
-    fmt << "(cpx *i, cpx *o" << ")\n{\n";
-
-    // If useLocal then all input values are read to local values before operations.        
-    for (int i = 0; i < n; ++i) {
+    std::stringstream fmt; 
+    fmt << "__inline static void " << fnName(direction, bitOrder, n) << "(cpx *i, cpx *o" << ")\n{\n";
+    for (int i = 0; i < n; ++i)
         fmt << "\tcpx i" << i << " = i[" << i << "];\n";
-    }   
-    for (int i = 0; i < n; ++i) {
-        fmt << "\t" << outStr[i*2].c_str() << ";\n";
-        fmt << "\t" << outStr[i*2 + 1].c_str() << ";\n";
-        //fmt << "\t" << exprToString(output[i], 1).c_str() << ";\n";        
+    if (direction == FORWARD_FFT || bitOrder == GEN_NORMAL_ORDER) {
+        for (int i = 0; i < n; ++i) {
+            fmt << "\t" << outStr[i * 2] << ";\n";
+            fmt << "\t" << outStr[i * 2 + 1] << ";\n";
+        }
+    }
+    else {
+        for (int i = 0; i < n; ++i) {
+            fmt << "\t" << outStr[i * 2] << " * " << 1.0 / ((double)n) << "f;\n";
+            fmt << "\t" << outStr[i * 2 + 1] << " * " << 1.0 / ((double)n) << "f;\n";
+        }
     }
     // Close function and return function budy
     fmt << "}\n\n";
     return fmt.str();
+}
+
+std::string generate_body(algorithmSpec specs, fft_direction direction, const int n)
+{
+    std::stringstream strm;
+    int depth = log2_32(n);
+    int lead = 32 - depth;
+    expr **output = (expr **)malloc(sizeof(expr *) * n);
+    std::string* outStr = new std::string[n * 2];
+    // Build the algorithm by recursivly traverse the path for each output.
+    for (int i = 0; i < n; ++i) {
+        output[i] = make_out_expr(i, _gen(direction, specs, i, depth, n), 1.0);        
+    }
+
+    int divisor = 1;
+    progress(2, n, &divisor);
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < n; ++i) {
+        outStr[i * 2] = cleanup(exprToString(output[i], 1, CPX_REAL));
+        outStr[i * 2 + 1] = cleanup(exprToString(output[i], 1, CPX_IMAG));
+        if (i % divisor == 0) printf(".");
+    }
+    printf("|\n");
+    deleteGenTree(output, n);    
+    // Reorder, so that output is sequential
+    std::sort(outStr, (std::string *)outStr + n * 2, [](std::string a, std::string b){
+        return std::stoi(a.substr(2, a.find("]"))) < std::stoi(b.substr(2, b.find("]")));
+    });
+    strm << createFunction(direction, GEN_NORMAL_ORDER, outStr, n);
+
+    std::string tmpA, tmpB;
+    for (int i = 0; i < n; ++i) {
+        int p = BIT_REVERSE(i, lead);
+        if (i < p) {     
+            alterIndex(outStr, i, p);
+            alterIndex(outStr, p, i);
+        }
+    }
+    std::sort(outStr, outStr + n * 2, [](std::string a, std::string b){
+        return std::stoi(a.substr(2, a.find("]"))) < std::stoi(b.substr(2, b.find("]")));
+    });
+    strm << createFunction(direction, GEN_BIT_REVERSE_ORDER, outStr, n);
+    return strm.str();
 }
 
 std::string genCaseIndex(int index)
@@ -312,14 +329,10 @@ void createFixedSizeFFT(std::string name, const int max_n, gen_flag file_flag)
         std::stringstream stream;
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating Size %d:\n", i);
-            printf("  Forward Bit Reversed:\n");
-            stream << generate_body(specs, FORWARD_FFT, GEN_BIT_REVERSE_ORDER, i).c_str() << "\n";
-            printf("  Inverse Bit Reversed:\n");
-            stream << generate_body(specs, INVERSE_FFT, GEN_BIT_REVERSE_ORDER, i).c_str() << "\n";
-            printf("  Forward Normal Order:\n");
-            stream << generate_body(specs, FORWARD_FFT, GEN_NORMAL_ORDER, i).c_str() << "\n";
-            printf("  Inverse Normal Order:\n");
-            stream << generate_body(specs, INVERSE_FFT, GEN_NORMAL_ORDER, i).c_str() << "\n";
+            printf("  Forward:\n");
+            stream << generate_body(specs, FORWARD_FFT, i).c_str() << "\n";
+            printf("  Inverse:\n");
+            stream << generate_body(specs, INVERSE_FFT, i).c_str() << "\n";
             printf("done.\n");
         }
         fprintf_s(f, stream.str().c_str());
@@ -335,10 +348,8 @@ void createFixedSizeFFT(std::string name, const int max_n, gen_flag file_flag)
     else {
         for (int i = 4; i <= max_n; i *= 2) {
             printf("Generating %d ...", i);
-            generate_body(specs, FORWARD_FFT, GEN_BIT_REVERSE_ORDER, i);
-            generate_body(specs, INVERSE_FFT, GEN_BIT_REVERSE_ORDER, i);
-            generate_body(specs, FORWARD_FFT, GEN_NORMAL_ORDER, i);
-            generate_body(specs, INVERSE_FFT, GEN_NORMAL_ORDER, i);
+            generate_body(specs, FORWARD_FFT, i);
+            generate_body(specs, INVERSE_FFT, i);
             printf("done.\n");
         }
         STOP_TIME(t);

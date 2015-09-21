@@ -4,8 +4,8 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
-#ifdef GENERATED_FIXED_SIZE
-    if (fixed_size_fft(dir, *in, *out, GEN_BIT_REVERSE_ORDER, n))
+#ifdef GENERATED_FIXED_SIZE    
+    if (fixed_size_fft(dir, *in, *out, GEN_BIT_REVERSE_ORDER, n))        
         return;
 #endif
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
@@ -17,7 +17,7 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
 
 __inline static void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, const int bit, const int steps, const int dist, const int n2);
 
-#define FIXED_SIZE 16
+#define FIXED_SIZE 128
 
 __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const int n)
 {

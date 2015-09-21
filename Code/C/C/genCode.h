@@ -27,8 +27,6 @@ typedef enum {
     CPX_OUT,
     CPX_REAL,
     CPX_IMAG,
-    CPX_TWREAL,
-    CPX_TWIMAG,
     CPX_ADD,
     CPX_SUB,
     CPX_MUL,
@@ -85,11 +83,6 @@ __inline static expr *make_out_expr(int index, expr *e, double scale)
     return mkExpr(CPX_OUT, index, e, NULL, scale);
 }
 
-__inline static expr* make_twiddle_expr(int p)
-{
-    return mkExpr(CPX_MAKE, -1, make_index_expr(CPX_TWREAL, p), make_index_expr(CPX_TWIMAG, p), 0.0);
-}
-
 // converts expression tree to string
 __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reImg)
 {
@@ -126,15 +119,14 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
         }
         break;
     case CPX_MAKE:
-        fmt << "(" << (reImg == CPX_REAL ? left : right) << ")";
+        if (reImg == CPX_REAL)
+            fmt << "(" << left << ")";
+        else
+            fmt << "(" << right << ")";
         break;
     case CPX_REAL: fmt << e->value << "f";
         break;
     case CPX_IMAG: fmt << e->value << "f";
-        break;
-    case CPX_TWREAL: fmt << "w" << e->index << ".r";
-        break;
-    case CPX_TWIMAG: fmt << "w" << e->index << ".i";
         break;
     case CPX_IN:
         if (useLocal == 0)
@@ -188,12 +180,32 @@ __inline static std::string exprToString(expr *e, int useLocal)
         else
             fmt << "i" << e->index;
         break;
-    case CPX_OUT: fmt << "o[" << e->index << "] = cpxMul(" << left << ", make_cpx(" << e->value << ", 0.0))";
+    case CPX_OUT: fmt << "o[" << e->index << "] = cpxMul(" << left << ", make_cpx(" << e->value << "f, 0.0))";
         break;
     default: fmt << "";
         break;
     }
     return fmt.str();
+}
+
+__inline static void alterIndex(std::string str[], const int index, const int p) {
+    str[index * 2].replace(str[index * 2].find("[") + 1, str[index * 2].find("]") - 2, std::to_string(p));
+    str[index * 2 + 1].replace(str[index * 2 + 1].find("[") + 1, str[index * 2 + 1].find("]") - 2, std::to_string(p));
+}
+
+__inline static void deletePartialTree(expr *t)
+{
+    if (t->right != NULL)
+        deletePartialTree(t->right);
+    if (t->left != NULL)
+        deletePartialTree(t->left);
+    delete(t);
+}
+
+__inline static void deleteGenTree(expr **tree, const int n)
+{
+    for (int i = 0; i < n; ++i)
+        deletePartialTree(tree[i]);
 }
 
 void createFixedSizeFFT(std::string name, const int max_n, gen_flag file_flag);

@@ -17,11 +17,13 @@ void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, cons
 
 __inline static void _fft_tbbody_f(cpx *in, cpx *out, cpx *W, const int bit, const int steps, const int dist, const int n2);
 
-#define FIXED_SIZE 128
-
 __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const int n)
 {
-    const int lg = log2_32(FIXED_SIZE);
+#ifdef GENERATED_FIXED_SIZE
+    const int lg = log2_32(GENERATED_FIXED_SIZE);
+#else
+    const int lg = 0;
+#endif
     const float angle = (dir * M_2_PI) / ((float)n);
     const int n2 = n / 2;
     int dist = n2;
@@ -36,8 +38,8 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
     }
 #ifdef GENERATED_FIXED_SIZE
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < n; i += FIXED_SIZE) {
-        fixed_size_fft(dir, &(out[i]), &(out[i]), GEN_NORMAL_ORDER, FIXED_SIZE);
+    for (int i = 0; i < n; i += GENERATED_FIXED_SIZE) {
+        fixed_size_fft(dir, &(out[i]), &(out[i]), GEN_NORMAL_ORDER, GENERATED_FIXED_SIZE);
     }
 #endif
 }

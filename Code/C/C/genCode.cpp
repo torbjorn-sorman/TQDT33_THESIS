@@ -323,7 +323,7 @@ void createFixedSizeFFT(std::string name, const int max_n, gen_flag file_flag)
         fprintf_s(f, "#include \"tb_definitions.h\"\n");
         fprintf_s(f, "#include \"genCode.h\"\n");
         fprintf_s(f, "#include \"tb_fft_helper.h\"\n\n");
-        fprintf_s(f, "#define GENERATED_FIXED_SIZE\n\n");
+        fprintf_s(f, "#define GENERATED_FIXED_SIZE %d\n\n", max_n);
 
         // Function declarations and bodies (__inline static void ...)
         std::stringstream stream;

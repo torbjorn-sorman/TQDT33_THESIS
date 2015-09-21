@@ -153,8 +153,5 @@
     <ClInclude Include="fft_radix4.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
-    <ClInclude Include="fft_generated_fixed_const_w.h">
-      <Filter>Header Files\tb\fft</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

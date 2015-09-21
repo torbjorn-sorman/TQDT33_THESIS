@@ -5,16 +5,16 @@
 #include "tsDefinitions.cuh"
 
 // Fast bit-reversal
-static int tab32[32] = { 
-    0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31 
+static int tab32[32] = {
+    0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
 };
 
 __host__ static __inline__ int log2_32(int value)
 {
-    value |= value >> 1; 
-    value |= value >> 2; 
-    value |= value >> 4; 
-    value |= value >> 8; 
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
     value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
@@ -110,6 +110,31 @@ __device__ static __inline__ void sharedToGlobal(int low, int high, int offset, 
     global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
     global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);
 #endif
+}
+
+//GPU lock-free synchronization function
+__device__ static __inline__ void __gpu_sync(int goalVal, volatile int *Arrayin, volatile int *Arrayout)
+{
+    int tid_in_blk = threadIdx.x;
+    int nBlockNum = gridDim.x;
+    int bid = blockIdx.x;
+    // only thread 0 is used for synchronization
+    if (tid_in_blk == 0) {
+        Arrayin[bid] = goalVal;
+    }
+    if (bid == 1) {
+        if (tid_in_blk < nBlockNum) {
+            while (Arrayin[tid_in_blk] != goalVal){ /* Do nothing here */ }
+        }
+        SYNC_THREADS;
+        if (tid_in_blk < nBlockNum) {
+            Arrayout[tid_in_blk] = goalVal;
+        }
+    }
+    if (tid_in_blk == 0) {
+        while (Arrayout[bid] != goalVal) { /* Do nothing here */ }
+    }
+    SYNC_THREADS;
 }
 
 //

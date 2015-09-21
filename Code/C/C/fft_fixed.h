@@ -12,9 +12,7 @@
 #include "tb_fft_helper.h"
 #include "tb_print.h"
 
-#include "fft_generated_fixed.h"
 #include "fft_generated_fixed_const.h"
-#include "fft_generated_fixed_const_w.h"
 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n);
 

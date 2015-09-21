@@ -1,4 +1,4 @@
-#ifndef GENCODE_h
+#ifndef GENCODE_H
 #define GENCODE_H 
 
 #include <string>
@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include <regex>
+#include <Windows.h>
 
 #include "tb_definitions.h"
 #include "tb_math.h"
@@ -137,15 +138,15 @@ __inline static std::string exprToString(expr *e, int useLocal, cpx_op_type reIm
         break;
     case CPX_IN:
         if (useLocal == 0)
-            fmt << "in[" << e->index << "]." << part;
+            fmt << "i[" << e->index << "]." << part;
         else
-            fmt << "in" << e->index << "." << part;
+            fmt << "i" << e->index << "." << part;
         break;
     case CPX_OUT:
         if (e->value == 1.0)
-            fmt << "out[" << e->index << "]." << part << " = " << left;
+            fmt << "o[" << e->index << "]." << part << " = " << left;
         else
-            fmt << "out[" << e->index << "]." << part << " = " << left << " * " << e->value << "f";
+            fmt << "o[" << e->index << "]." << part << " = " << left << " * " << e->value << "f";
         break;
     default: fmt << "";
         break;
@@ -183,11 +184,11 @@ __inline static std::string exprToString(expr *e, int useLocal)
         break;
     case CPX_IN:
         if (useLocal == 0)
-            fmt << "in[" << e->index << "]";
+            fmt << "i[" << e->index << "]";
         else
-            fmt << "in" << e->index;
+            fmt << "i" << e->index;
         break;
-    case CPX_OUT: fmt << "out[" << e->index << "] = cpxMul(" << left << ", make_cpx(" << e->value << ", 0.0))";
+    case CPX_OUT: fmt << "o[" << e->index << "] = cpxMul(" << left << ", make_cpx(" << e->value << ", 0.0))";
         break;
     default: fmt << "";
         break;
@@ -195,6 +196,6 @@ __inline static std::string exprToString(expr *e, int useLocal)
     return fmt.str();
 }
 
-void createFixedSizeFFT(std::string name, const int max_n, gen_flag bit_order_flag, gen_flag file_flag, gen_flag twiddle_flag);
+void createFixedSizeFFT(std::string name, const int max_n, gen_flag file_flag);
 
 #endif

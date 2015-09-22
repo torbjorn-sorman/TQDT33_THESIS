@@ -113,26 +113,28 @@ __device__ static __inline__ void sharedToGlobal(int low, int high, int offset, 
 }
 
 //GPU lock-free synchronization function
-__device__ static __inline__ void __gpu_sync(int goalVal, volatile int *Arrayin, volatile int *Arrayout)
+__device__ static __inline__ void DONOTUSE__gpu_sync(int val, volatile int *a, volatile int *b, const int blocks)
 {
-    int tid_in_blk = threadIdx.x;
-    int nBlockNum = gridDim.x;
+    // blockIdx.x * blockDim.x + threadIdx.x
+    int tid = threadIdx.x;
+    int nBlock = gridDim.x;
     int bid = blockIdx.x;
-    // only thread 0 is used for synchronization
-    if (tid_in_blk == 0) {
-        Arrayin[bid] = goalVal;
+    if (tid == 0) {
+        a[bid] = val;
     }
-    if (bid == 1) {
-        if (tid_in_blk < nBlockNum) {
-            while (Arrayin[tid_in_blk] != goalVal){ /* Do nothing here */ }
+    if (bid == 0) {
+        // Dangerous?
+        if (tid < nBlock) {
+            while (a[tid] != val){ /* Do nothing here */ }
         }
         SYNC_THREADS;
-        if (tid_in_blk < nBlockNum) {
-            Arrayout[tid_in_blk] = goalVal;
+        if (tid < nBlock) {
+            b[tid] = val;
         }
     }
-    if (tid_in_blk == 0) {
-        while (Arrayout[bid] != goalVal) { /* Do nothing here */ }
+    // Dangerous?
+    if (tid == 0) {
+        while (b[bid] != val) { /* Do nothing here */ }
     }
     SYNC_THREADS;
 }

@@ -51,7 +51,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 22
+#define RUNS 7
 
 int main()
 {    
@@ -77,18 +77,18 @@ int main()
         printf("\n%d:", n);
         
         char *fmt = n > 1000000 ? "\t%.0f" : "\t\t%.0f";
-
+        /*
         // cuFFT
         printf(fmt, cuFFTm[index] = cuFFT_Performance(n));
                 
         // Const geom
         printf("\t%.0f", constgeomFFTm[index] = tsConstantGeometry_Performance(n));
         if (tsConstantGeometry_Validate(n) == 0) printf("!");
-
+        */
         // Combine
         printf("\t%.0f", combineFFTm[index] = tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
-
+        /*
         if (n <= MAX_BLOCK_SIZE * 2) {        
             // Tobb
             printf("\t%.0f", tsTobb_SB_Performance(n));
@@ -97,13 +97,14 @@ int main()
             printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
             if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
         }
-
+        */
         ++index;
     }
     printf("\n\n");
     toFile("cuFFT", cuFFTm, RUNS);
     toFile("constant geometry", constgeomFFTm, RUNS);
     toFile("block combine", combineFFTm, RUNS);
+    
     printf("\nDone...");
     getchar();
 #endif

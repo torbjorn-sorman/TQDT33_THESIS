@@ -40,7 +40,7 @@ __host__ double tsTobb_Performance(const int n)
 
 __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
 {
-    int bit, dist, dist2;
+    int bit, dist;
     int steps, threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);
     const float scale = dir == FFT_FORWARD ? 1.f : 1.f / n;

@@ -3,15 +3,33 @@
 __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
 __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile int *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
+
+#define EXPERIMENTAL
 
 __host__ int tsCombine_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
-
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
+#ifdef EXPERIMENTAL
+    int lim = 256;
+    tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
+    if (n > lim) {
+        cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+        printf("\nOUT %d:\n", n);
+        console_print(out, n);
+    }
+    tsCombine2(FFT_INVERSE, &dev_out, &dev_in, n);
+    if (n > lim) {
+        cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+        printf("IN:\n");
+        console_print(in, n);
+    }
+#else
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
+#endif
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
@@ -26,11 +44,15 @@ __host__ double tsCombine_Performance(const int n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
+#ifdef EXPERIMENTAL
+        //tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
+#else
         tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
+#endif
         measures[i] = stopTimer();
     }
 
-    fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
+    fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);    
     return avg(measures, NUM_PERFORMANCE);
 }
 
@@ -73,65 +95,131 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     cudaDeviceSynchronize();
 }
 
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, const float angle, const int depth, const int breakSize, const int n)
-{    
+__host__ void prepSync(volatile int **dev_a, volatile int **dev_b, int blocks)
+{
+    *dev_a = 0;
+    *dev_b = 0;
+    if (blocks == 1)
+        return;
+    cudaMalloc((void**)dev_a, sizeof(int) * blocks);
+    cudaMalloc((void**)dev_b, sizeof(int) * blocks);
+}
+
+__host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
+{
+    int threads, blocks;
+    volatile int *dev_a, *dev_b;
+    int n2 = n / 2;
+    float w_angle = dir * (M_2_PI / n);
+    setBlocksAndThreads(&blocks, &threads, n2);
+    prepSync(&dev_a, &dev_b, blocks);
+    int nBlock = n / blocks;
+    float w_bangle = dir * (M_2_PI / nBlock);
+    cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    _kernelNoLockSynch KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, dev_a, dev_b, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, n);
+    cudaDeviceSynchronize();
+    if (blocks > 1) {
+        cudaError_t e = cudaGetLastError();
+        if (e) printf("\nError: %s\n", cudaGetErrorString(e));
+        cudaFree((void *)dev_a);
+        cudaFree((void *)dev_b);
+    }
+}
+
+__device__ static __inline__ void valuesIn(int *in_low, int *in_high, cpx *in_lower, cpx *in_upper, cpx *in, int tid, int lmask, int dist)
+{
+    *in_low = tid + (tid & lmask);
+    *in_high = *in_low + dist;
+    *in_lower = in[*in_low];
+    *in_upper = in[*in_high];
+}
+
+//GPU lock-free synchronization function
+__device__ static __inline__ void __gpu_sync(int val, volatile int *a, volatile int *b)
+{
+    int isMaster = (threadIdx.x == 0);
+    int isMasterBlock = (blockIdx.x == 0);
+    int isWorker = (threadIdx.x < gridDim.x);
+
+    if (isMaster) {
+        a[blockIdx.x] = val;
+    }
+    if (isMasterBlock) {
+        if (isWorker) {
+            /* Crashes... */
+            while (a[threadIdx.x] != val){ /* Do nothing here */ }
+        }
+        SYNC_THREADS;
+        if (isWorker) {
+            b[threadIdx.x] = val;
+        }
+    }
+    if (isMaster) {
+        /* Crashes... */
+        while (b[blockIdx.x] != val) { /* Do nothing here */ }
+    }
+    SYNC_THREADS;
+}
+
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile int *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n)
+{
     extern __shared__ cpx shared[];
-    int steps = 0;
-    int dist = n / 2;
     int bit = depth - 1;
-    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
-    unsigned int lmask = 0xFFFFFFFF << bit;
-    unsigned int pmask = (dist - 1) << steps;
-    int l = tid + (tid & lmask);
-    int u = l + dist;    
-    cpx in_lower = in[l];
-    cpx in_upper = in[u];
-    cpx w;
-    SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-    cpx_add_sub_mul(&(out[l]), &(out[u]), in_lower, in_upper, w);
-    __gpu_sync(0, NULL, NULL);
-    while (--bit > breakSize) {
-        dist = dist >> 1;
-        ++steps;
-        // 
-        lmask = 0xFFFFFFFF << bit;
-        pmask = (dist - 1) << steps;
-        l = tid + (tid & lmask);
-        u = l + dist;
-        in_lower = out[l];
-        in_upper = out[u];        
+    int in_low, in_high;
+    cpx w, in_lower, in_upper;
+    if (blocks > 1) {
+        int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+        int dist = n / 2;
+        int steps = 0;
+        unsigned int pmask = (dist - 1) << steps;
+        valuesIn(&in_low, &in_high, &in_lower, &in_upper, in, tid, 0xFFFFFFFF << bit, dist);
         SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-        cpx_add_sub_mul(&(out[l]), &(out[u]), in_lower, in_upper, w);
-        __gpu_sync(0, NULL, NULL);
-    }   
+        cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
+        __gpu_sync(steps, a, b);
+        while (--bit > breakSize) {
+            dist = dist >> 1;
+            ++steps;
+            pmask = (dist - 1) << steps;
+            valuesIn(&in_low, &in_high, &in_lower, &in_upper, out, tid, 0xFFFFFFFF << bit, dist);
+            SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
+            cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
+            __gpu_sync(steps, a, b);
+        }
+    }
 
     /* Next step, run all in shared mem, copy of _kernelB(...) */
-    l = threadIdx.x;
-    u = (n / 2) + l;
-    const int offset = blockIdx.x * blockDim.x * 2;
-    const int global_low = l + offset;
-    const int global_high = u + offset;
-    const int i = (l << 1);
+    in_low = threadIdx.x;
+    in_high = ((n / blocks) / 2) + in_low;
+    const int global_low = in_low + blockIdx.x * blockDim.x * 2;
+    const int global_high = in_high + blockIdx.x * blockDim.x * 2;
+    const int i = (in_low << 1);
     const int ii = i + 1;
 
     /* Move Global to Shared */
-    shared[l] = in[global_low];
-    shared[u] = in[global_high];
+    if (blocks > 1) {
+        shared[in_low] = out[global_low];
+        shared[in_high] = out[global_high];
+    }
+    else {
+        shared[in_low] = in[global_low];
+        shared[in_high] = in[global_high];
+    }
 
     /* Run FFT algorithm */
-    for (int steps = 0; steps < depth; ++steps) {
+    ++bit;
+    for (int steps = 0; steps < bit; ++steps) {
         SYNC_THREADS;
-        in_lower = shared[l];
-        in_upper = shared[u];
-        SIN_COS_F(angle * ((in_low & (0xffffffff << steps))), &w.y, &w.x);
+        in_lower = shared[in_low];
+        in_upper = shared[in_high];
+        SIN_COS_F(bAngle * ((in_low & (0xFFFFFFFF << steps))), &w.y, &w.x);
         SYNC_THREADS;
         cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
     }
 
     /* Move Shared to Global */
     SYNC_THREADS;
-    out[BIT_REVERSE(global_low, lead)] = cuCmulf(shared[l], scale);
-    out[BIT_REVERSE(global_high, lead)] = cuCmulf(shared[u], scale);
+    out[BIT_REVERSE(global_low, 32 - depth)] = cuCmulf(shared[in_low], scale);
+    out[BIT_REVERSE(global_high, 32 - depth)] = cuCmulf(shared[in_high], scale);
 }
 
 // Take no usage of shared mem yet...

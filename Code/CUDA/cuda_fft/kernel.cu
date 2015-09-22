@@ -51,7 +51,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 7
+#define RUNS 20
 
 int main()
 {    
@@ -100,10 +100,10 @@ int main()
         */
         ++index;
     }
-    printf("\n\n");
-    toFile("cuFFT", cuFFTm, RUNS);
-    toFile("constant geometry", constgeomFFTm, RUNS);
-    toFile("block combine", combineFFTm, RUNS);
+    //printf("\n\n");
+    //toFile("cuFFT", cuFFTm, RUNS);
+    //toFile("constant geometry", constgeomFFTm, RUNS);
+    //toFile("block combine", combineFFTm, RUNS);
     
     printf("\nDone...");
     getchar();

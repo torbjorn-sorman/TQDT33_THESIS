@@ -1,9 +1,11 @@
 #include "tsCombine.cuh"
 
+typedef volatile int syncVal;
+
 __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
 __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile int *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
 
 #define EXPERIMENTAL
 
@@ -15,17 +17,21 @@ __host__ int tsCombine_Validate(const int n)
 #ifdef EXPERIMENTAL
     int lim = 256;
     tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
+    /*
     if (n > lim) {
         cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
         printf("\nOUT %d:\n", n);
         console_print(out, n);
     }
+    */
     tsCombine2(FFT_INVERSE, &dev_out, &dev_in, n);
+    /*
     if (n > lim) {
         cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
         printf("IN:\n");
         console_print(in, n);
     }
+    */
 #else
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
@@ -52,7 +58,7 @@ __host__ double tsCombine_Performance(const int n)
         measures[i] = stopTimer();
     }
 
-    fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);    
+    fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     return avg(measures, NUM_PERFORMANCE);
 }
 
@@ -95,20 +101,20 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     cudaDeviceSynchronize();
 }
 
-__host__ void prepSync(volatile int **dev_a, volatile int **dev_b, int blocks)
+__host__ void prepSync(syncVal **dev_a, syncVal **dev_b, int blocks)
 {
     *dev_a = 0;
     *dev_b = 0;
     if (blocks == 1)
         return;
-    cudaMalloc((void**)dev_a, sizeof(int) * blocks);
-    cudaMalloc((void**)dev_b, sizeof(int) * blocks);
+    cudaMalloc((void**)dev_a, sizeof(int) * (blocks + 1));
+    cudaMalloc((void**)dev_b, sizeof(int) * (blocks + 1));
 }
 
 __host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
     int threads, blocks;
-    volatile int *dev_a, *dev_b;
+    syncVal *dev_a, *dev_b;
     int n2 = n / 2;
     float w_angle = dir * (M_2_PI / n);
     setBlocksAndThreads(&blocks, &threads, n2);
@@ -134,34 +140,49 @@ __device__ static __inline__ void valuesIn(int *in_low, int *in_high, cpx *in_lo
     *in_upper = in[*in_high];
 }
 
+#ifdef __CUDACC__
+#define ATOMIC_CAS(a,c,v) (atomicCAS((int *)(a),(int)(c),(int)(v)))
+#else
+#define ATOMIC_CAS(a,c,v) 1
+#endif
+
 //GPU lock-free synchronization function
-__device__ static __inline__ void __gpu_sync(int val, volatile int *a, volatile int *b)
+__device__ static __inline__ void __gpu_sync(const int val, syncVal *a, syncVal *b, const int blocks)
 {
     int isMaster = (threadIdx.x == 0);
-    int isMasterBlock = (blockIdx.x == 0);
-    int isWorker = (threadIdx.x < gridDim.x);
-
+    int workerId = blockIdx.x * blockDim.x + threadIdx.x;
     if (isMaster) {
         a[blockIdx.x] = val;
     }
-    if (isMasterBlock) {
-        if (isWorker) {
-            /* Crashes... */
-            while (a[threadIdx.x] != val){ /* Do nothing here */ }
-        }
+    if (workerId < blocks) {
+        /* Crashes... */
+        /*
+        do {
+        //old = ATOMIC_CAS(&(a[threadIdx.x]), val, val);
+        //old = val;
+        } while (val != old);
+        */
+        while (a[workerId] != val){ /* Do nothing here */ }
+        //printf("Worker %d / %d signing out!\n", workerId, blocks);
         SYNC_THREADS;
-        if (isWorker) {
-            b[threadIdx.x] = val;
-        }
+        //printf("Worker %d working!\n", workerId);
+        b[workerId] = val;
     }
     if (isMaster) {
         /* Crashes... */
+        /*
+        do {
+        old = ATOMIC_CAS(&(b[blockIdx.x]), val, val);
+        //old = val;
+        } while (val != old);
+        */
         while (b[blockIdx.x] != val) { /* Do nothing here */ }
+        //printf(" * Leader %d signing out!\n", blockIdx.x);
     }
     SYNC_THREADS;
 }
 
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile int *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n)
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n)
 {
     extern __shared__ cpx shared[];
     int bit = depth - 1;
@@ -175,7 +196,7 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile 
         valuesIn(&in_low, &in_high, &in_lower, &in_upper, in, tid, 0xFFFFFFFF << bit, dist);
         SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
         cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-        __gpu_sync(steps, a, b);
+        __gpu_sync(steps, a, b, blocks);
         while (--bit > breakSize) {
             dist = dist >> 1;
             ++steps;
@@ -183,7 +204,7 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, volatile int *a, volatile 
             valuesIn(&in_low, &in_high, &in_lower, &in_upper, out, tid, 0xFFFFFFFF << bit, dist);
             SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
             cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-            __gpu_sync(steps, a, b);
+            __gpu_sync(steps, a, b, blocks);
         }
     }
 

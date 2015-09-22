@@ -51,7 +51,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 14
+#define RUNS 13
 
 int main()
 {    

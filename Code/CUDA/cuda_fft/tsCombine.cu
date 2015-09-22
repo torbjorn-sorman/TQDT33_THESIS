@@ -5,7 +5,7 @@ typedef volatile int syncVal;
 __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
 __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int start, const int n);
 
 #define EXPERIMENTAL
 
@@ -111,6 +111,11 @@ __host__ void prepSync(syncVal **dev_a, syncVal **dev_b, int blocks)
     cudaMalloc((void**)dev_b, sizeof(int) * (blocks + 1));
 }
 
+#include <time.h>
+#include <stdlib.h>
+
+static int incr = 0;
+
 __host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
 {
     int threads, blocks;
@@ -122,7 +127,8 @@ __host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const in
     int nBlock = n / blocks;
     float w_bangle = dir * (M_2_PI / nBlock);
     cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    _kernelNoLockSynch KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, dev_a, dev_b, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, n);
+        
+    _kernelNoLockSynch KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, dev_a, dev_b, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, incr += n, n);
     cudaDeviceSynchronize();
     if (blocks > 1) {
         cudaError_t e = cudaGetLastError();
@@ -151,41 +157,31 @@ __device__ static __inline__ void __gpu_sync(const int val, syncVal *a, syncVal 
 {
     int isMaster = (threadIdx.x == 0);
     int workerId = blockIdx.x * blockDim.x + threadIdx.x;
+    if (workerId == 0)
+        printf("\nVal: %d Blocks: %d", val, blocks);
     if (isMaster) {
         a[blockIdx.x] = val;
+        printf("\n\tIN %d\t%d", val, blockIdx.x);
     }
     if (workerId < blocks) {
-        /* Crashes... */
-        /*
-        do {
-        //old = ATOMIC_CAS(&(a[threadIdx.x]), val, val);
-        //old = val;
-        } while (val != old);
-        */
+        //printf("\n\t\tIN %d\t%d", val, workerId);
         while (a[workerId] != val){ /* Do nothing here */ }
-        //printf("Worker %d / %d signing out!\n", workerId, blocks);
         SYNC_THREADS;
-        //printf("Worker %d working!\n", workerId);
         b[workerId] = val;
+        //printf("\n\t\tUT %d\t%d", val, workerId);
     }
     if (isMaster) {
-        /* Crashes... */
-        /*
-        do {
-        old = ATOMIC_CAS(&(b[blockIdx.x]), val, val);
-        //old = val;
-        } while (val != old);
-        */
         while (b[blockIdx.x] != val) { /* Do nothing here */ }
-        //printf(" * Leader %d signing out!\n", blockIdx.x);
+        printf("\n\tUT %d\t%d", val, blockIdx.x);
     }
     SYNC_THREADS;
 }
 
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n)
+__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int start, const int n)
 {
     extern __shared__ cpx shared[];
     int bit = depth - 1;
+    int incr = start;
     int in_low, in_high;
     cpx w, in_lower, in_upper;
     if (blocks > 1) {
@@ -196,7 +192,8 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, co
         valuesIn(&in_low, &in_high, &in_lower, &in_upper, in, tid, 0xFFFFFFFF << bit, dist);
         SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
         cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-        __gpu_sync(steps, a, b, blocks);
+        // TODO DO NOT USE STEP
+        __gpu_sync(incr++, a, b, blocks);
         while (--bit > breakSize) {
             dist = dist >> 1;
             ++steps;
@@ -204,7 +201,8 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, co
             valuesIn(&in_low, &in_high, &in_lower, &in_upper, out, tid, 0xFFFFFFFF << bit, dist);
             SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
             cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-            __gpu_sync(steps, a, b, blocks);
+            // TODO DO NOT USE STEP
+            __gpu_sync(incr++, a, b, blocks);
         }
     }
 

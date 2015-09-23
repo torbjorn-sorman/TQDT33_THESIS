@@ -2,31 +2,33 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="tsConstantGeometry.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="tsConstantGeometry_SB.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="tsHelper.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="tsTest.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="tsTobb.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="tsTobb_SB.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="tsConstantGeometry_DP.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="tsCombine.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="tsCombineNCS.cu" />
+    <CudaCompile Include="tsCombineNCS.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry.cu">
+      <Filter>Old</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry_DP.cu">
+      <Filter>Old</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry_SB.cu">
+      <Filter>Old</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsTobb.cu">
+      <Filter>Old</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsTobb_SB.cu">
+      <Filter>Old</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -35,14 +37,14 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{201d2a83-e80e-4b17-b58e-9c85b2ae8e14}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{8a629641-371e-42e1-9bb6-3ac03d2d0fde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Old">
+      <UniqueIdentifier>{20cc2850-7d5d-4cd0-ac1e-490ea2a929ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tsConstantGeometry_SB.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tsConstantGeometry.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="tsHelper.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -50,18 +52,34 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tsDefinitions.cuh" />
-    <ClInclude Include="tsTobb.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tsTobb_SB.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tsConstantGeometry_DP.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="tsCombine.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tsCombineNCS.cuh" />
+    <ClInclude Include="tsCombineNCS.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imglib.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="tsConstantGeometry_SB.cuh">
+      <Filter>Old</Filter>
+    </ClInclude>
+    <ClInclude Include="tsConstantGeometry.cuh">
+      <Filter>Old</Filter>
+    </ClInclude>
+    <ClInclude Include="tsConstantGeometry_DP.cuh">
+      <Filter>Old</Filter>
+    </ClInclude>
+    <ClInclude Include="tsTobb.cuh">
+      <Filter>Old</Filter>
+    </ClInclude>
+    <ClInclude Include="tsTobb_SB.cuh">
+      <Filter>Old</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="imglib.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

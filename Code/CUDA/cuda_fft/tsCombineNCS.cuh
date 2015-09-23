@@ -11,8 +11,10 @@
 #include "tsTest.cuh"
 
 __host__ void tsCombineNCS(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n);
+__host__ void tsCombineNCS2D(fftDirection dir, cpx *dev_in, const int n);
 
 __host__ int tsCombineNCS_Validate(const int n);
 __host__ double tsCombineNCS_Performance(const int n);
+__host__ int tsCombineNCS2D_Test(const int n);
 
 #endif

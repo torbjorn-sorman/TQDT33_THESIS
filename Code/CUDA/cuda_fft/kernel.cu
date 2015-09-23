@@ -1,5 +1,6 @@
 
 //#define PROFILER
+//#define IMAGE_TEST
 
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -48,7 +49,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 24
+#define RUNS 16
 
 int main()
 {    
@@ -60,15 +61,21 @@ int main()
         
     int start = 2;
     int end = start + RUNS;
+
+#if defined(PROFILER)
+    for (unsigned int n = power2(start); n < power2(end); n *= 2)
+        tsCombine_Performance(n);
+#elif defined(IMAGE_TEST)
+    if (tsCombineNCS2D_Test(power2(9)) == 1)
+        printf("\nDone...");
+    else
+        printf("\nFailed...");
+    getchar();
+#else
     int index = 0;
     double cuFFTm[RUNS];
     double combineFFTm[RUNS];
     double combineNCSFFTm[RUNS];
-
-#ifdef PROFILER
-    for (unsigned int n = power2(start); n < power2(end); n *= 2)
-        tsCombine_Performance(n);
-#else
     printf("\n\t\tcuFFT\tComb\tComb NCS");
     //printf("\tTobbSB\tConstSB");    
     printf("\n");

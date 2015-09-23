@@ -188,6 +188,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="tsTobb_SB.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="imglib.h" />
     <ClInclude Include="tsCombine.cuh" />
     <ClInclude Include="tsCombineNCS.cuh" />
     <ClInclude Include="tsConstantGeometry_DP.cuh" />
@@ -198,6 +199,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="tsHelper.cuh" />
     <ClInclude Include="tsTest.cuh" />
     <ClInclude Include="tsTobb_SB.cuh" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="imglib.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -154,6 +154,27 @@ __device__ static __inline__ int _global_body(cpx *in, cpx *out, int *in_high, c
         return bit;
 }
 
+__device__ static __inline__ void _local_body(cpx *in, cpx *out, const int in_low, const int in_high, const int i, const int ii, const int offset, const int lead, const float angle, const cpx scale, cpx *shared, int bit)
+{
+    cpx w, in_lower, in_upper;
+    /* Move Global to Shared */
+    mem_gtos(in_low, in_high, offset, shared, in);
+
+    /* Run FFT algorithm */
+    for (int steps = 0; steps < bit; ++steps) {
+        SYNC_THREADS;
+        in_lower = shared[in_low];
+        in_upper = shared[in_high];
+        SYNC_THREADS;
+        SIN_COS_F(angle * ((in_low & (0xFFFFFFFF << steps))), &w.y, &w.x);
+        cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
+    }
+
+    /* Move Shared to Global */
+    SYNC_THREADS;
+    mem_stog_db(in_low, in_high, offset, lead, scale, shared, out);
+}
+
 __global__ void _kernelNCS2D(cpx *in, const int depth, const float angle, const float bAngle, cpx scale, const int n)
 {
     extern __shared__ cpx shared[];
@@ -209,37 +230,24 @@ __global__ void _kernelNCS(cpx *in, cpx *out, const float angle, const float bAn
     int bit = depth - 1;
     cpx w, in_lower, in_upper;
     int in_high = n >> 1;
-    cpx *stage2 = in;
 
-    if (blocks > 1) {
-        bit = _global_body(in, out, &in_high, &stage2, bit, breakSize, angle, (blockIdx.x * blockDim.x + threadIdx.x), blocks, in_high);
-        /*
-        int tid = (blockIdx.x * blockDim.x + threadIdx.x);
-        int dist = in_high;
-        int steps = 0;
-        init_sync(tid, blocks);
-        _inner_kernel(in, out, angle, steps, tid, 0xFFFFFFFF << bit, (dist - 1) << steps, dist, blocks);
-        while (--bit > breakSize) {
-            dist = dist >> 1;
-            ++steps;
-            _inner_kernel(out, out, angle, steps, tid, 0xFFFFFFFF << bit, (dist - 1) << steps, dist, blocks);
-        }
-        in_high = ((n / blocks) >> 1);
-        stage2 = out; // easier then swap
-        */
-    }
+    if (blocks > 1)
+        bit = _global_body(in, out, &in_high, &in, bit, breakSize, angle, (blockIdx.x * blockDim.x + threadIdx.x), blocks, in_high);
 
-    /* Next step, run all in shared mem, copy of _kernelB(...) */
+    _local_body(in, out, threadIdx.x, in_high + threadIdx.x, threadIdx.x << 1, threadIdx.x + 1, blockIdx.x * blockDim.x * 2, 32 - depth, bAngle, scale, shared, ++bit);
+    return;
+
+    // Next step, run all in shared mem, copy of _kernelB(...)
     const int in_low = threadIdx.x;
     in_high += in_low;
     const int offset = blockIdx.x * blockDim.x * 2;
     const int i = (in_low << 1);
     const int ii = i + 1;
 
-    /* Move Global to Shared */
-    mem_gtos(in_low, in_high, offset, shared, stage2);
+    // Move Global to Shared
+    mem_gtos(in_low, in_high, offset, shared, in);
     
-    /* Run FFT algorithm */
+    // Run FFT algorithm
     ++bit;
     for (int steps = 0; steps < bit; ++steps) {
         SYNC_THREADS;
@@ -250,7 +258,8 @@ __global__ void _kernelNCS(cpx *in, cpx *out, const float angle, const float bAn
         cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
     }
 
-    /* Move Shared to Global */
+    // Move Shared to Global
     SYNC_THREADS;
     mem_stog_db(in_low, in_high, offset, 32 - depth, scale, shared, out);
+    //*/
 }

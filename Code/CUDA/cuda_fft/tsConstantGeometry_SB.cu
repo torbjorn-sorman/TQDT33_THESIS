@@ -62,7 +62,7 @@ __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx s
     const int ii = i + 1;
 
     /* Move (bit-reversed?) Global to Shared */
-    globalToShared(tid, in_high, 0, lead, shared, in);
+    mem_gtos_db(tid, in_high, 0, lead, shared, in);
 
     /* Run FFT algorithm */
     for (int steps = 0; steps < depth; ++steps) {
@@ -76,5 +76,5 @@ __global__ void _kernelCGSB48K(cpx *in, cpx *out, const float angle, const cpx s
 
     /* Move Shared to Global (index bit-reversed) */
     SYNC_THREADS;
-    sharedToGlobal(tid, in_high, 0, scale, lead, shared, out);
+    mem_stog_db(tid, in_high, 0, lead, scale, shared, out);
 }

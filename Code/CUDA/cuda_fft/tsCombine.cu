@@ -6,21 +6,13 @@ __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned 
 __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 
-//#define EXPERIMENTAL
-//#define EXP_NO_SYNC
-
 __host__ int tsCombine_Validate(const int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-#ifdef EXPERIMENTAL
-    tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
-    tsCombine2(FFT_INVERSE, &dev_out, &dev_in, n);
-#else
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
-#endif
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
@@ -35,11 +27,7 @@ __host__ double tsCombine_Performance(const int n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-#ifdef EXPERIMENTAL
-        tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
-#else
         tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
-#endif
         measures[i] = stopTimer();
     }
 
@@ -83,7 +71,7 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     else {
         _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scaleCpx, depth, lead, n2);
     }
-    cudaDeviceSynchronize();
+    cudaDeviceSynchronize();    
 }
 
 // Take no usage of shared mem yet...
@@ -143,7 +131,7 @@ __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, 
     const int ii = i + 1;
 
     /* Move (bit-reversed?) Global to Shared */
-    globalToShared(tid, in_high, 0, lead, shared, in);
+    mem_gtos_db(tid, in_high, 0, lead, shared, in);
 
     /* Run FFT algorithm */
     for (int steps = 0; steps < depth; ++steps) {
@@ -157,5 +145,5 @@ __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, 
 
     /* Move Shared to Global (index bit-reversed) */
     SYNC_THREADS;
-    sharedToGlobal(tid, in_high, 0, scale, lead, shared, out);
+    mem_stog(tid, in_high, 0, scale, shared, out);
 }

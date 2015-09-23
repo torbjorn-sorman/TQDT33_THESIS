@@ -48,22 +48,9 @@ __host__ void tsConstantGeometry_DP(fftDirection dir, cpx **dev_in, cpx **dev_ou
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);   
     const int depth = log2_32(n);
     set_block_and_threads(&numBlocks, &threadsPerBlock, n);
-#ifdef PRECALC_TWIDDLE
-    int sharedMem = sizeof(cpx) * (n + n / 2);
-    sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
-    _kernelCGDP KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
-#else
     int sharedMem = sizeof(cpx) * n;
     sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
     _kernelCGDP48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sharedMem)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n / 2);
-#endif
-    /* 
-        Max shared memory/cache available is 65536 (64KB), default shared Mem preference is 49152 (48KB) with 16KB as cache.
-        If whole sequence is to fit in the shared memory:
-        2 * n + n2 (not in place)
-        n + n2 (in place)
-        n (no twiddle)
-    */
     cudaDeviceSynchronize();
 }
 

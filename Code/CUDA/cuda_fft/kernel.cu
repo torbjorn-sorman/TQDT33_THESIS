@@ -13,17 +13,13 @@
 #include "tsDefinitions.cuh"
 #include "tsTest.cuh"
 
-#include "tsConstantGeometry.cuh"
-#include "tsConstantGeometry_SB.cuh"
-#include "tsTobb.cuh"
-#include "tsTobb_SB.cuh"
 #include "tsCombine.cuh"
 #include "tsCombineNCS.cuh"
 
 #ifndef PROFILER
 
 __host__ double cuFFT_Performance(const int n);
-void toFile(const char *name, const double m[], const int ms);
+__host__ void toFile(const char *name, const double m[], const int ms);
 
 // Print device properties
 void printDevProp(cudaDeviceProp devProp)
@@ -52,21 +48,20 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 14
+#define RUNS 24
 
 int main()
 {    
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
+    //cudaDeviceProp prop;
+    //cudaGetDeviceProperties(&prop, 0);
+    //printDevProp(prop);
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-    //printDevProp(prop);
-    
+        
     int start = 2;
     int end = start + RUNS;
     int index = 0;
     double cuFFTm[RUNS];
-    double constgeomFFTm[RUNS];
     double combineFFTm[RUNS];
     double combineNCSFFTm[RUNS];
 
@@ -74,7 +69,7 @@ int main()
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #else
-    printf("\n\t\tcuFFT\tConst\tComb\tComb NCS");
+    printf("\n\t\tcuFFT\tComb\tComb NCS");
     //printf("\tTobbSB\tConstSB");    
     printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
@@ -85,10 +80,6 @@ int main()
         // cuFFT
         printf(fmt, cuFFTm[index] = cuFFT_Performance(n));
                 
-        // Const geom
-        printf("\t%.0f", constgeomFFTm[index] = tsConstantGeometry_Performance(n));
-        if (tsConstantGeometry_Validate(n) == 0) printf("!");
-
         // Combine
         printf("\t%.0f", combineFFTm[index] = tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
@@ -97,21 +88,10 @@ int main()
         printf("\t%.0f", combineNCSFFTm[index] = tsCombineNCS_Performance(n));
         if (tsCombineNCS_Validate(n) == 0) printf("!");
 
-        /*
-        if (n <= MAX_BLOCK_SIZE * 2) {        
-            // Tobb
-            printf("\t%.0f", tsTobb_SB_Performance(n));
-            if (tsTobb_SB_Validate(n) == 0) printf("!");
-            // Const geom
-            printf("\t%.0f", tsConstantGeometry_SB_Performance(n));
-            if (tsConstantGeometry_SB_Validate(n) == 0) printf("!");
-        }
-        */
         ++index;
     }
     printf("\n\n");
     toFile("cuFFT", cuFFTm, RUNS);
-    toFile("Constant Geometry", constgeomFFTm, RUNS);
     toFile("Block Combine CPU Sync", combineFFTm, RUNS);
     toFile("Block Combine GPU Sync", combineNCSFFTm, RUNS);
     
@@ -146,7 +126,7 @@ __host__ double cuFFT_2D_Performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in, *dev_out;
-    fftMalloc(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
+    fftMalloc(n * n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     cufftHandle plan;
     cufftPlan2d(&plan, n, n, CUFFT_C2C);
     for (int i = 0; i < 20; ++i) {
@@ -160,7 +140,7 @@ __host__ double cuFFT_2D_Performance(const int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-void toFile(const char *name, const double m[], const int ms)
+__host__ void toFile(const char *name, const double m[], const int ms)
 {
     char filename[64] = "";
     FILE *f;

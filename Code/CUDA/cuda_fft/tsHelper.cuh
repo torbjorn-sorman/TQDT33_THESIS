@@ -1,8 +1,14 @@
 #ifndef TSHELPER_CUH
 #define TSHELPER_CUH
 
+//#include <Windows.h>
+//#include <cmath>
+//#include <limits>
+
 #include "cuda_runtime.h"
 #include "tsDefinitions.cuh"
+
+#include "imglib.h"
 
 // Fast bit-reversal
 static int tab32[32] = {
@@ -17,6 +23,34 @@ __host__ static __inline__ int log2_32(int value)
     value |= value >> 8;
     value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
+}
+
+#define SYNC_BLOCKS(g, i) (__gpu_sync_lock_free((g) + (i)))
+
+__device__ volatile int _sync_array_in[MAX_BLOCK_SIZE];
+__device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
+
+__device__ static __inline__ void init_sync(const int tid, const int blocks)
+{
+    if (tid < blocks) {
+        _sync_array_in[tid] = 0;
+        _sync_array_out[tid] = 0;
+    }
+}
+
+__device__ static __inline__ void __gpu_sync_lock_free(const int goal)
+{
+    int tid = threadIdx.x;
+    int bid = blockIdx.x;
+    int nBlocks = gridDim.x;
+    if (tid == 0) { _sync_array_in[bid] = goal; }    
+    if (bid == 1) { // Use bid == 1, if only one block this part will not run.
+        if (tid < nBlocks) { while (_sync_array_in[tid] != goal){} }
+        SYNC_THREADS;
+        if (tid < nBlocks) { _sync_array_out[tid] = goal; }
+    }
+    if (tid == 0) { while (_sync_array_out[bid] != goal) {} }
+    SYNC_THREADS;
 }
 
 __device__ static inline int log2(int v)
@@ -46,97 +80,40 @@ __device__ static __inline__ void cpx_add_sub_mul(cpx *out_lower, cpx *out_upper
     (*out_upper) = cuCmulf(cuCsubf(in_lower, in_upper), w);
 }
 
-#ifdef PRECALC_TWIDDLE
-#define GLOBAL_LOW low - offset
-#define GLOBAL_HIGH high - offset
-#define W_OFFSET(A, O) ((A) + (O))
-#else
-#define GLOBAL_LOW low
-#define GLOBAL_HIGH high
-#define W_OFFSET(A, O) (A)
-#endif
-
-__device__ static __inline__ void globalToShared(int low, int high, int offset, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_gtos(int low, int high, int offset, cpx *shared, cpx *global)
 {
     shared[low] = global[low + offset];
     shared[high] = global[high + offset];
 }
 
-__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_gtos_db(int low, int high, int offset, unsigned int lead, cpx *shared, cpx *global)
 {
-    global[low + offset] = shared[low];
-    global[high + offset] = shared[high];
+    shared[low] = global[BIT_REVERSE(low + offset, lead)];
+    shared[high] = global[BIT_REVERSE(high + offset, lead)];
 }
 
-__device__ static __inline__ void globalToShared(int low, int high, int offset, unsigned int lead, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_gtos_tb(int low, int high, int offset, unsigned int lead, cpx *shared, cpx *global)
 {
-#ifdef BIT_REVERSED_OUTPUT
-    shared[low] = global[GLOBAL_LOW];
-    shared[high] = global[GLOBAL_HIGH];
-#else
-    shared[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_LOW];
-    shared[W_OFFSET(BIT_REVERSE(GLOBAL_HIGH, lead), offset)] = global[GLOBAL_HIGH];
-#endif
+    shared[BIT_REVERSE(low, lead)] = global[low + offset];
+    shared[BIT_REVERSE(high, lead)] = global[high + offset];
 }
 
-__device__ static __inline__ void globalToShared(int low, int high, int offset, unsigned int lead, cpx *shared_low, cpx *shared_high, cpx *global)
+__device__ static __inline__ void mem_stog(int low, int high, int offset, cpx scale, cpx *shared, cpx *global)
 {
-#ifdef BIT_REVERSED_OUTPUT
-    shared_low[low] = global[GLOBAL_LOW];
-    shared_high[low] = global[GLOBAL_HIGH];
-#else
-    shared_low[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_LOW];
-    shared_high[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)] = global[GLOBAL_HIGH];
-#endif
+    global[low + offset] = cuCmulf(shared[low], scale);
+    global[high + offset] = cuCmulf(shared[high], scale);
 }
 
-__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx scale, unsigned int lead, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_stog_db(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global)
 {
-#ifdef BIT_REVERSED_OUTPUT
-    global[GLOBAL_LOW] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
-    global[GLOBAL_HIGH] = cuCmulf(shared[W_OFFSET(BIT_REVERSE(GLOBAL_HIGH, lead), offset)], scale);
-#else
-    global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
-    global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);
-#endif
+    global[BIT_REVERSE(low + offset, lead)] = cuCmulf(shared[low], scale);
+    global[BIT_REVERSE(high + offset, lead)] = cuCmulf(shared[high], scale);
 }
 
-__device__ static __inline__ void sharedToGlobal(int low, int high, int offset, cpx scale, unsigned int lead, cpx *shared_low, cpx *shared_high, cpx *global)
+__device__ static __inline__ void mem_stog_tb(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global)
 {
-#ifdef BIT_REVERSED_OUTPUT
-    global[GLOBAL_LOW] = cuCmulf(shared_low[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
-    global[GLOBAL_HIGH] = cuCmulf(shared_high[W_OFFSET(BIT_REVERSE(GLOBAL_LOW, lead), offset)], scale);
-#else
-    global[GLOBAL_LOW] = cuCmulf(shared[low], scale);
-    global[GLOBAL_HIGH] = cuCmulf(shared[high], scale);
-#endif
-}
-
-//GPU lock-free synchronization function
-__device__ static __inline__ void DONOTUSE__gpu_sync(int val, volatile int *a, volatile int *b, const int blocks)
-{
-    // blockIdx.x * blockDim.x + threadIdx.x
-    int tid = threadIdx.x;
-    int nBlock = gridDim.x;
-    int bid = blockIdx.x;
-    if (tid == 0) {
-        a[bid] = val;
-    }
-    if (bid == 0) {
-        // Dangerous?
-        if (tid < nBlock) {
-            while (a[tid] != val){ /* Do nothing here */ }
-        }
-        SYNC_THREADS;
-        if (tid < nBlock) {
-            b[tid] = val;
-        }
-    }
-    // Dangerous?
-    if (tid == 0) {
-        while (b[bid] != val) { /* Do nothing here */ }
-    }
-    SYNC_THREADS;
+    global[low + offset] = cuCmulf(shared[BIT_REVERSE(low, lead)], scale);
+    global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, lead)], scale);
 }
 
 __host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, const int size)
@@ -151,8 +128,10 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
     }
 }
 
-// Texture memory?
+// Texture memory, find use?
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);
+__host__ cpx* read_image(char *name, int *n);
+__host__ void write_image(char *name, cpx* seq, const int n);
 
 // Kernel functions
 __global__ void twiddle_factors(cpx *W, const float angle, const int n);

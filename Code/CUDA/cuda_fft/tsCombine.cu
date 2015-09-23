@@ -7,7 +7,8 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx sca
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
 
-#define EXPERIMENTAL
+//#define EXPERIMENTAL
+//#define EXP_NO_SYNC
 
 __host__ int tsCombine_Validate(const int n)
 {
@@ -16,7 +17,7 @@ __host__ int tsCombine_Validate(const int n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
 #ifdef EXPERIMENTAL
     tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
-    //tsCombine2(FFT_INVERSE, &dev_out, &dev_in, n);
+    tsCombine2(FFT_INVERSE, &dev_out, &dev_in, n);
 #else
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
@@ -36,7 +37,7 @@ __host__ double tsCombine_Performance(const int n)
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
 #ifdef EXPERIMENTAL
-        //tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
+        tsCombine2(FFT_FORWARD, &dev_in, &dev_out, n);
 #else
         tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
 #endif
@@ -90,7 +91,7 @@ __host__ void prepSync(syncVal **dev_a, syncVal **dev_b, int blocks)
 {
     *dev_a = 0;
     *dev_b = 0;
-    if (blocks == 1)
+    if (blocks == 1 || 1)
         return;
     cudaMalloc((void**)dev_a, sizeof(int) * (blocks + 1));
     cudaMalloc((void**)dev_b, sizeof(int) * (blocks + 1));
@@ -111,10 +112,9 @@ __host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const in
     float w_bangle = dir * (M_2_PI / nBlock);
     cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
 
-    srand((unsigned int)time(NULL));
     _kernelNoLockSynch KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, dev_a, dev_b, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, n);
     cudaDeviceSynchronize();
-    if (blocks > 1) {
+    if (blocks > 1 && 0) {
         cudaError_t e = cudaGetLastError();
         if (e) printf("\nError: %s\n", cudaGetErrorString(e));
         cudaFree((void *)dev_a);
@@ -139,7 +139,7 @@ __device__ static __inline__ void valuesIn(int *in_low, int *in_high, cpx *in_lo
 #endif
 
 #define CRITICAL_BLOCK 8
-/*
+
 //blocks shared variable
 __device__ int g_mutex;
 
@@ -151,10 +151,14 @@ __device__ void __gpu_sync2(int goalVal){
         atomicAdd(&g_mutex, 1);
         // wait for the other blocks
         //for (;;) { if (g_mutex == goalVal) break; }
-        printf("\nblock: %d", blockIdx.x);
-        while (g_mutex < goalVal) {}
+        //printf("\nblock: %d", blockIdx.x);
+
+        while (goalVal != ATOMIC_CAS(&g_mutex, goalVal, goalVal)){}
+        //while (g_mutex < goalVal) {}
     }
-    SYNC_THREADS;}*/
+    SYNC_THREADS;
+}
+
 //GPU lock-free synchronization function
 __device__ void __gpu_sync(const int goal, syncVal *a, syncVal *b)
 {
@@ -162,29 +166,20 @@ __device__ void __gpu_sync(const int goal, syncVal *a, syncVal *b)
     int bid = blockIdx.x;
     int nBlocks = gridDim.x;
 
-    if (bid * blockDim.x + tid == 0)
-        if (nBlocks == CRITICAL_BLOCK) printf("\nGoal: %d GridDim.x: %d  blockDim.x: %d ", goal, gridDim.x, blockDim.x);
-
     if (tid == 0) {
         a[bid] = goal;
-        if (nBlocks == CRITICAL_BLOCK) printf("\n\tIN %d\t%d", goal, bid);
     }
     if (bid == 1) {
-        if (tid < nBlocks) {
-            while (goal != ATOMIC_CAS(&(a[tid]), goal, goal)){}
+        if (tid < nBlocks) {            
             //while (a[tid] != goal){ /* ATOMIC_CAS(&(a[tid]), goal, goal); */ }
-            if (nBlocks == CRITICAL_BLOCK) printf("\n\t\tIN %d\t%d", goal, tid);
         }
         SYNC_THREADS;
         if (tid < nBlocks) {
-            if (nBlocks == CRITICAL_BLOCK) printf("\n\t\tUT %d\t%d", goal, tid);
             b[tid] = goal;
         }
-
     }
     if (tid == 0) {
-        while (b[bid] != goal) { /* ATOMIC_CAS(&(b[tid]), goal, goal); */ }
-        if (nBlocks == CRITICAL_BLOCK) printf("\n\tUT %d\t%d", goal, bid);
+        //while (b[bid] != goal) { /* ATOMIC_CAS(&(b[tid]), goal, goal); */ }
     }
     SYNC_THREADS;
 }
@@ -199,8 +194,8 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, co
         int tid = (blockIdx.x * blockDim.x + threadIdx.x);
         if (blockIdx.x == 0 && threadIdx.x < blocks) {
             //g_mutex = 0;
-            a[threadIdx.x] = 0;
-            b[threadIdx.x] = 0;
+            //a[threadIdx.x] = 0;
+            //b[threadIdx.x] = 0;
         }
         int dist = n / 2;
         int steps = 0;
@@ -208,8 +203,8 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, co
         valuesIn(&in_low, &in_high, &in_lower, &in_upper, in, tid, 0xFFFFFFFF << bit, dist);
         SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
         cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-        // TODO DO NOT USE STEP
-        __gpu_sync(blocks + steps + (angle > 1), a, b);
+        
+        //__gpu_sync(blocks + steps, a, b);
         //__gpu_sync2(blocks);
         while (--bit > breakSize) {
             dist = dist >> 1;
@@ -218,8 +213,8 @@ __global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, co
             valuesIn(&in_low, &in_high, &in_lower, &in_upper, out, tid, 0xFFFFFFFF << bit, dist);
             SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
             cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-            // TODO DO NOT USE STEP
-            __gpu_sync(blocks + steps + (angle > 1), a, b);
+            
+            //__gpu_sync(blocks + steps, a, b);
             //__gpu_sync2(blocks);
         }
     }

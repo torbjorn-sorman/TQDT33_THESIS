@@ -48,7 +48,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     bit = log2_32(n);
     const int lead = 32 - bit;
 
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors KERNEL_ARGS2(numBlocks, threadsPerBlock)(dev_W, w_angle, n);
     cudaDeviceSynchronize();
     
@@ -66,7 +66,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
         cudaDeviceSynchronize();
     }
 
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n);
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, lead);
     swap(dev_in, dev_out);
     cudaDeviceSynchronize();

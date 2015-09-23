@@ -18,6 +18,7 @@
 #include "tsTobb.cuh"
 #include "tsTobb_SB.cuh"
 #include "tsCombine.cuh"
+#include "tsCombineNCS.cuh"
 
 #ifndef PROFILER
 
@@ -51,7 +52,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 24
+#define RUNS 14
 
 int main()
 {    
@@ -67,12 +68,15 @@ int main()
     double cuFFTm[RUNS];
     double constgeomFFTm[RUNS];
     double combineFFTm[RUNS];
+    double combineNCSFFTm[RUNS];
 
 #ifdef PROFILER
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #else
-    printf("\n\t\tcuFFT\tConst\tComb\tTobbSB\tConstSB\n");    
+    printf("\n\t\tcuFFT\tConst\tComb\tComb NCS");
+    //printf("\tTobbSB\tConstSB");    
+    printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
         printf("\n%d:", n);
         
@@ -84,10 +88,14 @@ int main()
         // Const geom
         printf("\t%.0f", constgeomFFTm[index] = tsConstantGeometry_Performance(n));
         if (tsConstantGeometry_Validate(n) == 0) printf("!");
-        
+
         // Combine
         printf("\t%.0f", combineFFTm[index] = tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
+
+        // Combine No CPU Sync
+        printf("\t%.0f", combineNCSFFTm[index] = tsCombineNCS_Performance(n));
+        if (tsCombineNCS_Validate(n) == 0) printf("!");
 
         /*
         if (n <= MAX_BLOCK_SIZE * 2) {        
@@ -103,8 +111,9 @@ int main()
     }
     printf("\n\n");
     toFile("cuFFT", cuFFTm, RUNS);
-    toFile("constant geometry", constgeomFFTm, RUNS);
-    toFile("block combine", combineFFTm, RUNS);
+    toFile("Constant Geometry", constgeomFFTm, RUNS);
+    toFile("Block Combine CPU Sync", combineFFTm, RUNS);
+    toFile("Block Combine GPU Sync", combineNCSFFTm, RUNS);
     
     printf("\nDone...");
     getchar();

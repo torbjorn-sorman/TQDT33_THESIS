@@ -26,6 +26,7 @@
     <CudaCompile Include="tsCombine.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="tsCombineNCS.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -61,5 +62,6 @@
     <ClInclude Include="tsCombine.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tsCombineNCS.cuh" />
   </ItemGroup>
 </Project>

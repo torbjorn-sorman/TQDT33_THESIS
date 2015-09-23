@@ -30,18 +30,6 @@ __host__ cudaTextureObject_t specifyTexture(cpx *dev_W)
     return texObj;
 }
 
-__host__ void setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size)
-{
-    if (size > MAX_BLOCK_SIZE) {
-        *numBlocks = size / MAX_BLOCK_SIZE;
-        *threadsPerBlock = MAX_BLOCK_SIZE;
-    }
-    else {
-        *numBlocks = 1;
-        *threadsPerBlock = size;
-    }
-}
-
 __global__ void twiddle_factors(cpx *W, const float angle, const int n)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);

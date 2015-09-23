@@ -47,7 +47,7 @@ __host__ void tsConstantGeometry_SB(fftDirection dir, cpx **dev_in, cpx **dev_ou
     const float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     const int depth = log2_32(n);
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n / 2);
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n / 2);
     _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n);
     cudaDeviceSynchronize();
 }

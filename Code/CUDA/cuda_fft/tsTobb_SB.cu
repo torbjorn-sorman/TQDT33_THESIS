@@ -44,7 +44,7 @@ __host__ void tsTobb_SB(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     int threadsPerBlock, numBlocks;
     const float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n / 2);
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n / 2);
 #ifdef PRECALC_TWIDDLE
     _kernelTSB KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * (n + n / 2))(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
 #else

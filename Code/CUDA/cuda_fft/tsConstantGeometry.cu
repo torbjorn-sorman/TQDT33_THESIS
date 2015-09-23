@@ -47,7 +47,7 @@ __host__ void tsConstantGeometry(const fftDirection dir, cpx **dev_in, cpx **dev
 
     depth = log2_32(n);
 
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n2);
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors KERNEL_ARGS2(numBlocks, threadsPerBlock)(dev_W, w_angle, n);
     cudaDeviceSynchronize();
     
@@ -60,7 +60,7 @@ __host__ void tsConstantGeometry(const fftDirection dir, cpx **dev_in, cpx **dev
         cudaDeviceSynchronize();
     }
 
-    setBlocksAndThreads(&numBlocks, &threadsPerBlock, n);    
+    set_block_and_threads(&numBlocks, &threadsPerBlock, n);    
     bit_reverse KERNEL_ARGS2(numBlocks, threadsPerBlock)(*dev_out, *dev_in, scale, 32 - depth);
     swap(dev_in, dev_out);
     cudaDeviceSynchronize();

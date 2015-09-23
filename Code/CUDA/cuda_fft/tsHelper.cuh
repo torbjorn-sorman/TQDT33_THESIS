@@ -139,8 +139,17 @@ __device__ static __inline__ void DONOTUSE__gpu_sync(int val, volatile int *a, v
     SYNC_THREADS;
 }
 
-//
-__host__ void setBlocksAndThreads(int *numBlocks, int *threadsPerBlock, const int size);
+__host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, const int size)
+{
+    if (size > MAX_BLOCK_SIZE) {
+        *numBlocks = size / MAX_BLOCK_SIZE;
+        *threadsPerBlock = MAX_BLOCK_SIZE;
+    }
+    else {
+        *numBlocks = 1;
+        *threadsPerBlock = size;
+    }
+}
 
 // Texture memory?
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);

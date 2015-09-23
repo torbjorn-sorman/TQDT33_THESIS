@@ -5,7 +5,6 @@ typedef int syncVal;
 __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
 __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n);
 
 //#define EXPERIMENTAL
 //#define EXP_NO_SYNC
@@ -64,7 +63,7 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
     int dist = n2;
 
     // Set number of blocks and threads
-    setBlocksAndThreads(&blocks, &threads, n2);
+    set_block_and_threads(&blocks, &threads, n2);
 
     if (blocks > 1) {
         // Sync at device level until 
@@ -85,173 +84,6 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
         _kernelB KERNEL_ARGS3(1, threads, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scaleCpx, depth, lead, n2);
     }
     cudaDeviceSynchronize();
-}
-
-__host__ void prepSync(syncVal **dev_a, syncVal **dev_b, int blocks)
-{
-    *dev_a = 0;
-    *dev_b = 0;
-    if (blocks == 1 || 1)
-        return;
-    cudaMalloc((void**)dev_a, sizeof(int) * (blocks + 1));
-    cudaMalloc((void**)dev_b, sizeof(int) * (blocks + 1));
-}
-
-#include <time.h>
-#include <stdlib.h>
-
-__host__ void tsCombine2(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
-{
-    int threads, blocks;
-    syncVal *dev_a, *dev_b;
-    int n2 = n / 2;
-    float w_angle = dir * (M_2_PI / n);
-    setBlocksAndThreads(&blocks, &threads, n2);
-    prepSync(&dev_a, &dev_b, blocks);
-    int nBlock = n / blocks;
-    float w_bangle = dir * (M_2_PI / nBlock);
-    cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-
-    _kernelNoLockSynch KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, dev_a, dev_b, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, n);
-    cudaDeviceSynchronize();
-    if (blocks > 1 && 0) {
-        cudaError_t e = cudaGetLastError();
-        if (e) printf("\nError: %s\n", cudaGetErrorString(e));
-        cudaFree((void *)dev_a);
-        cudaFree((void *)dev_b);
-    }
-}
-
-__device__ static __inline__ void valuesIn(int *in_low, int *in_high, cpx *in_lower, cpx *in_upper, cpx *in, int tid, int lmask, int dist)
-{
-    *in_low = tid + (tid & lmask);
-    *in_high = *in_low + dist;
-    *in_lower = in[*in_low];
-    *in_upper = in[*in_high];
-}
-
-#ifdef __CUDACC__
-#define ATOMIC_CAS(a,c,v) (atomicCAS((int *)(a),(int)(c),(int)(v)))
-#define THREAD_FENCE __threadfence()
-#else
-#define ATOMIC_CAS(a,c,v) 1
-#define THREAD_FENCE
-#endif
-
-#define CRITICAL_BLOCK 8
-
-//blocks shared variable
-__device__ int g_mutex;
-
-//centralized barrier function
-__device__ void __gpu_sync2(int goalVal){
-    // in each block, only thread 0 synchronizes
-    // with the other blocks
-    if (threadIdx.x == 0) {
-        atomicAdd(&g_mutex, 1);
-        // wait for the other blocks
-        //for (;;) { if (g_mutex == goalVal) break; }
-        //printf("\nblock: %d", blockIdx.x);
-
-        while (goalVal != ATOMIC_CAS(&g_mutex, goalVal, goalVal)){}
-        //while (g_mutex < goalVal) {}
-    }
-    SYNC_THREADS;
-}
-
-//GPU lock-free synchronization function
-__device__ void __gpu_sync(const int goal, syncVal *a, syncVal *b)
-{
-    int tid = threadIdx.x;
-    int bid = blockIdx.x;
-    int nBlocks = gridDim.x;
-
-    if (tid == 0) {
-        a[bid] = goal;
-    }
-    if (bid == 1) {
-        if (tid < nBlocks) {            
-            //while (a[tid] != goal){ /* ATOMIC_CAS(&(a[tid]), goal, goal); */ }
-        }
-        SYNC_THREADS;
-        if (tid < nBlocks) {
-            b[tid] = goal;
-        }
-    }
-    if (tid == 0) {
-        //while (b[bid] != goal) { /* ATOMIC_CAS(&(b[tid]), goal, goal); */ }
-    }
-    SYNC_THREADS;
-}
-
-__global__ void _kernelNoLockSynch(cpx *in, cpx *out, syncVal *a, syncVal *b, const float angle, const float bAngle, const int depth, const int breakSize, cpx scale, const int blocks, const int n)
-{
-    extern __shared__ cpx shared[];    
-    int bit = depth - 1;
-    int in_low, in_high;
-    cpx w, in_lower, in_upper;
-    if (blocks > 1) {
-        int tid = (blockIdx.x * blockDim.x + threadIdx.x);
-        if (blockIdx.x == 0 && threadIdx.x < blocks) {
-            //g_mutex = 0;
-            //a[threadIdx.x] = 0;
-            //b[threadIdx.x] = 0;
-        }
-        int dist = n / 2;
-        int steps = 0;
-        unsigned int pmask = (dist - 1) << steps;
-        valuesIn(&in_low, &in_high, &in_lower, &in_upper, in, tid, 0xFFFFFFFF << bit, dist);
-        SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-        cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-        
-        //__gpu_sync(blocks + steps, a, b);
-        //__gpu_sync2(blocks);
-        while (--bit > breakSize) {
-            dist = dist >> 1;
-            ++steps;
-            pmask = (dist - 1) << steps;
-            valuesIn(&in_low, &in_high, &in_lower, &in_upper, out, tid, 0xFFFFFFFF << bit, dist);
-            SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-            cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-            
-            //__gpu_sync(blocks + steps, a, b);
-            //__gpu_sync2(blocks);
-        }
-    }
-
-    /* Next step, run all in shared mem, copy of _kernelB(...) */
-    in_low = threadIdx.x;
-    in_high = ((n / blocks) / 2) + in_low;
-    const int global_low = in_low + blockIdx.x * blockDim.x * 2;
-    const int global_high = in_high + blockIdx.x * blockDim.x * 2;
-    const int i = (in_low << 1);
-    const int ii = i + 1;
-
-    /* Move Global to Shared */
-    if (blocks > 1) {
-        shared[in_low] = out[global_low];
-        shared[in_high] = out[global_high];
-    }
-    else {
-        shared[in_low] = in[global_low];
-        shared[in_high] = in[global_high];
-    }
-
-    /* Run FFT algorithm */
-    ++bit;
-    for (int steps = 0; steps < bit; ++steps) {
-        SYNC_THREADS;
-        in_lower = shared[in_low];
-        in_upper = shared[in_high];
-        SIN_COS_F(bAngle * ((in_low & (0xFFFFFFFF << steps))), &w.y, &w.x);
-        SYNC_THREADS;
-        cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
-    }
-
-    /* Move Shared to Global */
-    SYNC_THREADS;
-    out[BIT_REVERSE(global_low, 32 - depth)] = cuCmulf(shared[in_low], scale);
-    out[BIT_REVERSE(global_high, 32 - depth)] = cuCmulf(shared[in_high], scale);
 }
 
 // Take no usage of shared mem yet...
@@ -300,6 +132,7 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx sca
     out[BIT_REVERSE(global_high, lead)] = cuCmulf(shared[in_high], scale);
 }
 
+// Full usage of shared mem!
 __global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
 {
     extern __shared__ cpx shared[];

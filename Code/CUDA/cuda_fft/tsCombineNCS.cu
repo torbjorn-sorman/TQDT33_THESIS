@@ -2,7 +2,7 @@
 
 __global__ void _kernelNCS(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cpx scale, cInt blocks, cInt n);
 __global__ void _kernelNCS2D(cpx *in, cInt depth, cFloat angle, cFloat bAngle, cpx scale, cInt n);
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt block_rows, cInt n);
+__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n);
 
 __host__ int tsCombineNCS_Validate(cInt n)
 {
@@ -33,9 +33,8 @@ __host__ double tsCombineNCS_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ int tsCombineNCS2D_Test(cInt tmpN)
+__host__ int tsCombineNCS2D_Test(cInt n)
 {
-    cInt n = 2048;
     double measures[NUM_PERFORMANCE];
     char input_file[40];
     char refere_file[40];
@@ -56,24 +55,25 @@ __host__ int tsCombineNCS2D_Test(cInt tmpN)
     cudaMalloc((void**)&dev_in, size);
     cudaMalloc((void**)&dev_out, size);
 
-    write_image(refere_file, in, n);
+    //write_image(refere_file, in, n);
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    /*
+    
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
         tsCombineNCS2D(FFT_FORWARD, dev_in, dev_out, n);
         measures[i] = stopTimer();
     }
-    printf("\nTime: %.2f\n", avg(measures, NUM_PERFORMANCE));
+    printf("%d: %.0f\n", n, avg(measures, NUM_PERFORMANCE));
 
-    */
-    tsCombineNCS2D(FFT_FORWARD, dev_in, dev_out, n);
-    cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
-    write_image(freq_domain, in, n);
+    
+    //tsCombineNCS2D(FFT_FORWARD, dev_in, dev_out, n);
+    //cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
+    //write_image(freq_domain, in, n);
+
     //tsCombineNCS2D(FFT_INVERSE, dev_out, dev_in, n);
-    cudaMemcpy(in, dev_in, size, cudaMemcpyDeviceToHost);
-    write_image(spatial_dom, in, n);
+    //cudaMemcpy(in, dev_in, size, cudaMemcpyDeviceToHost);
+    //write_image(spatial_dom, in, n);
 
     cudaFree(dev_in);
     cudaFree(dev_out);
@@ -124,9 +124,9 @@ __host__ void tsCombineNCS(fftDirection dir, cpx **dev_in, cpx **dev_out, cInt n
 __host__ void tsCombineNCS2D(fftDirection dir, cpx *dev_in, cpx *dev_out, cInt n)
 {
     dim3 threads, blocks, threads_trans, blocks_trans;
-    int blocks_rows = 0;
-    set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, &blocks_rows, n);
-    printf("Dim FFT Block: {%d, %d} FFT Threads {%d %d} Trans Block: {%d, %d} Trans Threads {%d %d}\n", blocks.x, blocks.x, threads.x, threads.x, blocks_trans.x, blocks_trans.x, threads_trans.x, threads_trans.x);
+    set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, n);
+    //printf("Dim FFT   {%d\t%d}\tt{%d\t%d}\n", blocks.x, blocks.x, threads.x, threads.y);
+    //printf("Dim Trans {%d\t%d}\tt{%d\t%d}\n", blocks_trans.x, blocks_trans.y, threads_trans.x, threads_trans.y);
     /*
     cCpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     int nBlock = n / blocks.y;
@@ -139,12 +139,12 @@ __host__ void tsCombineNCS2D(fftDirection dir, cpx *dev_in, cpx *dev_out, cInt n
     _kernelNCS2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, log2_32(n), w_angle, w_bangle, scale, n);
     cudaDeviceSynchronize();
     */
-    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, blocks_rows, n);
+    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, n);
     cudaDeviceSynchronize();
     /*
     _kernelNCS2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, log2_32(n), w_angle, w_bangle, scale, n);
     cudaDeviceSynchronize();
-    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, n);
+    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, block_rows, n);
     cudaDeviceSynchronize();
     */
     cudaError_t e = cudaGetLastError();
@@ -198,21 +198,22 @@ __device__ static __inline__ void algorithm_partial(cpx *in, cpx *out, cInt inpu
     mem_stog_db(in_low, in_high, offset, 32 - depth, scale, shared, out);
 }
 
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt block_rows, cInt n)
+__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n)
 {
     __shared__ float tile[TILE_DIM][TILE_DIM + 1];
 
     int x = blockIdx.x * TILE_DIM + threadIdx.x;
     int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)].x;    
 
-    for (int j = 0; j < TILE_DIM; j += block_rows)
-        tile[threadIdx.y + j][threadIdx.x] = in[(y + j) * n + x].x;
     SYNC_THREADS;
     x = blockIdx.y * TILE_DIM + threadIdx.x;
     y = blockIdx.x * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += block_rows)
-        out[(y + j) * n + x].x = tile[threadIdx.x][threadIdx.y + j];
-
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            out[(y + j) * n + (x + i)].x = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
 __global__ void _kernelNCS2D(cpx *in, cInt depth, cFloat angle, cFloat bAngle, cpx scale, cInt n)

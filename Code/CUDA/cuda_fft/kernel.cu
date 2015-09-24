@@ -66,10 +66,8 @@ int main()
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
-    if (tsCombineNCS2D_Test(power2(10)) == 1)
-        printf("\nDone...");
-    else
-        printf("\nFailed...");
+    for (unsigned int n = TILE_DIM; n <= 4096; n *= 2)
+        tsCombineNCS2D_Test(n);
     getchar();
 #else
     int index = 0;

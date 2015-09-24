@@ -129,23 +129,7 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
     }
 }
 
-__host__ static __inline void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, int *blocks_rows, cInt n)
-{
-    cInt n2 = n >> 1;
-    *blocks_rows = (TILE_DIM * TILE_DIM) / n;
-    (*bFFT).x = n;
-    (*bFFT).z = (*tFFT).y = (*tFFT).z = (*bTrans).z = (*tTrans).z = 1;
-    (*bTrans).x = (*bTrans).y = n / (32 * (*blocks_rows));
-    (*tTrans).x = (*tTrans).y = 32;
-    if (n2 > MAX_BLOCK_SIZE) {
-        (*bFFT).y = n2 / MAX_BLOCK_SIZE;
-        (*tFFT).x = MAX_BLOCK_SIZE;
-    }
-    else {
-        (*bFFT).y = 1;
-        (*tFFT).x = n2;
-    }
-}
+__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n);
 
 // Texture memory, find use?
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);

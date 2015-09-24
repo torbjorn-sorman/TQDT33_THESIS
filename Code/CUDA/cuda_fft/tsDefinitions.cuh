@@ -21,9 +21,10 @@ typedef void(*bitReverseFunction)(cpx *seq, const double dir, const int lead, co
 #define FFT_FORWARD -1.0f
 #define FFT_INVERSE 1.0f
 
-#define SHARED_MEM_SIZE 49152 // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
-#define MAX_BLOCK_SIZE 512 // this limits tsCombineNCS!
+#define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
+#define MAX_BLOCK_SIZE 512      // this limits tsCombineNCS!
 #define TILE_DIM 64
+#define THREAD_TILE_DIM 32      // This squared is the number of threads per block in the transpose kernel.
 
 #define BIT_REVERSED_OUTPUT
 

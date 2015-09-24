@@ -57,6 +57,24 @@ __global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n
     }
 }
 
+__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n)
+{
+    cInt n2 = n >> 1;
+    (*bFFT).x = n;
+    (*bFFT).z = (*tFFT).y = (*tFFT).z = (*bTrans).z = (*tTrans).z = 1;
+    (*bTrans).x = (*bTrans).y = (n / TILE_DIM);
+    (*tTrans).x = (*tTrans).y = THREAD_TILE_DIM;
+    if (n2 > MAX_BLOCK_SIZE) {
+        (*bFFT).y = n2 / MAX_BLOCK_SIZE;
+        (*tFFT).x = MAX_BLOCK_SIZE;
+    }
+    else {
+        (*bFFT).y = 1;
+        (*tFFT).x = n2;
+    }
+}
+
+
 __host__ cpx* read_image(char *name, int *n)
 {
     image image;
@@ -69,8 +87,8 @@ __host__ cpx* read_image(char *name, int *n)
 
     int size = *n = image->width;
     cpx *seq = (cpx *)malloc(sizeof(cpx) * size * size);
-    for (int y = 0; y < image->height; ++y) {
-        for (int x = 0; x < image->width; ++x) {            
+    for (int y = 0; y < (int)image->height; ++y) {
+        for (int x = 0; x < (int)image->width; ++x) {            
             cp = GET_PIXEL(image, x, y);
             seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
         }
@@ -98,15 +116,14 @@ __host__ void normalized_cpx_values(cpx* seq, const int n, double *min_val, doub
 
 __host__ void write_image(char *name, cpx* seq, const int n)
 {
-    int x, y, px;
+    int x, y;
     image image;
     FILE  *fp;
     fopen_s(&fp, name, "wb");
     image = alloc_img(n, n);
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
-            px = (y * n + x) * 3;
-            float val = ((float)(seq[y * n + x].x)) * 255.f;
+            float val = (seq[y * n + x].x) * 255.f;
             put_pixel_unsafe(image, x, y, val, val, val);
         }
     }

@@ -5,6 +5,10 @@
 
 typedef cuFloatComplex cpx;
 typedef const float fftDirection;
+typedef const int cInt;
+typedef const unsigned int cUInt;
+typedef const float cFloat;
+typedef const cpx cCpx;
 
 typedef void(*fftFunction)(fftDirection direction, cpx **in, cpx **out, const int n);
 typedef void(*transposeFunction)(cpx **seq, const int, const int n);
@@ -19,6 +23,7 @@ typedef void(*bitReverseFunction)(cpx *seq, const double dir, const int lead, co
 
 #define SHARED_MEM_SIZE 49152 // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
 #define MAX_BLOCK_SIZE 512 // this limits tsCombineNCS!
+#define TILE_DIM 64
 
 #define BIT_REVERSED_OUTPUT
 

@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <device_launch_parameters.h>
 
 #include "tsHelper.cuh"
-#include "math.h"
 
 /* Doubtful this works... */
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W)
@@ -62,8 +59,6 @@ __global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n
 
 __host__ cpx* read_image(char *name, int *n)
 {
-    unsigned int ch, px;
-    unsigned char *img;
     image image;
     color_component *cp;
     FILE *fp;
@@ -77,11 +72,28 @@ __host__ cpx* read_image(char *name, int *n)
     for (int y = 0; y < image->height; ++y) {
         for (int x = 0; x < image->width; ++x) {            
             cp = GET_PIXEL(image, x, y);
-            seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / 3.f, 0.f);
+            seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
         }
     }
     free_img(image);
     return seq;
+}
+
+__host__ void normalized_cpx_values(cpx* seq, const int n, double *min_val, double *range, double *avg)
+{
+    double min_v = DBL_MAX;
+    double max_v = DBL_MIN;
+    double sum_v = 0.0;
+    double tmp = 0.0;
+    for (int i = 0; i < n; ++i) {
+        tmp = (double)seq[i].x;
+        min_v = min(min_v, tmp);
+        max_v = max(max_v, tmp);
+        sum_v += tmp;
+    }
+    *min_val = min_v;
+    *range = max_v - min_v;
+    *avg = sum_v / (double)n;
 }
 
 __host__ void write_image(char *name, cpx* seq, const int n)
@@ -94,10 +106,17 @@ __host__ void write_image(char *name, cpx* seq, const int n)
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
             px = (y * n + x) * 3;
-            float val = seq[y * n + x].x;
+            float val = ((float)(seq[y * n + x].x)) * 255.f;
             put_pixel_unsafe(image, x, y, val, val, val);
         }
     }
     output_ppm(fp, image);
     fclose(fp);
+    free_img(image);
+}
+
+__host__ void clear_image(cpx* seq, const int n)
+{
+    for (int i = 0; i < n; ++i)
+        seq[i] = make_cuFloatComplex(1.f, 1.f);
 }

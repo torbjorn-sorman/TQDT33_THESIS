@@ -1,13 +1,14 @@
 #ifndef TSHELPER_CUH
 #define TSHELPER_CUH
 
-//#include <Windows.h>
-//#include <cmath>
-//#include <limits>
-
-#include "cuda_runtime.h"
+#include <Windows.h>
+#include <cmath>
+#include <limits>
+#include <stdio.h>
+#include <device_launch_parameters.h>
+#include <math.h>
+#include <cuda_runtime.h>
 #include "tsDefinitions.cuh"
-
 #include "imglib.h"
 
 // Fast bit-reversal
@@ -128,10 +129,29 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
     }
 }
 
+__host__ static __inline void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, int *blocks_rows, cInt n)
+{
+    cInt n2 = n >> 1;
+    *blocks_rows = (TILE_DIM * TILE_DIM) / n;
+    (*bFFT).x = n;
+    (*bFFT).z = (*tFFT).y = (*tFFT).z = (*bTrans).z = (*tTrans).z = 1;
+    (*bTrans).x = (*bTrans).y = n / (32 * (*blocks_rows));
+    (*tTrans).x = (*tTrans).y = 32;
+    if (n2 > MAX_BLOCK_SIZE) {
+        (*bFFT).y = n2 / MAX_BLOCK_SIZE;
+        (*tFFT).x = MAX_BLOCK_SIZE;
+    }
+    else {
+        (*bFFT).y = 1;
+        (*tFFT).x = n2;
+    }
+}
+
 // Texture memory, find use?
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);
 __host__ cpx* read_image(char *name, int *n);
 __host__ void write_image(char *name, cpx* seq, const int n);
+__host__ void clear_image(cpx* seq, const int n);
 
 // Kernel functions
 __global__ void twiddle_factors(cpx *W, const float angle, const int n);

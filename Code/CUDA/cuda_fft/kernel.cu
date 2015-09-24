@@ -1,6 +1,6 @@
 
 //#define PROFILER
-//#define IMAGE_TEST
+#define IMAGE_TEST
 
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -66,7 +66,7 @@ int main()
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
-    if (tsCombineNCS2D_Test(power2(9)) == 1)
+    if (tsCombineNCS2D_Test(power2(10)) == 1)
         printf("\nDone...");
     else
         printf("\nFailed...");

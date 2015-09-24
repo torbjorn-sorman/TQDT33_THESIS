@@ -363,7 +363,9 @@ int test_image(fft2d_func fft2d, char *filename, const int n_threads, const int 
     fft2d(FORWARD_FFT, cpxImg, n_threads, n);
 
     // Test to apply filter...
-    filter_blur(1024, cpxImg, n);
+    //filter_blur((7 * n) / 8, cpxImg, n);
+    //filter_edge(50, cpxImg, n);
+    filter_blur(10, cpxImg, n);
 
     cpx_to_img(cpxImg, imImage, n, 1);
     fft_shift(imImage, imImage2, n);

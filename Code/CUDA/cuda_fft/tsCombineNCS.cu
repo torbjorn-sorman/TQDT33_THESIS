@@ -57,7 +57,7 @@ __host__ int tsCombineNCS2D_Test(cInt n)
 
     //write_image(refere_file, in, n);
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    
+    /*
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
@@ -65,15 +65,15 @@ __host__ int tsCombineNCS2D_Test(cInt n)
         measures[i] = stopTimer();
     }
     printf("%d: %.0f\n", n, avg(measures, NUM_PERFORMANCE));
-
+    */
     
-    //tsCombineNCS2D(FFT_FORWARD, dev_in, dev_out, n);
-    //cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
-    //write_image(freq_domain, in, n);
+    tsCombineNCS2D(FFT_FORWARD, dev_in, dev_out, n);
+    cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
+    write_image(freq_domain, in, n);
 
-    //tsCombineNCS2D(FFT_INVERSE, dev_out, dev_in, n);
-    //cudaMemcpy(in, dev_in, size, cudaMemcpyDeviceToHost);
-    //write_image(spatial_dom, in, n);
+    tsCombineNCS2D(FFT_INVERSE, dev_out, dev_in, n);
+    cudaMemcpy(in, dev_in, size, cudaMemcpyDeviceToHost);
+    write_image(spatial_dom, in, n);
 
     cudaFree(dev_in);
     cudaFree(dev_out);
@@ -123,32 +123,35 @@ __host__ void tsCombineNCS(fftDirection dir, cpx **dev_in, cpx **dev_out, cInt n
 
 __host__ void tsCombineNCS2D(fftDirection dir, cpx *dev_in, cpx *dev_out, cInt n)
 {
+    cudaError_t e;
     dim3 threads, blocks, threads_trans, blocks_trans;
     set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, n);
     //printf("Dim FFT   {%d\t%d}\tt{%d\t%d}\n", blocks.x, blocks.x, threads.x, threads.y);
     //printf("Dim Trans {%d\t%d}\tt{%d\t%d}\n", blocks_trans.x, blocks_trans.y, threads_trans.x, threads_trans.y);
-    /*
+    
     cCpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     int nBlock = n / blocks.y;
     cFloat w_angle = dir * (M_2_PI / n);
     cFloat w_bangle = dir * (M_2_PI / nBlock);
 
-    printf("Dim FFT Block: {%d, %d} FFT Threads {%d %d} Trans Block: {%d, %d} Trans Threads {%d %d}\n", blocks.x, blocks.x, threads.x, threads.x, blocks_trans.x, blocks_trans.x, threads_trans.x, threads_trans.x);
-    */
-    /*
+    //printf("Dim FFT Block: {%d, %d} FFT Threads {%d %d} Trans Block: {%d, %d} Trans Threads {%d %d}\n", blocks.x, blocks.x, threads.x, threads.x, blocks_trans.x, blocks_trans.x, threads_trans.x, threads_trans.x);
+    
+    
     _kernelNCS2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, log2_32(n), w_angle, w_bangle, scale, n);
     cudaDeviceSynchronize();
-    */
+    if (e = cudaGetLastError()) printf("%s: %s\n", cudaGetErrorName(e), cudaGetErrorString(e));
+
     _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, n);
     cudaDeviceSynchronize();
-    /*
+
     _kernelNCS2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, log2_32(n), w_angle, w_bangle, scale, n);
     cudaDeviceSynchronize();
-    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, block_rows, n);
+    if (e = cudaGetLastError()) printf("%s: %s\n", cudaGetErrorName(e), cudaGetErrorString(e));
+
+    _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans) (dev_in, dev_out, n);
     cudaDeviceSynchronize();
-    */
-    cudaError_t e = cudaGetLastError();
-    if (e) printf("%s: %s\n", cudaGetErrorName(e), cudaGetErrorString(e));
+
+    
 }
 
 __device__ static __inline__ void inner_kernel(cpx *in, cpx *out, cFloat angle, cInt steps, cInt tid, cUInt lmask, cUInt pmask, cInt dist, cInt blocks)

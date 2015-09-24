@@ -66,8 +66,14 @@ int main()
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
-    for (unsigned int n = TILE_DIM; n <= 4096; n *= 2)
-        tsCombineNCS2D_Test(n);
+    printf("\n2D validation test!\n");
+    for (unsigned int n = TILE_DIM; n <= 4096; n *= 2) {
+        printf("%d... ", n);
+        if (tsCombineNCS2D_Test(n))
+            printf("OK\n");
+        else
+            printf("FAIL\n");
+    }
     getchar();
 #else
     int index = 0;

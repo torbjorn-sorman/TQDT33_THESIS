@@ -177,7 +177,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="tsCombine.cu" />
-    <CudaCompile Include="tsCombineNCS.cu" />
+    <CudaCompile Include="tsCombineGPUSync.cu" />
     <CudaCompile Include="tsConstantGeometry_DP.cu" />
     <CudaCompile Include="tsConstantGeometry_SB.cu" />
     <CudaCompile Include="tsConstantGeometry.cu" />
@@ -190,7 +190,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <ClInclude Include="imglib.h" />
     <ClInclude Include="tsCombine.cuh" />
-    <ClInclude Include="tsCombineNCS.cuh" />
+    <ClInclude Include="tsCombineGPUSync.cuh" />
     <ClInclude Include="tsConstantGeometry_DP.cuh" />
     <ClInclude Include="tsDefinitions.cuh" />
     <ClInclude Include="tsConstantGeometry.cuh" />

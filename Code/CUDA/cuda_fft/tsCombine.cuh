@@ -10,9 +10,9 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n);
+__host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n);
 
-__host__ int tsCombine_Validate(const int n);
-__host__ double tsCombine_Performance(const int n);
+__host__ int tsCombine_Validate(cInt n);
+__host__ double tsCombine_Performance(cInt n);
 
 #endif

@@ -1,6 +1,6 @@
 
 //#define PROFILER
-#define IMAGE_TEST
+//#define IMAGE_TEST
 
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -15,12 +15,12 @@
 #include "tsTest.cuh"
 
 #include "tsCombine.cuh"
-#include "tsCombineNCS.cuh"
+#include "tsCombineGPUSync.cuh"
 
 #ifndef PROFILER
 
-__host__ double cuFFT_Performance(const int n);
-__host__ void toFile(const char *name, const double m[], const int ms);
+__host__ double cuFFT_Performance(cInt n);
+__host__ void toFile(const char *name, const double m[], cInt ms);
 
 // Print device properties
 void printDevProp(cudaDeviceProp devProp)
@@ -59,29 +59,29 @@ int main()
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
         
+#if defined(PROFILER)
     int start = 2;
     int end = start + RUNS;
-
-#if defined(PROFILER)
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
     printf("\n2D validation test!\n");
-    for (unsigned int n = TILE_DIM; n <= 4096; n *= 2) {
+    for (unsigned int n = TILE_DIM; n <= 1024; n *= 2) {
         printf("%d... ", n);
-        if (tsCombineNCS2D_Test(n))
+        if (tsCombineGPUSync2D_Test(n))
             printf("OK\n");
         else
             printf("FAIL\n");
     }
     getchar();
 #else
+    int start = 2;
+    int end = start + RUNS;
     int index = 0;
     double cuFFTm[RUNS];
     double combineFFTm[RUNS];
     double combineNCSFFTm[RUNS];
-    printf("\n\t\tcuFFT\tComb\tComb NCS");
-    //printf("\tTobbSB\tConstSB");    
+    printf("\n\t\tcuFFT\tComb\tComb GPU Sync");
     printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
         printf("\n%d:", n);
@@ -96,8 +96,8 @@ int main()
         if (tsCombine_Validate(n) == 0) printf("!");
 
         // Combine No CPU Sync
-        printf("\t%.0f", combineNCSFFTm[index] = tsCombineNCS_Performance(n));
-        if (tsCombineNCS_Validate(n) == 0) printf("!");
+        printf("\t%.0f", combineNCSFFTm[index] = tsCombineGPUSync_Performance(n));
+        if (tsCombineGPUSync_Validate(n) == 0) printf("!");
 
         ++index;
     }
@@ -114,7 +114,7 @@ int main()
 
 #ifndef PROFILER
 
-__host__ double cuFFT_Performance(const int n)
+__host__ double cuFFT_Performance(cInt n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in,*dev_out;
@@ -133,7 +133,7 @@ __host__ double cuFFT_Performance(const int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ double cuFFT_2D_Performance(const int n)
+__host__ double cuFFT_2D_Performance(cInt n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in, *dev_out;
@@ -151,7 +151,7 @@ __host__ double cuFFT_2D_Performance(const int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void toFile(const char *name, const double m[], const int ms)
+__host__ void toFile(const char *name, const double m[], cInt ms)
 {
     char filename[64] = "";
     FILE *f;

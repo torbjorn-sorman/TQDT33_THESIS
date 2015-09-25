@@ -27,13 +27,13 @@ __host__ cudaTextureObject_t specifyTexture(cpx *dev_W)
     return texObj;
 }
 
-__global__ void twiddle_factors(cpx *W, const float angle, const int n)
+__global__ void twiddle_factors(cpx *W, cFloat angle, cInt n)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     SIN_COS_F(angle * i, &W[i].y, &W[i].x);
 }
 
-__global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead)
+__global__ void bit_reverse(cpx *in, cpx *out, cFloat scale, cInt lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -41,7 +41,7 @@ __global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead
     out[p].y = in[i].y * scale;
 }
 
-__global__ void bit_reverse(cpx *x, const float dir, const int lead, const int n)
+__global__ void bit_reverse(cpx *x, cFloat dir, cInt lead, cInt n)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -97,7 +97,7 @@ __host__ cpx* read_image(char *name, int *n)
     return seq;
 }
 
-__host__ void normalized_cpx_values(cpx* seq, const int n, double *min_val, double *range, double *avg)
+__host__ void normalized_cpx_values(cpx* seq, cInt n, double *min_val, double *range, double *avg)
 {
     double min_v = DBL_MAX;
     double max_v = DBL_MIN;
@@ -114,7 +114,7 @@ __host__ void normalized_cpx_values(cpx* seq, const int n, double *min_val, doub
     *avg = sum_v / (double)n;
 }
 
-__host__ void write_image(char *name, cpx* seq, const int n)
+__host__ void write_image(char *name, cpx* seq, cInt n)
 {
     int x, y;
     image image;
@@ -132,7 +132,7 @@ __host__ void write_image(char *name, cpx* seq, const int n)
     free_img(image);
 }
 
-__host__ void clear_image(cpx* seq, const int n)
+__host__ void clear_image(cpx* seq, cInt n)
 {
     for (int i = 0; i < n; ++i)
         seq[i] = make_cuFloatComplex(1.f, 1.f);

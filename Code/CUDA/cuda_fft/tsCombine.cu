@@ -2,11 +2,11 @@
 
 typedef int syncVal;
 
-__global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
-__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
-__global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2);
+__global__ void _kernelAll(cpx *in, cpx *out, cFloat angle, cUInt lmask, cUInt pmask, cInt steps, cInt dist);
+__global__ void _kernelBlock(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, cUInt lead, cInt n2);
+__global__ void _kernelB(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, cUInt lead, cInt n2);
 
-__host__ int tsCombine_Validate(const int n)
+__host__ int tsCombine_Validate(cInt n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -18,7 +18,7 @@ __host__ int tsCombine_Validate(const int n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsCombine_Performance(const int n)
+__host__ double tsCombine_Performance(cInt n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -37,14 +37,14 @@ __host__ double tsCombine_Performance(const int n)
 
 #define REVERSE_ON_OUT
 
-__host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
+__host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
 {
     int threads, blocks;
     float w_angle = dir * (M_2_PI / n);
-    const int depth = log2_32(n);
-    const int lead = 32 - depth;
-    const int n2 = (n / 2);
-    const int breakSize = log2_32(MAX_BLOCK_SIZE);
+    cInt depth = log2_32(n);
+    cInt lead = 32 - depth;
+    cInt n2 = (n / 2);
+    cInt breakSize = log2_32(MAX_BLOCK_SIZE);
     const cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     int steps = 0;
     int bit = depth - 1;
@@ -63,7 +63,7 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
             _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
             cudaDeviceSynchronize();
         }
-        const int nBlock = n / blocks;
+        cInt nBlock = n / blocks;
         w_angle = dir * (M_2_PI / nBlock);
         _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_angle, scaleCpx, bit + 1, lead, nBlock / 2);
         swap(dev_in, dev_out);
@@ -75,7 +75,7 @@ __host__ void tsCombine(fftDirection dir, cpx **dev_in, cpx **dev_out, const int
 }
 
 // Take no usage of shared mem yet...
-__global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist)
+__global__ void _kernelAll(cpx *in, cpx *out, cFloat angle, cUInt lmask, cUInt pmask, cInt steps, cInt dist)
 {
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     int l = tid + (tid & lmask);
@@ -88,17 +88,17 @@ __global__ void _kernelAll(cpx *in, cpx *out, const float angle, const unsigned 
 }
 
 // Full usage of shared mem!
-__global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
+__global__ void _kernelBlock(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, cUInt lead, cInt n2)
 {
     extern __shared__ cpx shared[];
     cpx w, in_lower, in_upper;
-    const int offset = blockIdx.x * blockDim.x * 2;
-    const int in_low = threadIdx.x;
-    const int in_high = n2 + in_low;
-    const int global_low = in_low + offset;
-    const int global_high = in_high + offset;
-    const int i = (in_low << 1);
-    const int ii = i + 1;
+    cInt offset = blockIdx.x * blockDim.x * 2;
+    cInt in_low = threadIdx.x;
+    cInt in_high = n2 + in_low;
+    cInt global_low = in_low + offset;
+    cInt global_high = in_high + offset;
+    cInt i = (in_low << 1);
+    cInt ii = i + 1;
 
     /* Move Global to Shared */
     shared[in_low] = in[global_low];
@@ -121,14 +121,14 @@ __global__ void _kernelBlock(cpx *in, cpx *out, const float angle, const cpx sca
 }
 
 // Full usage of shared mem!
-__global__ void _kernelB(cpx *in, cpx *out, const float angle, const cpx scale, const int depth, const unsigned int lead, const int n2)
+__global__ void _kernelB(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, cUInt lead, cInt n2)
 {
     extern __shared__ cpx shared[];
     cpx w, in_lower, in_upper;
-    const int tid = (blockIdx.x * blockDim.x + threadIdx.x);
-    const int in_high = n2 + tid;
-    const int i = (tid << 1);
-    const int ii = i + 1;
+    cInt tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    cInt in_high = n2 + tid;
+    cInt i = (tid << 1);
+    cInt ii = i + 1;
 
     /* Move (bit-reversed?) Global to Shared */
     mem_gtos_db(tid, in_high, 0, lead, shared, in);

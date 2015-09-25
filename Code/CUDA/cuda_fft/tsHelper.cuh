@@ -31,7 +31,7 @@ __host__ static __inline__ int log2_32(int value)
 __device__ volatile int _sync_array_in[MAX_BLOCK_SIZE];
 __device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
 
-__device__ static __inline__ void init_sync(const int tid, const int blocks)
+__device__ static __inline__ void init_sync(cInt tid, cInt blocks)
 {
     if (tid < blocks) {
         _sync_array_in[tid] = 0;
@@ -39,7 +39,7 @@ __device__ static __inline__ void init_sync(const int tid, const int blocks)
     }
 }
 
-__device__ static __inline__ void __gpu_sync_lock_free(const int goal)
+__device__ static __inline__ void __gpu_sync_lock_free(cInt goal)
 {
     int tid = threadIdx.x;
     int bid = blockIdx.x;
@@ -66,7 +66,7 @@ __host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
     *out = tmp;
 }
 
-__host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, const int l)
+__host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, cInt l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
@@ -117,7 +117,7 @@ __device__ static __inline__ void mem_stog_tb(int low, int high, int offset, uns
     global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, lead)], scale);
 }
 
-__host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, const int size)
+__host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, cInt size)
 {
     if (size > MAX_BLOCK_SIZE) {
         *numBlocks = size / MAX_BLOCK_SIZE;
@@ -134,12 +134,12 @@ __host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tT
 // Texture memory, find use?
 __host__ cudaTextureObject_t specifyTexture(cpx *dev_W);
 __host__ cpx* read_image(char *name, int *n);
-__host__ void write_image(char *name, cpx* seq, const int n);
-__host__ void clear_image(cpx* seq, const int n);
+__host__ void write_image(char *name, cpx* seq, cInt n);
+__host__ void clear_image(cpx* seq, cInt n);
 
 // Kernel functions
-__global__ void twiddle_factors(cpx *W, const float angle, const int n);
-__global__ void bit_reverse(cpx *in, cpx *out, const float scale, const int lead);
-__global__ void bit_reverse(cpx *seq, fftDirection dir, const int lead, const int n);
+__global__ void twiddle_factors(cpx *W, cFloat angle, cInt n);
+__global__ void bit_reverse(cpx *in, cpx *out, cFloat scale, cInt lead);
+__global__ void bit_reverse(cpx *seq, fftDir dir, cInt lead, cInt n);
 
 #endif

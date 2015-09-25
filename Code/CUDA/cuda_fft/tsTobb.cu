@@ -6,9 +6,9 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist);
+__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, cUInt lmask, cUInt pmask, cInt steps, cInt dist);
 
-__host__ int tsTobb_Validate(const int n)
+__host__ int tsTobb_Validate(cInt n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
@@ -21,7 +21,7 @@ __host__ int tsTobb_Validate(const int n)
     return fftResultAndFree(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out) != 1;
 }
 
-__host__ double tsTobb_Performance(const int n)
+__host__ double tsTobb_Performance(cInt n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
@@ -38,15 +38,15 @@ __host__ double tsTobb_Performance(const int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, const int n)
+__host__ void tsTobb(fftDir dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, cInt n)
 {
     int bit, dist;
     int steps, threadsPerBlock, numBlocks;
-    const float w_angle = dir * (M_2_PI / n);
-    const float scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
-    const int n2 = (n / 2);
+    cFloat w_angle = dir * (M_2_PI / n);
+    cFloat scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
+    cInt n2 = (n / 2);
     bit = log2_32(n);
-    const int lead = 32 - bit;
+    cInt lead = 32 - bit;
 
     set_block_and_threads(&numBlocks, &threadsPerBlock, n2);
     twiddle_factors KERNEL_ARGS2(numBlocks, threadsPerBlock)(dev_W, w_angle, n);
@@ -72,7 +72,7 @@ __host__ void tsTobb(fftDirection dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, 
     cudaDeviceSynchronize();
 }
 
-__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, const unsigned int pmask, const int steps, const int dist)
+__global__ void _tsTobb_body(cpx *in, cpx *out, cpx *W, cUInt lmask, cUInt pmask, cInt steps, cInt dist)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     int l = i + (i & lmask);

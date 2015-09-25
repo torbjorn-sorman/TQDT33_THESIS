@@ -11,9 +11,6 @@
     <CudaCompile Include="tsCombine.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="tsCombineNCS.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="tsConstantGeometry.cu">
       <Filter>Old</Filter>
     </CudaCompile>
@@ -28,6 +25,9 @@
     </CudaCompile>
     <CudaCompile Include="tsTobb_SB.cu">
       <Filter>Old</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tsCombineGPUSync.cu">
+      <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -55,9 +55,6 @@
     <ClInclude Include="tsCombine.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tsCombineNCS.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="imglib.h">
       <Filter>External</Filter>
     </ClInclude>
@@ -75,6 +72,9 @@
     </ClInclude>
     <ClInclude Include="tsTobb_SB.cuh">
       <Filter>Old</Filter>
+    </ClInclude>
+    <ClInclude Include="tsCombineGPUSync.cuh">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -8,10 +8,10 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernelCGDP(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
-__global__ void _kernelCGDP48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2);
+__global__ void _kernelCGDP(cpx *in, cpx *out, cFloat angle, const cpx scale, int depth, unsigned int lead, cInt n2);
+__global__ void _kernelCGDP48K(cpx *in, cpx *out, cFloat angle, const cpx scale, int depth, unsigned int lead, cInt n2);
 
-__host__ int tsConstantGeometry_DP_Validate(const int n)
+__host__ int tsConstantGeometry_DP_Validate(cInt n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -24,7 +24,7 @@ __host__ int tsConstantGeometry_DP_Validate(const int n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_DP_Performance(const int n)
+__host__ double tsConstantGeometry_DP_Performance(cInt n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -41,12 +41,12 @@ __host__ double tsConstantGeometry_DP_Performance(const int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsConstantGeometry_DP(fftDirection dir, cpx **dev_in, cpx **dev_out, const int n)
+__host__ void tsConstantGeometry_DP(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
 {
     int threadsPerBlock, numBlocks;
-    const float w_angle = dir * (M_2_PI / n);
+    cFloat w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);   
-    const int depth = log2_32(n);
+    cInt depth = log2_32(n);
     set_block_and_threads(&numBlocks, &threadsPerBlock, n);
     int sharedMem = sizeof(cpx) * n;
     sharedMem = sharedMem > SHARED_MEM_SIZE ? SHARED_MEM_SIZE : sharedMem;
@@ -54,7 +54,7 @@ __host__ void tsConstantGeometry_DP(fftDirection dir, cpx **dev_in, cpx **dev_ou
     cudaDeviceSynchronize();
 }
 
-__global__ void _kernelCGDP(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2)
+__global__ void _kernelCGDP(cpx *in, cpx *out, cFloat angle, const cpx scale, int depth, unsigned int lead, cInt n2)
 {
     extern __shared__ cpx mem[]; // sizeof(cpx) * (n + n + n/n)  
     cpx in_lower, in_upper;
@@ -92,7 +92,7 @@ __global__ void _kernelCGDP(cpx *in, cpx *out, const float angle, const cpx scal
     out[tid * 2 + 1] = cuCmulf(mem[n2 + BIT_REVERSE(tid * 2 + 1, lead)], scale);
 }
 
-__global__ void _kernelCGDP48K(cpx *in, cpx *out, const float angle, const cpx scale, int depth, unsigned int lead, const int n2)
+__global__ void _kernelCGDP48K(cpx *in, cpx *out, cFloat angle, const cpx scale, int depth, unsigned int lead, cInt n2)
 {
     extern __shared__ cpx mem[]; // sizeof(cpx) * (n + n + n/n)  
     cpx w, in_lower, in_upper;

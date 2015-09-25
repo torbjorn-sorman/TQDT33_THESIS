@@ -11,22 +11,22 @@
 void startTimer();
 double stopTimer();
 
-void console_print(cpx *seq, const int n);
+void console_print(cpx *seq, cInt n);
 
-unsigned int power(const unsigned int base, const unsigned int exp);
-unsigned int power2(const int unsigned exp);
+unsigned int power(cUInt base, cUInt exp);
+unsigned int power2(cUInt exp);
 
-int checkError(cpx *seq, cpx *ref, float refScale, const int n, int print);
-int checkError(cpx *seq, cpx *ref, const int n, int print);
-int checkError(cpx *seq, cpx *ref, const int n);
+int checkError(cpx *seq, cpx *ref, cFloat refScale, cInt n, cInt print);
+int checkError(cpx *seq, cpx *ref, cInt n, cInt print);
+int checkError(cpx *seq, cpx *ref, cInt n);
 
-cpx *get_seq(const int n);
-cpx *get_seq(const int n, const int sinus);
-cpx *get_seq(const int n, cpx *src);
+cpx *get_seq(cInt n);
+cpx *get_seq(cInt n, cInt sinus);
+cpx *get_seq(cInt n, cpx *src);
 
-double avg(double m[], int n);
+double avg(double m[], cInt n);
 
-void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
-int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
+void fftMalloc(cInt n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
+int fftResultAndFree(cInt n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
 
 #endif

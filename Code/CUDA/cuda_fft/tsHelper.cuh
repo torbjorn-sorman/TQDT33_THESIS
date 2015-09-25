@@ -26,10 +26,10 @@ __host__ static __inline__ int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-#define SYNC_BLOCKS(g, i) (__gpu_sync_lock_free((g) + (i)))
-
 __device__ volatile int _sync_array_in[MAX_BLOCK_SIZE];
 __device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
+__device__ volatile int _sync_array_2din[8192][32]; // assume block dim >= 256 AND rows <= 8192
+__device__ volatile int _sync_array_2dout[8192][32];
 
 __device__ static __inline__ void init_sync(cInt tid, cInt blocks)
 {
@@ -39,18 +39,41 @@ __device__ static __inline__ void init_sync(cInt tid, cInt blocks)
     }
 }
 
-__device__ static __inline__ void __gpu_sync_lock_free(cInt goal)
+__device__ static __inline__ void __gpu_sync(cInt goal)
 {
     int tid = threadIdx.x;
     int bid = blockIdx.x;
     int nBlocks = gridDim.x;
-    if (tid == 0) { _sync_array_in[bid] = goal; }    
+    if (tid == 0) { _sync_array_in[bid] = goal; }
     if (bid == 1) { // Use bid == 1, if only one block this part will not run.
         if (tid < nBlocks) { while (_sync_array_in[tid] != goal){} }
         SYNC_THREADS;
         if (tid < nBlocks) { _sync_array_out[tid] = goal; }
     }
     if (tid == 0) { while (_sync_array_out[bid] != goal) {} }
+    SYNC_THREADS;
+}
+
+__device__ static __inline__ void init_sync(cInt tid, cUInt row_id, cInt blocks)
+{
+    if (tid < blocks) {
+        _sync_array_2din[row_id][tid] = 0;
+        _sync_array_2dout[row_id][tid] = 0;
+    }
+}
+
+__device__ static __inline__ void __gpu_sync(cInt goal, cUInt row_id)
+{
+    int tid = threadIdx.x;
+    int bid = blockIdx.y;
+    int nBlocks = gridDim.x;
+    if (tid == 0) { _sync_array_2din[row_id][bid] = goal; }
+    if (bid == 1) { // Use bid == 1, if only one block this part will not run.
+        if (tid < nBlocks) { while (_sync_array_2din[row_id][tid] != goal){} }
+        SYNC_THREADS;
+        if (tid < nBlocks) { _sync_array_2dout[row_id][tid] = goal; }
+    }
+    if (tid == 0) { while (_sync_array_2dout[row_id][bid] != goal) {} }
     SYNC_THREADS;
 }
 

@@ -65,9 +65,9 @@ int main()
     for (unsigned int n = power2(start); n < power2(end); n *= 2)
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
-    printf("\n2D validation test!\n");
-    for (unsigned int n = TILE_DIM; n <= 1024; n *= 2) {
-        printf("%d... ", n);
+    printf("\n2D validation & performance test!\n");
+    for (unsigned int n = TILE_DIM; n <= 8192; n *= 2) {
+        printf("%d:\t", n);
         if (tsCombineGPUSync2D_Test(n))
             printf("OK\n");
         else

@@ -154,7 +154,7 @@ __host__ void normalized_image(cpx* seq, cInt n)
             mag = cuCabsf(seq[y * n + x]);
             val = ((mag - minVal) / range);
             val = (atan(val * scale) / (M_PI / 2.0));
-            seq[y * n + x] = make_cuFloatComplex((val > 1.0 ? 1 : val), 0.f);
+            seq[y * n + x] = make_cuFloatComplex((float)(val > 1.0 ? 1 : val), 0.f);
         }
     }
 }
@@ -169,7 +169,7 @@ __host__ void write_image(char *name, char *type, cpx* seq, cInt n)
     fopen_s(&fp, filename, "wb");
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
-            float val = (seq[y * n + x].x) * 255.f;
+            color_component val = (unsigned char)((seq[y * n + x].x) * 255.f);
             put_pixel_unsafe(image, x, y, val, val, val);
         }
     }

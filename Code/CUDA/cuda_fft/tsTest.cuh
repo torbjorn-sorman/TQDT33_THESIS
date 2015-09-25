@@ -12,6 +12,7 @@ void startTimer();
 double stopTimer();
 
 void console_print(cpx *seq, cInt n);
+void console_print_cpx_img(cpx *seq, cInt n);
 
 unsigned int power(cUInt base, cUInt exp);
 unsigned int power2(cUInt exp);
@@ -23,6 +24,7 @@ int checkError(cpx *seq, cpx *ref, cInt n);
 cpx *get_seq(cInt n);
 cpx *get_seq(cInt n, cInt sinus);
 cpx *get_seq(cInt n, cpx *src);
+cpx *get_sin_img(cInt n);
 
 double avg(double m[], cInt n);
 

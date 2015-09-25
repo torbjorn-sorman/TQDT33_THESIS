@@ -129,12 +129,31 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
     }
 }
 
-__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n);
+#define NO_STREAMING_MULTIPROCESSORS 7
 
-// Texture memory, find use?
-__host__ cudaTextureObject_t specifyTexture(cpx *dev_W);
+// The limit is number of SMs but some configuration can run one step beyond that limit when running with release config.
+__host__ static __inline int checkValidConfig(cInt blocks, cInt n)
+{
+    if (blocks > NO_STREAMING_MULTIPROCESSORS) {
+        switch (MAX_BLOCK_SIZE)
+        {
+        case 256:   return blocks <= 32;    // 2^14
+        case 512:   return blocks <= 16;    // 2^14
+        case 1024:  return blocks <= 4;     // 2^13
+            // Default is a configurable limit, essentially blocksize limits the number of treads that can perform the synchronization.
+        default:    return n <= MAX_BLOCK_SIZE * MAX_BLOCK_SIZE;
+        }
+    }
+    return 1;
+}
+
+__host__ void checkCudaError();
+__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n);
 __host__ cpx* read_image(char *name, int *n);
-__host__ void write_image(char *name, cpx* seq, cInt n);
+__host__ void write_image(char *name, char *type, cpx* seq, cInt n);
+__host__ void write_normalized_image(char *name, cpx* seq, cInt n);
+__host__ void normalized_image(cpx* seq, cInt n);
+__host__ cpx *fftShift(cpx *seq, cInt n);
 __host__ void clear_image(cpx* seq, cInt n);
 
 // Kernel functions

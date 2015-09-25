@@ -177,7 +177,7 @@ void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned i
 {
     if (file) printf("\n%s\n", name);
     validate(fn, n_threads, max_elem);
-    mtime(name, fn, n_threads, file, max_elem);
+    //mtime(name, fn, n_threads, file, max_elem);
 }
 
 void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
@@ -365,7 +365,7 @@ int test_image(fft2d_func fft2d, char *filename, const int n_threads, const int 
     // Test to apply filter...
     //filter_blur((7 * n) / 8, cpxImg, n);
     //filter_edge(50, cpxImg, n);
-    filter_blur(10, cpxImg, n);
+    //filter_blur(10, cpxImg, n);
 
     cpx_to_img(cpxImg, imImage, n, 1);
     fft_shift(imImage, imImage2, n);

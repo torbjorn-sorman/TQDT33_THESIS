@@ -30,6 +30,24 @@ void console_print(cpx *seq, cInt n)
     for (int i = 0; i < n; ++i) printf("%f\t%f\n", seq[i].x, seq[i].y);
 }
 
+void console_print_cpx_img(cpx *seq, cInt n)
+{
+    printf("\n");
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            printf("%.2f\t", seq[y * n + x].x);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            printf("%.2f\t", seq[y * n + x].y);
+        }
+        printf("\n");
+    }
+}
+
 unsigned int power(cUInt base, cUInt exp)
 {
     if (exp == 0)
@@ -97,6 +115,16 @@ cpx *get_seq(cInt n, cpx *src)
         seq[i].x = src[i].x;
         seq[i].y = src[i].y;
     }
+    return seq;
+}
+
+cpx *get_sin_img(cInt n)
+{
+    cpx *seq;
+    seq = (cpx *)malloc(sizeof(cpx) * n * n);
+    for (int y = 0; y < n; ++y)
+        for (int x = 0; x < n; ++x)
+            seq[y * n + x] = make_cuFloatComplex((float)sin(M_2_PI * (((double)x) / n)), 0.f);
     return seq;
 }
 

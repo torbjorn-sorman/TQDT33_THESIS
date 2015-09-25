@@ -74,6 +74,11 @@ __host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tT
     }
 }
 
+__host__ void checkCudaError()
+{
+    cudaError_t e;
+    if (e = cudaGetLastError()) printf("%s: %s\n", cudaGetErrorName(e), cudaGetErrorString(e));
+}
 
 __host__ cpx* read_image(char *name, int *n)
 {
@@ -88,7 +93,7 @@ __host__ cpx* read_image(char *name, int *n)
     int size = *n = image->width;
     cpx *seq = (cpx *)malloc(sizeof(cpx) * size * size);
     for (int y = 0; y < (int)image->height; ++y) {
-        for (int x = 0; x < (int)image->width; ++x) {            
+        for (int x = 0; x < (int)image->width; ++x) {
             cp = GET_PIXEL(image, x, y);
             seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
         }
@@ -104,7 +109,7 @@ __host__ void normalized_cpx_values(cpx* seq, cInt n, double *min_val, double *r
     double sum_v = 0.0;
     double tmp = 0.0;
     for (int i = 0; i < n; ++i) {
-        tmp = (double)seq[i].x;
+        tmp = cuCabsf(seq[i]);
         min_v = min(min_v, tmp);
         max_v = max(max_v, tmp);
         sum_v += tmp;
@@ -114,15 +119,56 @@ __host__ void normalized_cpx_values(cpx* seq, cInt n, double *min_val, double *r
     *avg = sum_v / (double)n;
 }
 
-__host__ void write_image(char *name, cpx* seq, cInt n)
+__host__ void write_normalized_image(char *name, cpx* seq, cInt n)
 {
-    int x, y;
     image image;
     FILE  *fp;
-    fopen_s(&fp, name, "wb");
+    double minVal, range, avg, mag, val;
+    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    double avg_pos = 0.4;
+    double scale = tan(avg_pos * (M_PI / 2)) / ((avg - minVal) / range);
     image = alloc_img(n, n);
-    for (y = 0; y < n; ++y) {
-        for (x = 0; x < n; ++x) {
+    fopen_s(&fp, name, "wb");
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            mag = cuCabsf(seq[y * n + x]);
+            val = ((mag - minVal) / range);
+            val = (atan(val * scale) / (M_PI / 2.0)) * 255.0;
+            color_component col = (unsigned char)(val > 255.0 ? 255 : val);
+            put_pixel_unsafe(image, x, y, col, col, col);
+        }
+    }
+    output_ppm(fp, image);
+    fclose(fp);
+    free_img(image);
+}
+
+__host__ void normalized_image(cpx* seq, cInt n)
+{
+    double minVal, range, avg, mag, val;
+    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    double avg_pos = 0.8;
+    double scale = tan(avg_pos * (M_PI / 2)) / ((avg - minVal) / range);
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            mag = cuCabsf(seq[y * n + x]);
+            val = ((mag - minVal) / range);
+            val = (atan(val * scale) / (M_PI / 2.0));
+            seq[y * n + x] = make_cuFloatComplex((val > 1.0 ? 1 : val), 0.f);
+        }
+    }
+}
+
+__host__ void write_image(char *name, char *type, cpx* seq, cInt n)
+{
+    image image;
+    FILE  *fp;
+    image = alloc_img(n, n);
+    char filename[50];
+    sprintf_s(filename, 50, "out/img/%s_%u_%s.ppm", name, n, type);
+    fopen_s(&fp, filename, "wb");
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
             float val = (seq[y * n + x].x) * 255.f;
             put_pixel_unsafe(image, x, y, val, val, val);
         }
@@ -136,4 +182,38 @@ __host__ void clear_image(cpx* seq, cInt n)
 {
     for (int i = 0; i < n; ++i)
         seq[i] = make_cuFloatComplex(1.f, 1.f);
+}
+
+__host__ void cpPixel(cInt px, cInt px2, cCpx *in, cpx *out)
+{
+    int p, p2;
+    p = px * 3;
+    p2 = px2 * 3;
+    out[p] = in[p2];
+    out[p + 1] = in[p2 + 1];
+    out[p + 2] = in[p2 + 2];
+}
+
+__host__ cpx* fftShift(cpx *seq, cInt n)
+{
+    cpx *out = (cpx *)malloc(sizeof(cpx)*n*n);
+    int px1, px2;
+    int n2 = n / 2;
+    for (int y = 0; y < n2; ++y) {
+        for (int x = 0; x < n2; ++x) {
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x + n2);
+            out[px1] = seq[px2];
+            out[px2] = seq[px1];
+        }
+    }
+    for (int y = 0; y < n2; ++y) {
+        for (int x = n2; x < n; ++x) {
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x - n2);
+            out[px1] = seq[px2];
+            out[px2] = seq[px1];
+        }
+    }
+    return out;
 }

@@ -71,7 +71,7 @@ void cpx_to_img(cpx **com, unsigned char *img, const int n, unsigned char mag)
     for (y = 0; y < n; ++y) {
         for (x = 0; x < n; ++x) {
             px = (y * n + x) * 3;
-            magnitude = sqrt(com[y][x].r *com[y][x].r + com[y][x].i *com[y][x].i);
+            magnitude = sqrt(com[y][x].r * com[y][x].r + com[y][x].i * com[y][x].i);
             val = ((magnitude - amin) / range);
             if (mag != 0)
                 val = (atan(val * scale) / (M_PI / 2.0)) * 255.0;

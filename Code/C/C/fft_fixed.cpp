@@ -5,8 +5,9 @@ __inline static void fft_xn(fft_direction dir, cpx *in, cpx *out, cpx *W, const 
 void fft_fixed(fft_direction dir, cpx **in, cpx **out, const int n_threads, const int n)
 {
 #ifdef GENERATED_FIXED_SIZE    
-    if (fixed_size_fft(dir, *in, *out, GEN_BIT_REVERSE_ORDER, n))        
+    if (fixed_size_fft(dir, *in, *out, GEN_BIT_REVERSE_ORDER, n)) {
         return;
+    }
 #endif
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);

@@ -25,8 +25,8 @@ typedef void(*bitReverseFunction)(cpx *seq, cDouble dir, cInt lead, cInt n);
 
 #define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
 #define MAX_BLOCK_SIZE 512      // this limits tsCombineGPUSync!
-#define TILE_DIM 64
-#define THREAD_TILE_DIM 32      // This squared is the number of threads per block in the transpose kernel.
+#define TILE_DIM 8//64
+#define THREAD_TILE_DIM 8//32   // This squared is the number of threads per block in the transpose kernel.
 
 #define BIT_REVERSED_OUTPUT
 

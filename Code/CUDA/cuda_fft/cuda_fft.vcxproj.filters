@@ -29,6 +29,7 @@
     <CudaCompile Include="tsCombineGPUSync.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="tsCombineGPUSyncTex.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -76,6 +77,7 @@
     <ClInclude Include="tsCombineGPUSync.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tsCombineGPUSyncTex.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imglib.cpp">

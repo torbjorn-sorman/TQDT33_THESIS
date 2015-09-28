@@ -16,6 +16,7 @@
 
 #include "tsCombine.cuh"
 #include "tsCombineGPUSync.cuh"
+#include "tsCombineGPUSyncTex.cuh"
 
 #ifndef PROFILER
 
@@ -71,10 +72,18 @@ int main()
     for (unsigned int n = TILE_DIM; n <= 8192; n *= 2) {
         printf("\t%d:", n);
         printf("\t%.0f\t", cuFFT_2D_Performance(n));
+        /*
         if (n < 4096 && tsCombineGPUSync2D_Test(n))
             printf("OK\n");
         else
             printf("\tFAIL\n");
+            //*/
+        
+        if (n < 4096 && tsCombineGPUSyncTex2D_Test(n))
+            printf("OK\n");
+        else
+            printf("\tFAIL\n");
+            //*/
     }
     getchar();
 #else

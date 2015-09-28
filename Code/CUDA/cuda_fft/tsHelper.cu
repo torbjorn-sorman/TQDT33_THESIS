@@ -74,6 +74,12 @@ __host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tT
     }
 }
 
+__host__ void checkCudaError(char *msg)
+{
+    cudaError_t e;    
+    if (e = cudaGetLastError()) printf("%s:\n%s: %s\n", msg, cudaGetErrorName(e), cudaGetErrorString(e));
+}
+
 __host__ void checkCudaError()
 {
     cudaError_t e;
@@ -216,4 +222,48 @@ __host__ cpx* fftShift(cpx *seq, cInt n)
         }
     }
     return out;
+}
+
+__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n)
+{
+    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
+    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
+
+    // Write to shared from Global (in)
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
+
+    SYNC_THREADS;
+    // Write to global
+    x = blockIdx.y * TILE_DIM + threadIdx.x;
+    y = blockIdx.x * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
+}
+
+__global__ void _kernelTranspose(cuSurf in, cuSurf out, cInt n)
+{
+    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
+    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
+
+    // Write to shared from Global (in)
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            SURF2D_READ(&(tile[threadIdx.y + j][threadIdx.x + i]), in, x + i, y + j);
+    //tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
+
+    SYNC_THREADS;
+    // Write to global
+    x = blockIdx.y * TILE_DIM + threadIdx.x;
+    y = blockIdx.x * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            SURF2D_WRITE(tile[threadIdx.x + i][threadIdx.y + j], out, x + i, y + j);
+    //out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }

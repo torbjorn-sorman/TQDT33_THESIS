@@ -129,6 +129,13 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
     }
 }
 
+// Likely room for optimizations!
+// In place swapping is problematic over several blocks and is not the task of this thesis work (solving block sync)
+
+// Transpose data set with dimensions n x n
+__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n);
+__global__ void _kernelTranspose(cuSurf in, cuSurf out, cInt n);
+
 #define NO_STREAMING_MULTIPROCESSORS 7
 
 // The limit is number of SMs but some configuration can run one step beyond that limit when running with release config.
@@ -148,6 +155,7 @@ __host__ static __inline int checkValidConfig(cInt blocks, cInt n)
 }
 
 __host__ void checkCudaError();
+__host__ void checkCudaError(char *msg);
 __host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n);
 __host__ cpx* read_image(char *name, int *n);
 __host__ void write_image(char *name, char *type, cpx* seq, cInt n);

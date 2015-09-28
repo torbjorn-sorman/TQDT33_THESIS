@@ -11,7 +11,7 @@
 #include "tsTest.cuh"
 
 __host__ void   tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n);
-__host__ void   tsCombineGPUSync2D(fftDir dir, cudaTextureObject_t tex, cpx *dev_in, cpx *dev_out, cInt n);
+__host__ void   tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n);
 
 __host__ int    tsCombineGPUSync_Validate(cInt n);
 __host__ double tsCombineGPUSync_Performance(cInt n);

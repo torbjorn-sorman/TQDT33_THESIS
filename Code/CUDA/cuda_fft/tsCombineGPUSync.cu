@@ -1,8 +1,9 @@
 #include "tsCombineGPUSync.cuh"
 
 __global__ void _kernelGPUSync(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cCpx scale, cInt nBlocks, cInt n2);
-__global__ void _kernelGPUSync2D(cudaTextureObject_t tex, cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n);
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n);
+//__global__ void _kernelGPUSync2D(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n);
+__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
+__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
 
 __host__ int tsCombineGPUSync_Validate(cInt n)
 {
@@ -33,7 +34,7 @@ __host__ double tsCombineGPUSync_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void test2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, cudaTextureObject_t *tex, size_t *size, char *image_name, cInt sinus, cInt n)
+__host__ void test2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, cInt sinus, cInt n)
 {
     if (sinus) {
         *in = get_sin_img(n);
@@ -48,45 +49,23 @@ __host__ void test2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, cudaTex
     }
     *size = n * n * sizeof(cpx);
     cudaMalloc((void**)dev_i, *size);
-    cudaMalloc((void**)dev_o, *size);
-
-    // create texture object
-    cudaResourceDesc resDesc;
-    memset(&resDesc, 0, sizeof(resDesc));
-    resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = *dev_i;
-    //cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindFloat);
-    resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
-    resDesc.res.linear.desc.x = 32; // bits per channel
-    resDesc.res.linear.desc.y = 32; // bits per channel
-    resDesc.res.linear.sizeInBytes = *size;
-
-    cudaTextureDesc texDesc;
-    memset(&texDesc, 0, sizeof(texDesc));
-    texDesc.readMode = cudaReadModeElementType;
-
-    // create texture object: we only have to do this once!
-    *tex = 0;
-    cudaCreateTextureObject(tex, &resDesc, &texDesc, NULL);
-    
+    cudaMalloc((void**)dev_o, *size);    
     cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
 }
 
-__host__ void test2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, cudaTextureObject_t *tex)
+__host__ void test2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
 {
     free(*in);
     free(*ref);
-    // destroy texture object
-    cudaDestroyTextureObject(*tex);
     cudaFree(*dev_i);
     cudaFree(*dev_o);
 }
 
-__host__ void test2DRun(fftDir dir, cudaTextureObject_t tex, cpx *in, cpx *dev_in, cpx *dev_out, char *image_name, char *type, size_t size, cInt write, cInt norm, cInt n)
+__host__ void test2DRun(fftDir dir, cpx *in, cpx *dev_in, cpx *dev_out, char *image_name, char *type, size_t size, cInt write, cInt norm, cInt n)
 {
-    tsCombineGPUSync2D(dir, tex, dev_in, dev_out, n);
+    tsCombineGPUSync2D(dir, dev_in, dev_out, n);
     if (write) {
-        cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
+        cudaMemcpy(in, dev_in, size, cudaMemcpyDeviceToHost);
         if (norm) {
             normalized_image(in, n);
             cpx *tmp = fftShift(in, n);
@@ -116,25 +95,25 @@ __host__ int test2DCompare(cpx *in, cCpx *ref, cpx *dev, size_t size, cInt len)
 __host__ int tsCombineGPUSync2D_Test(cInt n)
 {
     double measures[NUM_PERFORMANCE];
-    char *image_name = "shore";
+    char *image_name = "splash";
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
-    cudaTextureObject_t tex;
-    test2DSetup(&in, &ref, &dev_in, &dev_out, &tex, &size, image_name, NO, n);
+    test2DSetup(&in, &ref, &dev_in, &dev_out, &size, image_name, NO, n);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        tsCombineGPUSync2D(FFT_FORWARD, tex, dev_in, dev_out, n);
+        tsCombineGPUSync2D(FFT_FORWARD, dev_in, dev_out, n);
         measures[i] = stopTimer();
     }
-    printf("%.0f\t", avg(measures, NUM_PERFORMANCE));
+    printf("\t%.0f", avg(measures, NUM_PERFORMANCE));
 
-    //printf("-1\t");
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    test2DRun(FFT_FORWARD, tex, in, dev_in, dev_out, image_name, "frequency-domain", size, YES, YES, n);
-    test2DRun(FFT_INVERSE, tex, in, dev_in, dev_out, image_name, "spatial-domain", size, YES, NO, n);
+    test2DRun(FFT_FORWARD, in, dev_in, dev_out, image_name, "frequency-domain", size, YES, YES, n);
+    test2DRun(FFT_INVERSE, in, dev_in, dev_out, image_name, "spatial-domain", size, YES, NO, n);
     int res = test2DCompare(in, ref, dev_in, size, n * n);
-    test2DShakedown(&in, &ref, &dev_in, &dev_out, &tex);
+    test2DShakedown(&in, &ref, &dev_in, &dev_out);
+    if (res != 1)
+        printf("!");
     return res;
 }
 
@@ -162,7 +141,7 @@ __host__ void tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
 }
 
 // Fast in block 2D FFT when (partial) list fits shared memory combined with a general algorithm using global memory. Partially CPU synced and partially GPU-intra-block syncronized.
-__host__ void tsCombineGPUSync2D(fftDir dir, cudaTextureObject_t tex, cpx *dev_in, cpx *dev_out, cInt n)
+__host__ void tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
 {
     dim3 threads, blocks, threads_trans, blocks_trans;
     set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, n);
@@ -171,33 +150,26 @@ __host__ void tsCombineGPUSync2D(fftDir dir, cudaTextureObject_t tex, cpx *dev_i
     cInt nBlock = n / blocks.y;
     cFloat w_angle = dir * (M_2_PI / n);
     cFloat w_bangle = dir * (M_2_PI / nBlock);
-
-    // This is where the time-race is lost on short runs.
+        
     if (n > 256) {
-        _kernelGPUSync2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (tex, dev_in, dev_out, w_angle, w_bangle, log2_32(n), 1, scale, n);
+        _kernelGPUSync2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, dev_out, w_angle, w_bangle, log2_32(n), scale, n);
         cudaDeviceSynchronize();
-        checkCudaError();
 
-        _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans)           (dev_out, dev_in, n);
+        _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans)              (dev_out, dev_in, n);
         cudaDeviceSynchronize();
-        checkCudaError();
 
-        _kernelGPUSync2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (tex, dev_in, dev_out, w_angle, w_bangle, log2_32(n), 1, scale, n);
+        _kernelGPUSync2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, dev_out, w_angle, w_bangle, log2_32(n), scale, n);
         cudaDeviceSynchronize();
-        checkCudaError();
 
-        _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans)           (dev_out, dev_in, n);
+        _kernelTranspose KERNEL_ARGS2(blocks_trans, threads_trans)              (dev_out, dev_in, n);
         cudaDeviceSynchronize();
-        checkCudaError();
     }
     else {
-        _kernelGPUSync2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (tex, dev_in, dev_out, w_angle, w_bangle, log2_32(n), 1, scale, n);
+        _kernelGPUSync2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, dev_out, w_angle, w_bangle, log2_32(n), scale, n);
         cudaDeviceSynchronize();
-        checkCudaError();
 
-        _kernelGPUSync2D KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (tex, dev_out, dev_in, w_angle, w_bangle, log2_32(n), 0, scale, n);
+        _kernelGPUSync2DCol KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_out, dev_in, w_angle, w_bangle, log2_32(n), scale, n);
         cudaDeviceSynchronize();
-        checkCudaError();
     }
 }
 
@@ -299,50 +271,13 @@ __device__ static __inline__ void algorithm_partial(cpx *shared, cInt in_high, c
     }
 }
 
-// Likely room for optimizations!
-// In place swapping is problematic over several blocks and is not the task of this thesis work (solving block sync)
-
-// Transpose data set with dimensions n x n
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n)
+__device__ static __inline__ void mem_gtos_col(cInt low, cInt high, cInt global_low, cInt offsetHigh, cpx *shared, cpx *global)
 {
-    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
-    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
-
-    // Write to shared from Global (in)
-    int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
-
-    SYNC_THREADS;
-    // Write to global
-    x = blockIdx.y * TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
-}
-
-#ifdef __CUDACC__
-#define TEX_FETCH(t,i) (tex1Dfetch<cpx>((t), (i)))
-#else
-#define TEX_FETCH(t,i) {1, 0}
-#endif
-
-#define TEX_READ
-__device__ static __inline__ void mem_gtos_col(cInt low, cInt high, cInt global_low, cInt offsetHigh, cpx *shared, cudaTextureObject_t tex, cpx *global)
-{
-#ifdef TEX_READ
-    shared[low] = TEX_FETCH(tex, global_low);
-    shared[high] = TEX_FETCH(tex, global_low + offsetHigh);
-#else
     shared[low] = global[global_low];
-    shared[high] = global[global_low + offsetHigh];
-#endif    
+    shared[high] = global[global_low + offsetHigh];  
 }
 
-__device__ static __inline__ void mem_stog_db_col(cInt shared_low, cInt shared_high, cInt offset, cUInt lead, cpx scale, cpx *shared, cudaTextureObject_t tex, cpx *global, cInt n)
+__device__ static __inline__ void mem_stog_db_col(cInt shared_low, cInt shared_high, cInt offset, cUInt lead, cpx scale, cpx *shared, cpx *global, cInt n)
 {
     int row_low = BIT_REVERSE(shared_low + offset, lead);
     int row_high = BIT_REVERSE(shared_high + offset, lead);
@@ -350,31 +285,58 @@ __device__ static __inline__ void mem_stog_db_col(cInt shared_low, cInt shared_h
     global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scale);
 }
 
-__global__ void _kernelGPUSync2D(cudaTextureObject_t tex, cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n)
+__global__ void _kernelGPUSync2D(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n)
 {
     extern __shared__ cpx shared[];
     cInt global_offset = n * blockIdx.x;
     int bit = depth;
     int in_high = n >> 1;
-    
+    /*
     if (gridDim.y > 1) {
-        bit = algorithm_complete_2d(&(in[global_offset]), &(out[global_offset]), bit, log2(MAX_BLOCK_SIZE), angle, gridDim.y, in_high);
-        in_high >>= log2((int)gridDim.y);
+    bit = algorithm_complete_2d(&(in[global_offset]), &(out[global_offset]), bit, log2(MAX_BLOCK_SIZE), angle, gridDim.y, in_high);
+    in_high >>= log2((int)gridDim.y);
     }
-    
+    */
     int offset = blockIdx.y * blockDim.x * 2;
     in_high += threadIdx.x;
     if (rowWise)
         mem_gtos(threadIdx.x, in_high, offset, shared, &(in[global_offset]));
     else {
-        mem_gtos_col(threadIdx.x, in_high, (threadIdx.x + offset) * n + blockIdx.x, (n >> 1) * n, shared, tex, in);
+        mem_gtos_col(threadIdx.x, in_high, (threadIdx.x + offset) * n + blockIdx.x, (n >> 1) * n, shared, in);
     }
     SYNC_THREADS;
     algorithm_partial(shared, in_high, bAngle, bit);
     if (rowWise)
         mem_stog_db(threadIdx.x, in_high, offset, 32 - depth, scale, shared, &(out[global_offset]));
     else
-        mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, tex, out, n);
+        mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, out, n);
+}
+
+__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+{
+    extern __shared__ cpx shared[];
+    cInt global_offset = n * blockIdx.x;
+    int bit = depth;
+    int in_high = n >> 1;
+    int offset = blockIdx.y * blockDim.x * 2;
+    in_high += threadIdx.x;
+    mem_gtos(threadIdx.x, in_high, offset, shared, &(in[global_offset]));
+    SYNC_THREADS;
+    algorithm_partial(shared, in_high, bAngle, bit);
+    mem_stog_db(threadIdx.x, in_high, offset, 32 - depth, scale, shared, &(out[global_offset]));
+}
+
+__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+{
+    extern __shared__ cpx shared[];
+    int bit = depth;
+    int in_high = n >> 1;
+    int offset = blockIdx.y * blockDim.x * 2;
+    in_high += threadIdx.x;
+    mem_gtos_col(threadIdx.x, in_high, (threadIdx.x + offset) * n + blockIdx.x, (n >> 1) * n, shared, in);
+    SYNC_THREADS;
+    algorithm_partial(shared, in_high, bAngle, bit);
+    mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, out, n);
 }
 
 __global__ void _kernelGPUSync(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cCpx scale, cInt nBlocks, cInt n2)

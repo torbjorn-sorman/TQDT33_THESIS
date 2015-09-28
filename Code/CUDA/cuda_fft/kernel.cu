@@ -1,6 +1,6 @@
 
 //#define PROFILER
-#define IMAGE_TEST
+//#define IMAGE_TEST
 
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -68,22 +68,15 @@ int main()
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
     printf("\n2D validation & performance test!\n");
-    printf("\tn\tcuFFT\tMy\n");
-    for (unsigned int n = TILE_DIM; n <= 8192; n *= 2) {
-        printf("\t%d:", n);
-        printf("\t%.0f\t", cuFFT_2D_Performance(n));
-        /*
-        if (n < 4096 && tsCombineGPUSync2D_Test(n))
-            printf("OK\n");
-        else
-            printf("\tFAIL\n");
-            //*/
-        
-        if (n < 4096 && tsCombineGPUSyncTex2D_Test(n))
-            printf("OK\n");
-        else
-            printf("\tFAIL\n");
-            //*/
+    printf("\tn\tcuFFT\tMy\tMy Surf\t");
+    for (unsigned int n = TILE_DIM / 2; n <= 4096; n *= 2) {
+        printf("\n\t%d:", n);
+        printf("\t%.0f", cuFFT_2D_Performance(n));
+
+        if (n < 4096) {            
+            tsCombineGPUSync2D_Test(n);
+            tsCombineGPUSyncTex2D_Test(n);
+        }
     }
     getchar();
 #else
@@ -93,7 +86,7 @@ int main()
     double cuFFTm[RUNS];
     double combineFFTm[RUNS];
     double combineNCSFFTm[RUNS];
-    printf("\n\t\tcuFFT\tComb\tComb GPU Sync");
+    printf("\n\t\tcuFFT\tComb\tComb GPUS\tComp Tex");
     printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
         printf("\n%d:", n);
@@ -110,7 +103,7 @@ int main()
         // Combine No CPU Sync
         printf("\t%.0f", combineNCSFFTm[index] = tsCombineGPUSync_Performance(n));
         if (tsCombineGPUSync_Validate(n) == 0) printf("!");
-
+        
         ++index;
     }
     printf("\n\n");

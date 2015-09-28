@@ -5,6 +5,7 @@
 
 // Save space for better overview when many params
 typedef cuFloatComplex cpx;
+typedef cudaSurfaceObject_t cuSurf;
 typedef const cpx cCpx;
 typedef const float fftDir;
 typedef const int cInt;
@@ -41,7 +42,11 @@ typedef void(*bitReverseFunction)(cpx *seq, cDouble dir, cInt lead, cInt n);
 #define ATOMIC_CAS(a,c,v) (atomicCAS((int *)(a),(int)(c),(int)(v)))
 #define THREAD_FENCE __threadfence()
 #define ATOMIC_ADD(a, b) (atomicAdd((int *)(a), (int)(b)))
+#define SURF2D_READ(d,s,x,y) (surf2Dread((d), (s), (x) * sizeof(cpx), (y)))
+#define SURF2D_WRITE(d,s,x,y) (surf2Dwrite((d), (s), (x) * sizeof(cpx), (y)));
 #else
+#define SURF2D_READ(d,s,x,y) 1
+#define SURF2D_WRITE(d,s,x,y) 1
 #define ATOMIC_ADD(a, b) 1
 #define ATOMIC_CAS(a, c, v) 1
 #define THREAD_FENCE

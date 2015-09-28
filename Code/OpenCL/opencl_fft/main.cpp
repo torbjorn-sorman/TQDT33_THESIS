@@ -2,7 +2,8 @@
 
 int main()
 {
-    printf("Success!\n");
+    
+    printf("Done\n");
     getchar();
     return 0;
 }

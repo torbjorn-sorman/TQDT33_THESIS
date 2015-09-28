@@ -20,6 +20,7 @@
 #ifndef PROFILER
 
 __host__ double cuFFT_Performance(cInt n);
+__host__ double cuFFT_2D_Performance(cInt n);
 __host__ void toFile(const char *name, const double m[], cInt ms);
 
 // Print device properties
@@ -66,12 +67,14 @@ int main()
         tsCombine_Performance(n);
 #elif defined(IMAGE_TEST)
     printf("\n2D validation & performance test!\n");
+    printf("\tn\tcuFFT\tMy\n");
     for (unsigned int n = TILE_DIM; n <= 8192; n *= 2) {
-        printf("%d:\t", n);
-        if (tsCombineGPUSync2D_Test(n))
+        printf("\t%d:", n);
+        printf("\t%.0f\t", cuFFT_2D_Performance(n));
+        if (n < 4096 && tsCombineGPUSync2D_Test(n))
             printf("OK\n");
         else
-            printf("FAIL\n");
+            printf("\tFAIL\n");
     }
     getchar();
 #else

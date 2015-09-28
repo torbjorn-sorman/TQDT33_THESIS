@@ -54,29 +54,6 @@ __device__ static __inline__ void __gpu_sync(cInt goal)
     SYNC_THREADS;
 }
 
-__device__ static __inline__ void init_sync(cInt tid, cUInt row_id, cInt blocks)
-{
-    if (tid < blocks) {
-        _sync_array_2din[row_id][tid] = 0;
-        _sync_array_2dout[row_id][tid] = 0;
-    }
-}
-
-__device__ static __inline__ void __gpu_sync(cInt goal, cUInt row_id)
-{
-    int tid = threadIdx.x;
-    int bid = blockIdx.y;
-    int nBlocks = gridDim.x;
-    if (tid == 0) { _sync_array_2din[row_id][bid] = goal; }
-    if (bid == 1) { // Use bid == 1, if only one block this part will not run.
-        if (tid < nBlocks) { while (_sync_array_2din[row_id][tid] != goal){} }
-        SYNC_THREADS;
-        if (tid < nBlocks) { _sync_array_2dout[row_id][tid] = goal; }
-    }
-    if (tid == 0) { while (_sync_array_2dout[row_id][bid] != goal) {} }
-    SYNC_THREADS;
-}
-
 __device__ static inline int log2(int v)
 {
     return FIND_FIRST_BIT(v) - 1;

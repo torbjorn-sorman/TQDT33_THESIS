@@ -1,36 +1,58 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "C", "C\C.vcxproj", "{3570239E-A341-4EED-B40D-3E031A685BB3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cuda_fft", "..\CUDA\cuda_fft\cuda_fft.vcxproj", "{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opencl_fft", "..\OpenCL\opencl_fft\opencl_fft.vcxproj", "{038F4113-78EF-4F08-8C84-D607D361DEC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|Win32.Build.0 = Debug|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|x64.ActiveCfg = Debug|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Debug|x64.Build.0 = Debug|Win32
+		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|Win32.ActiveCfg = Release|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|Win32.Build.0 = Release|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|x64.ActiveCfg = Release|Win32
 		{3570239E-A341-4EED-B40D-3E031A685BB3}.Release|x64.Build.0 = Release|Win32
+		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|Win32.Build.0 = Debug|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|x64.ActiveCfg = Debug|x64
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Debug|x64.Build.0 = Debug|x64
+		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|Win32.ActiveCfg = Release|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|Win32.Build.0 = Release|Win32
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|x64.ActiveCfg = Release|x64
 		{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}.Release|x64.Build.0 = Release|x64
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Debug|Win32.Build.0 = Debug|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Debug|x64.ActiveCfg = Debug|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Release|Win32.ActiveCfg = Release|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Release|Win32.Build.0 = Release|Win32
+		{038F4113-78EF-4F08-8C84-D607D361DEC5}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

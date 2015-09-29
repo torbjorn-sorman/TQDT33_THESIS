@@ -10,7 +10,12 @@ int GPUSync_validate(const int n)
 
     GPUSync(-1.f, data_in, data_out, n);
 
-    int res = checkError(data_in, data_ref, n);
+    int res = checkError(data_out, data_ref, n);
+
+    printf("\n");
+    write_console(data_out, n);
+    printf("\n");
+    write_console(data_ref, n);
 
     free(data_in);
     free(data_out);
@@ -74,10 +79,7 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     if (checkErr(err, "Failed to create a command commands!")) return;
         
     std::string data = getKernel("kernel.cl");
-    //const char *kernelSource = getKernel("kernel.cl").c_str();
-
-    //printf("\n%s\n%s\n", kernelSource, data.c_str());
-
+    
     char *kernelSrc = (char *)malloc(sizeof(char) * (data.size() + 1));
     strcpy_s(kernelSrc, data.size() + 1, data.c_str());    
     kernelSrc[data.size()] = '\0';
@@ -104,21 +106,21 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     }
         
     // Create the compute kernel in the program we wish to run    
-    kernel = clCreateKernel(program, "square", &err);
-    if (!kernel || checkErr(err, "Failed to create compute kernel!")) return;
+    kernel = clCreateKernel(program, "kernelGPUSync", &err);
+    if (checkErr(err, "Failed to create compute kernel!") || !kernel) return;
 
     // Create the input and output arrays in device memory for our calculation
-    input = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * n, NULL, NULL);
-    output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * n, NULL, NULL);
+    input = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cpx) * n, NULL, NULL);
+    output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cpx) * n, NULL, NULL);
     if (!input || !output) {
         printf("Error: Failed to allocate device memory!\n");
         return;
     }
-
+    
     // Write our data set into the input array in device memory
-    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(float) * n, dev_in, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(cpx) * n, dev_in, 0, NULL, NULL);
     if (checkErr(err, "Failed to write to source array!")) return;
-
+    
     int threads, blocks;
     const int n2 = n / 2;
     if (n2 > MAX_BLOCK_SIZE) {
@@ -131,8 +133,8 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     }
 
     const int nBlock = n / blocks;
-    const int w_angle = dir * (M_2_PI / n);
-    const int w_bangle = dir * (M_2_PI / nBlock);
+    const float w_angle = dir * (M_2_PI / n);
+    const float w_bangle = dir * (M_2_PI / nBlock);
     const cpx scale = {(dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f};
     const int depth = log2_32(n);
     const int breakSize = log2_32(MAX_BLOCK_SIZE);
@@ -143,22 +145,27 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
     err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
     err |= clSetKernelArg(kernel, 2, sizeof(float), &w_angle);
-    err |= clSetKernelArg(kernel, 2, sizeof(float), &w_bangle);
-    err |= clSetKernelArg(kernel, 2, sizeof(int), &depth);
-    err |= clSetKernelArg(kernel, 2, sizeof(int), &breakSize);
-    err |= clSetKernelArg(kernel, 2, sizeof(cpx), &scale);
-    err |= clSetKernelArg(kernel, 2, sizeof(int), &nBlock);
-    err |= clSetKernelArg(kernel, 2, sizeof(int), &n2);
-    if (checkErr(err, err, "Failed to set kernel arguments! ")) return;
+    err |= clSetKernelArg(kernel, 3, sizeof(float), &w_bangle);
+    err |= clSetKernelArg(kernel, 4, sizeof(int), &depth);
+    err |= clSetKernelArg(kernel, 5, sizeof(int), &breakSize);
+    err |= clSetKernelArg(kernel, 6, sizeof(cpx), &scale);
+    err |= clSetKernelArg(kernel, 7, sizeof(int), &nBlock);
+    err |= clSetKernelArg(kernel, 8, sizeof(int), &n2);
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to set kernel arguments! %d\n", err);
+        return;
+    }
 
     // Get the maximum work group size for executing the kernel on the device
-    //
     err = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
     if (checkErr(err, err, "Failed to retrieve kernel work group info!")) return;
+    
+    local = threads;
+    global = blocks;
 
     // Execute the kernel over the entire range of our 1d input data set
-    // using the maximum number of work group items for this device
-    global = n;
+    // using the maximum number of work group items for this device    
     err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, NULL);
     if (err) {
         printf("Error: Failed to execute kernel!\n");

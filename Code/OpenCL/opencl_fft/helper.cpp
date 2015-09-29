@@ -97,3 +97,29 @@ cpx *get_seq(const int n, cpx *src)
     return seq;
 }
 
+void write_console(float x)
+{
+    if (x == 0)
+        printf(" %.3f", 0.f);
+    else {
+        if (x > 0)
+            printf(" ");
+        printf("%.3f", x);
+    }
+}
+
+void write_console(cpx a)
+{
+    write_console(a.x);
+    printf("\t");
+    write_console(a.y);
+}
+
+void write_console(cpx *seq, const int n)
+{
+    for (int i = 0; i < n; ++i){
+        write_console(seq[i]);
+        printf("\n");
+    }
+}
+

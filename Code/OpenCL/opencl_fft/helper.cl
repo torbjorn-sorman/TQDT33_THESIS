@@ -1,7 +1,7 @@
 #ifndef HELPER_CL
 #define HELPER_CL
-
-//#define WHAT
+/*
+#define WHAT
 
 #ifdef WHAT
 #define __kernel
@@ -26,7 +26,7 @@
 #define sincos(a,x) sincos((a), (x))
 #define log2(v) log2((v))
 #endif
-
+*/
 //#define M_2_PI 6.28318530718f
 //#define M_PI 3.14159265359f
 
@@ -67,7 +67,7 @@ static __inline cpx cpxMul(const cpx a, const cpx b)
         );
 }
 
-static __inline void cpx_add_sub_mul(cpx *out_lower, cpx *out_upper, cpx in_lower, cpx in_upper, cpx w)
+static __inline void cpx_add_sub_mul(__local cpx *out_lower,__local cpx *out_upper, cpx in_lower, cpx in_upper, cpx w)
 {
     (*out_lower) = cpxAdd(in_lower, in_upper);
     (*out_upper) = cpxMul(cpxSub(in_lower, in_upper), w);

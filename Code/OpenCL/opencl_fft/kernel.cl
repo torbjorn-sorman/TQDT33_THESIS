@@ -37,7 +37,7 @@ static __inline void mem_gtos(int low, int high, int offset, __local cpx *shared
     shared[low] = out[low + offset];
     shared[high] = out[high + offset];
 }
-static __inline void mem_stog_db(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, __global cpx *out)
+static __inline void mem_stog_db(int low, int high, int offset, unsigned int lead, cpx scale, __local cpx *shared, global cpx *out)
 {
     out[reverseBitOrder(low + offset, lead)] = cpxMul(shared[low], scale);
     out[reverseBitOrder(high + offset, lead)] = cpxMul(shared[high], scale);
@@ -55,6 +55,9 @@ __kernel void kernelGPUSync(__global cpx *in, __global cpx *out, const float ang
         in = out;
     }
     */
+
+    printf("SPAM!");
+    return;
     int offset = get_group_id(0) * get_local_size(0) * 2;
     in_high += get_local_id(0);
     mem_gtos(get_local_id(0), in_high, offset, shared, in);

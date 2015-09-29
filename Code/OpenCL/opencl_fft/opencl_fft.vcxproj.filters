@@ -36,5 +36,8 @@
     <None Include="kernel.cl">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="helper.cl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

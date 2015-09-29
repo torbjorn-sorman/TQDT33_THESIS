@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "helper.h"
 
-int     GPUSync_validate    (cInt n);
-double  GPUSync_performance (cInt n);
+int     GPUSync_validate    (const int n);
+double  GPUSync_performance (const int n);
 
 #endif

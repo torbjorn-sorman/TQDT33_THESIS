@@ -94,6 +94,7 @@
     <ClInclude Include="helper.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="helper.cl" />
     <None Include="kernel.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -15,10 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="fftGPUSync.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="fftGPUSync.cpp">
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -26,8 +27,14 @@
     <ClInclude Include="fftGPUSync.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="definitions.h">
+    <ClInclude Include="definitions.h" />
+    <ClInclude Include="helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernel.cl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

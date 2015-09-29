@@ -1,9 +1,10 @@
 #include "fftGPUSync.h"
 
-void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n);
+void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n);
 
 int GPUSync_validate(cInt n)
 {    
+    GPUSync(-1.f, NULL, NULL, n);
     return 1;
 }
 
@@ -16,21 +17,21 @@ int checkErr(cl_int error, char *msg)
 {
     if (error != CL_SUCCESS) {
         printf("Error: %s\n", msg);
-        return 0;
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 int checkErr(cl_int error, cl_int args, char *msg)
 {
     if (error != CL_SUCCESS) {
         printf("Error: %s %d\n", args, msg);
-        return 0;
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
-void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
+void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
 {
     size_t global;
     size_t local;
@@ -44,12 +45,16 @@ void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
 
     cl_mem input;                       // device memory used for the input array
     cl_mem output;                      // device memory used for the output array
+    
+    cl_platform_id platform;
+    unsigned int no_plat;
+    err = clGetPlatformIDs(1, &platform, &no_plat);
+    if (checkErr(err, no_plat, "Failed to get platform!")) return;
 
-    // Connect to a compute device
-    int gpu = 1;
-    err = clGetDeviceIDs(NULL, gpu ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
+    // Connect to a compute device    
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
     if (checkErr(err, "Failed to create a device group!")) return;
-
+    
     // Create a compute context
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     if (checkErr(err, "Failed to create a compute context!")) return;
@@ -57,11 +62,14 @@ void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
     // Create a command commands
     commands = clCreateCommandQueue(context, device_id, 0, &err);
     if (checkErr(err, "Failed to create a command commands!")) return;
+        
+    std::string data = getKernel("kernel.cl");
+    printf("%s\n", data.c_str());
 
-    char *KernelSource = "";
-
+    return;
+    /*
     // Create the compute program from the source buffer
-    program = clCreateProgramWithSource(context, 1, (const char **)& KernelSource, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, (const char **)((*kernelSource).c_str()), NULL, &err);
     if (checkErr(err, "Failed to create compute program!")) return;
 
     // Build the program executable
@@ -135,7 +143,7 @@ void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
     // Print a brief summary detailing the results
     //
     printf("Computed '%d/%d' correct values!\n", 1, n);
-
+    */
     // Shutdown and cleanup
     //
     clReleaseMemObject(input);
@@ -144,4 +152,5 @@ void tsCombineGPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
     clReleaseKernel(kernel);
     clReleaseCommandQueue(commands);
     clReleaseContext(context);
+    
 }

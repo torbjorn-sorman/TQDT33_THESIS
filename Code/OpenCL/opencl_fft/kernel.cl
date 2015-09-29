@@ -1,5 +1,4 @@
-
-__kernel void kernelGPUSync(__global int4 * theArray, const uint stage, const uint passOfStage, const uint dir)
+__kernel void kernelGPUSync(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cCpx scale, cInt nBlocks, cInt n2)
 {
 
 }

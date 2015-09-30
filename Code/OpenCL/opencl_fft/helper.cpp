@@ -97,6 +97,29 @@ cpx *get_seq(const int n, cpx *src)
     return seq;
 }
 
+int cmp(const void *x, const void *y)
+{
+    double xx = *(double*)x, yy = *(double*)y;
+    if (xx < yy) return -1;
+    if (xx > yy) return  1;
+    return 0;
+}
+
+double avg(double m[], int n)
+{
+    int i, cnt, end;
+    double sum;
+    qsort(m, n, sizeof(double), cmp);
+    sum = 0.0;
+    cnt = 0;
+    end = n < 5 ? n - 1 : 5;
+    for (i = 0; i < end; ++i) {
+        sum += m[i];
+        ++cnt;
+    }
+    return (sum / (double)cnt);
+}
+
 void write_console(float x)
 {
     if (x == 0)
@@ -123,7 +146,6 @@ void write_console(cpx *seq, const int n)
     }
 }
 
-
 int checkErr(cl_int error, char *msg)
 {
     if (error != CL_SUCCESS) {
@@ -136,159 +158,96 @@ int checkErr(cl_int error, char *msg)
 int checkErr(cl_int error, cl_int args, char *msg)
 {
     if (error != CL_SUCCESS) {
-        printf("Error: %d %s\n", args, msg);
+        printf("Error Code: %d\nMessage: %s\n", args, msg);
         return 1;
     }
     return 0;
 }
 
-typedef struct {
-    size_t global_work_size[3] = { 1, 1, 1 };
-    size_t local_work_size[3] = { 1, 1, 1 };
-    cl_device_id device_id;
-    cl_context context;
-    cl_command_queue commands;
-    cl_program program;
-    cl_kernel kernel;
-    cl_mem input, output;
-    cl_platform_id platform;
-} oclParams;
-
-cl_int oclSetup(char *kernelName, cpx *dev_in, const int n, oclParams *params)
+cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
 {
-    oclParams p;
-    size_t global_work_size[3] = { 1, 1, 1 };
-    size_t local_work_size[3] = { 1, 1, 1 };
-
     cl_int err = CL_SUCCESS;
-    cl_device_id device_id;             // compute device id 
-    cl_context context;                 // compute context
-    cl_command_queue commands;          // compute command queue
-    cl_program program;                 // compute program
-    cl_kernel kernel;                   // compute kernel
-    cl_mem input, output;
-    cl_platform_id platform;
+    args->global_work_size[0] = args->global_work_size[1] = args->global_work_size[2] = 1; 
+    args->local_work_size[0] = args->local_work_size[1] = args->local_work_size[2] = 1;
 
-    unsigned int no_plat;
-    err = clGetPlatformIDs(1, &platform, &no_plat);
-    if (checkErr(err, no_plat, "Failed to get platform!")) return err;
-
+    err = clGetPlatformIDs(1, &args->platform, NULL);
+    if (err != CL_SUCCESS) return err;
+    
     // Connect to a compute device    
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
-    if (checkErr(err, "Failed to create a device group!")) return err;
+    err = clGetDeviceIDs(args->platform, CL_DEVICE_TYPE_GPU, 1, &args->device_id, NULL);
+    if (err != CL_SUCCESS) return err;
 
     // Create a compute context
-    context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-    if (checkErr(err, "Failed to create a compute context!")) return err;
+    args->context = clCreateContext(0, 1, &args->device_id, NULL, NULL, &err);
+    if (err != CL_SUCCESS) return err;
 
     // Create a command commands
-    commands = clCreateCommandQueue(context, device_id, 0, &err);
-    if (checkErr(err, "Failed to create a command commands!")) return err;
+    args->commands = clCreateCommandQueue(args->context, args->device_id, 0, &err);
+    if (err != CL_SUCCESS) return err;
 
     std::string filename = kernelName;
     filename += ".cl";
     std::string data = getKernel(filename.c_str());
 
-    char *kernelSrc = (char *)malloc(sizeof(char) * (data.size() + 1));
-    strcpy_s(kernelSrc, data.size() + 1, data.c_str());
-    kernelSrc[data.size()] = '\0';
+    char *src = (char *)malloc(sizeof(char) * (data.size() + 1));
+    strcpy_s(src, sizeof(char) * (data.size() + 1), data.c_str());
+    src[data.size()] = '\0';
 
     // Create the compute program from the source buffer
-    program = clCreateProgramWithSource(context, 1, (const char **)&kernelSrc, NULL, &err);
-    if (checkErr(err, "Failed to create compute program!")) return err;
+    args->program = clCreateProgramWithSource(args->context, 1, (const char **)&src, NULL, &err);
+    args->kernelSource = src;
+    if (err != CL_SUCCESS) return err;
 
     // Build the program executable
-    err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+    err = clBuildProgram(args->program, 0, NULL, NULL, NULL, NULL);
     if (err != CL_SUCCESS) {
         size_t len;
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
-        printf("Error: Failed to build program executable! Len: %d\n", len);
+        clGetProgramBuildInfo(args->program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);        
         char *buffer = (char *)malloc(sizeof(char) * len);
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, len, buffer, NULL);
-        printf("%s\n", buffer);
+        clGetProgramBuildInfo(args->program, args->device_id, CL_PROGRAM_BUILD_LOG, len, buffer, NULL);
+        printf("Failed to build program:\n%s\n", buffer);
         free(buffer);
         return err;
     }
 
     // Create the compute kernel in the program we wish to run    
-    kernel = clCreateKernel(program, kernelName, &err);
-    if (checkErr(err, "Failed to create compute kernel!") || !kernel) return err;
+    args->kernel = clCreateKernel(args->program, kernelName, &err);
+    if (err != CL_SUCCESS) return err;
 
-    const int n2 = n / 2;
-    global_work_size[0] = n2;
-    local_work_size[0] = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
+    const int n2 = args->n / 2;
+    args->global_work_size[0] = n2;
+    args->local_work_size[0] = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
 
-    const int nBlock = n / global_work_size[0];
-    size_t shMemSize = sizeof(cpx) * local_work_size[0] * 2;
+    args->nBlock = args->n / n2;
+    args->shared_mem_size = sizeof(cpx) * args->local_work_size[0] * 2;
 
     // Create the input and output arrays in device memory for our calculation
-    input = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cpx) * n, NULL, NULL);
-    output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cpx) * n, NULL, NULL);
-    if (!input || !output) {
-        printf("Error: Failed to allocate device memory!\n");
-        return err;
-    }
-
+    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(cpx) * args->n, NULL, NULL);
+    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(cpx) * args->n, NULL, NULL);
+    args->sync_in = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(int) * MAX_BLOCK_SIZE, NULL, NULL);
+    args->sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(int) * MAX_BLOCK_SIZE, NULL, NULL);
+    
     // Write our data set into the input array in device memory
-    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(cpx) * n, dev_in, 0, NULL, NULL);
-    if (checkErr(err, "Failed to write to source array!")) return err;
-    
+    err = clEnqueueWriteBuffer(args->commands, args->input, CL_TRUE, 0, sizeof(cpx) * args->n, dev_in, 0, NULL, NULL);
+    if (err != CL_SUCCESS) return err;
 }
 
-cl_int oclSetArgs()
+void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error)
 {
-    const float w_angle = dir * (M_2_PI / n);
-    const float w_bangle = dir * (M_2_PI / nBlock);
-    const cpx scale = { (dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f };
-    const int depth = log2_32(n);
-    const int breakSize = log2_32(MAX_BLOCK_SIZE);
-
-    // Set the arguments to our compute kernel
-    cl_int err = 0;
-    int arg = 0;
-    err = clSetKernelArg(kernel, arg++, shMemSize, NULL);
-    err |= clSetKernelArg(kernel, arg++, sizeof(cl_mem), &input);
-    err |= clSetKernelArg(kernel, arg++, sizeof(cl_mem), &output);
-    err |= clSetKernelArg(kernel, arg++, sizeof(float), &w_angle);
-    err |= clSetKernelArg(kernel, arg++, sizeof(float), &w_bangle);
-    err |= clSetKernelArg(kernel, arg++, sizeof(int), &depth);
-    err |= clSetKernelArg(kernel, arg++, sizeof(int), &breakSize);
-    err |= clSetKernelArg(kernel, arg++, sizeof(cpx), &scale);
-    err |= clSetKernelArg(kernel, arg++, sizeof(int), &nBlock);
-    err |= clSetKernelArg(kernel, arg++, sizeof(int), &n2);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to set kernel arguments! %d\n", err);
-        return err;
+    cl_int err = CL_SUCCESS;
+    err = clEnqueueReadBuffer(args->commands, args->output, CL_TRUE, 0, sizeof(cpx) * args->n, dev_out, 0, NULL, NULL);
+    if (err != CL_SUCCESS) {
+        *error = err;
+        printf("\n%d\n", err);
     }
-}
-
-cl_int oclExecute()
-{
-    cl_int err = clEnqueueNDRangeKernel(commands, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, NULL);
-    clFinish(commands);
-    return err;
-}
-
-void oclRelease(cpx *dev_out, const int n)
-{
-    
-    err = clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(cpx) * n, dev_out, 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to read output array! %d\n", err);
-        return;
-    }
-
-    // Shutdown and cleanup
-    free(kernelSrc);
-    //clReleaseMemObject(shared);
-    clReleaseMemObject(input);
-    clReleaseMemObject(output);
-    clReleaseProgram(program);
-    clReleaseKernel(kernel);
-    clReleaseCommandQueue(commands);
-    clReleaseContext(context);
-
+    free(args->kernelSource);
+    clReleaseMemObject(args->input);
+    clReleaseMemObject(args->output);
+    clReleaseMemObject(args->sync_in);
+    clReleaseMemObject(args->sync_out);
+    clReleaseProgram(args->program);
+    clReleaseKernel(args->kernel);
+    clReleaseCommandQueue(args->commands);
+    clReleaseContext(args->context);
 }
 

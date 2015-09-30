@@ -21,6 +21,8 @@ cpx *get_seq(const int n);
 cpx *get_seq(const int n, const int sinus);
 cpx *get_seq(const int n, cpx *src);
 
+double avg(double m[], int n);
+
 void write_console(cpx a);
 void write_console(cpx *seq, const int n);
 
@@ -38,3 +40,16 @@ static __inline int log2_32(int value)
     value |= value >> 16;
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
+
+static __inline cl_int oclExecute(oclArgs *args)
+{
+    cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, 3, NULL, args->global_work_size, args->local_work_size, 0, NULL, NULL);
+    clFinish(args->commands);
+    return err;
+}
+
+int checkErr(cl_int error, char *msg);
+int checkErr(cl_int error, cl_int args, char *msg);
+
+cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args);
+void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error);

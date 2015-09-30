@@ -1,14 +1,31 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-
+#include "CL\cl.h"
 
 typedef const float fftDir;
+
 struct cpx {
     float x;
     float y;
 };
 
+struct oclArgs {
+    int n;
+    int nBlock;
+    float dir;
+    size_t shared_mem_size;
+    size_t global_work_size[3];
+    size_t local_work_size[3];
+    cl_device_id device_id;
+    cl_context context;
+    cl_command_queue commands;
+    cl_program program;
+    cl_kernel kernel;
+    cl_mem input, output, sync_in, sync_out;
+    cl_platform_id platform;
+    char *kernelSource;
+};
 
 #define M_2_PI 6.28318530718f
 #define M_PI 3.14159265359f

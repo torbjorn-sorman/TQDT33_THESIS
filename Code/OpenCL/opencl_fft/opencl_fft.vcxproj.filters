@@ -26,7 +26,7 @@
     <ClCompile Include="helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kernel.cl">
+    <ClCompile Include="kernelGPUSync.cl">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

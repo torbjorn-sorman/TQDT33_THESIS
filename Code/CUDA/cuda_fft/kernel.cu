@@ -1,6 +1,6 @@
 
 //#define PROFILER
-#define IMAGE_TEST
+//#define IMAGE_TEST
 
 #include <stdio.h>
 #include <cuda_runtime.h>

@@ -1,11 +1,14 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+
+
 typedef const float fftDir;
 struct cpx {
     float x;
     float y;
 };
+
 
 #define M_2_PI 6.28318530718f
 #define M_PI 3.14159265359f

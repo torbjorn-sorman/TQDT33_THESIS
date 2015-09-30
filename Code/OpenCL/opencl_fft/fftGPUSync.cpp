@@ -9,14 +9,9 @@ int GPUSync_validate(const int n)
     cpx *data_ref = get_seq(n, data_in);
 
     GPUSync(-1.f, data_in, data_out, n);
+    GPUSync(1.f, data_out, data_in, n);
 
-    int res = checkError(data_out, data_ref, n);
-
-    printf("\n");
-    write_console(data_out, n);
-    printf("\n");
-    write_console(data_ref, n);
-
+    int res = checkError(data_in, data_ref, n, 1);
     free(data_in);
     free(data_out);
     free(data_ref);
@@ -40,7 +35,7 @@ int checkErr(cl_int error, char *msg)
 int checkErr(cl_int error, cl_int args, char *msg)
 {
     if (error != CL_SUCCESS) {
-        printf("Error: %s %d\n", args, msg);
+        printf("Error: %d %s\n", args, msg);
         return 1;
     }
     return 0;
@@ -48,8 +43,8 @@ int checkErr(cl_int error, cl_int args, char *msg)
 
 void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
 {
-    size_t global;
-    size_t local;
+    size_t global_work_size[3] = { 1, 1, 1 };
+    size_t local_work_size[3] = { 1, 1, 1 };
     
     cl_int err = CL_SUCCESS;
     cl_device_id device_id;             // compute device id 
@@ -95,19 +90,37 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     if (err != CL_SUCCESS)
     {
         size_t len;
-        char buffer[2048];
-
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
-        printf("Error: Failed to build program executable!\n");
+        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);        
+        printf("Error: Failed to build program executable! Len: %d\n", len);
+        char *buffer = (char *)malloc(sizeof(char) * len);
         clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, len, buffer, NULL);
-        //clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
         printf("%s\n", buffer);    
+        free(buffer);
         return;    
     }
         
     // Create the compute kernel in the program we wish to run    
     kernel = clCreateKernel(program, "kernelGPUSync", &err);
     if (checkErr(err, "Failed to create compute kernel!") || !kernel) return;
+
+    const int n2 = n / 2;
+    global_work_size[0] = n2;
+    local_work_size[0] = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
+
+    const int nBlock = n / global_work_size[0];
+    size_t shMemSize = sizeof(cpx) * local_work_size[0] * 2;
+
+    // CL_DEVICE_MAX_WORK_GROUP_SIZE
+    // CL_DEVICE_MAX_WORK_ITEM_SIZES
+    /*
+    size_t grp_size;
+    size_t itm_sizes[3];
+    clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(grp_size), &grp_size, NULL);
+    clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(itm_sizes), &itm_sizes, NULL);
+
+    printf("Grp: %u, Itm: %u, %u, %u\n", grp_size, itm_sizes[0], itm_sizes[1], itm_sizes[2]);
+
+    */
 
     // Create the input and output arrays in device memory for our calculation
     input = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cpx) * n, NULL, NULL);
@@ -121,18 +134,7 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(cpx) * n, dev_in, 0, NULL, NULL);
     if (checkErr(err, "Failed to write to source array!")) return;
     
-    int threads, blocks;
-    const int n2 = n / 2;
-    if (n2 > MAX_BLOCK_SIZE) {
-        blocks = n2 / MAX_BLOCK_SIZE;
-        threads = MAX_BLOCK_SIZE;
-    }
-    else {
-        blocks = 1;
-        threads = n2;
-    }
-
-    const int nBlock = n / blocks;
+    
     const float w_angle = dir * (M_2_PI / n);
     const float w_bangle = dir * (M_2_PI / nBlock);
     const cpx scale = {(dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f};
@@ -141,43 +143,46 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     
     // Set the arguments to our compute kernel
     // __global cpx *in, __global cpx *out, const float angle, const float bAngle, const int depth, const int breakSize, const cpx scale, const int nBlocks, const int n2)
-    err = 0;
-    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-    err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
-    err |= clSetKernelArg(kernel, 2, sizeof(float), &w_angle);
-    err |= clSetKernelArg(kernel, 3, sizeof(float), &w_bangle);
-    err |= clSetKernelArg(kernel, 4, sizeof(int), &depth);
-    err |= clSetKernelArg(kernel, 5, sizeof(int), &breakSize);
-    err |= clSetKernelArg(kernel, 6, sizeof(cpx), &scale);
-    err |= clSetKernelArg(kernel, 7, sizeof(int), &nBlock);
-    err |= clSetKernelArg(kernel, 8, sizeof(int), &n2);
+    err = 0;   
+    int arg = 0; 
+    err = clSetKernelArg(kernel, arg++, shMemSize, NULL);
+    err |= clSetKernelArg(kernel, arg++, sizeof(cl_mem), &input);
+    err |= clSetKernelArg(kernel, arg++, sizeof(cl_mem), &output);
+    err |= clSetKernelArg(kernel, arg++, sizeof(float), &w_angle);
+    err |= clSetKernelArg(kernel, arg++, sizeof(float), &w_bangle);
+    err |= clSetKernelArg(kernel, arg++, sizeof(int), &depth);
+    err |= clSetKernelArg(kernel, arg++, sizeof(int), &breakSize);
+    err |= clSetKernelArg(kernel, arg++, sizeof(cpx), &scale);
+    err |= clSetKernelArg(kernel, arg++, sizeof(int), &nBlock);
+    err |= clSetKernelArg(kernel, arg++, sizeof(int), &n2);
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to set kernel arguments! %d\n", err);
         return;
     }
-
+    /*
     // Get the maximum work group size for executing the kernel on the device
-    err = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
+    int cap;
+    err = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(cap), &cap, NULL);
     if (checkErr(err, err, "Failed to retrieve kernel work group info!")) return;
     
-    local = threads;
-    global = blocks;
+    //if (local_work_size[0] * local_work_size[1] * local_work_size[2] > cap)
+    printf("\nDIM\tglobal_work_size\t%d\t%d\t%d\n", global_work_size[0], global_work_size[1], global_work_size[2]);
+    printf("\tlocal_work_size \t%d\t%d\t%d\n", local_work_size[0], local_work_size[1], local_work_size[2]);
+    printf("\tCap: %d\n", cap);
 
-    // Execute the kernel over the entire range of our 1d input data set
-    // using the maximum number of work group items for this device    
-    err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, NULL);
-    if (err) {
-        printf("Error: Failed to execute kernel!\n");
-        return;
-    }
-
+    printf("\nsizeof(size_t) = %lu\n", sizeof(global_work_size));
+    */
+    // Execute the kernel
+    err = clEnqueueNDRangeKernel(commands, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+    if (checkErr(err, err, "Failed to execute kernel!\n")) return;
+    
     // Wait for the command commands to get serviced before reading back results
     clFinish(commands);
 
     // Read back the results from the device to verify the output
     //
-    err = clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(float) * n, dev_out, 0, NULL, NULL);
+    err = clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(cpx) * n, dev_out, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to read output array! %d\n", err);
@@ -186,6 +191,7 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     
     // Shutdown and cleanup
     free(kernelSrc);
+    //clReleaseMemObject(shared);
     clReleaseMemObject(input);
     clReleaseMemObject(output);
     clReleaseProgram(program);

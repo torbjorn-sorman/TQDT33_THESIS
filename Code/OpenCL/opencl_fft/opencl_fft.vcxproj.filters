@@ -13,6 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="OpenCL Files">
+      <UniqueIdentifier>{D011BB44-1BF7-4113-997B-A081035B40D8}</UniqueIdentifier>
+      <Extensions>cl</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fftGPUSync.cpp">
@@ -20,6 +24,9 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kernel.cl">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -33,11 +40,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="kernel.cl">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="helper.cl">
+    <none Include="helper.cl">
       <Filter>Header Files</Filter>
-    </None>
+    </none>
   </ItemGroup>
 </Project>

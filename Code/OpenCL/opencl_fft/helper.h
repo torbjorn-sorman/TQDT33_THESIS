@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <vector>
 #include <fstream>
+#include <CL\cl.h>
 
 #include "definitions.h"
 

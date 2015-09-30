@@ -73,7 +73,7 @@ void GPUSync(fftDir dir, cpx *dev_in, cpx *dev_out, const int n)
     commands = clCreateCommandQueue(context, device_id, 0, &err);
     if (checkErr(err, "Failed to create a command commands!")) return;
         
-    std::string data = getKernel("kernel.cl");
+    std::string data = getKernel("kernelGPUSync.cl");
     
     char *kernelSrc = (char *)malloc(sizeof(char) * (data.size() + 1));
     strcpy_s(kernelSrc, data.size() + 1, data.c_str());    

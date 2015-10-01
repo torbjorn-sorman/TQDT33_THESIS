@@ -27,13 +27,13 @@ __host__ cudaTextureObject_t specifyTexture(cpx *dev_W)
     return texObj;
 }
 
-__global__ void twiddle_factors(cpx *W, cFloat angle, cInt n)
+__global__ void twiddle_factors(cpx *W, float angle, int n)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     SIN_COS_F(angle * i, &W[i].y, &W[i].x);
 }
 
-__global__ void bit_reverse(cpx *in, cpx *out, cFloat scale, cInt lead)
+__global__ void bit_reverse(cpx *in, cpx *out, float scale, int lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -41,7 +41,7 @@ __global__ void bit_reverse(cpx *in, cpx *out, cFloat scale, cInt lead)
     out[p].y = in[i].y * scale;
 }
 
-__global__ void bit_reverse(cpx *x, cFloat dir, cInt lead, cInt n)
+__global__ void bit_reverse(cpx *x, float dir, int lead, int n)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -57,9 +57,9 @@ __global__ void bit_reverse(cpx *x, cFloat dir, cInt lead, cInt n)
     }
 }
 
-__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n)
+__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, int n)
 {
-    cInt n2 = n >> 1;
+    int n2 = n >> 1;
     (*bFFT).x = n;
     (*bFFT).z = (*tFFT).y = (*tFFT).z = (*bTrans).z = (*tTrans).z = 1;
     (*bTrans).x = (*bTrans).y = (n / TILE_DIM);
@@ -108,7 +108,7 @@ __host__ cpx* read_image(char *name, int *n)
     return seq;
 }
 
-__host__ void normalized_cpx_values(cpx* seq, cInt n, double *min_val, double *range, double *avg)
+__host__ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, double *avg)
 {
     double min_v = DBL_MAX;
     double max_v = DBL_MIN;
@@ -125,7 +125,7 @@ __host__ void normalized_cpx_values(cpx* seq, cInt n, double *min_val, double *r
     *avg = sum_v / (double)n;
 }
 
-__host__ void write_normalized_image(char *name, cpx* seq, cInt n)
+__host__ void write_normalized_image(char *name, cpx* seq, int n)
 {
     image image;
     FILE  *fp;
@@ -149,7 +149,7 @@ __host__ void write_normalized_image(char *name, cpx* seq, cInt n)
     free_img(image);
 }
 
-__host__ void normalized_image(cpx* seq, cInt n)
+__host__ void normalized_image(cpx* seq, int n)
 {
     double minVal, range, avg, mag, val;
     normalized_cpx_values(seq, n, &minVal, &range, &avg);
@@ -165,7 +165,7 @@ __host__ void normalized_image(cpx* seq, cInt n)
     }
 }
 
-__host__ void write_image(char *name, char *type, cpx* seq, cInt n)
+__host__ void write_image(char *name, char *type, cpx* seq, int n)
 {
     image image;
     FILE  *fp;
@@ -184,13 +184,13 @@ __host__ void write_image(char *name, char *type, cpx* seq, cInt n)
     free_img(image);
 }
 
-__host__ void clear_image(cpx* seq, cInt n)
+__host__ void clear_image(cpx* seq, int n)
 {
     for (int i = 0; i < n; ++i)
         seq[i] = make_cuFloatComplex(1.f, 1.f);
 }
 
-__host__ void cpPixel(cInt px, cInt px2, cCpx *in, cpx *out)
+__host__ void cpPixel(int px, int px2, cpx *in, cpx *out)
 {
     int p, p2;
     p = px * 3;
@@ -200,7 +200,7 @@ __host__ void cpPixel(cInt px, cInt px2, cCpx *in, cpx *out)
     out[p + 2] = in[p2 + 2];
 }
 
-__host__ cpx* fftShift(cpx *seq, cInt n)
+__host__ cpx* fftShift(cpx *seq, int n)
 {
     cpx *out = (cpx *)malloc(sizeof(cpx)*n*n);
     int px1, px2;
@@ -224,7 +224,7 @@ __host__ cpx* fftShift(cpx *seq, cInt n)
     return out;
 }
 
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n)
+__global__ void _kernelTranspose(cpx *in, cpx *out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
@@ -245,7 +245,7 @@ __global__ void _kernelTranspose(cpx *in, cpx *out, cInt n)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-__global__ void _kernelTranspose(cuSurf in, cuSurf out, cInt n)
+__global__ void _kernelTranspose(cuSurf in, cuSurf out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];

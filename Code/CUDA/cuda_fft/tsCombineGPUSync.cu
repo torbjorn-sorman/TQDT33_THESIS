@@ -1,11 +1,11 @@
 #include "tsCombineGPUSync.cuh"
 
-__global__ void _kernelGPUSync(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cCpx scale, cInt nBlocks, cInt n2);
-//__global__ void _kernelGPUSync2D(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n);
-__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
-__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
+__global__ void _kernelGPUSync(cpx *in, cpx *out, float angle, float bAngle, int depth, int breakSize, cpx scale, int nBlocks, int n2);
+//__global__ void _kernelGPUSync2D(cpx *in, cpx *out, float angle, float bAngle, int depth, int rowWise, cpx scale, int n);
+__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
+__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
 
-__host__ int tsCombineGPUSync_Validate(cInt n)
+__host__ int tsCombineGPUSync_Validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -17,7 +17,7 @@ __host__ int tsCombineGPUSync_Validate(cInt n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsCombineGPUSync_Performance(cInt n)
+__host__ double tsCombineGPUSync_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -34,7 +34,7 @@ __host__ double tsCombineGPUSync_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void test2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, cInt sinus, cInt n)
+__host__ void test2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n)
 {
     if (sinus) {
         *in = get_sin_img(n);
@@ -61,7 +61,7 @@ __host__ void test2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
     cudaFree(*dev_o);
 }
 
-__host__ void test2DRun(fftDir dir, cpx *in, cpx *dev_in, cpx *dev_out, char *image_name, char *type, size_t size, cInt write, cInt norm, cInt n)
+__host__ void test2DRun(fftDir dir, cpx *in, cpx *dev_in, cpx *dev_out, char *image_name, char *type, size_t size, int write, int norm, int n)
 {
     tsCombineGPUSync2D(dir, dev_in, dev_out, n);
     if (write) {
@@ -78,7 +78,7 @@ __host__ void test2DRun(fftDir dir, cpx *in, cpx *dev_in, cpx *dev_out, char *im
     }
 }
 
-__host__ int test2DCompare(cpx *in, cCpx *ref, cpx *dev, size_t size, cInt len)
+__host__ int test2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
 {
     cudaMemcpy(in, dev, size, cudaMemcpyDeviceToHost);
     for (int i = 0; i < len; ++i) {
@@ -92,7 +92,7 @@ __host__ int test2DCompare(cpx *in, cCpx *ref, cpx *dev, size_t size, cInt len)
 #define YES 1
 #define NO 0
 
-__host__ int tsCombineGPUSync2D_Test(cInt n)
+__host__ int tsCombineGPUSync2D_Test(int n)
 {
     double measures[NUM_PERFORMANCE];
     char *image_name = "splash";
@@ -123,33 +123,39 @@ configurations.
 */
 
 // Fast in block FFT when (partial) list fits shared memory combined with a general intra-block synchronizing algorithm using global memory.
-__host__ void tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
+__host__ void tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
     int threads, blocks;
-    cInt n2 = n / 2;
+    int n2 = n / 2;
     set_block_and_threads(&blocks, &threads, n2);
 
     if (!checkValidConfig(blocks, n))
         return;
 
-    cInt nBlock = n / blocks;
-    cFloat w_angle = dir * (M_2_PI / n);
-    cFloat w_bangle = dir * (M_2_PI / nBlock);
-    cCpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    int nBlock = n / blocks;
+    float w_angle = dir * (M_2_PI / n);
+    float w_bangle = dir * (M_2_PI / nBlock);
+    cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    /*
+    if (n == 4096 || n == 8192) {
+        printf("\nGPUS\t<%d, %d, %u>", blocks, threads, sizeof(cpx) * nBlock);
+        printf("(cpx*,cpx*,%f,%f,%d,%d,cpx,%d,%d)\n", w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), blocks, n2);
+    }
+    */
     _kernelGPUSync KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, log2_32(n), log2_32(MAX_BLOCK_SIZE), scale, blocks, n2);
     cudaDeviceSynchronize();
 }
 
 // Fast in block 2D FFT when (partial) list fits shared memory combined with a general algorithm using global memory. Partially CPU synced and partially GPU-intra-block syncronized.
-__host__ void tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
+__host__ void tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, int n)
 {
     dim3 threads, blocks, threads_trans, blocks_trans;
     set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, n);
 
-    cCpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    cInt nBlock = n / blocks.y;
-    cFloat w_angle = dir * (M_2_PI / n);
-    cFloat w_bangle = dir * (M_2_PI / nBlock);
+    cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    int nBlock = n / blocks.y;
+    float w_angle = dir * (M_2_PI / n);
+    float w_bangle = dir * (M_2_PI / nBlock);
         
     if (n > 256) {
         _kernelGPUSync2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (dev_in, dev_out, w_angle, w_bangle, log2_32(n), scale, n);
@@ -174,7 +180,7 @@ __host__ void tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n)
 }
 
 // Move to helper!
-__device__ static __inline__ void init_sync2d(cInt tid, cInt blocks)
+__device__ static __inline__ void init_sync2d(int tid, int blocks)
 {
     if (tid < blocks) {
         _sync_array_2din[blockIdx.x][tid] = 0;
@@ -183,7 +189,7 @@ __device__ static __inline__ void init_sync2d(cInt tid, cInt blocks)
 }
 
 // Move to helper!
-__device__ static __inline__ void __gpu_sync2d(cInt goal)
+__device__ static __inline__ void __gpu_sync2d(int goal)
 {
     volatile int *in = _sync_array_2din[blockIdx.x];
     volatile int *out = _sync_array_2dout[blockIdx.x];
@@ -201,7 +207,7 @@ __device__ static __inline__ void __gpu_sync2d(cInt goal)
     SYNC_THREADS;
 }
 
-__device__ static __inline__ void inner_kernel(cpx *in, cpx *out, cFloat angle, cInt steps, cInt tid, cUInt lmask, cUInt pmask, cInt dist, cInt blocks)
+__device__ static __inline__ void inner_kernel(cpx *in, cpx *out, float angle, int steps, int tid, unsigned int lmask, unsigned int pmask, int dist, int blocks)
 {
     cpx w;
     int in_low = tid + (tid & lmask);
@@ -213,7 +219,7 @@ __device__ static __inline__ void inner_kernel(cpx *in, cpx *out, cFloat angle, 
     __gpu_sync(blocks + steps);
 }
 
-__device__ static __inline__ void inner_kernel_2d(cpx *in, cpx *out, cFloat angle, cInt steps, cInt tid, cUInt lmask, cUInt pmask, cInt dist, cInt blocks)
+__device__ static __inline__ void inner_kernel_2d(cpx *in, cpx *out, float angle, int steps, int tid, unsigned int lmask, unsigned int pmask, int dist, int blocks)
 {
     cpx w;
     int in_low = tid + (tid & lmask);
@@ -226,7 +232,7 @@ __device__ static __inline__ void inner_kernel_2d(cpx *in, cpx *out, cFloat angl
     __gpu_sync2d(blocks + steps);
 }
 
-__device__ static __inline__ int algorithm_complete(cpx *in, cpx *out, cInt bit_start, cInt breakSize, cFloat angle, cInt nBlocks, cInt n2)
+__device__ static __inline__ int algorithm_complete(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
 {
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     int dist = n2;
@@ -241,7 +247,7 @@ __device__ static __inline__ int algorithm_complete(cpx *in, cpx *out, cInt bit_
     return breakSize + 1;
 }
 
-__device__ static __inline__ int algorithm_complete_2d(cpx *in, cpx *out, cInt bit_start, cInt breakSize, cFloat angle, cInt nBlocks, cInt n2)
+__device__ static __inline__ int algorithm_complete_2d(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
 {
     int tid = (blockIdx.y * blockDim.x + threadIdx.x);
     int dist = n2;
@@ -256,11 +262,11 @@ __device__ static __inline__ int algorithm_complete_2d(cpx *in, cpx *out, cInt b
     return breakSize + 1;
 }
 
-__device__ static __inline__ void algorithm_partial(cpx *shared, cInt in_high, cFloat angle, cInt bit)
+__device__ static __inline__ void algorithm_partial(cpx *shared, int in_high, float angle, int bit)
 {
     cpx w, in_lower, in_upper;
-    cInt i = (threadIdx.x << 1);
-    cInt ii = i + 1;
+    int i = (threadIdx.x << 1);
+    int ii = i + 1;
     for (int steps = 0; steps < bit; ++steps) {
         in_lower = shared[threadIdx.x];
         in_upper = shared[in_high];
@@ -271,13 +277,13 @@ __device__ static __inline__ void algorithm_partial(cpx *shared, cInt in_high, c
     }
 }
 
-__device__ static __inline__ void mem_gtos_col(cInt low, cInt high, cInt global_low, cInt offsetHigh, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_gtos_col(int low, int high, int global_low, int offsetHigh, cpx *shared, cpx *global)
 {
     shared[low] = global[global_low];
     shared[high] = global[global_low + offsetHigh];  
 }
 
-__device__ static __inline__ void mem_stog_db_col(cInt shared_low, cInt shared_high, cInt offset, cUInt lead, cpx scale, cpx *shared, cpx *global, cInt n)
+__device__ static __inline__ void mem_stog_db_col(int shared_low, int shared_high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global, int n)
 {
     int row_low = BIT_REVERSE(shared_low + offset, lead);
     int row_high = BIT_REVERSE(shared_high + offset, lead);
@@ -285,10 +291,10 @@ __device__ static __inline__ void mem_stog_db_col(cInt shared_low, cInt shared_h
     global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scale);
 }
 
-__global__ void _kernelGPUSync2D(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt rowWise, cpx scale, cInt n)
+__global__ void _kernelGPUSync2D(cpx *in, cpx *out, float angle, float bAngle, int depth, int rowWise, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
-    cInt global_offset = n * blockIdx.x;
+    int global_offset = n * blockIdx.x;
     int bit = depth;
     int in_high = n >> 1;
     /*
@@ -312,10 +318,10 @@ __global__ void _kernelGPUSync2D(cpx *in, cpx *out, cFloat angle, cFloat bAngle,
         mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, out, n);
 }
 
-__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+__global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
-    cInt global_offset = n * blockIdx.x;
+    int global_offset = n * blockIdx.x;
     int bit = depth;
     int in_high = n >> 1;
     int offset = blockIdx.y * blockDim.x * 2;
@@ -326,7 +332,7 @@ __global__ void _kernelGPUSync2DRow(cpx *in, cpx *out, cFloat angle, cFloat bAng
     mem_stog_db(threadIdx.x, in_high, offset, 32 - depth, scale, shared, &(out[global_offset]));
 }
 
-__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+__global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
     int bit = depth;
@@ -339,7 +345,7 @@ __global__ void _kernelGPUSync2DCol(cpx *in, cpx *out, cFloat angle, cFloat bAng
     mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, out, n);
 }
 
-__global__ void _kernelGPUSync(cpx *in, cpx *out, cFloat angle, cFloat bAngle, cInt depth, cInt breakSize, cCpx scale, cInt nBlocks, cInt n2)
+__global__ void _kernelGPUSync(cpx *in, cpx *out, float angle, float bAngle, int depth, int breakSize, cpx scale, int nBlocks, int n2)
 {
     extern __shared__ cpx shared[];
     int bit = depth;

@@ -6,9 +6,9 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernelTSB48K(cpx *in, cpx *out, cInt depth, cFloat angle, const cpx scale, cInt n);
+__global__ void _kernelTSB48K(cpx *in, cpx *out, int depth, float angle, const cpx scale, int n);
 
-__host__ int tsTobb_SB_Validate(cInt n)
+__host__ int tsTobb_SB_Validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -21,7 +21,7 @@ __host__ int tsTobb_SB_Validate(cInt n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsTobb_SB_Performance(cInt n)
+__host__ double tsTobb_SB_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -38,21 +38,21 @@ __host__ double tsTobb_SB_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsTobb_SB(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
+__host__ void tsTobb_SB(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
     int threadsPerBlock, numBlocks;
-    cFloat w_angle = dir * (M_2_PI / n);
+    float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     set_block_and_threads(&numBlocks, &threadsPerBlock, n / 2);
     _kernelTSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * n)(*dev_in, *dev_out, log2_32(n), w_angle, scale, n);
     cudaDeviceSynchronize();
 }
 
-__global__ void _kernelTSB48K(cpx *in, cpx *out, cInt depth, cFloat angle, const cpx scale, cInt n)
+__global__ void _kernelTSB48K(cpx *in, cpx *out, int depth, float angle, const cpx scale, int n)
 {
     extern __shared__ cpx shared[];
-    cInt tid = (blockIdx.x * blockDim.x + threadIdx.x);
-    cInt lead = 32 - depth;
+    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    int lead = 32 - depth;
     int bit = depth;
     int dist = n;
     int lower;

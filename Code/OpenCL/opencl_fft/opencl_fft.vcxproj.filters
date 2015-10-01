@@ -19,29 +19,32 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="fftGPUSync.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kernelGPUSync.cl">
+    <ClCompile Include="fftOpenCL.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kernelGPUSync.cl">
+      <Filter>OpenCL Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kernelPartSync.cl">
+      <Filter>OpenCL Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fftGPUSync.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="definitions.h" />
     <ClInclude Include="helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fftOpenCL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <none Include="helper.cl">
-      <Filter>Header Files</Filter>
+    <none Include="kernelHelper.cl">
+      <Filter>OpenCL Files</Filter>
     </none>
   </ItemGroup>
 </Project>

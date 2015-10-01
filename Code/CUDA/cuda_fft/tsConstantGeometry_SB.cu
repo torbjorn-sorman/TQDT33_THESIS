@@ -8,9 +8,9 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _kernelCGSB48K(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, unsigned int lead, cInt n);
+__global__ void _kernelCGSB48K(cpx *in, cpx *out, float angle, const cpx scale, int depth, unsigned int lead, int n);
 
-__host__ int tsConstantGeometry_SB_Validate(cInt n)
+__host__ int tsConstantGeometry_SB_Validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
@@ -23,7 +23,7 @@ __host__ int tsConstantGeometry_SB_Validate(cInt n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_SB_Performance(cInt n)
+__host__ double tsConstantGeometry_SB_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -40,26 +40,26 @@ __host__ double tsConstantGeometry_SB_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsConstantGeometry_SB(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n)
+__host__ void tsConstantGeometry_SB(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
 
     int threadsPerBlock, numBlocks;
-    cFloat w_angle = dir * (M_2_PI / n);
+    float w_angle = dir * (M_2_PI / n);
     const cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    cInt depth = log2_32(n);
+    int depth = log2_32(n);
     set_block_and_threads(&numBlocks, &threadsPerBlock, n / 2);
     _kernelCGSB48K KERNEL_ARGS3(numBlocks, threadsPerBlock, sizeof(cpx) * n)(*dev_in, *dev_out, w_angle, scale, depth, 32 - depth, n);
     cudaDeviceSynchronize();
 }
 
-__global__ void _kernelCGSB48K(cpx *in, cpx *out, cFloat angle, const cpx scale, cInt depth, cUInt lead, cInt n)
+__global__ void _kernelCGSB48K(cpx *in, cpx *out, float angle, const cpx scale, int depth, unsigned int lead, int n)
 {
     extern __shared__ cpx shared[];
     cpx w, in_lower, in_upper;
-    cInt tid = (blockIdx.x * blockDim.x + threadIdx.x);
-    cInt in_high = (n >> 1) + tid;
-    cInt i = (tid << 1);
-    cInt ii = i + 1;
+    int tid = (blockIdx.x * blockDim.x + threadIdx.x);
+    int in_high = (n >> 1) + tid;
+    int i = (tid << 1);
+    int ii = i + 1;
 
     /* Move (bit-reversed?) Global to Shared */
     mem_gtos_db(tid, in_high, 0, lead, shared, in);

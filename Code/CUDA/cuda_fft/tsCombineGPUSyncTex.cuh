@@ -11,8 +11,8 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__host__ void   tsCombineGPUSyncTex2D(fftDir dir, cuSurf surfIn, cuSurf surfOut, cInt n);
+__host__ void   tsCombineGPUSyncTex2D(fftDir dir, cuSurf surfIn, cuSurf surfOut, int n);
 
-__host__ int    tsCombineGPUSyncTex2D_Test(cInt n);
+__host__ int    tsCombineGPUSyncTex2D_Test(int n);
 
 #endif

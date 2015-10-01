@@ -1,3 +1,6 @@
+#ifndef HELPER_H
+#define HELPER_H
+
 #include <Windows.h>
 #include <vector>
 #include <fstream>
@@ -44,8 +47,17 @@ static __inline int log2_32(int value)
 static __inline cl_int oclExecute(oclArgs *args)
 {
     cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, 3, NULL, args->global_work_size, args->local_work_size, 0, NULL, NULL);
-    clFinish(args->commands);
+    if (err != CL_SUCCESS)
+        return err;
+    err = clFinish(args->commands);
     return err;
+}
+
+static __inline void swap(cl_mem *a, cl_mem *b)
+{
+    cl_mem *c = a;
+    *a = *b;
+    *b = *c;
 }
 
 int checkErr(cl_int error, char *msg);
@@ -53,3 +65,5 @@ int checkErr(cl_int error, cl_int args, char *msg);
 
 cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args);
 void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error);
+
+#endif

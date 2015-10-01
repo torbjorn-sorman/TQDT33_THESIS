@@ -10,11 +10,11 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__host__ void   tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, cInt n);
-__host__ void   tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, cInt n);
+__host__ void   tsCombineGPUSync(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
+__host__ void   tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, int n);
 
-__host__ int    tsCombineGPUSync_Validate(cInt n);
-__host__ double tsCombineGPUSync_Performance(cInt n);
-__host__ int    tsCombineGPUSync2D_Test(cInt n);
+__host__ int    tsCombineGPUSync_Validate(int n);
+__host__ double tsCombineGPUSync_Performance(int n);
+__host__ int    tsCombineGPUSync2D_Test(int n);
 
 #endif

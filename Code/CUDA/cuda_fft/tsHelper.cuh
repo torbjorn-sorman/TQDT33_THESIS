@@ -31,7 +31,7 @@ __device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
 __device__ volatile int _sync_array_2din[8192][32]; // assume block dim >= 256 AND rows <= 8192
 __device__ volatile int _sync_array_2dout[8192][32];
 
-__device__ static __inline__ void init_sync(cInt tid, cInt blocks)
+__device__ static __inline__ void init_sync(int tid, int blocks)
 {
     if (tid < blocks) {
         _sync_array_in[tid] = 0;
@@ -39,7 +39,7 @@ __device__ static __inline__ void init_sync(cInt tid, cInt blocks)
     }
 }
 
-__device__ static __inline__ void __gpu_sync(cInt goal)
+__device__ static __inline__ void __gpu_sync(int goal)
 {
     int tid = threadIdx.x;
     int bid = blockIdx.x;
@@ -66,7 +66,7 @@ __host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
     *out = tmp;
 }
 
-__host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, cInt l)
+__host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
@@ -117,7 +117,7 @@ __device__ static __inline__ void mem_stog_tb(int low, int high, int offset, uns
     global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, lead)], scale);
 }
 
-__host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, cInt size)
+__host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, int size)
 {
     if (size > MAX_BLOCK_SIZE) {
         *numBlocks = size / MAX_BLOCK_SIZE;
@@ -133,13 +133,13 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
 // In place swapping is problematic over several blocks and is not the task of this thesis work (solving block sync)
 
 // Transpose data set with dimensions n x n
-__global__ void _kernelTranspose(cpx *in, cpx *out, cInt n);
-__global__ void _kernelTranspose(cuSurf in, cuSurf out, cInt n);
+__global__ void _kernelTranspose(cpx *in, cpx *out, int n);
+__global__ void _kernelTranspose(cuSurf in, cuSurf out, int n);
 
 #define NO_STREAMING_MULTIPROCESSORS 7
 
 // The limit is number of SMs but some configuration can run one step beyond that limit when running with release config.
-__host__ static __inline int checkValidConfig(cInt blocks, cInt n)
+__host__ static __inline int checkValidConfig(int blocks, int n)
 {
     if (blocks > NO_STREAMING_MULTIPROCESSORS) {
         switch (MAX_BLOCK_SIZE)
@@ -156,17 +156,17 @@ __host__ static __inline int checkValidConfig(cInt blocks, cInt n)
 
 __host__ void checkCudaError();
 __host__ void checkCudaError(char *msg);
-__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, cInt n);
+__host__ void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, int n);
 __host__ cpx* read_image(char *name, int *n);
-__host__ void write_image(char *name, char *type, cpx* seq, cInt n);
-__host__ void write_normalized_image(char *name, cpx* seq, cInt n);
-__host__ void normalized_image(cpx* seq, cInt n);
-__host__ cpx *fftShift(cpx *seq, cInt n);
-__host__ void clear_image(cpx* seq, cInt n);
+__host__ void write_image(char *name, char *type, cpx* seq, int n);
+__host__ void write_normalized_image(char *name, cpx* seq, int n);
+__host__ void normalized_image(cpx* seq, int n);
+__host__ cpx *fftShift(cpx *seq, int n);
+__host__ void clear_image(cpx* seq, int n);
 
 // Kernel functions
-__global__ void twiddle_factors(cpx *W, cFloat angle, cInt n);
-__global__ void bit_reverse(cpx *in, cpx *out, cFloat scale, cInt lead);
-__global__ void bit_reverse(cpx *seq, fftDir dir, cInt lead, cInt n);
+__global__ void twiddle_factors(cpx *W, float angle, int n);
+__global__ void bit_reverse(cpx *in, cpx *out, float scale, int lead);
+__global__ void bit_reverse(cpx *seq, fftDir dir, int lead, int n);
 
 #endif

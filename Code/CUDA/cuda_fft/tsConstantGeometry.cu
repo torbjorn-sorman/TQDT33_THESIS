@@ -6,9 +6,9 @@
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 
-__global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, cInt n2);
+__global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, int n2);
 
-__host__ int tsConstantGeometry_Validate(cInt n)
+__host__ int tsConstantGeometry_Validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
     fftMalloc(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out);
@@ -21,7 +21,7 @@ __host__ int tsConstantGeometry_Validate(cInt n)
     return fftResultAndFree(n, &dev_in, &dev_out, &dev_W, &in, &ref, &out) != 1;
 }
 
-__host__ double tsConstantGeometry_Performance(cInt n)
+__host__ double tsConstantGeometry_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out, *dev_W;
@@ -38,12 +38,12 @@ __host__ double tsConstantGeometry_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void tsConstantGeometry(const fftDir dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, cInt n)
+__host__ void tsConstantGeometry(const fftDir dir, cpx **dev_in, cpx **dev_out, cpx *dev_W, int n)
 {
     int steps, depth, threadsPerBlock, numBlocks;
-    cFloat w_angle = dir * (M_2_PI / n);
-    cFloat scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
-    cInt n2 = (n / 2);
+    float w_angle = dir * (M_2_PI / n);
+    float scale = dir == FFT_FORWARD ? 1.f : 1.f / n;
+    int n2 = (n / 2);
 
     depth = log2_32(n);
 
@@ -66,7 +66,7 @@ __host__ void tsConstantGeometry(const fftDir dir, cpx **dev_in, cpx **dev_out, 
     cudaDeviceSynchronize();
 }
 
-__global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, cInt n2)
+__global__ void _tsConstantGeometry_Body(cpx *in, cpx *out, cpx *W, unsigned int mask, int n2)
 {
     int l = (blockIdx.x * blockDim.x + threadIdx.x);
     int i = l * 2;

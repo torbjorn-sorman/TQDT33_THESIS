@@ -170,12 +170,10 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
     args->global_work_size[0] = args->global_work_size[1] = args->global_work_size[2] = 1; 
     args->local_work_size[0] = args->local_work_size[1] = args->local_work_size[2] = 1;
 
-    err = clGetPlatformIDs(1, &args->platform, NULL);
-    if (err != CL_SUCCESS) return err;
+    if (err = clGetPlatformIDs(1, &args->platform, NULL) != CL_SUCCESS) return err;
     
     // Connect to a compute device    
-    err = clGetDeviceIDs(args->platform, CL_DEVICE_TYPE_GPU, 1, &args->device_id, NULL);
-    if (err != CL_SUCCESS) return err;
+    if (err = clGetDeviceIDs(args->platform, CL_DEVICE_TYPE_GPU, 1, &args->device_id, NULL) != CL_SUCCESS) return err;
 
     // Create a compute context
     args->context = clCreateContext(0, 1, &args->device_id, NULL, NULL, &err);
@@ -199,8 +197,7 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
     if (err != CL_SUCCESS) return err;
 
     // Build the program executable
-    err = clBuildProgram(args->program, 0, NULL, NULL, NULL, NULL);
-    if (err != CL_SUCCESS) {
+    if (err = clBuildProgram(args->program, 0, NULL, NULL, NULL, NULL) != CL_SUCCESS) {
         size_t len;
         clGetProgramBuildInfo(args->program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);        
         char *buffer = (char *)malloc(sizeof(char) * len);
@@ -218,18 +215,19 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
     args->global_work_size[0] = n2;
     args->local_work_size[0] = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
 
-    args->nBlock = args->n / n2;
+    args->nBlock = args->n / args->local_work_size[0];
     args->shared_mem_size = sizeof(cpx) * args->local_work_size[0] * 2;
 
-    // Create the input and output arrays in device memory for our calculation
-    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(cpx) * args->n, NULL, NULL);
-    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(cpx) * args->n, NULL, NULL);
-    args->sync_in = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(int) * MAX_BLOCK_SIZE, NULL, NULL);
-    args->sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sizeof(int) * MAX_BLOCK_SIZE, NULL, NULL);
-    
-    // Write our data set into the input array in device memory
-    err = clEnqueueWriteBuffer(args->commands, args->input, CL_TRUE, 0, sizeof(cpx) * args->n, dev_in, 0, NULL, NULL);
-    if (err != CL_SUCCESS) return err;
+    size_t data_mem_size = sizeof(cpx) * args->n;
+    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, NULL);
+    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, NULL);
+
+    if (dev_in != NULL) {
+        err = clEnqueueWriteBuffer(args->commands, args->input, CL_TRUE, 0, data_mem_size, dev_in, 0, NULL, NULL);
+        if (err != CL_SUCCESS) return err;
+        err = clFinish(args->commands);
+    }
+    return err;
 }
 
 void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error)
@@ -238,13 +236,12 @@ void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error)
     err = clEnqueueReadBuffer(args->commands, args->output, CL_TRUE, 0, sizeof(cpx) * args->n, dev_out, 0, NULL, NULL);
     if (err != CL_SUCCESS) {
         *error = err;
-        printf("\n%d\n", err);
+        printf("\nError: %d Size: %u\n", err, sizeof(cpx) * args->n);
     }
+    *error = clFinish(args->commands);
     free(args->kernelSource);
     clReleaseMemObject(args->input);
     clReleaseMemObject(args->output);
-    clReleaseMemObject(args->sync_in);
-    clReleaseMemObject(args->sync_out);
     clReleaseProgram(args->program);
     clReleaseKernel(args->kernel);
     clReleaseCommandQueue(args->commands);

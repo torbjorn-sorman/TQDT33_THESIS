@@ -20,9 +20,9 @@
 
 #ifndef PROFILER
 
-__host__ double cuFFT_Performance(cInt n);
-__host__ double cuFFT_2D_Performance(cInt n);
-__host__ void toFile(const char *name, const double m[], cInt ms);
+__host__ double cuFFT_Performance(int n);
+__host__ double cuFFT_2D_Performance(int n);
+__host__ void toFile(const char *name, const double m[], int ms);
 
 // Print device properties
 void printDevProp(cudaDeviceProp devProp)
@@ -85,8 +85,7 @@ int main()
     int index = 0;
     double cuFFTm[RUNS];
     double combineFFTm[RUNS];
-    double combineNCSFFTm[RUNS];
-    printf("\n\t\tcuFFT\tComb\tComb GPUS\tComp Tex");
+    printf("\n\t\tcuFFT\tComb");
     printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
         printf("\n%d:", n);
@@ -99,17 +98,12 @@ int main()
         // Combine
         printf("\t%.0f", combineFFTm[index] = tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
-
-        // Combine No CPU Sync
-        printf("\t%.0f", combineNCSFFTm[index] = tsCombineGPUSync_Performance(n));
-        if (tsCombineGPUSync_Validate(n) == 0) printf("!");
         
         ++index;
     }
     printf("\n\n");
     toFile("cuFFT", cuFFTm, RUNS);
     toFile("Block Combine CPU Sync", combineFFTm, RUNS);
-    toFile("Block Combine GPU Sync", combineNCSFFTm, RUNS);
     
     printf("\nDone...");
     getchar();
@@ -119,7 +113,7 @@ int main()
 
 #ifndef PROFILER
 
-__host__ double cuFFT_Performance(cInt n)
+__host__ double cuFFT_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in,*dev_out;
@@ -138,7 +132,7 @@ __host__ double cuFFT_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ double cuFFT_2D_Performance(cInt n)
+__host__ double cuFFT_2D_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *dev_in, *dev_out;
@@ -156,7 +150,7 @@ __host__ double cuFFT_2D_Performance(cInt n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-__host__ void toFile(const char *name, const double m[], cInt ms)
+__host__ void toFile(const char *name, const double m[], int ms)
 {
     char filename[64] = "";
     FILE *f;

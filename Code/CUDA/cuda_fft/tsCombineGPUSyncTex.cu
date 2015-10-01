@@ -1,9 +1,9 @@
 #include "tsCombineGPUSyncTex.cuh"
 
-__global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
-__global__ void _kernelGPUSyncTex2DCol(cuSurf surfIn, cuSurf surfOut, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n);
+__global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n);
+__global__ void _kernelGPUSyncTex2DCol(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n);
 
-__host__ void testTex2DSetup(cpx **in, cpx **ref, size_t *size, char *image_name, cInt sinus, cInt n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
+__host__ void testTex2DSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
 {
     if (sinus) {
         *in = get_sin_img(n);
@@ -44,7 +44,7 @@ __host__ void testTex2DShakedown(cpx **in, cpx **ref, cuSurf *sObjIn, cuSurf *sO
     cudaFreeArray(*cuAOut);
 }
 
-__host__ void testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf surfIn, cuSurf surfOut, char *image_name, char *type, size_t size, cInt write, cInt norm, cInt n)
+__host__ void testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf surfIn, cuSurf surfOut, char *image_name, char *type, size_t size, int write, int norm, int n)
 {
     tsCombineGPUSyncTex2D(dir, surfIn, surfOut, n);
     if (write) {
@@ -61,7 +61,7 @@ __host__ void testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf surfIn, c
     }
 }
 
-__host__ int testTex2DCompare(cpx *in, cCpx *ref, cudaArray *dev, size_t size, cInt len)
+__host__ int testTex2DCompare(cpx *in, cpx *ref, cudaArray *dev, size_t size, int len)
 {
     cudaMemcpyFromArray(in, dev, 0, 0, size, cudaMemcpyDeviceToHost);
     for (int i = 0; i < len; ++i) {
@@ -75,7 +75,7 @@ __host__ int testTex2DCompare(cpx *in, cCpx *ref, cudaArray *dev, size_t size, c
 #define YES 1
 #define NO 0
 
-__host__ int tsCombineGPUSyncTex2D_Test(cInt n)
+__host__ int tsCombineGPUSyncTex2D_Test(int n)
 {
     double measures[NUM_PERFORMANCE];
     char *image_name = "shore";
@@ -104,15 +104,15 @@ __host__ int tsCombineGPUSyncTex2D_Test(cInt n)
 }
 
 // Fast in block 2D FFT when (partial) list fits shared memory combined with a general algorithm using global memory. Partially CPU synced and partially GPU-intra-block syncronized.
-__host__ void tsCombineGPUSyncTex2D(fftDir dir, cuSurf surfIn, cuSurf surfOut, cInt n)
+__host__ void tsCombineGPUSyncTex2D(fftDir dir, cuSurf surfIn, cuSurf surfOut, int n)
 {
     dim3 threads, blocks, threads_trans, blocks_trans;
     set2DBlocksNThreads(&blocks, &threads, &blocks_trans, &threads_trans, n);
 
-    cCpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    cInt nBlock = n / blocks.y;
-    cFloat w_angle = dir * (M_2_PI / n);
-    cFloat w_bangle = dir * (M_2_PI / nBlock);
+    cpx scale = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    int nBlock = n / blocks.y;
+    float w_angle = dir * (M_2_PI / n);
+    float w_bangle = dir * (M_2_PI / nBlock);
 
     _kernelGPUSyncTex2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (surfIn, surfOut, w_angle, w_bangle, log2_32(n), scale, n);
     cudaDeviceSynchronize();
@@ -120,11 +120,11 @@ __host__ void tsCombineGPUSyncTex2D(fftDir dir, cuSurf surfIn, cuSurf surfOut, c
     cudaDeviceSynchronize();
 }
 
-__device__ static __inline__ void algorithm_partial(cpx *shared, cInt in_high, cFloat angle, cInt bit)
+__device__ static __inline__ void algorithm_partial(cpx *shared, int in_high, float angle, int bit)
 {
     cpx w, in_lower, in_upper;
-    cInt i = (threadIdx.x << 1);
-    cInt ii = i + 1;
+    int i = (threadIdx.x << 1);
+    int ii = i + 1;
     for (int steps = 0; steps < bit; ++steps) {
         in_lower = shared[threadIdx.x];
         in_upper = shared[in_high];
@@ -135,19 +135,19 @@ __device__ static __inline__ void algorithm_partial(cpx *shared, cInt in_high, c
     }
 }
 
-__device__ static __inline__ void mem_gtos_row(cInt low, cInt high, cInt offset, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cuSurf surf)
 {
     SURF2D_READ(&(shared[low]), surf, low + offset, blockIdx.x);
     SURF2D_READ(&(shared[high]), surf, high + offset, blockIdx.x);
 }
 
-__device__ static __inline__ void mem_gtos_col(cInt low, cInt high, cInt offset, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cpx *shared, cuSurf surf)
 {
     SURF2D_READ(&(shared[low]), surf, blockIdx.x, low + offset);
     SURF2D_READ(&(shared[high]), surf, blockIdx.x, high + offset);
 }
 
-__device__ static __inline__ void mem_stog_db_row(cInt low, cInt high, cInt offset, cUInt lead, cpx scale, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_db_row(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
 {
     int row_low = BIT_REVERSE(low + offset, lead);
     int row_high = BIT_REVERSE(high + offset, lead);
@@ -155,7 +155,7 @@ __device__ static __inline__ void mem_stog_db_row(cInt low, cInt high, cInt offs
     SURF2D_WRITE(cuCmulf(shared[high], scale), surf, row_high, blockIdx.x);
 }
 
-__device__ static __inline__ void mem_stog_db_col(cInt low, cInt high, cInt offset, cUInt lead, cpx scale, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
 {
     int col_low = BIT_REVERSE(low + offset, lead);
     int col_high = BIT_REVERSE(high + offset, lead);
@@ -163,7 +163,7 @@ __device__ static __inline__ void mem_stog_db_col(cInt low, cInt high, cInt offs
     SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, col_high);
 }
 
-__global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+__global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
     int bit = depth;
@@ -176,7 +176,7 @@ __global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, cFloat ang
     mem_stog_db_row(threadIdx.x, in_high, offset, 32 - depth, scale, shared, surfOut);
 }
 
-__global__ void _kernelGPUSyncTex2DCol(cuSurf surfIn, cuSurf surfOut, cFloat angle, cFloat bAngle, cInt depth, cpx scale, cInt n)
+__global__ void _kernelGPUSyncTex2DCol(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
     int bit = depth;

@@ -1,5 +1,5 @@
-#ifndef HELPER_CL
-#define HELPER_CL
+#ifndef KERNELHELPER_CL
+#define KERNELHELPER_CL
 
 typedef struct {
     float x;

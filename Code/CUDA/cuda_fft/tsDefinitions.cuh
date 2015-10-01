@@ -6,17 +6,12 @@
 // Save space for better overview when many params
 typedef cuFloatComplex cpx;
 typedef cudaSurfaceObject_t cuSurf;
-typedef const cpx cCpx;
-typedef const float fftDir;
-typedef const int cInt;
-typedef const unsigned int cUInt;
-typedef const float cFloat;
-typedef const double cDouble;
+typedef float fftDir;
 
-typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, cInt n);
-typedef void(*transposeFunction)(cpx **seq, cInt, cInt n);
-typedef void(*twiddleFunction)(cpx *W, cInt, cInt n);
-typedef void(*bitReverseFunction)(cpx *seq, cDouble dir, cInt lead, cInt n);
+typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, int n);
+typedef void(*transposeFunction)(cpx **seq, int, int n);
+typedef void(*twiddleFunction)(cpx *W, int, int n);
+typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 
 #define M_2_PI 6.28318530718f
 #define M_PI 3.14159265359f

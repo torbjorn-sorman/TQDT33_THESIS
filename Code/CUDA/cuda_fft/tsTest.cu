@@ -25,12 +25,12 @@ double stopTimer()
 }
 
 // Useful functions for debugging
-void console_print(cpx *seq, cInt n)
+void console_print(cpx *seq, int n)
 {
     for (int i = 0; i < n; ++i) printf("%f\t%f\n", seq[i].x, seq[i].y);
 }
 
-void console_print_cpx_img(cpx *seq, cInt n)
+void console_print_cpx_img(cpx *seq, int n)
 {
     printf("\n");
     for (int y = 0; y < n; ++y) {
@@ -48,7 +48,7 @@ void console_print_cpx_img(cpx *seq, cInt n)
     }
 }
 
-unsigned int power(cUInt base, cUInt exp)
+unsigned int power(unsigned int base, unsigned int exp)
 {
     if (exp == 0)
         return 1;
@@ -59,12 +59,12 @@ unsigned int power(cUInt base, cUInt exp)
     return value;
 }
 
-unsigned int power2(cUInt exp)
+unsigned int power2(unsigned int exp)
 {
     return power(2, exp);
 }
 
-int checkError(cpx *seq, cpx *ref, float refScale, cInt n, int print)
+int checkError(cpx *seq, cpx *ref, float refScale, int n, int print)
 {
     int j;
     double re, im, i_val, r_val;
@@ -79,22 +79,22 @@ int checkError(cpx *seq, cpx *ref, float refScale, cInt n, int print)
     return re > ERROR_MARGIN || im > ERROR_MARGIN;
 }
 
-int checkError(cpx *seq, cpx *ref, cInt n, int print)
+int checkError(cpx *seq, cpx *ref, int n, int print)
 {
     return checkError(seq, ref, 1.f, n, print);
 }
 
-int checkError(cpx *seq, cpx *ref, cInt n)
+int checkError(cpx *seq, cpx *ref, int n)
 {
     return checkError(seq, ref, n, 0);
 }
 
-cpx *get_seq(cInt n)
+cpx *get_seq(int n)
 {
     return get_seq(n, 0);
 }
 
-cpx *get_seq(cInt n, cInt sinus)
+cpx *get_seq(int n, int sinus)
 {
     int i;
     cpx *seq;
@@ -106,7 +106,7 @@ cpx *get_seq(cInt n, cInt sinus)
     return seq;
 }
 
-cpx *get_seq(cInt n, cpx *src)
+cpx *get_seq(int n, cpx *src)
 {
     int i;
     cpx *seq;
@@ -118,7 +118,7 @@ cpx *get_seq(cInt n, cpx *src)
     return seq;
 }
 
-cpx *get_sin_img(cInt n)
+cpx *get_sin_img(int n)
 {
     cpx *seq;
     seq = (cpx *)malloc(sizeof(cpx) * n * n);

@@ -42,24 +42,24 @@ __host__ double tsCombine_Performance(int n)
 // Seven physical "cores" that can run blocks in "parallel" (and most important sync threads in a block). 1024 is the thread limit per physical core.
 // Essentially (depending on scheduling and other factors) # blocks fewer than HW_LIMIT can be synched, any # above is not trivially solved. cuFFT solves this.
 #define HW_LIMIT (1024 / MAX_BLOCK_SIZE) * 7
+//#define THREE_KERNELS
 
 __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
     int threads, blocks;
     int depth = log2_32(n);
-    int n2 = (n / 2);
-    int breakSize = log2_32(MAX_BLOCK_SIZE);
+    const int lead = 32 - depth;
+    const int n2 = (n / 2);
+    const int breakSize = log2_32(MAX_BLOCK_SIZE);
     cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     set_block_and_threads(&blocks, &threads, n2);
-    int nBlock = n / blocks;
-    float w_angle = dir * (M_2_PI / n);
-    float w_bangle = dir * (M_2_PI / nBlock);
-    int bSize = n2;
-    if (blocks < HW_LIMIT) {
-        // Calculate complete sequence in one launch and syncronize on GPU
-        _kernelGPUS KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, depth, 32 - depth, breakSize, scaleCpx, blocks, n2);
-    }
-    else {
+    int numBlocks = blocks;
+    const int nBlock = n / blocks;    
+    const float w_angle = dir * (M_2_PI / n);
+    const float w_bangle = dir * (M_2_PI / nBlock);
+    int bSize = n2;   
+     
+    if (blocks >= HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         int steps = 0;
         int bit = depth - 1;
@@ -72,10 +72,16 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
             _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
             cudaDeviceSynchronize();
         }
-        _kernelBlock KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock)(*dev_out, *dev_in, w_bangle, scaleCpx, bit + 1, 32 - depth, nBlock / 2);
-        swap(dev_in, dev_out);        
+        swap(dev_in, dev_out);
+        depth = bit + 1;
+        bSize = nBlock / 2;
+        numBlocks = 1;
     }
+
+    // Calculate complete sequence in one launch and syncronize on GPU
+    _kernelGPUS KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, depth, lead, breakSize, scaleCpx, numBlocks, bSize);
     cudaDeviceSynchronize();
+
 }
 
 // Take no usage of shared mem yet...
@@ -88,12 +94,11 @@ __global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, u
 __global__ void _kernelBlock(cpx *in, cpx *out, float angle, const cpx scale, int depth, unsigned int lead, int n2)
 {
     extern __shared__ cpx shared[];
-    int offset = blockIdx.x * blockDim.x * 2;
-    int in_low = threadIdx.x;
-    int in_high = n2 + in_low;
-    mem_gtos(in_low, in_high, offset, shared, in);
+    int offset = blockIdx.x * blockDim.x * 2;    
+    int in_high = n2 + threadIdx.x;
+    mem_gtos(threadIdx.x, in_high, offset, shared, in);
     algorithm_p(shared, in_high, angle, depth);
-    mem_stog_db(in_low, in_high, offset, lead, scale, shared, out);
+    mem_stog_db(threadIdx.x, in_high, offset, lead, scale, shared, out);
 }
 
 __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, unsigned int pmask, int dist)

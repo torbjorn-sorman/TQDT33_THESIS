@@ -15,11 +15,11 @@ void setupTestData(cpx **din, cpx **dout, cpx **dref, oclArgs *args, fftDir dir,
     args->dir = FFT_FORWARD;
 }
 
-int freeResults(cpx **din, cpx **dout, cpx **dref, const int n)
+int freeResults(cpx **din, cpx **dout, cpx **dref, const int print, const int n)
 {
     int res = 0;
     if (dref != NULL)
-        res = checkError(*din, *dref, n, 1);
+        res = checkError(*din, *dref, n, print);
     if (din != NULL)
         free(*din);
     if (dout != NULL)
@@ -46,7 +46,7 @@ int GPUSync_validate(const int n)
     oclSetup("kernelGPUSync", data_out, &arguments);
     oclRelease(data_in, &arguments, &err);
     if (checkErr(err, err, "Validation failed!")) return err;
-    return freeResults(&data_in, &data_out, &data_ref, n);
+    return freeResults(&data_in, &data_out, &data_ref, 1, n);
 }
 
 double GPUSync_performance(const int n)
@@ -65,7 +65,7 @@ double GPUSync_performance(const int n)
         measurements[i] = stopTimer();
     }
     oclRelease(data_out, &arguments, &err);
-    int res = freeResults(&data_in, &data_out, NULL, n);
+    int res = freeResults(&data_in, &data_out, NULL, 1, n);
     if (checkErr(err, err, "Validation failed!") || res)
         return -1;
     return avg(measurements, 20);
@@ -100,7 +100,7 @@ double PartSync_performance(const int n)
     return -1;
 }
 
-cl_int setupKernel(char *kernelFilename, char *kernelName, const int n, oclArgs *args)
+cl_int setupKernel(const int n, oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
      
@@ -108,9 +108,6 @@ cl_int setupKernel(char *kernelFilename, char *kernelName, const int n, oclArgs 
     cl_device_id device_id;
     cl_context context;
     cl_command_queue commands;
-    cl_program program;
-    cl_kernel kernel;
-    char *kernelSource;
     
     // Get platform id
     if (err = clGetPlatformIDs(1, &platform, NULL) != CL_SUCCESS) return err;
@@ -126,6 +123,19 @@ cl_int setupKernel(char *kernelFilename, char *kernelName, const int n, oclArgs 
     commands = clCreateCommandQueue(context, device_id, 0, &err);
     if (err != CL_SUCCESS) return err;
 
+    args->platform = platform;
+    args->device_id = device_id;
+    args->context = context;
+    args->commands = commands;
+}
+
+cl_int setupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
+{
+    cl_int err = CL_SUCCESS;
+
+    cl_program program;
+    cl_kernel kernel;
+    char *kernelSource;
     // Read kernel file as a char *
     std::string filename = kernelFilename;
     filename += ".cl";
@@ -137,15 +147,15 @@ cl_int setupKernel(char *kernelFilename, char *kernelName, const int n, oclArgs 
     kernelSource = src;
 
     // Create the compute program from the source buffer
-    program = clCreateProgramWithSource(context, 1, (const char **)&src, NULL, &err);    
+    program = clCreateProgramWithSource(args->context, 1, (const char **)&src, NULL, &err);
     if (err != CL_SUCCESS) return err;
 
     // Build the program executable
     if (err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL) != CL_SUCCESS) {
         size_t len;
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+        clGetProgramBuildInfo(program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
         char *buffer = (char *)malloc(sizeof(char) * len);
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, len, buffer, NULL);
+        clGetProgramBuildInfo(program, args->device_id, CL_PROGRAM_BUILD_LOG, len, buffer, NULL);
         printf("\n%s\n", buffer);
         free(buffer);
         return err;
@@ -155,12 +165,6 @@ cl_int setupKernel(char *kernelFilename, char *kernelName, const int n, oclArgs 
     kernel = clCreateKernel(program, kernelName, &err);
     if (err != CL_SUCCESS) return err;
 
-    // If successful, store in the argument struct!
-    args->n = n;
-    args->platform = platform;
-    args->device_id = device_id;
-    args->context = context;
-    args->commands = commands;
     args->program = program;
     args->kernel = kernel;
     args->kernelSource = kernelSource;
@@ -180,7 +184,7 @@ cl_int setupDeviceMemoryData(oclArgs *args, cpx *dev_in)
 
 #define HW_LIMIT (1024 / MAX_BLOCK_SIZE) * 7
 
-cl_int setupWorkGroupsAndMemory(oclArgs *args)
+cl_int setupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
 {   
     cl_int err = CL_SUCCESS;
     const int n2 = args->n / 2;
@@ -198,8 +202,16 @@ cl_int setupWorkGroupsAndMemory(oclArgs *args)
     if (err != CL_SUCCESS) return err;
     cl_mem sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &input);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &output);
+    
+    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &input);
+    checkErr(err, err, "input");
+    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &output);
+    checkErr(err, err, "output");
+
+    err = clSetKernelArg(argsCrossGroups->kernel, 0, sizeof(cl_mem), &input);
+    checkErr(err, err, "CPU input");
+    err = clSetKernelArg(argsCrossGroups->kernel, 1, sizeof(cl_mem), &output);
+    checkErr(err, err, "CPU output");
 
     // If successful, store in the argument struct!
     args->global_work_size = grpDim;
@@ -215,25 +227,25 @@ cl_int setupWorkGroupsAndMemory(oclArgs *args)
     return err;
 }
 
-void setKernelCPUArg(oclArgs *args, float w_angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
+cl_int setKernelCPUArg(oclArgs *args, float w_angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
 {    
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
-    clSetKernelArg(args->kernel, 2, sizeof(float), &w_angle);
-    clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
-    clSetKernelArg(args->kernel, 4, sizeof(unsigned int), &pmask);
-    clSetKernelArg(args->kernel, 5, sizeof(int), &steps);
-    clSetKernelArg(args->kernel, 6, sizeof(int), &dist);
+    cl_int err = CL_SUCCESS;
+    err = clSetKernelArg(args->kernel, 2, sizeof(float), &w_angle);
+    checkErr(err, err, "w_angle");
+    err = clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
+    checkErr(err, err, "lmask");
+    err = clSetKernelArg(args->kernel, 4, sizeof(unsigned int), &pmask);
+    checkErr(err, err, "pmask");
+    err = clSetKernelArg(args->kernel, 5, sizeof(int), &steps);
+    checkErr(err, err, "steps");
+    err = clSetKernelArg(args->kernel, 6, sizeof(int), &dist);
+    checkErr(err, err, "dist");  
+    return err;  
 }
 
-void setKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
+cl_int setKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
 {
     cl_int err = CL_SUCCESS;
-    // (dev_buf *in, dev_buf *out, syn_buf *sync_in, syn_buf *sync_out, grp_buf *shared, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, const int n2)
-    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
-    checkErr(err, err, "input");
-    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
-    checkErr(err, err, "output");
     err = clSetKernelArg(args->kernel, 2, sizeof(cl_mem), &args->sync_in);
     checkErr(err, err, "sync_in");
     err = clSetKernelArg(args->kernel, 3, sizeof(cl_mem), &args->sync_out);
@@ -256,6 +268,7 @@ void setKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int le
     checkErr(err, err, "nBlocks");
     err = clSetKernelArg(args->kernel, 12, sizeof(int), &n2);
     checkErr(err, err, "n2");
+    return err;
 }
 
 cl_int runCombine(oclArgs *argCPU, oclArgs *argGPU)
@@ -266,27 +279,31 @@ cl_int runCombine(oclArgs *argCPU, oclArgs *argGPU)
     const int breakSize = log2_32(MAX_BLOCK_SIZE);
     cpx scaleCpx = {(argCPU->dir == FFT_FORWARD ? 1.f : 1.f / argCPU->n), 0.f};    
     int numBlocks = argCPU->global_work_size / argCPU->local_work_size;
-    const int nBlock = argCPU->n / argCPU->global_work_size;
+    const int nBlock = argCPU->n / numBlocks;
     const float w_angle = argCPU->dir * (M_2_PI / argCPU->n);
     const float w_bangle = argCPU->dir * (M_2_PI / nBlock);
     int bSize = n2;
 
-    if (argCPU->global_work_size >= HW_LIMIT) {
+    if (numBlocks > 1) { //= HW_LIMIT) {
 
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         --depth;
         int steps = 0;
         int dist = n2;
-        setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);        
-        oclExecute(argCPU);
+        cl_int err = setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);        
+        checkErr(err, err, "First blood!");
+        err = oclExecute(argCPU);
+        checkErr(err, err, "Second blood!");
         argGPU->output = argCPU->input;
         argGPU->input  = argCPU->output;
         argCPU->input  = argCPU->output;
         while (--depth > breakSize) {
             dist >>= 1;
             ++steps;
-            setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
-            oclExecute(argCPU);
+            err = setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
+            checkErr(err, err, "War blood!");
+            err = oclExecute(argCPU);
+            checkErr(err, err, "Execute blood!");
         }
         ++depth;
         bSize = nBlock / 2;
@@ -317,23 +334,31 @@ void oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, cl_int *error)
     clReleaseKernel(argGPU->kernel);
     clReleaseKernel(argCPU->kernel);
     clReleaseCommandQueue(argGPU->commands);
-    clReleaseCommandQueue(argCPU->commands);
     clReleaseContext(argGPU->context);
-    clReleaseContext(argCPU->context);
 }
 
 int runPartialSync(const int n)
 {
-    oclArgs argCPU, argGPU;    
+    cl_int err = CL_SUCCESS;
+    oclArgs argGPU;
+    oclArgs argCPU;
     cpx *data_in, *data_out, *data_ref;    
     setupTestData(&data_in, &data_out, &data_ref, &argCPU, FFT_FORWARD, n);
     argGPU.n = argCPU.n;
     argGPU.dir = argCPU.dir;
 
-    setupKernel("kernelPartSync", "kernelCPU", n, &argCPU);
-    setupKernel("kernelPartSync", "kernelGPU", n, &argGPU);
-    
-    setupWorkGroupsAndMemory(&argGPU);
+    setupKernel(n, &argGPU);
+    memcpy(&argCPU, &argGPU, sizeof(oclArgs));
+
+    err = setupProgram("kernelPartSync", "kernelGPU", &argGPU);    
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupProgram("kernelPartSync", "kernelCPU", &argCPU);
+    checkErr(err, err, "Failed to setup CPU Program!");
+
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupWorkGroupsAndMemory(&argGPU, &argCPU);
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupDeviceMemoryData(&argGPU, data_in);
 
     // Kernels must share some features!
     argCPU.global_work_size = argGPU.global_work_size;
@@ -343,18 +368,16 @@ int runPartialSync(const int n)
     argCPU.data_mem_size = argGPU.data_mem_size;
     argCPU.nBlock = argGPU.nBlock;
 
-    setupDeviceMemoryData(&argCPU, data_in);
-
-    printf("Attempt to run with %d global and %d local items.\n", argGPU.global_work_size, argGPU.local_work_size);
-
-    cl_int err = runCombine(&argCPU, &argGPU);
+    
+    
+    err = runCombine(&argCPU, &argGPU);
 
     checkErr(err, err, "Run failed!");
     
     oclRelease(data_out, &argCPU, &argGPU, &err);
     if (checkErr(err, err, "Validation failed!")) return err;    
 
-    write_console(data_out, n);
+    printf("n: %d\t%f & %f\n", n, data_out[1].y, data_out[n - 1].y);
 
-    return freeResults(&data_in, &data_out, &data_ref, n);
+    return freeResults(&data_in, &data_out, &data_ref, 0, n);
 }

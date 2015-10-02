@@ -3,7 +3,7 @@
 #include "helper.h"
 
 #define START 4
-#define END 16
+#define END 65536
 
 int main(int argc, char** argv)
 {

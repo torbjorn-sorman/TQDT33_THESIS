@@ -43,15 +43,14 @@ void algorithm_partial(grp_buf *shared, int in_high, float angle, int bit)
 // GPU takes care of overall syncronization
 __kernel void kernelCPU(dev_buf *in, dev_buf *out, float angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
 {
-    printf("kernelCPU Global id: %d\n", get_global_id(0));
+    //if (get_global_id(0) == 0) printf("%f\t%d\t%u\t%u\t%d\n", angle, steps, lmask, pmask, dist);
     inner_kernel(in, out, angle, steps, lmask, pmask, dist);
 }
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
 // Can be combined with kernelCPU in a manner that the kernelCPU is run until problem can be split into smaller parts.
 __kernel void kernelGPU(dev_buf *in, dev_buf *out, syn_buf *sync_in, syn_buf *sync_out, grp_buf *shared, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, const int n2)
-{
-    printf("kernelGPU Global id: %d\n", get_global_id(0));
+{    
     int bit = depth;
     int in_high = n2;
     if (nBlocks > 1) {

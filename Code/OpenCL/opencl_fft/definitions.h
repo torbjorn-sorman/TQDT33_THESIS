@@ -15,8 +15,9 @@ struct oclArgs {
     int nBlock;
     float dir;
     size_t shared_mem_size;
-    size_t global_work_size[3];
-    size_t local_work_size[3];
+    size_t data_mem_size;
+    size_t global_work_size;
+    size_t local_work_size;
     cl_device_id device_id;
     cl_context context;
     cl_command_queue commands;

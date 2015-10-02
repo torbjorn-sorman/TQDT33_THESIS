@@ -167,9 +167,6 @@ int checkErr(cl_int error, cl_int args, char *msg)
 cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
-    args->global_work_size[0] = args->global_work_size[1] = args->global_work_size[2] = 1; 
-    args->local_work_size[0] = args->local_work_size[1] = args->local_work_size[2] = 1;
-
     if (err = clGetPlatformIDs(1, &args->platform, NULL) != CL_SUCCESS) return err;
     
     // Connect to a compute device    
@@ -212,11 +209,11 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
     if (err != CL_SUCCESS) return err;
 
     const int n2 = args->n / 2;
-    args->global_work_size[0] = n2;
-    args->local_work_size[0] = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
+    args->global_work_size = n2;
+    args->local_work_size = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
 
-    args->nBlock = args->n / args->local_work_size[0];
-    args->shared_mem_size = sizeof(cpx) * args->local_work_size[0] * 2;
+    args->nBlock = args->n / args->local_work_size;
+    args->shared_mem_size = sizeof(cpx) * args->local_work_size * 2;
 
     size_t data_mem_size = sizeof(cpx) * args->n;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, NULL);
@@ -233,15 +230,16 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
 void oclRelease(cpx *dev_out, oclArgs *args, cl_int *error)
 {
     cl_int err = CL_SUCCESS;
-    err = clEnqueueReadBuffer(args->commands, args->output, CL_TRUE, 0, sizeof(cpx) * args->n, dev_out, 0, NULL, NULL);
-    if (err != CL_SUCCESS) {
-        *error = err;
-        printf("\nError: %d Size: %u\n", err, sizeof(cpx) * args->n);
+    if (dev_out != NULL) {
+        err = clEnqueueReadBuffer(args->commands, args->output, CL_TRUE, 0, args->data_mem_size, dev_out, 0, NULL, NULL);
+        checkErr(err, "Read Buffer!");
     }
     *error = clFinish(args->commands);
     free(args->kernelSource);
     clReleaseMemObject(args->input);
     clReleaseMemObject(args->output);
+    clReleaseMemObject(args->sync_in);
+    clReleaseMemObject(args->sync_out);
     clReleaseProgram(args->program);
     clReleaseKernel(args->kernel);
     clReleaseCommandQueue(args->commands);

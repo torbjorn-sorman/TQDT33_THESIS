@@ -46,7 +46,7 @@ static __inline int log2_32(int value)
 
 static __inline cl_int oclExecute(oclArgs *args)
 {
-    cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, 3, NULL, args->global_work_size, args->local_work_size, 0, NULL, NULL);
+    cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, 1, NULL, &args->global_work_size, &args->local_work_size, 0, NULL, NULL);
     if (err != CL_SUCCESS)
         return err;
     err = clFinish(args->commands);

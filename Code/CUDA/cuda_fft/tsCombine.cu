@@ -42,7 +42,6 @@ __host__ double tsCombine_Performance(int n)
 // Seven physical "cores" that can run blocks in "parallel" (and most important sync threads in a block). 1024 is the thread limit per physical core.
 // Essentially (depending on scheduling and other factors) # blocks fewer than HW_LIMIT can be synched, any # above is not trivially solved. cuFFT solves this.
 #define HW_LIMIT (1024 / MAX_BLOCK_SIZE) * 7
-//#define THREE_KERNELS
 
 __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
@@ -61,19 +60,19 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
      
     if (blocks >= HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
-        int steps = 0;
-        int bit = depth - 1;
+        --depth;
+        int steps = 0;        
         int dist = n2;
-        _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
+        _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
         cudaDeviceSynchronize();
-        while (--bit > breakSize) {
+        while (--depth > breakSize) {
             dist >>= 1;
             ++steps;
-            _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << bit, (dist - 1) << steps, steps, dist);
+            _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
             cudaDeviceSynchronize();
         }
         swap(dev_in, dev_out);
-        depth = bit + 1;
+        ++depth;
         bSize = nBlock / 2;
         numBlocks = 1;
     }
@@ -88,17 +87,6 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 __global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
 {
     inner_k(in, out, angle, steps, lmask, pmask, dist);
-}
-
-// Full usage of shared mem!
-__global__ void _kernelBlock(cpx *in, cpx *out, float angle, const cpx scale, int depth, unsigned int lead, int n2)
-{
-    extern __shared__ cpx shared[];
-    int offset = blockIdx.x * blockDim.x * 2;    
-    int in_high = n2 + threadIdx.x;
-    mem_gtos(threadIdx.x, in_high, offset, shared, in);
-    algorithm_p(shared, in_high, angle, depth);
-    mem_stog_db(threadIdx.x, in_high, offset, lead, scale, shared, out);
 }
 
 __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, unsigned int pmask, int dist)

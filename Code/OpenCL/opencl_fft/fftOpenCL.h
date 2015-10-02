@@ -14,4 +14,6 @@ double  GPUSync_performance(const int n);
 int     PartSync_validate(const int n);
 double  PartSync_performance(const int n);
 
+int runPartialSync(const int n);
+
 #endif

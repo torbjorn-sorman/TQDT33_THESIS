@@ -26,12 +26,6 @@
     <ClCompile Include="fftOpenCL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kernelGPUSync.cl">
-      <Filter>OpenCL Files</Filter>
-    </ClCompile>
-    <ClCompile Include="kernelPartSync.cl">
-      <Filter>OpenCL Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="definitions.h" />
@@ -43,8 +37,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <none Include="kernelHelper.cl">
+    <None Include="kernelHelper.cl">
       <Filter>OpenCL Files</Filter>
-    </none>
+    </None>
+    <None Include="kernelGPUSync.cl">
+      <Filter>OpenCL Files</Filter>
+    </None>
+    <None Include="kernelPartSync.cl">
+      <Filter>OpenCL Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

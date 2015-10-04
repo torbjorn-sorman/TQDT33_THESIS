@@ -78,27 +78,6 @@ void mem_stog_db(int low, int high, int offset, unsigned int lead, cpx scale, gr
     device[(reverse(high + offset) >> lead)] = cpxMul(shared[high], scale);
 }
 
-void group_sync_init(syn_buf *s_in, syn_buf *s_out)
-{
-    if (get_global_id(0) < get_num_groups(0)) {
-        s_in[get_global_id(0)] = 0;
-        s_out[get_global_id(0)] = 0;
-    }
-}
-
-void group_sync(syn_buf *s_in, syn_buf *s_out, const int goal)
-{
-    if (get_local_id(0) == 0) { s_in[get_group_id(0)] = goal; }
-    if (get_group_id(0) == 1) { // Use get_group_id(0) == 1, if only one block this part will not run.
-        if (get_local_id(0) < get_num_groups(0)) { while (s_in[get_local_id(0)] != goal){} }
-        barrier(0);
-        if (get_local_id(0) < get_num_groups(0)) { s_out[get_local_id(0)] = goal; }
-    }
-    if (get_local_id(0) == 0) { while (s_out[get_group_id(0)] != goal) {} }
-    barrier(0);
-}
-
-
 void butterflyDev(dev_buf *out, cpx in_lower, cpx in_upper, int index_low, int index_high, float angle)
 {
     float w_x, w_y;

@@ -3,18 +3,6 @@
 void runGPUSync(oclArgs *args);
 void runPartSync(oclArgs *args);
 
-void setupTestData(cpx **din, cpx **dout, cpx **dref, oclArgs *args, fftDir dir, const int n)
-{
-    if (din != NULL)
-        *din = get_seq(n, 1);
-    if (dout != NULL)
-        *dout = get_seq(n);
-    if (dref != NULL)
-        *dref = get_seq(n, *din);
-    args->n = n;
-    args->dir = FFT_FORWARD;
-}
-
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int print, const int n)
 {
     int res = 0;
@@ -29,86 +17,15 @@ int freeResults(cpx **din, cpx **dout, cpx **dref, const int print, const int n)
     return res;
 }
 
-int GPUSync_validate(const int n)
-{
-    if (n > (MAX_BLOCK_SIZE * 2)) return 0;
-    cl_int err = CL_SUCCESS;
-    cpx *data_in, *data_out, *data_ref;
-    oclArgs arguments;
-    setupTestData(&data_in, &data_out, &data_ref, &arguments, FFT_FORWARD, n);
-    oclSetup("kernelGPUSync", data_in, &arguments);
-    runGPUSync(&arguments);
-    oclRelease(data_out, &arguments, &err);
-    if (checkErr(err, err, "Validation failed!")) return err;
-
-    arguments.dir = FFT_INVERSE;
-    swap(&arguments.input, &arguments.output);
-    oclSetup("kernelGPUSync", data_out, &arguments);
-    oclRelease(data_in, &arguments, &err);
-    if (checkErr(err, err, "Validation failed!")) return err;
-    return freeResults(&data_in, &data_out, &data_ref, 1, n);
-}
-
-double GPUSync_performance(const int n)
-{
-    if (n > (MAX_BLOCK_SIZE * 2))
-        return -1.0;
-    cl_int err = CL_SUCCESS;
-    double measurements[20];
-    cpx *data_in, *data_out;
-    oclArgs arguments;
-    setupTestData(&data_in, &data_out, NULL, &arguments, FFT_FORWARD, n);
-    oclSetup("kernelGPUSync", NULL, &arguments);
-    for (int i = 0; i < 20; ++i) {
-        startTimer();
-        runGPUSync(&arguments);
-        measurements[i] = stopTimer();
-    }
-    oclRelease(data_out, &arguments, &err);
-    int res = freeResults(&data_in, &data_out, NULL, 1, n);
-    if (checkErr(err, err, "Validation failed!") || res)
-        return -1;
-    return avg(measurements, 20);
-}
-
-void runGPUSync(oclArgs *args)
-{
-    const float w_angle = args->dir * (M_2_PI / args->n);
-    const cpx scale = { (args->dir == FFT_FORWARD ? 1.f : 1.f / args->n), 0.f };
-    const int depth = log2_32(args->n);
-    const int lead = 32 - depth;
-    const int n2 = args->n / 2;
-    int arg = 0;
-    clSetKernelArg(args->kernel, arg++, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, arg++, sizeof(cl_mem), &args->input);
-    clSetKernelArg(args->kernel, arg++, sizeof(cl_mem), &args->output);
-    clSetKernelArg(args->kernel, arg++, sizeof(float), &w_angle);
-    clSetKernelArg(args->kernel, arg++, sizeof(int), &depth);
-    clSetKernelArg(args->kernel, arg++, sizeof(int), &lead);
-    clSetKernelArg(args->kernel, arg++, sizeof(cpx), &scale);
-    clSetKernelArg(args->kernel, arg++, sizeof(int), &n2);
-    oclExecute(args);
-}
-
-int PartSync_validate(const int n)
-{
-   return 1;
-}
-
-double PartSync_performance(const int n)
-{
-    return -1;
-}
-
 cl_int setupKernel(const int n, oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
-     
+
     cl_platform_id platform;
     cl_device_id device_id;
     cl_context context;
     cl_command_queue commands;
-    
+
     // Get platform id
     if (err = clGetPlatformIDs(1, &platform, NULL) != CL_SUCCESS) return err;
 
@@ -182,14 +99,14 @@ cl_int setupDeviceMemoryData(oclArgs *args, cpx *dev_in)
     return err;
 }
 
-#define HW_LIMIT (1024 / MAX_BLOCK_SIZE) * 7
+#define HW_LIMIT ((1024 / MAX_BLOCK_SIZE) * 7)
 
 cl_int setupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
-{   
+{
     cl_int err = CL_SUCCESS;
     const int n2 = args->n / 2;
     int grpDim = n2;
-    int itmDim = n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2;    
+    int itmDim = n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2;
     int nBlock = args->n / itmDim;
     size_t data_mem_size = sizeof(cpx) * args->n;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
@@ -202,16 +119,6 @@ cl_int setupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
     if (err != CL_SUCCESS) return err;
     cl_mem sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
-    
-    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &input);
-    checkErr(err, err, "input");
-    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &output);
-    checkErr(err, err, "output");
-
-    err = clSetKernelArg(argsCrossGroups->kernel, 0, sizeof(cl_mem), &input);
-    checkErr(err, err, "CPU input");
-    err = clSetKernelArg(argsCrossGroups->kernel, 1, sizeof(cl_mem), &output);
-    checkErr(err, err, "CPU output");
 
     // If successful, store in the argument struct!
     args->global_work_size = grpDim;
@@ -227,83 +134,61 @@ cl_int setupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
     return err;
 }
 
-cl_int setKernelCPUArg(oclArgs *args, float w_angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
-{    
-    cl_int err = CL_SUCCESS;
-    err = clSetKernelArg(args->kernel, 2, sizeof(float), &w_angle);
-    checkErr(err, err, "w_angle");
-    err = clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
-    checkErr(err, err, "lmask");
-    err = clSetKernelArg(args->kernel, 4, sizeof(unsigned int), &pmask);
-    checkErr(err, err, "pmask");
-    err = clSetKernelArg(args->kernel, 5, sizeof(int), &steps);
-    checkErr(err, err, "steps");
-    err = clSetKernelArg(args->kernel, 6, sizeof(int), &dist);
-    checkErr(err, err, "dist");  
-    return err;  
-}
-
-cl_int setKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
+void setKernelCPUArg(oclArgs *args, float w_angle, unsigned int lmask, int steps, int dist)
 {
-    cl_int err = CL_SUCCESS;
-    err = clSetKernelArg(args->kernel, 2, sizeof(cl_mem), &args->sync_in);
-    checkErr(err, err, "sync_in");
-    err = clSetKernelArg(args->kernel, 3, sizeof(cl_mem), &args->sync_out);
-    checkErr(err, err, "sync_out");
-    err = clSetKernelArg(args->kernel, 4, args->shared_mem_size, NULL);
-    checkErr(err, err, "shared_mem_size");
-    err = clSetKernelArg(args->kernel, 5, sizeof(float), &angle);
-    checkErr(err, err, "angle");
-    err = clSetKernelArg(args->kernel, 6, sizeof(float), &bAngle);
-    checkErr(err, err, "bAngle");
-    err = clSetKernelArg(args->kernel, 7, sizeof(int), &depth);
-    checkErr(err, err, "depth");
-    err = clSetKernelArg(args->kernel, 8, sizeof(int), &lead);
-    checkErr(err, err, "lead");
-    err = clSetKernelArg(args->kernel, 9, sizeof(int), &breakSize);
-    checkErr(err, err, "breakSize");
-    err = clSetKernelArg(args->kernel, 10, sizeof(cpx), &scale);
-    checkErr(err, err, "scale");
-    err = clSetKernelArg(args->kernel, 11, sizeof(int), &nBlocks);
-    checkErr(err, err, "nBlocks");
-    err = clSetKernelArg(args->kernel, 12, sizeof(int), &n2);
-    checkErr(err, err, "n2");
-    return err;
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    clSetKernelArg(args->kernel, 2, sizeof(float), &w_angle);
+    clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &dist);
 }
 
-cl_int runCombine(oclArgs *argCPU, oclArgs *argGPU)
+void setKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    clSetKernelArg(args->kernel, 2, sizeof(cl_mem), &args->sync_in);
+    clSetKernelArg(args->kernel, 3, sizeof(cl_mem), &args->sync_out);
+    clSetKernelArg(args->kernel, 4, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 5, sizeof(float), &angle);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &bAngle);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &depth);
+    clSetKernelArg(args->kernel, 8, sizeof(int), &lead);
+    clSetKernelArg(args->kernel, 9, sizeof(int), &breakSize);
+    clSetKernelArg(args->kernel, 10, sizeof(cpx), &scale);
+    clSetKernelArg(args->kernel, 11, sizeof(int), &nBlocks);
+    clSetKernelArg(args->kernel, 12, sizeof(int), &n2);
+}
+
+void runCombine(oclArgs *argCPU, oclArgs *argGPU)
 {
     int depth = log2_32(argCPU->n);
     const int lead = 32 - depth;
     const int n2 = (argCPU->n / 2);
     const int breakSize = log2_32(MAX_BLOCK_SIZE);
-    cpx scaleCpx = {(argCPU->dir == FFT_FORWARD ? 1.f : 1.f / argCPU->n), 0.f};    
+    cpx scaleCpx = { (argCPU->dir == FFT_FORWARD ? 1.f : 1.f / argCPU->n), 0.f };
     int numBlocks = argCPU->global_work_size / argCPU->local_work_size;
     const int nBlock = argCPU->n / numBlocks;
     const float w_angle = argCPU->dir * (M_2_PI / argCPU->n);
     const float w_bangle = argCPU->dir * (M_2_PI / nBlock);
     int bSize = n2;
 
-    if (numBlocks > 1) { //= HW_LIMIT) {
+    if (numBlocks >= HW_LIMIT) {
 
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         --depth;
         int steps = 0;
         int dist = n2;
-        cl_int err = setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);        
-        checkErr(err, err, "First blood!");
-        err = oclExecute(argCPU);
-        checkErr(err, err, "Second blood!");
-        argGPU->output = argCPU->input;
-        argGPU->input  = argCPU->output;
-        argCPU->input  = argCPU->output;
+        setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, steps, dist);
+        oclExecute(argCPU);        
+        swap(&argGPU->input, &argGPU->output);
+        argCPU->input = argCPU->output;
         while (--depth > breakSize) {
             dist >>= 1;
             ++steps;
-            err = setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
-            checkErr(err, err, "War blood!");
-            err = oclExecute(argCPU);
-            checkErr(err, err, "Execute blood!");
+            setKernelCPUArg(argCPU, w_angle, 0xFFFFFFFF << depth, steps, dist);            
+            oclExecute(argCPU);            
         }
         ++depth;
         bSize = nBlock / 2;
@@ -312,7 +197,7 @@ cl_int runCombine(oclArgs *argCPU, oclArgs *argGPU)
 
     // Calculate complete sequence in one launch and syncronize on GPU
     setKernelGPUArg(argGPU, w_angle, w_bangle, depth, lead, breakSize, scaleCpx, numBlocks, bSize);
-    return oclExecute(argGPU);
+    oclExecute(argGPU);
 }
 
 
@@ -337,47 +222,80 @@ void oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, cl_int *error)
     clReleaseContext(argGPU->context);
 }
 
-int runPartialSync(const int n)
+cl_int createKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n)
+{
+    argGPU->n = argCPU->n = n;
+    argGPU->dir = argCPU->dir = dir;
+    setupKernel(n, argGPU);
+    memcpy(argCPU, argGPU, sizeof(oclArgs));
+    cl_int err = setupProgram("kernelPartSync", "kernelGPU", argGPU);
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupProgram("kernelPartSync", "kernelCPU", argCPU);
+    checkErr(err, err, "Failed to setup CPU Program!");
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupWorkGroupsAndMemory(argGPU, argCPU);
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = setupDeviceMemoryData(argGPU, data_in);
+    argCPU->global_work_size = argGPU->global_work_size;
+    argCPU->local_work_size = argGPU->local_work_size;
+    argCPU->input = argGPU->input;
+    argCPU->output = argGPU->output;
+    argCPU->data_mem_size = argGPU->data_mem_size;
+    argCPU->nBlock = argGPU->nBlock;
+    return err;
+}
+
+int GPUSync_validate(const int n)
 {
     cl_int err = CL_SUCCESS;
+    cpx *data_in = get_seq(n, 1);
+    cpx *data_out = get_seq(n);
+    cpx *data_ref = get_seq(n, data_in);
+
     oclArgs argGPU;
     oclArgs argCPU;
-    cpx *data_in, *data_out, *data_ref;    
-    setupTestData(&data_in, &data_out, &data_ref, &argCPU, FFT_FORWARD, n);
-    argGPU.n = argCPU.n;
-    argGPU.dir = argCPU.dir;
-
-    setupKernel(n, &argGPU);
-    memcpy(&argCPU, &argGPU, sizeof(oclArgs));
-
-    err = setupProgram("kernelPartSync", "kernelGPU", &argGPU);    
-    checkErr(err, err, "Failed to setup GPU Program!");
-    err = setupProgram("kernelPartSync", "kernelCPU", &argCPU);
-    checkErr(err, err, "Failed to setup CPU Program!");
-
-    checkErr(err, err, "Failed to setup GPU Program!");
-    err = setupWorkGroupsAndMemory(&argGPU, &argCPU);
-    checkErr(err, err, "Failed to setup GPU Program!");
-    err = setupDeviceMemoryData(&argGPU, data_in);
-
-    // Kernels must share some features!
-    argCPU.global_work_size = argGPU.global_work_size;
-    argCPU.local_work_size = argGPU.local_work_size;
-    argCPU.input = argGPU.input;
-    argCPU.output = argGPU.output;
-    argCPU.data_mem_size = argGPU.data_mem_size;
-    argCPU.nBlock = argGPU.nBlock;
-
-    
-    
-    err = runCombine(&argCPU, &argGPU);
-
+    err = createKernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n);
+    checkErr(err, err, "Create failed!");
+    runCombine(&argCPU, &argGPU);
     checkErr(err, err, "Run failed!");
-    
     oclRelease(data_out, &argCPU, &argGPU, &err);
-    if (checkErr(err, err, "Validation failed!")) return err;    
+    checkErr(err, err, "Release failed!");
 
-    printf("n: %d\t%f & %f\n", n, data_out[1].y, data_out[n - 1].y);
+
+    err = createKernels(&argCPU, &argGPU, data_out, FFT_INVERSE, n);
+    checkErr(err, err, "Create failed!");
+    runCombine(&argCPU, &argGPU);
+    checkErr(err, err, "Run failed!");
+    oclRelease(data_in, &argCPU, &argGPU, &err);
+    checkErr(err, err, "Release failed!");
+
+    //printf("n: %d\t%f & %f\n", n, data_out[1].y, data_out[n - 1].y);
 
     return freeResults(&data_in, &data_out, &data_ref, 0, n);
+}
+
+double GPUSync_performance(const int n)
+{
+    cl_int err = CL_SUCCESS;
+    double measurements[20];
+    cpx *data_in = get_seq(n, 1);
+
+    oclArgs argGPU;
+    oclArgs argCPU;
+    err = createKernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n);
+    checkErr(err, err, "Create failed!");
+
+    for (int i = 0; i < 20; ++i) {
+        startTimer();
+        runCombine(&argCPU, &argGPU);
+        measurements[i] = stopTimer();
+    }
+
+    oclRelease(data_in, &argCPU, &argGPU, &err);
+    checkErr(err, err, "Release failed!");
+
+    int res = freeResults(&data_in, NULL, NULL, 1, n);
+    if (checkErr(err, err, "Validation failed!") || res)
+        return -1;
+    return avg(measurements, 20);
 }

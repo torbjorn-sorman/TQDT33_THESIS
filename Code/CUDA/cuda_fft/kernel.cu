@@ -15,6 +15,7 @@
 #include "tsTest.cuh"
 
 #include "tsCombine.cuh"
+#include "tsCombine2.cuh"
 #include "tsCombineGPUSync.cuh"
 #include "tsCombineGPUSyncTex.cuh"
 
@@ -51,7 +52,7 @@ void printDevProp(cudaDeviceProp devProp)
 
 #endif
 
-#define RUNS 16
+#define RUNS 24
 
 int main()
 {    
@@ -85,7 +86,8 @@ int main()
     int index = 0;
     double cuFFTm[RUNS];
     double combineFFTm[RUNS];
-    printf("\n\t\tcuFFT\tComb");
+    double combine2FFTm[RUNS];
+    printf("\n\t\tcuFFT\tComb\tComb2");
     printf("\n");
     for (unsigned int n = power2(start); n < power2(end); n *= 2) {        
         printf("\n%d:", n);
@@ -94,16 +96,21 @@ int main()
         
         // cuFFT
         printf(fmt, cuFFTm[index] = cuFFT_Performance(n));
-                
+
         // Combine
         printf("\t%.0f", combineFFTm[index] = tsCombine_Performance(n));
         if (tsCombine_Validate(n) == 0) printf("!");
+
+        // Combine2 (fewer params)
+        printf("\t%.0f", combine2FFTm[index] = tsCombine2_Performance(n));
+        if (tsCombine2_Validate(n) == 0) printf("!");
         
         ++index;
     }
     printf("\n\n");
     toFile("cuFFT", cuFFTm, RUNS);
-    toFile("Block Combine CPU Sync", combineFFTm, RUNS);
+    toFile("Block Combine GPU Sync", combineFFTm, RUNS);
+    toFile("Block Combine 2 GPU Sync", combine2FFTm, RUNS);
     
     printf("\nDone...");
     getchar();

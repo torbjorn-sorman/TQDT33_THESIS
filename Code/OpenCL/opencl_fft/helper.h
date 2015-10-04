@@ -44,20 +44,17 @@ static __inline int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-static __inline cl_int oclExecute(oclArgs *args)
+static __inline void oclExecute(oclArgs *args)
 {
-    cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, 1, NULL, &args->global_work_size, &args->local_work_size, 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-        return err;
-    err = clFinish(args->commands);
-    return err;
+    clEnqueueNDRangeKernel(args->commands, args->kernel, 1, NULL, &args->global_work_size, &args->local_work_size, 0, NULL, NULL);
+    clFinish(args->commands);
 }
 
 static __inline void swap(cl_mem *a, cl_mem *b)
 {
-    cl_mem *c = a;
+    cl_mem c = *a;
     *a = *b;
-    *b = *c;
+    *b = c;
 }
 
 int checkErr(cl_int error, char *msg);

@@ -2,12 +2,12 @@
 
 typedef int syncVal;
 
-__global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, unsigned int pmask, int steps, int dist);
+__global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist);
+__global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist);
+__global__ void _kernelAll2DCol(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist);
 __global__ void _kernelGPUS(cpx *in, cpx *out, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2);
-__global__ void _kernelBlock(cpx *in, cpx *out, float angle, const cpx scale, int depth, unsigned int lead, int n2);
-
-__device__ static __inline__ void algorithm_p(cpx *shared, int in_high, float angle, int bit);
-__device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, unsigned int pmask, int dist);
+__global__ void _kernelGPUS2DRow(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
+__global__ void _kernelGPUS2DCol(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
 
 __host__ int tsCombine_Validate(int n)
 {
@@ -19,6 +19,43 @@ __host__ int tsCombine_Validate(int n)
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
+}
+
+__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *image_name, char *type, size_t size, int write, int norm, int n)
+{
+    tsCombine2D(dir, dev_in, dev_out, n);
+    if (write) {
+        cudaMemcpy(in, *dev_out, size, cudaMemcpyDeviceToHost);
+        if (norm) {
+            normalized_image(in, n);
+            cpx *tmp = fftShift(in, n);
+            write_image(image_name, type, tmp, n);
+            free(tmp);
+        }
+        else {
+            write_image(image_name, type, in, n);
+        }
+    }
+}
+
+__host__ int tsCombine2D_Validate(int n)
+{
+    char *image_name = "splash";
+    cpx *in, *ref, *dev_in, *dev_out;
+    size_t size;
+    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, image_name, 0, n);
+
+    //cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
+    //tsCombine2D(FFT_FORWARD, &dev_in, &dev_out, n);
+    //tsCombine2D(FFT_INVERSE, &dev_out, &dev_in, n);
+
+    cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
+    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, image_name, "frequency-domain", size, 1, 1, n);
+    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, image_name, "spatial-domain", size, 1, 0, n);
+
+    int res = fft2DCompare(in, ref, dev_in, size, n * n);
+    fft2DShakedown(&in, &ref, &dev_in, &dev_out);
+    return res;
 }
 
 __host__ double tsCombine_Performance(int n)
@@ -38,6 +75,24 @@ __host__ double tsCombine_Performance(int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
+__host__ double tsCombine2D_Performance(int n)
+{
+    double measures[NUM_PERFORMANCE];
+    char *image_name = "splash";
+    cpx *in, *ref, *dev_in, *dev_out;
+    size_t size;
+    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, image_name, 0, n);
+
+    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+        startTimer();
+        tsCombine2D(FFT_FORWARD, &dev_in, &dev_out, n);
+        measures[i] = stopTimer();
+    }
+
+    fft2DShakedown(&in, &ref, &dev_in, &dev_out);
+    return avg(measures, NUM_PERFORMANCE);
+}
+
 // My device specifics!
 // Seven physical "cores" that can run blocks in "parallel" (and most important sync threads in a block). 1024 is the thread limit per physical core.
 // Essentially (depending on scheduling and other factors) # blocks fewer than HW_LIMIT can be synched, any # above is not trivially solved. cuFFT solves this.
@@ -53,22 +108,22 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
     cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
     set_block_and_threads(&blocks, &threads, n2);
     int numBlocks = blocks;
-    const int nBlock = n / blocks;    
+    const int nBlock = n / blocks;
     const float w_angle = dir * (M_2_PI / n);
     const float w_bangle = dir * (M_2_PI / nBlock);
-    int bSize = n2;   
-     
+    int bSize = n2;
+
     if (blocks >= HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         --depth;
-        int steps = 0;        
+        int steps = 0;
         int dist = n2;
-        _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
+        _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
         cudaDeviceSynchronize();
         while (--depth > breakSize) {
             dist >>= 1;
             ++steps;
-            _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, (dist - 1) << steps, steps, dist);
+            _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
             cudaDeviceSynchronize();
         }
         swap(dev_in, dev_out);
@@ -80,16 +135,74 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
     // Calculate complete sequence in one launch and syncronize on GPU
     _kernelGPUS KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, depth, lead, breakSize, scaleCpx, numBlocks, bSize);
     cudaDeviceSynchronize();
-
 }
 
-// Take no usage of shared mem yet...
-__global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, unsigned int pmask, int steps, int dist)
+__host__ void tsCombine2D_help(fftDir dir, cpx **dev_in, cpx **dev_out, int rowWise, int n)
 {
-    inner_k(in, out, angle, steps, lmask, pmask, dist);
+    dim3 blocks;
+    int threads;
+    int depth = log2_32(n);
+    const int breakSize = log2_32(MAX_BLOCK_SIZE);
+    cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
+    set_block_and_threads2D(&blocks, &threads, n);
+
+    const int nBlock = n / blocks.y;
+    const float w_angle = dir * (M_2_PI / n);
+    const float w_bangle = dir * (M_2_PI / nBlock);
+    int bSize = n;
+
+    if (blocks.y > 1) {
+        // Calculate sequence until parts fit into a block, syncronize on CPU until then.
+        --depth;
+        int steps = 0;
+        int dist = (n / 2);
+        if (rowWise)
+            _kernelAll2DRow KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
+        else
+            _kernelAll2DCol KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
+        cudaDeviceSynchronize();
+        while (--depth > breakSize) {
+            dist >>= 1;
+            ++steps;
+            if (rowWise)
+                _kernelAll2DRow KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
+            else
+                _kernelAll2DCol KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
+            cudaDeviceSynchronize();
+        }
+        swap(dev_in, dev_out);
+        ++depth;
+        bSize = nBlock;
+    }
+
+    // Calculate complete sequence in one launch and syncronize on GPU
+    if (rowWise)
+        _kernelGPUS2DRow KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, depth, scaleCpx, bSize);
+    else
+        _kernelGPUS2DCol KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, w_bangle, depth, scaleCpx, bSize);
+    cudaDeviceSynchronize();
 }
 
-__device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, unsigned int pmask, int dist)
+__host__ void tsCombine2D(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
+{
+    dim3 blocks, threads;
+    set_block_and_threads_transpose(&blocks, &threads, n);
+    if (n > 256) {
+        tsCombine2D_help(dir, dev_in, dev_out, 1, n);
+        _kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        cudaDeviceSynchronize();
+        tsCombine2D_help(dir, dev_in, dev_out, 1, n);
+        _kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        cudaDeviceSynchronize();
+    }
+    else {
+        tsCombine2D_help(dir, dev_in, dev_out, 1, n);
+        tsCombine2D_help(dir, dev_out, dev_in, 0, n);
+    }
+    swap(dev_in, dev_out);
+}
+
+__device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, int dist)
 {
     cpx w;
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -97,8 +210,8 @@ __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int st
     int in_high = in_low + dist;
     cpx in_lower = in[in_low];
     cpx in_upper = in[in_high];
-    SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-    cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);    
+    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
 }
 
 __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
@@ -107,12 +220,12 @@ __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, i
     int dist = n2;
     int steps = 0;
     init_sync(tid, nBlocks);
-    inner_k(in, out, angle, steps, 0xFFFFFFFF << bit_start, (dist - 1) << steps, dist);
+    inner_k(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
     __gpu_sync(nBlocks + steps);
     for (int bit = bit_start - 1; bit > breakSize; --bit) {
         dist = dist >> 1;
         ++steps;
-        inner_k(out, out, angle, steps, 0xFFFFFFFF << bit, (dist - 1) << steps, dist);
+        inner_k(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
         __gpu_sync(nBlocks + steps);
     }
     return breakSize + 1;
@@ -133,6 +246,35 @@ __device__ static __inline__ void algorithm_p(cpx *shared, int in_high, float an
     }
 }
 
+// Take no usage of shared mem yet...
+__global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
+{
+    inner_k(in, out, angle, steps, lmask, dist);
+}
+
+__device__ static __inline__ void inner_k2D(cpx *in, cpx *out, int x, int y, float angle, int steps, int dist)
+{
+    cpx w;
+    int in_low = x + y * gridDim.x;
+    int in_high = in_low + dist;
+    cpx in_lower = in[in_low];
+    cpx in_upper = in[in_high];
+    SIN_COS_F(angle * (((blockIdx.y * blockDim.x + threadIdx.x) << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
+}
+
+__global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
+{
+    int col_id = blockIdx.y * blockDim.x + threadIdx.x;
+    inner_k2D(in, out, (col_id + (col_id & lmask)), blockIdx.x, angle, steps, dist);
+}
+
+__global__ void _kernelAll2DCol(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
+{
+    int row_id = blockIdx.y * blockDim.x + threadIdx.x;
+    inner_k2D(in, out, blockIdx.x, (row_id + (row_id & lmask)), angle, steps, dist);
+}
+
 // Full blown block syncronized algorithm! In theory this should scale up but is limited by hardware (#cores)
 __global__ void _kernelGPUS(cpx *in, cpx *out, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
 {
@@ -149,4 +291,31 @@ __global__ void _kernelGPUS(cpx *in, cpx *out, float angle, float bAngle, int de
     mem_gtos(threadIdx.x, in_high, offset, shared, in);
     algorithm_p(shared, in_high, bAngle, bit);
     mem_stog_db(threadIdx.x, in_high, offset, lead, scale, shared, out);
+}
+
+__global__ void _kernelGPUS2DRow(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n)
+{
+    extern __shared__ cpx shared[];
+    int global_offset = n * blockIdx.x;
+    int bit = depth;
+    int in_high = n >> 1;
+    int offset = blockIdx.y * blockDim.x * 2;
+    in_high += threadIdx.x;
+    mem_gtos(threadIdx.x, in_high, offset, shared, &(in[global_offset]));
+    SYNC_THREADS;
+    algorithm_p(shared, in_high, bAngle, bit);
+    mem_stog_db(threadIdx.x, in_high, offset, 32 - depth, scale, shared, &(out[global_offset]));
+}
+
+__global__ void _kernelGPUS2DCol(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n)
+{
+    extern __shared__ cpx shared[];
+    int bit = depth;
+    int in_high = n >> 1;
+    int offset = blockIdx.y * blockDim.x * 2;
+    in_high += threadIdx.x;
+    mem_gtos_col(threadIdx.x, in_high, (threadIdx.x + offset) * n + blockIdx.x, (n >> 1) * n, shared, in);
+    SYNC_THREADS;
+    algorithm_p(shared, in_high, bAngle, bit);
+    mem_stog_db_col(threadIdx.x, in_high, offset, 32 - depth, scale, shared, out, n);
 }

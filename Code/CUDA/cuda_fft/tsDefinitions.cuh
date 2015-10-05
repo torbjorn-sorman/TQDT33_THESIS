@@ -26,13 +26,16 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 
 #define BIT_REVERSED_OUTPUT
 
+// Test
+#define NUM_PERFORMANCE 10
+
 #ifdef __CUDACC__
 #define KERNEL_ARGS2(grid, block) <<< grid, block >>>
 #define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
 #define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
 #define SYNC_THREADS __syncthreads()
 #define BIT_REVERSE(x, l) ((__brev((x))) >> (l))
-#define SIN_COS_F(a, x, y) sincosf(a, x, y)
+#define SIN_COS_F(a, x, y) __sincosf(a, x, y)
 #define FIND_FIRST_BIT(v) (__ffs(v))
 #define ATOMIC_CAS(a,c,v) (atomicCAS((int *)(a),(int)(c),(int)(v)))
 #define THREAD_FENCE __threadfence()

@@ -105,7 +105,7 @@ __host__ int tsCombineGPUSync2D_Test(int n)
         tsCombineGPUSync2D(FFT_FORWARD, dev_in, dev_out, n);
         measures[i] = stopTimer();
     }
-    printf("\t%.0f", avg(measures, NUM_PERFORMANCE));
+    printf("\t(%.0f)", avg(measures, NUM_PERFORMANCE));
 
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
     test2DRun(FFT_FORWARD, in, dev_in, dev_out, image_name, "frequency-domain", size, YES, YES, n);
@@ -179,34 +179,6 @@ __host__ void tsCombineGPUSync2D(fftDir dir, cpx *dev_in, cpx *dev_out, int n)
     }
 }
 
-// Move to helper!
-__device__ static __inline__ void init_sync2d(int tid, int blocks)
-{
-    if (tid < blocks) {
-        _sync_array_2din[blockIdx.x][tid] = 0;
-        _sync_array_2dout[blockIdx.x][tid] = 0;
-    }
-}
-
-// Move to helper!
-__device__ static __inline__ void __gpu_sync2d(int goal)
-{
-    volatile int *in = _sync_array_2din[blockIdx.x];
-    volatile int *out = _sync_array_2dout[blockIdx.x];
-    int bid = blockIdx.y;
-    int tid = threadIdx.x;
-    int nBlocks = gridDim.y;
-    if (tid == 0) { in[bid] = goal; }
-    if (bid == 1) { // Use bid == 1, if only one block this part will not run.
-        SYNC_THREADS;
-        if (tid < nBlocks) { while (in[tid] != goal){} }
-        SYNC_THREADS;
-        if (tid < nBlocks) { out[tid] = goal; }
-    }
-    if (tid == 0) { while (out[bid] != goal) {} }
-    SYNC_THREADS;
-}
-
 __device__ static __inline__ void inner_kernel(cpx *in, cpx *out, float angle, int steps, int tid, unsigned int lmask, unsigned int pmask, int dist, int blocks)
 {
     cpx w;
@@ -217,19 +189,6 @@ __device__ static __inline__ void inner_kernel(cpx *in, cpx *out, float angle, i
     SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
     cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
     __gpu_sync(blocks + steps);
-}
-
-__device__ static __inline__ void inner_kernel_2d(cpx *in, cpx *out, float angle, int steps, int tid, unsigned int lmask, unsigned int pmask, int dist, int blocks)
-{
-    cpx w;
-    int in_low = tid + (tid & lmask);
-    int in_high = in_low + dist;
-    cpx in_lower = in[in_low];
-    cpx in_upper = in[in_high];
-    SIN_COS_F(angle * ((tid << steps) & pmask), &w.y, &w.x);
-    cpx_add_sub_mul(&(out[in_low]), &(out[in_high]), in_lower, in_upper, w);
-    if (blockIdx.x == 0 && threadIdx.x == 0) printf("Test sync!");
-    __gpu_sync2d(blocks + steps);
 }
 
 __device__ static __inline__ int algorithm_complete(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
@@ -243,21 +202,6 @@ __device__ static __inline__ int algorithm_complete(cpx *in, cpx *out, int bit_s
         dist = dist >> 1;
         ++steps;
         inner_kernel(out, out, angle, steps, tid, 0xFFFFFFFF << bit, (dist - 1) << steps, dist, nBlocks);
-    }
-    return breakSize + 1;
-}
-
-__device__ static __inline__ int algorithm_complete_2d(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
-{
-    int tid = (blockIdx.y * blockDim.x + threadIdx.x);
-    int dist = n2;
-    int steps = 0;
-    init_sync2d(tid, nBlocks);
-    inner_kernel_2d(in, out, angle, steps, tid, 0xFFFFFFFF << bit_start, (dist - 1) << steps, dist, nBlocks);
-    for (int bit = bit_start - 1; bit > breakSize; --bit) {
-        dist = dist >> 1;
-        ++steps;
-        inner_kernel_2d(out, out, angle, steps, tid, 0xFFFFFFFF << bit, (dist - 1) << steps, dist, nBlocks);
     }
     return breakSize + 1;
 }
@@ -277,32 +221,12 @@ __device__ static __inline__ void algorithm_partial(cpx *shared, int in_high, fl
     }
 }
 
-__device__ static __inline__ void mem_gtos_col(int low, int high, int global_low, int offsetHigh, cpx *shared, cpx *global)
-{
-    shared[low] = global[global_low];
-    shared[high] = global[global_low + offsetHigh];  
-}
-
-__device__ static __inline__ void mem_stog_db_col(int shared_low, int shared_high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global, int n)
-{
-    int row_low = BIT_REVERSE(shared_low + offset, lead);
-    int row_high = BIT_REVERSE(shared_high + offset, lead);
-    global[row_low * n + blockIdx.x] = cuCmulf(shared[shared_low], scale);
-    global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scale);
-}
-
 __global__ void _kernelGPUSync2D(cpx *in, cpx *out, float angle, float bAngle, int depth, int rowWise, cpx scale, int n)
 {
     extern __shared__ cpx shared[];
     int global_offset = n * blockIdx.x;
     int bit = depth;
     int in_high = n >> 1;
-    /*
-    if (gridDim.y > 1) {
-    bit = algorithm_complete_2d(&(in[global_offset]), &(out[global_offset]), bit, log2(MAX_BLOCK_SIZE), angle, gridDim.y, in_high);
-    in_high >>= log2((int)gridDim.y);
-    }
-    */
     int offset = blockIdx.y * blockDim.x * 2;
     in_high += threadIdx.x;
     if (rowWise)

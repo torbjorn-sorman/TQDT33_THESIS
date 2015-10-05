@@ -90,7 +90,7 @@ __host__ int tsCombineGPUSyncTex2D_Test(int n)
         tsCombineGPUSyncTex2D(FFT_FORWARD, inputSurfObj, outputSurfObj, n);
         measures[i] = stopTimer();
     }
-    printf("\t%.0f", avg(measures, NUM_PERFORMANCE));
+    printf("\t(%.0f)", avg(measures, NUM_PERFORMANCE));
 
     cudaMemcpyToArray(cuInputArray, 0, 0, in, size, cudaMemcpyHostToDevice);
     testTex2DRun(FFT_FORWARD, in, cuInputArray, inputSurfObj, outputSurfObj, image_name, "frequency-domain", size, YES, YES, n);

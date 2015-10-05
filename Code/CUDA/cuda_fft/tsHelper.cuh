@@ -99,6 +99,20 @@ __device__ static __inline__ void mem_gtos_tb(int low, int high, int offset, uns
     shared[BIT_REVERSE(high, lead)] = global[high + offset];
 }
 
+__device__ static __inline__ void mem_gtos_col(int low, int high, int global_low, int offsetHigh, cpx *shared, cpx *global)
+{
+    shared[low] = global[global_low];
+    shared[high] = global[global_low + offsetHigh];
+}
+
+__device__ static __inline__ void mem_stog_db_col(int shared_low, int shared_high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global, int n)
+{
+    int row_low = BIT_REVERSE(shared_low + offset, lead);
+    int row_high = BIT_REVERSE(shared_high + offset, lead);
+    global[row_low * n + blockIdx.x] = cuCmulf(shared[shared_low], scale);
+    global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scale);
+}
+
 __device__ static __inline__ void mem_stog(int low, int high, int offset, cpx scale, cpx *shared, cpx *global)
 {
     global[low + offset] = cuCmulf(shared[low], scale);
@@ -127,6 +141,27 @@ __host__ static __inline void set_block_and_threads(int *numBlocks, int *threads
         *numBlocks = 1;
         *threadsPerBlock = size;
     }
+}
+
+__host__ static __inline void set_block_and_threads2D(dim3 *numBlocks, int *threadsPerBlock, int n)
+{
+    numBlocks->x = n;
+    int n2 = n >> 1;
+    if (n2 > MAX_BLOCK_SIZE) {        
+        numBlocks->y = n2 / MAX_BLOCK_SIZE;
+        *threadsPerBlock = MAX_BLOCK_SIZE;
+    }
+    else {
+        numBlocks->y = 1;
+        *threadsPerBlock = n2;
+    }  
+}
+
+__host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n)
+{
+    bTrans->z = tTrans->z = 1;
+    bTrans->x = bTrans->y = (n / TILE_DIM);
+    tTrans->x = tTrans->y = THREAD_TILE_DIM;
 }
 
 // Likely room for optimizations!

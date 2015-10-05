@@ -3,7 +3,7 @@
 #include "helper.h"
 
 #define START 4
-#define END 1048576
+#define END 33554432
 
 
 //#define PROFILER
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
     printf("\n");
 
     for (int i = START; i <= END; i *= 2)
-        printf("%d:\t%f\n", i, measurements[log2_32(i) - log2_32(START)]);
+        printf("%d:\t%.0f\n", i, measurements[log2_32(i) - log2_32(START)]);
 
     printf("\nCompleted\n");
     getchar();

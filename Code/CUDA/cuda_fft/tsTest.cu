@@ -18,9 +18,9 @@ void startTimer()
 double stopTimer()
 {
     QueryPerformanceCounter(&EndingTime);
-    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; 
-    ElapsedMicroseconds.QuadPart *= 1000000; 
-    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart; 
+    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    ElapsedMicroseconds.QuadPart *= 1000000;
+    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
     return (double)ElapsedMicroseconds.QuadPart;
 }
 
@@ -202,4 +202,42 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
     result = checkError(*in, *ref, n);
     _fftFreeSeq(in, out, ref);
     return result;
+}
+
+void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n)
+{
+    if (sinus) {
+        *in = get_sin_img(n);
+        *ref = get_sin_img(n);
+    }
+    else {
+        char input_file[40];
+        sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
+        int sz;
+        *in = read_image(input_file, &sz);
+        *ref = read_image(input_file, &sz);
+    }
+    *size = n * n * sizeof(cpx);
+    cudaMalloc((void**)dev_i, *size);
+    cudaMalloc((void**)dev_o, *size);
+    cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
+}
+
+void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
+{
+    free(*in);
+    free(*ref);
+    cudaFree(*dev_i);
+    cudaFree(*dev_o);
+}
+
+int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
+{
+    cudaMemcpy(in, dev, size, cudaMemcpyDeviceToHost);
+    for (int i = 0; i < len; ++i) {
+        if (cuCabsf(cuCsubf(in[i], ref[i])) > 0.0001) {
+            return 0;
+        }
+    }
+    return 1;
 }

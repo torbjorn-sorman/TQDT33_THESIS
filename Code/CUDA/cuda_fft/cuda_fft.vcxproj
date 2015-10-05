@@ -180,14 +180,24 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="tsCombine2.cu" />
     <CudaCompile Include="tsCombineGPUSync.cu" />
     <CudaCompile Include="tsCombineGPUSyncTex.cu" />
-    <CudaCompile Include="tsConstantGeometry_DP.cu" />
-    <CudaCompile Include="tsConstantGeometry_SB.cu" />
-    <CudaCompile Include="tsConstantGeometry.cu" />
-    <CudaCompile Include="tsTobb.cu" />
+    <CudaCompile Include="tsConstantGeometry_DP.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry_SB.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="tsConstantGeometry.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="tsTobb.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
     <CudaCompile Include="tsHelper.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="tsTest.cu" />
-    <CudaCompile Include="tsTobb_SB.cu" />
+    <CudaCompile Include="tsTobb_SB.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imglib.h" />
@@ -195,14 +205,24 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="tsCombine2.cuh" />
     <ClInclude Include="tsCombineGPUSync.cuh" />
     <ClInclude Include="tsCombineGPUSyncTex.cuh" />
-    <ClInclude Include="tsConstantGeometry_DP.cuh" />
+    <ClInclude Include="tsConstantGeometry_DP.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="tsDefinitions.cuh" />
-    <ClInclude Include="tsConstantGeometry.cuh" />
-    <ClInclude Include="tsConstantGeometry_SB.cuh" />
-    <ClInclude Include="tsTobb.cuh" />
+    <ClInclude Include="tsConstantGeometry.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="tsConstantGeometry_SB.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="tsTobb.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="tsHelper.cuh" />
     <ClInclude Include="tsTest.cuh" />
-    <ClInclude Include="tsTobb_SB.cuh" />
+    <ClInclude Include="tsTobb_SB.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imglib.cpp" />

@@ -43,8 +43,7 @@ int algorithm_cross_group(dev_buf *in, dev_buf *out, syn_buf *sync_in, syn_buf *
     int steps = 0;
     group_sync_init(sync_in, sync_out);
     inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    group_sync(sync_in, sync_out, nBlocks + steps);
-    
+    group_sync(sync_in, sync_out, nBlocks + steps);        
     for (int bit = bit_start - 1; bit > breakSize; --bit) {
         dist = dist >> 1;
         ++steps;

@@ -3,37 +3,6 @@
 __global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n);
 __global__ void _kernelGPUSyncTex2DCol(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n);
 
-__host__ void testTex2DSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
-{
-    if (sinus) {
-        *in = get_sin_img(n);
-        *ref = get_sin_img(n);
-    }
-    else {
-        char input_file[40];
-        sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
-        int sz;
-        *in = read_image(input_file, &sz);
-        *ref = read_image(input_file, &sz);
-    }
-    *size = n * n * sizeof(cpx);
-    // Allocate CUDA arrays in device memory
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
-    cudaMallocArray(cuInputArray, &channelDesc, n, n, cudaArraySurfaceLoadStore);
-    cudaMallocArray(cuOutputArray, &channelDesc, n, n, cudaArraySurfaceLoadStore);
-    // Specify surface
-    struct cudaResourceDesc resDesc;
-    memset(&resDesc, 0, sizeof(resDesc));
-    resDesc.resType = cudaResourceTypeArray;
-    // Create the surface objects
-    resDesc.res.array.array = *cuInputArray;
-    *inputSurfObj = 0;
-    cudaCreateSurfaceObject(inputSurfObj, &resDesc);
-    resDesc.res.array.array = *cuOutputArray;
-    *outputSurfObj = 0;
-    cudaCreateSurfaceObject(outputSurfObj, &resDesc);
-}
-
 __host__ void testTex2DShakedown(cpx **in, cpx **ref, cuSurf *sObjIn, cuSurf *sObjOut, cudaArray **cuAIn, cudaArray **cuAOut)
 {
     free(*in);
@@ -83,7 +52,7 @@ __host__ int tsCombineGPUSyncTex2D_Test(int n)
     size_t size;
     cudaArray *cuInputArray, *cuOutputArray;
     cuSurf inputSurfObj, outputSurfObj;
-    testTex2DSetup(&in, &ref, &size, image_name, NO, n, &cuInputArray, &cuOutputArray, &inputSurfObj, &outputSurfObj);
+    fft2DSurfSetup(&in, &ref, &size, image_name, NO, n, &cuInputArray, &cuOutputArray, &inputSurfObj, &outputSurfObj);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
@@ -133,34 +102,6 @@ __device__ static __inline__ void algorithm_partial(cpx *shared, int in_high, fl
         cpx_add_sub_mul(&(shared[i]), &(shared[ii]), in_lower, in_upper, w);
         SYNC_THREADS;
     }
-}
-
-__device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cuSurf surf)
-{
-    SURF2D_READ(&(shared[low]), surf, low + offset, blockIdx.x);
-    SURF2D_READ(&(shared[high]), surf, high + offset, blockIdx.x);
-}
-
-__device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cpx *shared, cuSurf surf)
-{
-    SURF2D_READ(&(shared[low]), surf, blockIdx.x, low + offset);
-    SURF2D_READ(&(shared[high]), surf, blockIdx.x, high + offset);
-}
-
-__device__ static __inline__ void mem_stog_db_row(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
-{
-    int row_low = BIT_REVERSE(low + offset, lead);
-    int row_high = BIT_REVERSE(high + offset, lead);
-    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, row_low, blockIdx.x);
-    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, row_high, blockIdx.x);
-}
-
-__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
-{
-    int col_low = BIT_REVERSE(low + offset, lead);
-    int col_high = BIT_REVERSE(high + offset, lead);
-    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, blockIdx.x, col_low);
-    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, col_high);
 }
 
 __global__ void _kernelGPUSyncTex2DRow(cuSurf surfIn, cuSurf surfOut, float angle, float bAngle, int depth, cpx scale, int n)

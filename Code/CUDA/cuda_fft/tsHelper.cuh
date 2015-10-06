@@ -66,6 +66,13 @@ __host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
     *out = tmp;
 }
 
+__host__ __device__ static __inline__ void swap(cuSurf *in, cuSurf *out)
+{
+    cuSurf tmp = *in;
+    *in = *out;
+    *out = tmp;
+}
+
 __host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
@@ -129,6 +136,35 @@ __device__ static __inline__ void mem_stog_tb(int low, int high, int offset, uns
 {
     global[low + offset] = cuCmulf(shared[BIT_REVERSE(low, lead)], scale);
     global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, lead)], scale);
+}
+
+
+__device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cuSurf surf)
+{
+    SURF2D_READ(&(shared[low]), surf, low + offset, blockIdx.x);
+    SURF2D_READ(&(shared[high]), surf, high + offset, blockIdx.x);
+}
+
+__device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cpx *shared, cuSurf surf)
+{
+    SURF2D_READ(&(shared[low]), surf, blockIdx.x, low + offset);
+    SURF2D_READ(&(shared[high]), surf, blockIdx.x, high + offset);
+}
+
+__device__ static __inline__ void mem_stog_db_row(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
+{
+    int row_low = BIT_REVERSE(low + offset, lead);
+    int row_high = BIT_REVERSE(high + offset, lead);
+    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, row_low, blockIdx.x);
+    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, row_high, blockIdx.x);
+}
+
+__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
+{
+    int col_low = BIT_REVERSE(low + offset, lead);
+    int col_high = BIT_REVERSE(high + offset, lead);
+    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, blockIdx.x, col_low);
+    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, col_high);
 }
 
 __host__ static __inline void set_block_and_threads(int *numBlocks, int *threadsPerBlock, int size)

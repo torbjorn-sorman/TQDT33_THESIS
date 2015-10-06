@@ -241,3 +241,69 @@ int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
     }
     return 1;
 }
+
+int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *relDiff)
+{
+    double mDiff = 0.0;
+    double mVal = -1;
+    cudaMemcpy(in, dev, size, cudaMemcpyDeviceToHost);
+    for (int i = 0; i < len; ++i) {
+        mVal = max(mVal, max(cuCabsf(in[i]), cuCabsf(ref[i])));
+        double tmp = cuCabsf(cuCsubf(in[i], ref[i]));
+        mDiff = tmp > mDiff ? tmp : mDiff;
+    }
+    *relDiff = (mDiff / mVal);
+    return *relDiff < 0.00001;
+}
+
+__host__ void cudaCheckError(cudaError_t err)
+{
+    if (err) {
+        printf("\n%s: %s\n", cudaGetErrorName(err), cudaGetErrorString(err));
+        getchar();
+        exit(err);
+    }
+}
+
+__host__ void cudaCheckError()
+{
+    cudaCheckError(cudaGetLastError());
+}
+
+__host__ void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
+{
+    if (sinus) {
+        *in = get_sin_img(n);
+        *ref = get_sin_img(n);
+    }
+    else {
+        char input_file[40];
+        sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
+        int sz;
+        *in = read_image(input_file, &sz);
+        *ref = read_image(input_file, &sz);
+    }
+    *size = n * n * sizeof(cpx);
+    // Allocate CUDA arrays in device memory
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
+    cudaMallocArray(cuInputArray, &channelDesc, n, n, cudaArraySurfaceLoadStore);
+    cudaCheckError();
+    if (cuOutputArray != NULL) {
+        cudaMallocArray(cuOutputArray, &channelDesc, n, n, cudaArraySurfaceLoadStore);
+    }
+    // Specify surface
+    struct cudaResourceDesc resDesc;
+    memset(&resDesc, 0, sizeof(resDesc));
+    resDesc.resType = cudaResourceTypeArray;
+    // Create the surface objects
+    resDesc.res.array.array = *cuInputArray;
+    *inputSurfObj = 0;
+    cudaCreateSurfaceObject(inputSurfObj, &resDesc); 
+    cudaCheckError();
+    if (outputSurfObj != NULL) {
+        resDesc.res.array.array = *cuOutputArray;
+        *outputSurfObj = 0;
+        cudaCreateSurfaceObject(outputSurfObj, &resDesc);
+        cudaCheckError();
+    }
+}

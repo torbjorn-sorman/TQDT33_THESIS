@@ -1,8 +1,10 @@
 #ifndef TSTEST_CUH
 #define TSTEST_CUH
 
-#include "tsDefinitions.cuh"
 #include <Windows.h>
+#include <cuda_texture_types.h>
+
+#include "tsDefinitions.cuh"
 #include "tsHelper.cuh"
 
 /* Performance measure on Windows, result in micro seconds */
@@ -32,5 +34,9 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
 void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n);
 void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
+int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
+void cudaCheckError(cudaError_t err);
+void cudaCheckError();
+__host__ void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
 
 #endif

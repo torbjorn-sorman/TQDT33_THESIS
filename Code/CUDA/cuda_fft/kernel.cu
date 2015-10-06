@@ -1,8 +1,4 @@
 
-//#define PROFILER
-#define IMAGE_TEST
-#define RUN_CUFFT
-
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
@@ -20,10 +16,16 @@
 
 __host__ double cuFFT_Performance(int n);
 __host__ double cuFFT_2D_Performance(int n);
+__host__ int cuFFT_2D_Compare(int n, double *diff);
 __host__ void printDevProp(cudaDeviceProp devProp);
 __host__ void toFile(const char *name, const double m[], int ms);
 
-#define RUNS 10
+//#define PROFILER
+#define IMAGE_TEST
+#define RUN_CUFFT
+
+//#define START_ELEM 7
+#define RUNS 9
 
 int main()
 {
@@ -33,10 +35,16 @@ int main()
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
     double measures[RUNS];
+    double measures_surf[RUNS];
     double measures_cuFFT[RUNS];
     int measureIndex = 0;
-    int start = 2;
-    int end = start + RUNS;
+#ifdef START_ELEM
+    int start = START_ELEM;
+    int end = START_ELEM + RUNS - 1;
+#else
+    int start = log2_32(TILE_DIM >> 1);
+    int end = log2_32(TILE_DIM >> 1) + RUNS - 1;
+#endif
 
 #if defined(PROFILER)
     cudaProfilerStart();
@@ -57,20 +65,24 @@ int main()
 #ifdef RUN_CUFFT
     printf("\tcuFFT");
 #endif
-    printf("\tMy");
-    for (unsigned int n = TILE_DIM / 2; n <= power2(end); n *= 2) {
+    printf("\tMyCUDA");
+    double diff = 0.0;
+    for (unsigned int n = power2(start); n <= power2(end); n *= 2) {
         printf("\n%d:", n);
         char *fmt = (n > 1000000 ? "\t%.0f" : "\t\t%.0f");
 #ifdef RUN_CUFFT
         printf(fmt, measures_cuFFT[measureIndex] = cuFFT_2D_Performance(n));
+        
         printf("\t%.0f", measures[measureIndex] = tsCombine2D_Performance(n));
         if (tsCombine2D_Validate(n) == 0) printf("!");
-        /*
-        if (n < 4096) {
-        tsCombineGPUSync2D_Test(n);
-        tsCombineGPUSyncTex2D_Test(n);
-        }
-        */
+        if (cuFFT_2D_Compare(n, &diff) == 0) printf("Fishy(%f)", diff);
+        
+        printf("\t%.0f", measures_surf[measureIndex] = tsCombine2DSurf_Performance(n));
+        if (tsCombine2DSurf_Validate(n) == 0) printf("!");
+
+        if (n < 4096)
+            tsCombineGPUSyncTex2D_Test(n);
+
 #else
         printf(fmt, measures[measureIndex] = tsCombine2D_Performance(n));
         if (tsCombine2D_Validate(n) == 0) printf("!");
@@ -82,6 +94,8 @@ int main()
     toFile("cuFFT 2D", measures_cuFFT, RUNS);
 #endif
     toFile("Combine 2D CPU and GPU Sync", measures, RUNS);
+    toFile("Combine 2D Surface CPU and GPU Sync", measures_surf, RUNS);
+    printf("\nDone...");
     getchar();
 #else
     printf("\n\t");
@@ -154,6 +168,27 @@ __host__ double cuFFT_2D_Performance(int n)
     cufftDestroy(plan);
     fftResultAndFree(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     return avg(measures, NUM_PERFORMANCE);
+}
+
+__host__ int cuFFT_2D_Compare(int n, double *diff)
+{
+    cpx *cuFFT, *myCUDA;
+    cpx *dev_in, *dev_out;
+    size_t size;
+    fft2DSetup(&cuFFT, &myCUDA, &dev_in, &dev_out, &size, "shore", 0, n);
+        
+    cufftHandle plan;
+    cufftPlan2d(&plan, n, n, CUFFT_C2C);    
+    cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
+    cudaDeviceSynchronize();     
+    cudaMemcpy(cuFFT, dev_out, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(dev_in, myCUDA, size, cudaMemcpyHostToDevice);
+    tsCombine2D(FFT_FORWARD, &dev_in, &dev_out, n);
+
+    cufftDestroy(plan);
+    int res = fft2DCompare(myCUDA, cuFFT, dev_out, size, n * n, diff);
+    fft2DShakedown(&myCUDA, &cuFFT, &dev_in, &dev_out);
+    return res;
 }
 
 __host__ void toFile(const char *name, const double m[], int ms)

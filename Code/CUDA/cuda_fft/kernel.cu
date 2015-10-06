@@ -9,23 +9,26 @@
 #include <vector>
 
 #include "definitions.h"
-#include "tsTest.cuh"
+//#include "tsTest.cuh"
 #include "getopt.h"
 #include "MyCUDA.h"
-#include "tsCombine.cuh"
+//#include "tsCombine.cuh"
 
+/*
 __host__ double cuFFT_Performance(int n);
 __host__ double cuFFT_2D_Performance(int n);
 __host__ int cuFFT_2D_Compare(int n, double *diff);
-__host__ void printDevProp(cudaDeviceProp devProp);
-__host__ void toFile(std::string name, std::vector<double> results, int ms);
+*/
+
+void printDevProp(cudaDeviceProp devProp);
+void toFile(std::string name, std::vector<double> results, int ms);
 
 //#define PROFILER
-#define IMAGE_TEST
-#define RUN_CUFFT
+//#define IMAGE_TEST
+//#define RUN_CUFFT
 
 //#define START_ELEM 7
-#define RUNS 9
+//#define RUNS 9
 
 std::vector<Platform> getPlatforms(benchmarkArgument *args)
 {
@@ -65,12 +68,11 @@ int main(int argc, const char* argv[])
             for (Platform platform : platforms)
                 std::cout << platform.name << "\t";            
             std::cout << "\n";
-            char *fmt = "%.0f\t";
             std::cout << std::setprecision(0);
             for (int i = 0; i < measureIndex; ++i) {
                 std::cout << power2(i + args.start) << "\t";
                 for (Platform platform : platforms)
-                    std::cout << platform.results.at(i) << (args.validate == 1 ? platform.validate(power2(args.start + i)) : "") << "\t";
+                    std::cout << platform.results.at(i) << (args.validate == 1 || platform.validate(power2(args.start + i)) ? "" : "!") << "\t";
                 std::cout << "\n";
             }
         }
@@ -78,7 +80,7 @@ int main(int argc, const char* argv[])
             for (Platform platform : platforms)
                 toFile(platform.name, platform.results, args.number_of_lengths);
     }
-
+    /*
 
     double measures[RUNS];
     double measures_surf[RUNS];
@@ -182,6 +184,7 @@ int main(int argc, const char* argv[])
     getchar();
 #endif
     return 0;
+    */
 }
 
 __host__ double cuFFT_Performance(int n)

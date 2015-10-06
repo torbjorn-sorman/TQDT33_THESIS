@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="Platforms\CUDA\MyHelperCUDA.cu">
+      <Filter>Platforms\CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Platforms\CUDA\MyFFTCUDA.cu">
+      <Filter>Platforms\CUDA</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Definitions.h" />
+    <ClInclude Include="Common\imglib.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\parsearg.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\mymath.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\MyHelperCUDA.cuh">
+      <Filter>Platforms\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\MyFFTCUDA.cuh">
+      <Filter>Platforms\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyCUDA.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\Platform.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{c8d5b27f-8c3d-43d7-b5a2-f8376853c2a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms">
+      <UniqueIdentifier>{bff72685-e7c6-4980-9246-278ac8f7820b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms\CUDA">
+      <UniqueIdentifier>{0e8eea15-c8fa-4312-9c78-548d1a40bbb7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Common\imglib.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\parsearg.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyCUDA.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -40,6 +40,6 @@ int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
-__host__ void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
+void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
 
 #endif

@@ -19,9 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3390EB1A-E26E-42D8-8D68-9B7E2C49EEC8}</ProjectGuid>
-    <RootNamespace>cuda_fft</RootNamespace>
-    <ProjectName>benchmark</ProjectName>
+    <ProjectGuid>{1D9A8B51-4CA4-4C18-B72F-B37701A9A16E}</ProjectGuid>
+    <RootNamespace>benchmarkfft</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -82,24 +81,12 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
-    <CudaCompile>
-      <PtxAsOptionV>true</PtxAsOptionV>
-      <Include>
-      </Include>
-      <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_30,sm_30</CodeGeneration>
-    </CudaCompile>
-    <CudaLink>
-      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.0\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cufft.lib</AdditionalDependencies>
-    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -110,8 +97,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64"</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
@@ -119,14 +105,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64"</Include>
-      <CodeGeneration>compute_30,sm_30</CodeGeneration>
-      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
-    <CudaLink>
-      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cufft.lib</AdditionalDependencies>
-    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -147,9 +126,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
-    <CudaCompile>
-      <CodeGeneration>compute_30,sm_30</CodeGeneration>
-    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -158,13 +134,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
@@ -173,72 +151,28 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
-      <Optimization>InheritFromHost</Optimization>
       <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="tsCombine.cu" />
-    <CudaCompile Include="tsCombineGPUSync.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsCombineGPUSyncTex.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsConstantGeometry_DP.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsConstantGeometry_SB.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsConstantGeometry.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsTobb.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="tsHelper.cu" />
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="tsTest.cu" />
-    <CudaCompile Include="tsTobb_SB.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
+    <CudaCompile Include="Platforms\CUDA\MyFFTCUDA.cu" />
+    <CudaCompile Include="Platforms\CUDA\MyHelperCUDA.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="getopt.h" />
-    <ClInclude Include="imglib.h" />
-    <ClInclude Include="MyCUDA.h" />
-    <ClInclude Include="Platform.h" />
-    <ClInclude Include="tsCombine.cuh" />
-    <ClInclude Include="tsCombineGPUSync.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="tsCombineGPUSyncTex.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="tsConstantGeometry_DP.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="definitions.h" />
-    <ClInclude Include="tsConstantGeometry.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="tsConstantGeometry_SB.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="tsTobb.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="tsHelper.cuh" />
-    <ClInclude Include="tsTest.cuh" />
-    <ClInclude Include="tsTobb_SB.cuh">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Common\imglib.h" />
+    <ClInclude Include="Common\mymath.h" />
+    <ClInclude Include="Common\parsearg.h" />
+    <ClInclude Include="Definitions.h" />
+    <ClInclude Include="Platforms\CUDA\MyFFTCUDA.cuh" />
+    <ClInclude Include="Platforms\CUDA\MyHelperCUDA.cuh" />
+    <ClInclude Include="Platforms\MyCUDA.h" />
+    <ClInclude Include="Platforms\Platform.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="getopt.c" />
-    <ClCompile Include="imglib.cpp" />
-    <ClCompile Include="MyCUDA.cpp" />
+    <ClCompile Include="Common\imglib.cpp" />
+    <ClCompile Include="Common\parsearg.cpp" />
+    <ClCompile Include="Platforms\MyCUDA.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

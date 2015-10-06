@@ -85,13 +85,14 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="definitions.h" />
+    <ClInclude Include="MyCUDA.h" />
+    <ClInclude Include="Platform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imglib.cpp">
       <Filter>External</Filter>
     </ClCompile>
-    <ClCompile Include="getopt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="getopt.c" />
+    <ClCompile Include="MyCUDA.cpp" />
   </ItemGroup>
 </Project>

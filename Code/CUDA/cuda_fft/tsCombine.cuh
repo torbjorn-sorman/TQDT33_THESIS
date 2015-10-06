@@ -6,7 +6,7 @@
 #include <device_launch_parameters.h>
 #include <math.h>
 
-#include "tsDefinitions.cuh"
+#include "definitions.h"
 #include "tsHelper.cuh"
 #include "tsTest.cuh"
 

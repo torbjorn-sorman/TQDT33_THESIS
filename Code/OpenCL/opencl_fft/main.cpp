@@ -27,9 +27,11 @@ int main(int argc, char** argv)
     }
 #ifndef PROFILER
     printf("\n");
-
-    for (int i = START; i <= END; i *= 2)
-        printf("%d:\t%.0f\n", i, measurements[log2_32(i) - log2_32(START)]);
+    char *fmt;
+    for (int i = START; i <= END; i *= 2) {
+        fmt = (i < 1000000 ? "%d:\t\t%.0f\n" : "%d:\t%.0f\n");  
+        printf(fmt, i, measurements[log2_32(i) - log2_32(START)]);
+    }
 
     printf("\nCompleted\n");
     getchar();

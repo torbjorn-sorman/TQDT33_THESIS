@@ -1,8 +1,3 @@
-#include <Windows.h>
-#include <stdio.h>
-#include <cuda_runtime.h>
-#include "math.h"
-
 #include "tsTest.cuh"
 
 #define ERROR_MARGIN 0.0001

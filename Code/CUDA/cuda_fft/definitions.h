@@ -28,6 +28,7 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 
 // Test
 #define NUM_PERFORMANCE 10
+#define HIGHEST_EXP 25
 
 #ifdef __CUDACC__
 #define KERNEL_ARGS2(grid, block) <<< grid, block >>>
@@ -56,5 +57,25 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 #define SIN_COS_F(a, x, y)
 #define FIND_FIRST_BIT(v)
 #endif
+
+struct benchmarkArgument {
+    int dimensions = 1;
+    int start = 2;
+    int end = 10;
+    int number_of_lengths = 8;
+    int test_platform = 0;
+    int platform_cufft = 0;
+    int platform_cuda = 0;
+    int platform_opencl = 0;
+    int platform_opengl = 0;
+    int platform_directx = 0;
+    int platform_c = 0;
+    int platform_openmp = 0;
+    int profiler = 0;
+    int show_cuprop = 0;
+    int write_file = 0;
+    int validate = 0;
+    int display = 0;
+};
 
 #endif

@@ -139,7 +139,7 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 
 #define ROW_COL_KERNEL(rw, kr, kc) ((rw) ? (kr) : (kc))
 
-__host__ void tsCombine2D_help(fftDir dir, cpx **dev_in, cpx **dev_out, int rowWise, int n)
+__host__ static __inline void tsCombine2D_help(fftDir dir, cpx **dev_in, cpx **dev_out, int rowWise, int n)
 {
     dim3 blocks;
     int threads;
@@ -360,7 +360,8 @@ __global__ void _kernelGPUS2DRowSurf(cuSurf in, cuSurf out, float angle, float b
     mem_gtos_row(threadIdx.x, in_high, rowOffset, shared, in);
     SYNC_THREADS;
     algorithm_p(shared, in_high, bAngle, depth);
-    mem_stog_db_row(threadIdx.x, in_high, rowOffset, (32 - log2((int)gridDim.x)), scale, shared, out);
+    //mem_stog_db_row(threadIdx.x, in_high, rowOffset, (32 - log2((int)gridDim.x)), scale, shared, out);
+    mem_stog_dbt_row(threadIdx.x, in_high, rowOffset, (32 - log2((int)gridDim.x)), scale, shared, out);
 }
 
 __global__ void _kernelGPUS2DColSurf(cuSurf in, cuSurf out, float angle, float bAngle, int depth, cpx scale, int n)
@@ -413,12 +414,8 @@ __host__ void tsCombine2DSurf_help(fftDir dir, cuSurf *surfaceIn, cuSurf *surfac
 
 __host__ void tsCombine2DSurf(fftDir dir, cuSurf *surfaceIn, cuSurf *surfaceOut, int n)
 {
-    dim3 blocks, threads;
-    set_block_and_threads_transpose(&blocks, &threads, n);
-
     tsCombine2DSurf_help(dir, surfaceIn, surfaceOut, 1, n);
-    tsCombine2DSurf_help(dir, surfaceOut, surfaceIn, 0, n);
-
+    tsCombine2DSurf_help(dir, surfaceOut, surfaceIn, 1, n);
     swap(surfaceIn, surfaceOut);
 }
 
@@ -470,7 +467,7 @@ __host__ int tsCombine2DSurf_Validate(int n)
     int res;
     char *image_name = "shore";
     cpx *in, *ref;
-    size_t size;    
+    size_t size;
     cudaArray *inArr, *outArr;
     cuSurf inSurf, outSurf;
     fft2DSurfSetup(&in, &ref, &size, image_name, NO, n, &inArr, &outArr, &inSurf, &outSurf);

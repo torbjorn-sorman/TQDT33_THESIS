@@ -81,13 +81,13 @@
     <ClCompile Include="genCode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="tb_test.cpp">
       <Filter>Source Files\tb</Filter>
     </ClCompile>
     <ClCompile Include="fft_radix4.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
+    <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">

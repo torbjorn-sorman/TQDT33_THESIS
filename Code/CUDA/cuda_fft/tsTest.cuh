@@ -3,8 +3,11 @@
 
 #include <Windows.h>
 #include <cuda_texture_types.h>
-
-#include "tsDefinitions.cuh"
+#include <Windows.h>
+#include <stdio.h>
+#include <cuda_runtime.h>
+#include "math.h"
+#include "definitions.h"
 #include "tsHelper.cuh"
 
 /* Performance measure on Windows, result in micro seconds */

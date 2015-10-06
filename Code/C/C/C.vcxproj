@@ -97,7 +97,7 @@
     <ClCompile Include="genCode.cpp" />
     <ClCompile Include="imglib.cpp" />
     <ClCompile Include="kiss_fft.c" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="main.c" />
     <ClCompile Include="tb_fft_helper.cpp" />
     <ClCompile Include="tb_filter.cpp" />
     <ClCompile Include="tb_image.cpp" />

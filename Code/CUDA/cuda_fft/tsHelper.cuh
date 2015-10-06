@@ -8,7 +8,7 @@
 #include <device_launch_parameters.h>
 #include <math.h>
 #include <cuda_runtime.h>
-#include "tsDefinitions.cuh"
+#include "definitions.h"
 #include "imglib.h"
 
 // Fast bit-reversal
@@ -132,6 +132,14 @@ __device__ static __inline__ void mem_stog_db(int low, int high, int offset, uns
     global[BIT_REVERSE(high + offset, lead)] = cuCmulf(shared[high], scale);
 }
 
+__device__ static __inline__ void mem_stog_dbt(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global)
+{
+    int xl = BIT_REVERSE(low + offset, lead);
+    int xh = BIT_REVERSE(high + offset, lead);
+    global[blockIdx.x + xl * gridDim.x] = cuCmulf(shared[low], scale);
+    global[blockIdx.x + xh * gridDim.x] = cuCmulf(shared[high], scale);
+}
+
 __device__ static __inline__ void mem_stog_tb(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cpx *global)
 {
     global[low + offset] = cuCmulf(shared[BIT_REVERSE(low, lead)], scale);
@@ -157,6 +165,14 @@ __device__ static __inline__ void mem_stog_db_row(int low, int high, int offset,
     int row_high = BIT_REVERSE(high + offset, lead);
     SURF2D_WRITE(cuCmulf(shared[low], scale), surf, row_low, blockIdx.x);
     SURF2D_WRITE(cuCmulf(shared[high], scale), surf, row_high, blockIdx.x);
+}
+
+__device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)
+{
+    int row_low = BIT_REVERSE(low + offset, lead);
+    int row_high = BIT_REVERSE(high + offset, lead);
+    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, blockIdx.x, row_low);
+    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, row_high);
 }
 
 __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int lead, cpx scale, cpx *shared, cuSurf surf)

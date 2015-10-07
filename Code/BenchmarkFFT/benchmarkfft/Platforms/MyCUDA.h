@@ -1,6 +1,9 @@
-#pragma once
+#ifndef MYCUDA_H
+#define MYCUDA_H
+
 #include "Platform.h"
-#include "CUDA/MyFFTCUDA.cuh"
+#include "CUDA/cuda_fft.cuh"
+
 class MyCUDA : public Platform
 {
 public:
@@ -10,3 +13,4 @@ public:
     virtual void MyCUDA::runPerformance(const int n);
 };
 
+#endif

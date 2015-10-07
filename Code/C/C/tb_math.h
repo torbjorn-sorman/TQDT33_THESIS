@@ -37,12 +37,12 @@ static const unsigned int revTbl256[] =
 
 unsigned int reverseBitsLowMem(int x, const int l);
 int log2_32(int value);
-int cpx_equal(cpx a, cpx b);
 int cpx_equal(cpx *a, cpx *b, const int n);
 int cpx_equal(cpx **a, cpx **b, const int n);
-double cpx_diff(cpx a, cpx b);
+int cpx_equal(cpx a, cpx b);
 double cpx_diff(cpx *a, cpx *b, const int n);
 double cpx_diff(cpx **a, cpx **b, const int n);
+double cpx_diff(cpx a, cpx b);
 double cpx_avg_diff(cpx *a, cpx *b, const int n);
 double cpx_avg_diff(cpx **a, cpx **b, const int n);
 

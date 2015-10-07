@@ -1,6 +1,6 @@
 #include "tb_test.h"
 
-#define NO_TESTS 16
+#define NO_TESTS 10
 #define NO_RUNS 1
 
 LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
@@ -14,7 +14,7 @@ LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 void validate(fft_func fn, const int n_threads, const unsigned int max_elements)
 {
     cpx *in, *out, *ref;
-    for (unsigned int n = 4; n <= max_elements; n *= 2) {
+    for (unsigned int n = 4; n <= max_elements; n *= 2) {        
         // Test sinus
         in = get_seq(n, 1);
         out = get_seq(n);
@@ -177,7 +177,7 @@ void test_fft(char *name, fft_func fn, const int n_threads, int file, unsigned i
 {
     if (file) printf("\n%s\n", name);
     validate(fn, n_threads, max_elem);
-    //mtime(name, fn, n_threads, file, max_elem);
+    mtime(name, fn, n_threads, file, max_elem);
 }
 
 void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
@@ -185,7 +185,7 @@ void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
     double measure;
     cpx *in, *out;
     int ma = max_elem > 128 ? 128 : max_elem;
-    for (unsigned int n = 4; n <= ma; n *= 2) {
+    for (int n = 4; n <= ma; n *= 2) {
         in = get_seq(n, 1);
         out = get_seq(n);
         START_TIME;
@@ -205,7 +205,7 @@ void test_short_fftw(unsigned int max_elem)
     fftw_complex *fftw_in, *fftw_out;
     fftw_plan p;
     int ma = max_elem > GENERATED_FIXED_SIZE ? GENERATED_FIXED_SIZE : max_elem;
-    for (unsigned int n = 4; n <= ma; n *= 2) {
+    for (int n = 4; n <= ma; n *= 2) {
         fftw_in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n);
         fftw_out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n);
         p = fftw_plan_dft_1d(n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);

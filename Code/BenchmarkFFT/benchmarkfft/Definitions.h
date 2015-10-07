@@ -3,34 +3,45 @@
 
 #include "cuComplex.h"
 
-// Save space for better overview when many params
+//
+// Typedefs to improve code readability and better semantics
+//
 typedef cuFloatComplex cpx;
 typedef cudaSurfaceObject_t cuSurf;
 typedef float fftDir;
-
 typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, int n);
 typedef void(*transposeFunction)(cpx **seq, int, int n);
 typedef void(*twiddleFunction)(cpx *W, int, int n);
 typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 
+//
+// Math & Algorithm defines
+//
 #define M_2_PI 6.28318530718f
 #define M_PI 3.14159265359f
-
+#define RELATIVE_ERROR_MARGIN 0.00001
 #define FFT_FORWARD -1.0f
 #define FFT_INVERSE 1.0f
 
-#define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if 
+//
+// Hardware & Tweak defines, no need to poll this every time program runs.
+//
 #define MAX_BLOCK_SIZE 1024     // this limits tsCombineGPUSync!
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32      // This squared is the number of threads per block in the transpose kernel.
-
+#define HW_LIMIT ((1024 / MAX_BLOCK_SIZE) * 7)
 #define NO_STREAMING_MULTIPROCESSORS 7
-#define BIT_REVERSED_OUTPUT
+#define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if
 
-// Test
+//
+// Test related defines
+//
 #define NUM_PERFORMANCE 10
 #define HIGHEST_EXP 25
 
+//
+// CUDA compiler nvcc intrisics related defines.
+//
 #ifdef __CUDACC__
 #define KERNEL_ARGS2(grid, block) <<< grid, block >>>
 #define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>

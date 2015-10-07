@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PLATFORM_H
+#define PLATFORM_H
+
 #include <string>
 #include <vector>
 class Platform
@@ -8,7 +10,13 @@ public:
     std::vector<double> results;
 
     Platform()
-    {        
+    {
+        results = std::vector<double>();
+    }
+
+    Platform(const int dim)
+    {
+        dimensions = dim;
     }
 
     virtual ~Platform()
@@ -28,3 +36,4 @@ protected:
     int dimensions;
 };
 
+#endif

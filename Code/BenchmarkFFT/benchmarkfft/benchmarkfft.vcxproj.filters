@@ -2,10 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="Platforms\CUDA\MyHelperCUDA.cu">
+    <CudaCompile Include="Platforms\CUDA\cuda_fft.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="Platforms\CUDA\MyFFTCUDA.cu">
+    <CudaCompile Include="Platforms\CUDA\cuda_helper.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -20,17 +20,53 @@
     <ClInclude Include="Common\mymath.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\CUDA\MyHelperCUDA.cuh">
-      <Filter>Platforms\CUDA</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\CUDA\MyFFTCUDA.cuh">
-      <Filter>Platforms\CUDA</Filter>
-    </ClInclude>
     <ClInclude Include="Platforms\MyCUDA.h">
       <Filter>Platforms</Filter>
     </ClInclude>
     <ClInclude Include="Platforms\Platform.h">
       <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyOpenCL.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\mytimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\mycomplex.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyCuFFT.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyOpenMP.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyC.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\OpenMP\omp_fast_index.h">
+      <Filter>Platforms\OpenMP</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h">
+      <Filter>Platforms\OpenMP</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\OpenCL\ocl_fft.h">
+      <Filter>Platforms\OpenCL</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\OpenCL\ocl_helper.h">
+      <Filter>Platforms\OpenCL</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\cuda_helper.cuh">
+      <Filter>Platforms\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\cuda_fft.cuh">
+      <Filter>Platforms\CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\C\c_fft.h">
+      <Filter>Platforms\C</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\C\c_helper.h">
+      <Filter>Platforms\C</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +79,15 @@
     <Filter Include="Platforms\CUDA">
       <UniqueIdentifier>{0e8eea15-c8fa-4312-9c78-548d1a40bbb7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Platforms\OpenCL">
+      <UniqueIdentifier>{a92d3a1e-93ba-426b-a1fc-49464de4feb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms\C">
+      <UniqueIdentifier>{634529ad-9602-4b01-85f9-0e39f0837d5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms\OpenMP">
+      <UniqueIdentifier>{9311ef5d-2659-4dbe-a0cb-ca4815ac47d0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\imglib.cpp">
@@ -54,5 +99,40 @@
     <ClCompile Include="Platforms\MyCUDA.cpp">
       <Filter>Platforms</Filter>
     </ClCompile>
+    <ClCompile Include="Platforms\MyOpenCL.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyCuFFT.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyOpenMP.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyC.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenMP\omp_constant_geometry.cpp">
+      <Filter>Platforms\OpenMP</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenMP\omp_fast_index.cpp">
+      <Filter>Platforms\OpenMP</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp">
+      <Filter>Platforms\OpenCL</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenCL\ocl_helper.cpp">
+      <Filter>Platforms\OpenCL</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\C\c_fft.cpp">
+      <Filter>Platforms\C</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\C\c_helper.cpp">
+      <Filter>Platforms\C</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Platforms\OpenCL\ocl_kernel.cl">
+      <Filter>Platforms\OpenCL</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-#include "MyFFTCUDA.cuh"
+#include "cuda_fft.cuh"
 
 __global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist);
 __global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist);
@@ -6,6 +6,9 @@ __global__ void _kernelAll2DCol(cpx *in, cpx *out, float angle, unsigned int lma
 __global__ void _kernelGPUS(cpx *in, cpx *out, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2);
 __global__ void _kernelGPUS2DRow(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
 __global__ void _kernelGPUS2DCol(cpx *in, cpx *out, float angle, float bAngle, int depth, cpx scale, int n);
+
+__device__ volatile int _sync_array_in[MAX_BLOCK_SIZE];
+__device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
 
 __host__ int tsCombine_Validate(int n)
 {
@@ -67,7 +70,6 @@ __host__ double tsCombine_Performance(int n)
 
     fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     double t = avg(measures, NUM_PERFORMANCE);
-    printf("Time: %f\n", t);
     return t;
 }
 
@@ -89,11 +91,8 @@ __host__ double tsCombine2D_Performance(int n)
     return avg(measures, NUM_PERFORMANCE);
 }
 
-// My device specifics!
-// Seven physical "cores" that can run blocks in "parallel" (and most important sync threads in a block). 1024 is the thread limit per physical core.
-// Essentially (depending on scheduling and other factors) # blocks fewer than HW_LIMIT can be synched, any # above is not trivially solved. cuFFT solves this.
-#define HW_LIMIT (1024 / MAX_BLOCK_SIZE) * 7
-
+// Seven physical "cores" can run blocks in "parallel" (and most important: sync over blocks).
+// Essentially my algorithm handles (depending on scheduling and other factors) # blocks fewer than HW_LIMIT on the GPU, any # above is not trivially solved. cuFFT solves this.
 __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
     int threads, blocks;
@@ -179,10 +178,10 @@ __host__ void tsCombine2D(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 
     if (n > 256) {
         tsCombine2D_help(dir, dev_in, dev_out, 1, n);
-        _kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
         cudaDeviceSynchronize();
         tsCombine2D_help(dir, dev_in, dev_out, 1, n);
-        _kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        kernelTranspose KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
         cudaDeviceSynchronize();
     }
     else {
@@ -209,14 +208,14 @@ __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, i
     int tid = (blockIdx.x * blockDim.x + threadIdx.x);
     int dist = n2;
     int steps = 0;
-    init_sync(tid, nBlocks);
+    init_sync(_sync_array_in, _sync_array_out, tid, nBlocks);
     inner_k(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    __gpu_sync(nBlocks + steps);
+    __gpu_sync(_sync_array_in, _sync_array_out, nBlocks + steps);
     for (int bit = bit_start - 1; bit > breakSize; --bit) {
         dist = dist >> 1;
         ++steps;
         inner_k(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
-        __gpu_sync(nBlocks + steps);
+        __gpu_sync(_sync_array_in, _sync_array_out, nBlocks + steps);
     }
     return breakSize + 1;
 }

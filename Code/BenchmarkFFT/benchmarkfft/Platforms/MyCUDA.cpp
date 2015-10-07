@@ -1,10 +1,9 @@
 #include "MyCUDA.h"
 
 MyCUDA::MyCUDA(const int dim, const int runs)
+    : Platform(dim)
 {
     name = "CUDA";
-    dimensions = dim;
-    results = std::vector<double>(runs);
 }
 
 MyCUDA::~MyCUDA()
@@ -14,18 +13,12 @@ MyCUDA::~MyCUDA()
 bool MyCUDA::validate(const int n)
 {   
     if (dimensions == 1)
-        return tsCombine_Validate(n);
-    return tsCombine2D_Validate(n);
+        return tsCombine_Validate(n) == 1;
+    return tsCombine2D_Validate(n) == 1;
 }
 
 void MyCUDA::runPerformance(const int n)
 {
-    printf("RUN!");
-    if (dimensions == 1) {
-        printf("RUN!");
-        results.push_back(tsCombine_Performance(n));
-    }
-    else {
-        results.push_back(tsCombine2D_Performance(n));
-    }
+    double time = ((dimensions == 1) ? tsCombine_Performance(n) : tsCombine2D_Performance(n));
+    results.push_back(time);
 }

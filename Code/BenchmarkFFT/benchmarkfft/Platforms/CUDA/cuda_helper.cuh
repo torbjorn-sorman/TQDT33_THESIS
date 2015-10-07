@@ -1,13 +1,12 @@
 #ifndef MYHELPERCUDA_CUH
 #define MYHELPERCUDA_CUH
 
-#include <Windows.h>
-#include <stdio.h>
 #include <device_launch_parameters.h>
-#include <math.h>
+
 #include <cuda_runtime.h>
 #include "../../Definitions.h"
 #include "../../Common/imglib.h"
+#include "../../Common/mycomplex.h"
 
 __host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
 {
@@ -32,31 +31,26 @@ __host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, 
     return((x >> 16) | (x << 16)) >> l;
 }
 
-__device__ volatile int _sync_array_in[MAX_BLOCK_SIZE];
-__device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
-__device__ volatile int _sync_array_2din[8192][32]; // assume block dim >= 256 AND rows <= 8192
-__device__ volatile int _sync_array_2dout[8192][32];
-
-__device__ static __inline__ void init_sync(int tid, int blocks)
+__device__ static __inline__ void init_sync(volatile int sync_in[], volatile int sync_out[], int tid, int blocks)
 {
     if (tid < blocks) {
-        _sync_array_in[tid] = 0;
-        _sync_array_out[tid] = 0;
+        sync_in[tid] = 0;
+        sync_out[tid] = 0;
     }
 }
 
-__device__ static __inline__ void __gpu_sync(int goal)
+__device__ static __inline__ void __gpu_sync(volatile int sync_in[], volatile int sync_out[], int goal)
 {
     int tid = threadIdx.x;
     int bid = blockIdx.x;
     int nBlocks = gridDim.x;
-    if (tid == 0) { _sync_array_in[bid] = goal; }
+    if (tid == 0) { sync_in[bid] = goal; }
     if (bid == 1) { // Use bid == 1, if only one block this part will not run.
-        if (tid < nBlocks) { while (_sync_array_in[tid] != goal){} }
+        if (tid < nBlocks) { while (sync_in[tid] != goal){} }
         SYNC_THREADS;
-        if (tid < nBlocks) { _sync_array_out[tid] = goal; }
+        if (tid < nBlocks) { sync_out[tid] = goal; }
     }
-    if (tid == 0) { while (_sync_array_out[bid] != goal) {} }
+    if (tid == 0) { while (sync_out[bid] != goal) {} }
     SYNC_THREADS;
 }
 
@@ -166,11 +160,11 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
     SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, col_high);
 }
 
-__global__ void twiddle_factors(cpx *W, float angle, int n);
-__global__ void bit_reverse(cpx *in, cpx *out, float scale, int lead);
-__global__ void bit_reverse(cpx *seq, fftDir dir, int lead, int n);
-__global__ void _kernelTranspose(cpx *in, cpx *out, int n);
-__global__ void _kernelTranspose(cuSurf in, cuSurf out, int n);
+__global__ void kernelTwiddleFactors(cpx *W, float angle, int n);
+__global__ void kernelBitReverse(cpx *in, cpx *out, float scale, int lead);
+__global__ void kernelBitReverse(cpx *seq, fftDir dir, int lead, int n);
+__global__ void kernelTranspose(cpx *in, cpx *out, int n);
+__global__ void kernelTranspose(cuSurf in, cuSurf out, int n);
 
 int checkValidConfig(int blocks, int n);
 void set_block_and_threads(int *numBlocks, int *threadsPerBlock, int size);
@@ -194,16 +188,6 @@ double stopTimer();
 void console_print(cpx *seq, int n);
 void console_print_cpx_img(cpx *seq, int n);
 
-unsigned int power(unsigned int base, unsigned int exp);
-unsigned int power2(unsigned int exp);
-
-int checkError(cpx *seq, cpx *ref, float refScale, int n, int print);
-int checkError(cpx *seq, cpx *ref, int n, int print);
-int checkError(cpx *seq, cpx *ref, int n);
-
-cpx *get_seq(int n);
-cpx *get_seq(int n, int sinus);
-cpx *get_seq(int n, cpx *src);
 cpx *get_sin_img(int n);
 
 double avg(double m[], int n);

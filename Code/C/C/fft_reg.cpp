@@ -27,9 +27,6 @@ void fft_reg(fft_direction dir, cpx **in, cpx **out, const int n_threads, const 
     }
     bit_reverse(*out, dir, 32 - log2_32(n), n);
     free(W);
-
-    console_newline(1);
-    console_print(*out, n);
 }
 
 _inline void _do_rows(fft_direction dir, cpx** seq, cpx *W, const int n_threads, const int n)

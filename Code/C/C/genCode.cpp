@@ -261,7 +261,7 @@ std::string genCaseIndex(int index)
 {
     std::stringstream fmt;
     fmt << "case ";
-    int len = (index == 10 ? 2 : (index < 10 ? 3 : 4 - log10(index)));
+    int len = (int)(index == 10 ? 2 : (index < 10 ? 3 : 4 - log10(index)));
     for (int i = 0; i < len; ++i) {
         fmt << " ";
     }

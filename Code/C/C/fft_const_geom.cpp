@@ -27,10 +27,6 @@ void fft_const_geom(fft_direction dir, cpx **in, cpx **out, const int n_threads,
 
     bit_reverse(*out, dir, 32 - depth, n);
     free(W);
-
-
-    console_newline(1);
-    console_print(*out, n);
 }
 
 _inline void _do_rows(fft_direction dir, cpx** seq, const cpx *W, cpx **buffers, const int n_threads, const int n)

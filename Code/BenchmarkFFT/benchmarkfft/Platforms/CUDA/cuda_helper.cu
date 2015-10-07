@@ -1,12 +1,12 @@
-#include "MyHelperCUDA.cuh"
+#include "cuda_helper.cuh"
 
-__global__ void twiddle_factors(cpx *W, float angle, int n)
+__global__ void kernelTwiddleFactors(cpx *W, float angle, int n)
 {
     int i = (blockIdx.x * blockDim.x + threadIdx.x);
     SIN_COS_F(angle * i, &W[i].y, &W[i].x);
 }
 
-__global__ void bit_reverse(cpx *in, cpx *out, float scale, int lead)
+__global__ void kernelBitReverse(cpx *in, cpx *out, float scale, int lead)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -14,7 +14,7 @@ __global__ void bit_reverse(cpx *in, cpx *out, float scale, int lead)
     out[p].y = in[i].y * scale;
 }
 
-__global__ void bit_reverse(cpx *x, float dir, int lead, int n)
+__global__ void kernelBitReverse(cpx *x, float dir, int lead, int n)
 {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int p = BIT_REVERSE(i, lead);
@@ -30,7 +30,7 @@ __global__ void bit_reverse(cpx *x, float dir, int lead, int n)
     }
 }
 
-__global__ void _kernelTranspose(cpx *in, cpx *out, int n)
+__global__ void kernelTranspose(cpx *in, cpx *out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
@@ -51,7 +51,7 @@ __global__ void _kernelTranspose(cpx *in, cpx *out, int n)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-__global__ void _kernelTranspose(cuSurf in, cuSurf out, int n)
+__global__ void kernelTranspose(cuSurf in, cuSurf out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
@@ -181,8 +181,8 @@ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, doub
     double tmp = 0.0;
     for (int i = 0; i < n; ++i) {
         tmp = cuCabsf(seq[i]);
-        min_v = min(min_v, tmp);
-        max_v = max(max_v, tmp);
+        min_v = min_v < tmp ? min_v : tmp;
+        max_v = max_v > tmp ? max_v : tmp;
         sum_v += tmp;
     }
     *min_val = min_v;
@@ -291,23 +291,6 @@ cpx* fftShift(cpx *seq, int n)
 
 #define ERROR_MARGIN 0.0001
 
-static LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
-
-void startTimer()
-{
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
-}
-
-double stopTimer()
-{
-    QueryPerformanceCounter(&EndingTime);
-    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    ElapsedMicroseconds.QuadPart *= 1000000;
-    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-    return (double)ElapsedMicroseconds.QuadPart;
-}
-
 // Useful functions for debugging
 void console_print(cpx *seq, int n)
 {
@@ -332,76 +315,6 @@ void console_print_cpx_img(cpx *seq, int n)
     }
 }
 
-unsigned int power(unsigned int base, unsigned int exp)
-{
-    if (exp == 0)
-        return 1;
-    unsigned int value = base;
-    for (unsigned int i = 1; i < exp; ++i) {
-        value *= base;
-    }
-    return value;
-}
-
-unsigned int power2(unsigned int exp)
-{
-    return power(2, exp);
-}
-
-int checkError(cpx *seq, cpx *ref, float refScale, int n, int print)
-{
-    int j;
-    double re, im, i_val, r_val;
-    re = im = 0.0;
-    for (j = 0; j < n; ++j) {
-        r_val = abs(refScale * seq[j].x - ref[j].x);
-        i_val = abs(refScale * seq[j].y - ref[j].y);
-        re = re > r_val ? re : r_val;
-        im = im > i_val ? im : i_val;
-    }
-    if (print == 1) printf("Error\tre(e): %f\t im(e): %f\t@%u\n", re, im, n);
-    return re > ERROR_MARGIN || im > ERROR_MARGIN;
-}
-
-int checkError(cpx *seq, cpx *ref, int n, int print)
-{
-    return checkError(seq, ref, 1.f, n, print);
-}
-
-int checkError(cpx *seq, cpx *ref, int n)
-{
-    return checkError(seq, ref, n, 0);
-}
-
-cpx *get_seq(int n)
-{
-    return get_seq(n, 0);
-}
-
-cpx *get_seq(int n, int sinus)
-{
-    int i;
-    cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n);
-    for (i = 0; i < n; ++i) {
-        seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
-        seq[i].y = 0.f;
-    }
-    return seq;
-}
-
-cpx *get_seq(int n, cpx *src)
-{
-    int i;
-    cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n);
-    for (i = 0; i < n; ++i) {
-        seq[i].x = src[i].x;
-        seq[i].y = src[i].y;
-    }
-    return seq;
-}
-
 cpx *get_sin_img(int n)
 {
     cpx *seq;
@@ -410,29 +323,6 @@ cpx *get_sin_img(int n)
         for (int x = 0; x < n; ++x)
             seq[y * n + x] = make_cuFloatComplex((float)sin(M_2_PI * (((double)x) / n)), 0.f);
     return seq;
-}
-
-int cmp(const void *x, const void *y)
-{
-    double xx = *(double*)x, yy = *(double*)y;
-    if (xx < yy) return -1;
-    if (xx > yy) return  1;
-    return 0;
-}
-
-double avg(double m[], int n)
-{
-    int i, cnt, end;
-    double sum;
-    qsort(m, n, sizeof(double), cmp);
-    sum = 0.0;
-    cnt = 0;
-    end = n < 5 ? n - 1 : 5;
-    for (i = 0; i < end; ++i) {
-        sum += m[i];
-        ++cnt;
-    }
-    return (sum / (double)cnt);
 }
 
 void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W)
@@ -478,19 +368,18 @@ void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
 
 int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
 {
-    int result;
     _cudaFree(dev_in, dev_out, dev_W);
     cudaDeviceSynchronize();
     if (in == NULL && ref == NULL && out == NULL)
         return 0;
-    result = checkError(*in, *ref, n);
+    double diff = diff_seq(*in, *ref, n);
     _fftFreeSeq(in, out, ref);
     cudaError_t cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");
         return 1;
     }
-    return result;
+    return diff > ERROR_MARGIN;
 }
 
 void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n)
@@ -534,6 +423,8 @@ int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
     }
     return 1;
 }
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *relDiff)
 {

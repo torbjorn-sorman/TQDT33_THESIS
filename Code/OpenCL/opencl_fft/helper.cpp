@@ -27,6 +27,7 @@ std::string getKernel(const char *filename)
     return contents;
 }
 
+// Integer power function
 unsigned int power(const unsigned int base, const unsigned int exp)
 {
     if (exp == 0)
@@ -38,6 +39,7 @@ unsigned int power(const unsigned int base, const unsigned int exp)
     return value;
 }
 
+// Integer power function with base 2
 unsigned int power2(const unsigned int exp)
 {
     return power(2, exp);

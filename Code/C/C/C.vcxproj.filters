@@ -87,7 +87,7 @@
     <ClCompile Include="fft_radix4.cpp">
       <Filter>Source Files\tb\fft</Filter>
     </ClCompile>
-    <ClCompile Include="main.c" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_kiss_fft_guts.h">

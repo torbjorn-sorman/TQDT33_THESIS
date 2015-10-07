@@ -5,8 +5,10 @@
 #include <device_launch_parameters.h>
 
 #include "../../Definitions.h"
-#include "MyHelperCUDA.cuh"
 #include "../../Common/mymath.h"
+#include "../../Common/mytimer.h"
+#include "../../Common/mycomplex.h"
+#include "cuda_helper.cuh"
 
 __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
 __host__ void tsCombine2D(fftDir dir, cpx **dev_in, cpx **dev_out, int n);

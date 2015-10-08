@@ -19,6 +19,8 @@ bool MyCUDA::validate(const int n)
 
 void MyCUDA::runPerformance(const int n)
 {
+    cudaProfilerStart();
     double time = ((dimensions == 1) ? tsCombine_Performance(n) : tsCombine2D_Performance(n));
     results.push_back(time);
+    cudaProfilerStop();
 }

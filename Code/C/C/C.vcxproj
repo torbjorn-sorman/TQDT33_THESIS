@@ -54,7 +54,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <OpenMPSupport>true</OpenMPSupport>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -76,6 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <OpenMPSupport>false</OpenMPSupport>
       <AdditionalIncludeDirectories>C:\Users\torso\Documents\GitHub\TQDT33_THESIS\Code\C\C\fftw-3.3.4-dll32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,6 +120,7 @@
     <ClInclude Include="imglib.h" />
     <ClInclude Include="kissfft.hh" />
     <ClInclude Include="kiss_fft.h" />
+    <ClInclude Include="mytimer.h" />
     <ClInclude Include="tb_definitions.h" />
     <ClInclude Include="tb_fft_helper.h" />
     <ClInclude Include="tb_filter.h" />

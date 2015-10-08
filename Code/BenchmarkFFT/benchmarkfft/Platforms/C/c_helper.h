@@ -3,14 +3,12 @@
 
 #include "../../Definitions.h"
 
-/*
-static void __inline swap(cpx **a, cpx **b)
+__host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
 {
-    cpx *tmp = *a;
-    *a = *b;
-    *b = tmp;
+    cpx *tmp = *in;
+    *in = *out;
+    *out = tmp;
 }
-*/
 
 static void __inline swap(cpx *a, cpx *b)
 {
@@ -49,6 +47,31 @@ static void __inline twiddle_factors(cpx *W, fftDir dir, const int n)
     float w_ang;
     w_ang = -M_2_PI / n;
     int len = n >> 1;
+    for (int i = 0; i < len; ++i) {
+        W[i].x = cos(w_ang * i);
+    }
+    len >>= 1;
+    if (dir == FFT_FORWARD) {
+        for (int i = 0; i < len; ++i) {
+            int tmp = i + len;
+            W[i].y = W[tmp].x;
+            W[tmp].y = -W[i].x;
+        }
+    }
+    else {
+        for (int i = 0; i < len; ++i) {
+            int tmp = i + len;
+            W[i].y = -W[tmp].x;
+            W[tmp].y = W[i].x;
+        }
+    }
+}
+
+static void __inline ompTwiddleFactors(cpx *W, fftDir dir, const int n)
+{
+    float w_ang;
+    w_ang = -M_2_PI / n;
+    int len = n >> 1;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < len; ++i) {
         W[i].x = cos(w_ang * i);
@@ -74,6 +97,21 @@ static void __inline twiddle_factors(cpx *W, fftDir dir, const int n)
 
 static void __inline bit_reverse(cpx *x, fftDir dir, const int lead, const int n)
 {
+    for (int i = 0; i <= n; ++i) {
+        int p = bit_reverse(i, lead);
+        if (i < p)
+            swap(&(x[i]), &(x[p]));
+    }
+    if (dir == FFT_INVERSE) {
+        cpx scale = make_cuFloatComplex(1.f / n, 0.f);
+        for (int i = 0; i < n; ++i) {
+            x[i] = cuCmulf(x[i], scale);
+        }
+    }
+}
+
+static void __inline ompBitReverse(cpx *x, fftDir dir, const int lead, const int n)
+{
 #pragma omp parallel for schedule(static)
     for (int i = 0; i <= n; ++i) {
         int p = bit_reverse(i, lead);
@@ -83,17 +121,29 @@ static void __inline bit_reverse(cpx *x, fftDir dir, const int lead, const int n
     if (dir == FFT_INVERSE) {
         cpx scale = make_cuFloatComplex(1.f / n, 0.f);
 #pragma omp parallel for schedule(static)
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < n; ++i) {
             x[i] = cuCmulf(x[i], scale);
+        }
     }
 }
 
 static void __inline transpose(cpx **seq, const int n)
 {
-#pragma omp parallel for schedule(static)
-    for (int y = 0; y < n; ++y)
-        for (int x = y + 1; x < n; ++x)
+    for (int y = 0; y < n; ++y){
+        for (int x = y + 1; x < n; ++x) {
             swap(&seq[y][x], &seq[x][y]);
+        }
+    }
+}
+
+static void __inline ompTranspose(cpx **seq, const int n)
+{
+#pragma omp parallel for schedule(static)
+    for (int y = 0; y < n; ++y){
+        for (int x = y + 1; x < n; ++x) {
+            swap(&seq[y][x], &seq[x][y]);
+        }
+    }
 }
 
 #endif

@@ -5,7 +5,7 @@
 #include <omp.h> 
 #endif
 
-#include <Windows.h>
+#include "mytimer.h"
 #include <limits>
 #include "fftw-3.3.4-dll32\fftw3.h"
 #include "cgp_fft.h"

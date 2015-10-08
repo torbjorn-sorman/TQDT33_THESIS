@@ -153,5 +153,8 @@
     <ClInclude Include="fft_radix4.h">
       <Filter>Header Files\tb\fft</Filter>
     </ClInclude>
+    <ClInclude Include="mytimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

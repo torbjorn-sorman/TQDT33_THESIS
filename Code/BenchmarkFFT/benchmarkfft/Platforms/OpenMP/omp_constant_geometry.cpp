@@ -9,8 +9,8 @@ int ompConstantGeometry_validate(const int n)
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
-   ompConstantGeometry(FFT_FORWARD, &in, &out, n);
-   ompConstantGeometry(FFT_INVERSE, &out, &in, n);
+    ompConstantGeometry(FFT_FORWARD, &in, &out, n);
+    ompConstantGeometry(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
     free(in);
     free(out);
@@ -22,8 +22,8 @@ int ompConstantGeometry2D_validate(const int n)
 {
     cpx **in = get_seq2D(n, 1);
     cpx **ref = get_seq2D(n, in);
-   ompConstantGeometry2D(FFT_FORWARD, in, n);
-   ompConstantGeometry2D(FFT_INVERSE, in, n);
+    ompConstantGeometry2D(FFT_FORWARD, in, n);
+    ompConstantGeometry2D(FFT_INVERSE, in, n);
     double diff = diff_seq(in, ref, n);
     free_seq2D(in, n);
     free_seq2D(ref, n);
@@ -36,7 +36,7 @@ double ompConstantGeometry_runPerformance(const int n)
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-       ompConstantGeometry(FFT_FORWARD, &in, &in, n);
+        ompConstantGeometry(FFT_FORWARD, &in, &in, n);
         measures[i] = stopTimer();
     }
     free(in);
@@ -49,7 +49,7 @@ double ompConstantGeometry2D_runPerformance(const int n)
     cpx **in = get_seq2D(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-       ompConstantGeometry2D(FFT_FORWARD, in, n);
+        ompConstantGeometry2D(FFT_FORWARD, in, n);
         measures[i] = stopTimer();
     }
     free_seq2D(in, n);
@@ -59,14 +59,34 @@ double ompConstantGeometry2D_runPerformance(const int n)
 //
 // Algorithm
 //
-
-_inline void _fft_cgbody(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
+/*
+_inline void ompCGBody(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
 {
-    int const n2 = n / 2;
+    const int n2 = n / 2;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < n; i += 2) {
         int l = i / 2;
         cpxAddSubMul(&out[i], &out[i + 1], in[l], in[n2 + l], W[l & mask]);
+    }
+}
+*/
+
+_inline void ompCGBody(cpx *in, cpx *out, const cpx *W, unsigned int mask, const int n)
+{
+    int l, u, p, n2;
+    float tmp_r, tmp_i;
+    n2 = n / 2;
+    #pragma omp parallel for schedule(static) private(l, u, p, tmp_r, tmp_i)
+    for (int i = 0; i < n; i += 2) {
+        l = i / 2;
+        u = n2 + l;
+        p = l & mask;
+        tmp_r = in[l].x - in[u].x;
+        tmp_i = in[l].y - in[u].y;
+        out[i].x = in[l].x + in[u].x;
+        out[i].y = in[l].y + in[u].y;
+        out[i + 1].x = (W[p].x * tmp_r) - (W[p].y * tmp_i);
+        out[i + 1].y = (W[p].y * tmp_r) + (W[p].x * tmp_i);
     }
 }
 
@@ -75,54 +95,62 @@ void ompConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
     int depth = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n);
+    ompTwiddleFactors(W, dir, n);
 
-    _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
+    ompCGBody(*in, *out, W, 0xffffffff << steps, n);
     while (++steps < depth) {
         swap(in, out);
-        _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
+        ompCGBody(*in, *out, W, 0xffffffff << steps, n);
     }
 
-    bit_reverse(*out, dir, 32 - depth, n);
+    ompBitReverse(*out, dir, 32 - depth, n);
     free(W);
 }
 
-_inline void _fft_const_geom(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
+_inline void ompCG(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
 {
     int depth = log2_32(n);
     int steps = 0;
-    _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
+    ompCGBody(*in, *out, W, 0xffffffff << steps, n);
     while (++steps < depth) {
         swap(in, out);
-        _fft_cgbody(*in, *out, W, 0xffffffff << steps, n);
+        ompCGBody(*in, *out, W, 0xffffffff << steps, n);
     }
-    bit_reverse(*out, dir, 32 - depth, n);
+    ompBitReverse(*out, dir, 32 - depth, n);
 }
 
-_inline void _do_rows(fftDir dir, cpx** seq, const cpx *W, cpx **buffers, const int n)
+_inline void ompCGDoRows(fftDir dir, cpx** seq, const cpx *W, cpx **buffers, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int row = 0; row < n; ++row) {
+#ifdef _OPENMP
         int tid = omp_get_thread_num();
-        _fft_const_geom(dir, &seq[row], &buffers[tid], W, n);
+#else
+        int tid = 0;
+#endif
+        ompCG(dir, &seq[row], &buffers[tid], W, n);
         swap(&seq[row], &buffers[tid]);
     }
 }
 
 void ompConstantGeometry2D(fftDir dir, cpx** seq, const int n)
 {
+#ifdef _OPENMP
     int n_threads = omp_get_num_threads();
+#else
+    int n_threads = 1;
+#endif
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n);
+    ompTwiddleFactors(W, dir, n);
     cpx** buffers = (cpx **)malloc(sizeof(cpx *) * n_threads);
 #pragma omp for schedule(static)
     for (int i = 0; i < n_threads; ++i) {
         buffers[i] = (cpx *)malloc(sizeof(cpx) * n);
     }
-    _do_rows(dir, seq, W, buffers, n);
-    transpose(seq, n);
-    _do_rows(dir, seq, W, buffers, n);
-    transpose(seq, n);
+    ompCGDoRows(dir, seq, W, buffers, n);
+    ompTranspose(seq, n);
+    ompCGDoRows(dir, seq, W, buffers, n);
+    ompTranspose(seq, n);
 #pragma omp for schedule(static)
     for (int i = 0; i < n_threads; ++i) {
         free(buffers[i]);
@@ -131,8 +159,8 @@ void ompConstantGeometry2D(fftDir dir, cpx** seq, const int n)
     free(W);
 }
 
-_inline void _fft_cgbody(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
-{   
+_inline void ompCGBody(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
+{
     cpx w;
     const int n2 = n / 2;
     int old = -1;
@@ -142,10 +170,10 @@ _inline void _fft_cgbody(cpx *in, cpx *out, float w_angle, unsigned int mask, co
         int p = l & mask;
         if (old != p) {
             float ang = p * w_angle;
-            w = make_cuFloatComplex(cos(ang = p * w_angle), sin(ang));
+            w = make_cuFloatComplex(cos(ang), sin(ang));
             old = p;
         }
-        cpxAddSubMul(&out[i], &out[i + 1], in[l], in[n2 + l], w);
+        cpxAddSubMul(in, l, (n / 2) + l, out++, out++, w);
     }
 }
 
@@ -156,11 +184,11 @@ void ompConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n)
     int steps = --bit;
     unsigned int mask = 0xffffffff << (steps - bit);
     float w_angle = dir * M_2_PI / n;
-    _fft_cgbody(*in, *out, w_angle, mask, n);
+    ompCGBody(*in, *out, w_angle, mask, n);
     while (bit-- > 0) {
         swap(in, out);
         mask = 0xffffffff << (steps - bit);
-        _fft_cgbody(*in, *out, w_angle, mask, n);
+        ompCGBody(*in, *out, w_angle, mask, n);
     }
-    bit_reverse(*out, dir, lead, n);
+    ompBitReverse(*out, dir, lead, n);
 }

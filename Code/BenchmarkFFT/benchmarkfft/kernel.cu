@@ -1,7 +1,6 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "cuda_profiler_api.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -23,12 +22,15 @@ void toFile(std::string name, std::vector<double> results, int ms);
 std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 {
     std::vector<Platform *> platforms;
+    // cuFFT only shipped for x64
+#ifdef _WIN64
+    if (args->platform_cufft)
+        platforms.insert(platforms.begin(), new MyCuFFT(args->dimensions, args->number_of_lengths));
+#endif
     if (args->platform_cuda)
         platforms.insert(platforms.begin(), new MyCUDA(args->dimensions, args->number_of_lengths));
     if (args->platform_opencl)
         platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
-    if (args->platform_cufft)
-        platforms.insert(platforms.begin(), new MyCuFFT(args->dimensions, args->number_of_lengths));
     if (args->platform_c)
         platforms.insert(platforms.begin(), new MyC(args->dimensions, args->number_of_lengths));
     if (args->platform_openmp)
@@ -39,37 +41,48 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 int main(int argc, const char* argv[])
 {
     benchmarkArgument args;
-    std::cout << "Parsing arguments" << std::endl;
     if (!parseArguments(&args, argc, argv))
         return 0;
-    std::cout << "Control Show CUDA Properties" << std::endl;
+    if (args.profiler) {
+        if (args.test_platform) {
+            cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+            cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+            std::vector<Platform *> platforms = getPlatforms(&args);
+            for (int i = args.start; i < args.end; ++i) {
+                int n = power2(i);
+                for (Platform *platform : platforms)
+                    platform->runPerformance(n);
+            }
+            platforms.clear();
+        }
+        return 0;
+    }
     if (args.show_cuprop) {
+        std::cout << "Control Show CUDA Properties" << std::endl;
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
     }
-    std::cout << "Control Test Platforms" << std::endl;
     if (args.test_platform) {
-
+        std::cout << "Control Test Platforms" << std::endl;
         cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
         cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
         std::vector<Platform *> platforms = getPlatforms(&args);
-        std::cout << "  Running Platforms (might take a while)..." << std::endl;
-        if (args.profiler) cudaProfilerStart();
+        std::cout << "  Running Platforms (might take a while)..." << std::endl;        
         for (int i = args.start; i < args.end; ++i) {
-            int n = power2(i);
+            int n = power2(i);            
             for (Platform *platform : platforms)
                 platform->runPerformance(n);
         }
-        if (args.profiler) cudaProfilerStop();
         if (args.display) {
-            std::cout << std::string(1 + (int)log10(power2(args.start + args.number_of_lengths)) / 8, '\t');
+            int tabs = 1 + (int)log10(power2(args.start + args.number_of_lengths)) / 8;
+            std::cout << std::string(tabs, '\t');
             for (Platform *platform : platforms)
                 std::cout << platform->name << "\t";
             std::cout << std::endl << std::setprecision(0);
             for (int i = 0; i < args.number_of_lengths; ++i) {
-                std::cout << power2(i + args.start) << std::string(2 - (int)log10(power2(args.start + i)) / 8, '\t');
+                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 8, '\t');
                 for (Platform *platform : platforms)
                     std::cout << platform->results.at(i) << (args.validate != 1 || platform->validate(power2(args.start + i)) ? "" : "!") << "\t";
                 std::cout << std::endl;
@@ -112,7 +125,11 @@ void printDevProp(cudaDeviceProp devProp)
 
 void toFile(std::string name, std::vector<double> results, int ms)
 {
-    std::string filename = "out/" + name + ".txt";
+    #ifdef _WIN64
+    std::string filename = "out/x64/" + name + ".txt";
+    #else
+    std::string filename = "out/Win32/" + name + ".txt";
+    #endif
     FILE *f;
     fopen_s(&f, filename.c_str(), "w");
     for (int i = 0; i < ms; ++i) {

@@ -1,6 +1,7 @@
 #ifndef MYC_H
 #define MYC_H
 
+#include <iostream>
 #include "Platform.h"
 #include "C\c_fft.h"
 

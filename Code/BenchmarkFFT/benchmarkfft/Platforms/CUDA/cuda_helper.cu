@@ -151,28 +151,6 @@ void checkCudaError()
     if (e = cudaGetLastError()) printf("%s: %s\n", cudaGetErrorName(e), cudaGetErrorString(e));
 }
 
-cpx* read_image(char *name, int *n)
-{
-    image image;
-    color_component *cp;
-    FILE *fp;
-    fopen_s(&fp, name, "rb");
-    image = get_ppm(fp);
-    if (!image || image->width != image->height)
-        return NULL;
-
-    int size = *n = image->width;
-    cpx *seq = (cpx *)malloc(sizeof(cpx) * size * size);
-    for (int y = 0; y < (int)image->height; ++y) {
-        for (int x = 0; x < (int)image->width; ++x) {
-            cp = GET_PIXEL(image, x, y);
-            seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
-        }
-    }
-    free_img(image);
-    return seq;
-}
-
 void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, double *avg)
 {
     double min_v = 99999999999;
@@ -382,19 +360,13 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
     return diff > ERROR_MARGIN;
 }
 
-void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n)
+void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int n)
 {
-    if (sinus) {
-        *in = get_sin_img(n);
-        *ref = get_sin_img(n);
-    }
-    else {
-        char input_file[40];
-        sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
-        int sz;
-        *in = read_image(input_file, &sz);
-        *ref = read_image(input_file, &sz);
-    }
+    char input_file[40];
+    sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
+    int sz;
+    *in = read_image(input_file, &sz);
+    *ref = read_image(input_file, &sz);
     *size = n * n * sizeof(cpx);
     cudaMalloc((void**)dev_i, *size);
     cudaMalloc((void**)dev_o, *size);

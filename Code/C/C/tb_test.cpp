@@ -3,14 +3,6 @@
 #define NO_TESTS 10
 #define NO_RUNS 1
 
-LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
-
-#define QPF QueryPerformanceFrequency
-#define QPC QueryPerformanceCounter
-
-#define START_TIME QPF(&Frequency); QPC(&StartingTime)
-#define STOP_TIME(RES) QPC(&EndingTime); ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart; ElapsedMicroseconds.QuadPart *= 1000000; ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;(RES) = (double)ElapsedMicroseconds.QuadPart
-
 void validate(fft_func fn, const int n_threads, const unsigned int max_elements)
 {
     cpx *in, *out, *ref;
@@ -60,10 +52,10 @@ double timing(fft_func fn, const int n_threads, const int n)
     in = get_seq(n, 1);
     out = get_seq(n);
     for (int i = 0; i < NO_TESTS; ++i) {
-        START_TIME;
+        startTimer();
         for (int j = 0; j < NO_RUNS; ++j)
             fn(FORWARD_FFT, &in, &out, n_threads, n);
-        STOP_TIME(measures[i]);
+        measures[i] = stopTimer();
     }
     free(in);
     free(out);
@@ -76,9 +68,9 @@ double timing(fft2d_func fn, const int n_threads, const int n)
     cpx **in;
     in = get_seq2d(n, 1);
     for (int i = 0; i < NO_TESTS; ++i) {
-        START_TIME;
+        startTimer();
         fn(FORWARD_FFT, in, n_threads, n);
-        STOP_TIME(measures[i]);
+        measures[i] = stopTimer();
     }
     free_seq2d(in, n);
     return avg(measures, NO_TESTS);
@@ -90,9 +82,9 @@ double timing(twiddle_func fn, const int n_threads, const int n)
     cpx *W;
     W = get_seq(n, 1);
     for (int i = 0; i < NO_TESTS; ++i) {
-        START_TIME;
+        startTimer();
         fn(W, FORWARD_FFT, n);
-        STOP_TIME(measures[i]);
+        measures[i] = stopTimer();
     }
     free(W);
     return avg(measures, NO_TESTS);
@@ -188,11 +180,11 @@ void test_short_fft(fft_func fn, const int n_threads, unsigned int max_elem)
     for (int n = 4; n <= ma; n *= 2) {
         in = get_seq(n, 1);
         out = get_seq(n);
-        START_TIME;
+        startTimer();
         for (int i = 0; i < 100000; ++i) {
             fn(FORWARD_FFT, &in, &out, n_threads, n);
         }
-        STOP_TIME(measure);
+        measure = stopTimer();
         free(in);
         free(out);
         printf("Time short %d\t%f\n", n, measure);
@@ -209,11 +201,11 @@ void test_short_fftw(unsigned int max_elem)
         fftw_in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n);
         fftw_out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * n);
         p = fftw_plan_dft_1d(n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);
-        START_TIME;
+        startTimer();
         for (int i = 0; i < 100000; ++i) {
             fftw_execute(p);
         }
-        STOP_TIME(measure);
+        measure = stopTimer();
         fftw_destroy_plan(p);
         fftw_free(fftw_in);
         fftw_free(fftw_out);
@@ -238,10 +230,10 @@ double timing_fftw(const int n)
     p = fftw_plan_dft_1d(n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);
 
     for (int i = 0; i < NO_TESTS; ++i) {
-        START_TIME;
+        startTimer();
         for (int j = 0; j < NO_RUNS; ++j)
             fftw_execute(p);
-        STOP_TIME(measures[i]);
+        measures[i] = stopTimer();
     }
 
     fftw_destroy_plan(p);
@@ -260,9 +252,9 @@ double timing_fftw2d(const int n)
     p = fftw_plan_dft_2d(n, n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);
 
     for (int i = 0; i < NO_TESTS; ++i) {
-        START_TIME;
+        startTimer();
         fftw_execute(p);
-        STOP_TIME(measures[i]);
+        measures[i] = stopTimer();
     }
 
     fftw_destroy_plan(p);

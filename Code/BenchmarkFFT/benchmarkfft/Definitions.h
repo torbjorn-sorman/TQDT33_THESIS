@@ -6,7 +6,9 @@
 //
 // Typedefs to improve code readability and better semantics
 //
+
 typedef cuFloatComplex cpx;
+
 typedef cudaSurfaceObject_t cuSurf;
 typedef float fftDir;
 typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, int n);
@@ -36,7 +38,7 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 //
 // Test related defines
 //
-#define NUM_PERFORMANCE 10
+#define NUM_PERFORMANCE 9
 #define HIGHEST_EXP 25
 
 //

@@ -1,8 +1,11 @@
 #ifndef MYCUFFT_H
 #define MYCUFFT_H
 
+
 #include "Platform.h"
+#ifdef _WIN64
 #include <cufft.h>
+#endif
 #include "CUDA/cuda_helper.cuh"
 #include "../Common/mymath.h"
 #include "../Common/mytimer.h"

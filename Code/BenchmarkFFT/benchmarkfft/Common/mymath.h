@@ -32,7 +32,8 @@ static __inline int cmp(const void *in_l, const void *in_h)
 static __inline double avg(double m[], int n)
 {
     double sum = 0.0;
-    int end = ((n < 5) ? ((n / 2) < 1 ? 1 : (n / 2)) : 5);
+    int samples = 3;
+    int end = ((n < samples) ? ((n / 2) < 1 ? 1 : (n / 2)) : samples);
     qsort(m, n, sizeof(double), cmp);    
     for (int i = 0; i < end; ++i)
         sum += m[i];
@@ -58,10 +59,14 @@ static __inline unsigned int power2(const unsigned int exp)
     return power(2, exp);
 }
 
-static __inline void cpxAddSubMul(cpx *out_l, cpx *out_h, cpx in_l, cpx in_h, cpx w)
+static __inline void cpxAddSubMul(cpx* in, int l, int u, cpx *outL, cpx *outU, cpx W)
 {
-    (*out_l) = cuCaddf(in_l, in_h);
-    (*out_h) = cuCmulf(cuCsubf(in_l, in_h), w);
+    float x = in[l].x - in[u].x;
+    float y = in[l].y - in[u].y;
+    outL->x = in[l].x + in[u].x;
+    outL->y = in[l].y + in[u].y;
+    outU->x = (W.x * x) - (W.y * y);
+    outU->y = (W.y * x) + (W.x * y);
 }
 
 #endif

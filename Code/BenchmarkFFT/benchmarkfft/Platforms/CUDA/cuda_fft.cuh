@@ -8,6 +8,7 @@
 #include "../../Common/mymath.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/mycomplex.h"
+#include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 
 __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n);

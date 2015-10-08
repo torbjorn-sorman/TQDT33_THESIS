@@ -3,7 +3,7 @@
 MyC::MyC(const int dim, const int runs)
     : Platform(dim)
 {
-    name = "C/C++";
+    name = "C_C++";
 }
 
 MyC::~MyC()
@@ -20,6 +20,6 @@ bool MyC::validate(const int n)
 
 void MyC::runPerformance(const int n)
 {
-    double time = ((dimensions == 1) ? cConstantGeometry_runPerformance(n) : cConstantGeometry2D_runPerformance(n));
+    double time = ((dimensions == 1) ? cConstantGeometry_runPerformance(n) : cConstantGeometry2D_runPerformance(n));    
     results.push_back(time);
 }

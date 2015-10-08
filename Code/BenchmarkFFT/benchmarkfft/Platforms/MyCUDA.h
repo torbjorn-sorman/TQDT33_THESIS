@@ -1,6 +1,7 @@
 #ifndef MYCUDA_H
 #define MYCUDA_H
 
+#include "cuda_profiler_api.h"
 #include "Platform.h"
 #include "CUDA/cuda_fft.cuh"
 

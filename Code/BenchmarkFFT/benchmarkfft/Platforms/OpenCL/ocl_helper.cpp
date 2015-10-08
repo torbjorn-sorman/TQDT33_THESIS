@@ -72,7 +72,7 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
     if (err != CL_SUCCESS) return err;
 
     const int n2 = args->n / 2;
-    args->global_work_size = n2;
+    args->global_work_size[0] = n2;
     args->local_work_size = (n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2);
 
     args->nBlock = (int)(args->n / args->local_work_size);
@@ -91,7 +91,7 @@ cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args)
 }
 
 
-cl_int oclSetupKernel(const int n, oclArgs *args)
+cl_int oclSetupKernel(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
     cl_platform_id platform;
@@ -163,7 +163,7 @@ cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in)
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
+cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
     const int n2 = args->n / 2;
@@ -183,7 +183,9 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
     if (err != CL_SUCCESS) return err;
 
     // If successful, store in the argument struct!
-    args->global_work_size = grpDim;
+    args->global_work_size[0] = grpDim;
+    args->global_work_size[1] = 1;
+    args->global_work_size[2] = 1;
     args->local_work_size = itmDim;
     args->shared_mem_size = shared_mem_size;
     args->data_mem_size = data_mem_size;
@@ -196,21 +198,49 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups)
     return err;
 }
 
+cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
+{
+    cl_int err = CL_SUCCESS;
+    const int n = args->n;
+    int itmDim = (n / 2) > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (n / 2);
+    int nBlock = n / itmDim;
+    size_t data_mem_size = sizeof(cpx) * n * n;
+    size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
+    cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    if (err != CL_SUCCESS) return err;
+    cl_mem output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    if (err != CL_SUCCESS) return err;
+
+    // If successful, store in the argument struct!
+    args->global_work_size[0] = args->n;
+    args->global_work_size[1] = args->n / itmDim;
+    args->global_work_size[2] = 1;
+    args->local_work_size = itmDim;
+    args->shared_mem_size = shared_mem_size;
+    args->data_mem_size = data_mem_size;
+    args->nBlock = nBlock;
+    args->input = input;
+    args->input = output;
+
+    return err;
+}
+
 cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n)
 {
     argGPU->n = argCPU->n = n;
     argGPU->dir = argCPU->dir = dir;
-    oclSetupKernel(n, argGPU);
+    oclSetupKernel(argGPU);
     memcpy(argCPU, argGPU, sizeof(oclArgs));
-    cl_int err = oclSetupProgram("kernelOpenCL", "kernelGPU", argGPU);
+
+    cl_int err = oclSetupProgram("ocl_kernel", "kernelGPU", argGPU);
     checkErr(err, err, "Failed to setup GPU Program!");
-    err = oclSetupProgram("kernelOpenCL", "kernelCPU", argCPU);
+    err = oclSetupProgram("ocl_kernel", "kernelCPU", argCPU);
     checkErr(err, err, "Failed to setup CPU Program!");
-    checkErr(err, err, "Failed to setup GPU Program!");
-    err = oclSetupWorkGroupsAndMemory(argGPU, argCPU);
+
+    err = oclSetupWorkGroupsAndMemory(argGPU);
     checkErr(err, err, "Failed to setup GPU Program!");
     err = oclSetupDeviceMemoryData(argGPU, data_in);
-    argCPU->global_work_size = argGPU->global_work_size;
+    argCPU->global_work_size[0] = argGPU->global_work_size[0];
     argCPU->local_work_size = argGPU->local_work_size;
     argCPU->input = argGPU->input;
     argCPU->output = argGPU->output;
@@ -219,7 +249,60 @@ cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir d
     return err;
 }
 
-cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
+cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n)
+{
+    argGPU->n = argCPU->n = n;
+    argGPU->dir = argCPU->dir = dir;
+    oclSetupKernel(argGPU);
+    memcpy(argCPU, argGPU, sizeof(oclArgs));
+    memcpy(argTrans, argGPU, sizeof(oclArgs));
+
+    cl_int err = oclSetupProgram("ocl_kernel", "kernelGPU2D", argGPU);
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = oclSetupProgram("ocl_kernel", "kernelCPU2D", argCPU);
+    checkErr(err, err, "Failed to setup CPU Program!");
+    err = oclSetupProgram("ocl_kernel", "kernelTranspose", argTrans);
+    checkErr(err, err, "Failed to setup CPU Program!");
+
+    err = oclSetupWorkGroupsAndMemory2D(argGPU);
+    checkErr(err, err, "Failed to setup GPU Program!");
+    err = oclSetupDeviceMemoryData(argGPU, data_in);
+    argCPU->global_work_size[0] = argGPU->global_work_size[0];
+    argCPU->global_work_size[1] = argGPU->global_work_size[1];
+    argCPU->local_work_size = argGPU->local_work_size;
+    argCPU->input = argGPU->input;
+    argCPU->output = argGPU->output;
+    argCPU->data_mem_size = argGPU->data_mem_size;
+    argCPU->nBlock = argGPU->nBlock;
+    return err;
+}
+
+cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
+{
+    cl_int err = CL_SUCCESS;
+    if (dev_out != NULL) {
+        err = clEnqueueReadBuffer(argGPU->commands, argGPU->output, CL_TRUE, 0, argGPU->data_mem_size, dev_out, 0, NULL, NULL);
+        checkErr(err, "Read Buffer!");
+    }
+    err = clFinish(argGPU->commands);
+    free(argGPU->kernelSource);
+    free(argTrans->kernelSource);
+    clReleaseMemObject(argGPU->input);
+    clReleaseMemObject(argGPU->output);
+    clReleaseMemObject(argGPU->sync_in);
+    clReleaseMemObject(argGPU->sync_out);
+    clReleaseProgram(argGPU->program);
+    clReleaseProgram(argCPU->program);
+    clReleaseProgram(argTrans->program);
+    clReleaseKernel(argGPU->kernel);
+    clReleaseKernel(argCPU->kernel);
+    clReleaseKernel(argTrans->kernel);
+    clReleaseCommandQueue(argGPU->commands);
+    clReleaseContext(argGPU->context);
+    return err;
+}
+
+cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
 {
     cl_int err = CL_SUCCESS;
     if (dev_out != NULL) {
@@ -230,8 +313,6 @@ cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
     free(argGPU->kernelSource);
     clReleaseMemObject(argGPU->input);
     clReleaseMemObject(argGPU->output);
-    clReleaseMemObject(argGPU->sync_in);
-    clReleaseMemObject(argGPU->sync_out);
     clReleaseProgram(argGPU->program);
     clReleaseProgram(argCPU->program);
     clReleaseKernel(argGPU->kernel);

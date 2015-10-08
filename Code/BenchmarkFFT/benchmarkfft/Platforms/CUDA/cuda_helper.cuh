@@ -8,21 +8,21 @@
 #include "../../Common/imglib.h"
 #include "../../Common/mycomplex.h"
 
-__host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
+__device__ static __inline__ void devSwap(cpx **in, cpx **out)
 {
     cpx *tmp = *in;
     *in = *out;
     *out = tmp;
 }
 
-__host__ __device__ static __inline__ void swap(cuSurf *in, cuSurf *out)
+__host__ __device__ static __inline__ void devSwap(cuSurf *in, cuSurf *out)
 {
     cuSurf tmp = *in;
     *in = *out;
     *out = tmp;
 }
 
-__host__ __device__ static __inline__ unsigned int bitReverse32(unsigned int x, int l)
+__device__ static __inline__ unsigned int devBitReverse32(unsigned int x, int l)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
     x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
@@ -59,10 +59,24 @@ __device__ static inline int log2(int v)
     return FIND_FIRST_BIT(v) - 1;
 }
 
-__device__ static __inline__ void cpx_add_sub_mul(cpx *out_lower, cpx *out_upper, cpx in_lower, cpx in_upper, cpx w)
+__device__ static __inline__ void cpx_add_sub_mul(cpx* in, int l, int u, cpx *outL, cpx *outU, cpx W)
 {
-    (*out_lower) = cuCaddf(in_lower, in_upper);
-    (*out_upper) = cuCmulf(cuCsubf(in_lower, in_upper), w);
+    float x = in[l].x - in[u].x;
+    float y = in[l].y - in[u].y;
+    outL->x = in[l].x + in[u].x;
+    outL->y = in[l].y + in[u].y;
+    outU->x = (W.x * x) - (W.y * y);
+    outU->y = (W.y * x) + (W.x * y);
+}
+
+__device__ static __inline__ void cpx_add_sub_mul(cpx inL, cpx inU, cpx *outL, cpx *outU, cpx W)
+{
+    float x = inL.x - inU.x;
+    float y = inL.y - inU.y;
+    outL->x = inL.x + inU.x;
+    outL->y = inL.y + inU.y;
+    outU->x = (W.x * x) - (W.y * y);
+    outU->y = (W.y * x) + (W.x * y);
 }
 
 __device__ static __inline__ void mem_gtos(int low, int high, int offset, cpx *shared, cpx *global)

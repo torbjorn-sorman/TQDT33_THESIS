@@ -11,12 +11,13 @@ MyCuFFT::~MyCuFFT()
 }
 
 bool MyCuFFT::validate(const int n)
-{   
+{
     return true;
 }
 
 void MyCuFFT::runPerformance(const int n)
 {
+#ifdef _WIN64
     double measures[NUM_PERFORMANCE];
     cpx *dev_in, *dev_out;
     cufftHandle plan;
@@ -42,4 +43,5 @@ void MyCuFFT::runPerformance(const int n)
     cufftDestroy(plan);
     fftResultAndFree(n, &dev_in, &dev_out, NULL, NULL, NULL, NULL);
     results.push_back(avg(measures, NUM_PERFORMANCE));
+#endif
 }

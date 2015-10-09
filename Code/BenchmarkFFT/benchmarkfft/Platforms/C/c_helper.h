@@ -136,6 +136,26 @@ static void __inline transpose(cpx **seq, const int n)
     }
 }
 
+static void __inline transposeN(cpx *seq, const int n)
+{
+    for (int y = 0; y < n; ++y){
+        for (int x = y + 1; x < n; ++x) {
+            swap(&seq[y*n + x], &seq[x*n + y]);
+        }
+    }
+}
+
+static void __inline transpose(cpx *seq, const int n)
+{
+    for (int y = 0; y < n; ++y){
+        cpx *seqY = &seq[y * n + y];
+        cpx *seqX = &seq[y + y * n];
+        for (int x = y + 1; x < n; ++x) {
+            swap(++seqY, seqX += n);
+        }
+    }
+}
+
 static void __inline ompTranspose(cpx **seq, const int n)
 {
 #pragma omp parallel for schedule(static)

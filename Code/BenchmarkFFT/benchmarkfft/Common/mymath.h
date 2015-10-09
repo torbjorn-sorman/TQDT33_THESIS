@@ -69,4 +69,24 @@ static __inline void cpxAddSubMul(cpx* in, int l, int u, cpx *outL, cpx *outU, c
     outU->y = (W.y * x) + (W.x * y);
 }
 
+static __inline void cpxAddSubMulCG(cpx* in, int l, int u, cpx *out, cpx W)
+{
+    float x = in[l].x - in[u].x;
+    float y = in[l].y - in[u].y;
+    out->x = in[l].x + in[u].x;
+    out->y = in[l].y + in[u].y;
+    (++out)->x = (W.x * x) - (W.y * y);
+    out->y = (W.y * x) + (W.x * y);
+}
+
+static __inline void cpxAddSubMulCG(cpx *inL, cpx *inU, cpx *out, cpx W)
+{
+    float x = inL->x - inU->x;
+    float y = inL->y - inU->y;
+    out->x = inL->x + inU->x;
+    out->y = inL->y + inU->y;
+    (++out)->x = (W.x * x) - (W.y * y);
+    out->y = (W.y * x) + (W.x * y);
+}
+
 #endif

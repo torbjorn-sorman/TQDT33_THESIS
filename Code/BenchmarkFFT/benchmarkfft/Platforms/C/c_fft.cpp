@@ -27,13 +27,14 @@ int cConstantGeometry_validate(const int n)
 
 int cConstantGeometry2D_validate(const int n)
 {
-    cpx **in = get_seq2D(n, 1);
-    cpx **ref = get_seq2D(n, in);
-    cConstantGeometry2D(FFT_FORWARD, in, n);
-    cConstantGeometry2D(FFT_INVERSE, in, n);
+    cpx *in, *buf, *ref;
+    setup_seq2D(&in, &buf, &ref, n);
+    cConstantGeometry2D(FFT_FORWARD, in, buf, n);
+    cConstantGeometry2D(FFT_INVERSE, in, buf, n);
     double diff = diff_seq(in, ref, n);
-    free_seq2D(in, n);
-    free_seq2D(ref, n);
+    free(in);
+    free(buf);
+    free(ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -57,13 +58,15 @@ double cConstantGeometry_runPerformance(const int n)
 double cConstantGeometry2D_runPerformance(const int n)
 {
     double measures[NUM_PERFORMANCE];
-    cpx **in = get_seq2D(n, 1);
+    cpx *in = get_seq(n);
+    cpx *out = get_seq(n);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        cConstantGeometry2D(FFT_FORWARD, in, n);
+        cConstantGeometry2D(FFT_FORWARD, in, out, n);
         measures[i] = stopTimer();
     }
-    free_seq2D(in, n);
+    free(in);
+    free(out);
     return avg(measures, NUM_PERFORMANCE);
 }
 
@@ -75,7 +78,8 @@ _inline void cCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, c
 {
     for (int i = 0; i < n; i += 2) {
         int l = i / 2;
-        cpxAddSubMul(in, l, (n / 2) + l, out++, out++, W[l & mask]);
+        cpxAddSubMulCG(&in[l], &in[(n / 2) + l], out, W[l & mask]);
+        out += 2;
     }
 }
 
@@ -96,37 +100,29 @@ void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
     free(W);
 }
 
-_inline void cCG(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
+_inline void cCG(fftDir dir, cpx **in, cpx **out, int offset, const cpx *W, const int n)
 {
     int depth = log2_32(n);
     int steps = 0;
-    cCGBody(*in, *out, W, 0xffffffff << steps, n);
+    cCGBody(*in + offset, *out + offset, W, 0xffffffff << steps, n);
     while (++steps < depth) {
         swap(in, out);
-        cCGBody(*in, *out, W, 0xffffffff << steps, n);
+        cCGBody(*in + offset, *out + offset, W, 0xffffffff << steps, n);
     }
     bit_reverse(*out, dir, 32 - depth, n);
 }
 
-static void _inline cCGDoRows(fftDir dir, cpx** seq, const cpx *W, cpx *buffer, const int n)
+void cConstantGeometry2D(fftDir dir, cpx* in, cpx* out, const int n)
 {
-    for (int row = 0; row < n; ++row) {
-        cCG(dir, &seq[row], &buffer, W, n);
-        swap(&seq[row], &buffer);
-    }
-}
-
-void cConstantGeometry2D(fftDir dir, cpx** seq, const int n)
-{
-    cpx* buffer = (cpx *)malloc(sizeof(cpx) * n);
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-    cCGDoRows(dir, seq, W, buffer, n);
-    transpose(seq, n);
-    cCGDoRows(dir, seq, W, buffer, n);
-    transpose(seq, n);
+    //for (int row = 0; row < n * n; row += n)
+        //cCG(dir, &in, &out, row, W, n);
+    transpose(out, n);
+    //for (int row = 0; row < n * n; row += n)
+        //cCG(dir, &in, &out, row, W, n);
+    transpose(in, n);
     free(W);
-    free(buffer);
 }
 
 _inline void cCGBody(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)

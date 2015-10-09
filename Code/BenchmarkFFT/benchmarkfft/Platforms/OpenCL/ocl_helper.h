@@ -7,6 +7,7 @@
 
 #include "../../Definitions.h"
 #include "../../Common/mycomplex.h"
+#include "../../Common/imglib.h"
 
 struct oclArgs {
     int n;

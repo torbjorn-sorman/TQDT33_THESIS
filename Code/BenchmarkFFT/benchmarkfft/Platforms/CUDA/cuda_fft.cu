@@ -22,7 +22,7 @@ __host__ int tsCombine_Validate(int n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *image_name, char *type, size_t size, int write, int norm, int n)
+__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *type, size_t size, int write, int norm, int n)
 {
     tsCombine2D(dir, dev_in, dev_out, n);
     if (write) {
@@ -30,25 +30,24 @@ __host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out,
         if (norm) {
             normalized_image(in, n);
             cpx *tmp = fftShift(in, n);
-            write_image(image_name, type, tmp, n);
+            write_image("CUDA", type, tmp, n);
             free(tmp);
         }
         else {
-            write_image(image_name, type, in, n);
+            write_image("CUDA", type, in, n);
         }
     }
 }
 
 __host__ int tsCombine2D_Validate(int n)
 {
-    char *image_name = "shore";
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
-    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, image_name, 0, n);
+    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
 
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, image_name, "frequency-domain", size, 1, 1, n);
-    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, image_name, "spatial-domain", size, 1, 0, n);
+    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, "frequency-domain", size, 1, 1, n);
+    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, "spatial-domain", size, 1, 0, n);
 
     int res = fft2DCompare(in, ref, dev_in, size, n * n);
     fft2DShakedown(&in, &ref, &dev_in, &dev_out);
@@ -76,10 +75,9 @@ __host__ double tsCombine_Performance(int n)
 __host__ double tsCombine2D_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
-    char *image_name = "splash";
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
-    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, image_name, 0, n);
+    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
@@ -109,6 +107,7 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 
     if (blocks >= HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
+        cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
         --depth;
         int steps = 0;
         int dist = n2;
@@ -119,6 +118,7 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
             ++steps;
             _kernelAll KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
             cudaDeviceSynchronize();
+            
         }
         swap(dev_in, dev_out);
         ++depth;
@@ -127,6 +127,7 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
     }
 
     // Calculate complete sequence in one launch and syncronize on GPU
+    cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     _kernelGPUS KERNEL_ARGS3(blocks, threads, sizeof(cpx) * nBlock) (*dev_in, *dev_out, w_angle, dir * (M_2_PI / nBlock), depth, lead, breakSize, scaleCpx, numBlocks, bSize);
     cudaDeviceSynchronize();
 }
@@ -197,7 +198,7 @@ __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int st
     int in_low = tid + (tid & lmask);
     int in_high = in_low + dist;
     SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in_low, in_high, &(out[in_low]), &(out[in_high]), w);
+    cpx_add_sub_mul(&in[in_low], &in[in_high], &out[in_low], &out[in_high], &w);
 }
 
 __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
@@ -218,15 +219,26 @@ __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, i
 
 __device__ static __inline__ void algorithm_p(cpx *shared, int in_high, float angle, int bit)
 {
+    //float x, y;
     cpx w, in_lower, in_upper;
     cpx *out_i = &(shared[threadIdx.x << 1]);
     cpx *out_ii = out_i + 1;
+    cpx *in_l = &shared[threadIdx.x];
+    cpx *in_u = &shared[in_high];
     for (int steps = 0; steps < bit; ++steps) {
-        in_lower = shared[threadIdx.x];
-        in_upper = shared[in_high];
+        in_lower = *in_l;
+        in_upper = *in_u;
         SYNC_THREADS;
         SIN_COS_F(angle * ((threadIdx.x & (0xFFFFFFFF << steps))), &w.y, &w.x);
-        cpx_add_sub_mul(in_lower, in_upper, out_i, out_ii, w);
+        cpx_add_sub_mul(&in_lower, &in_upper, out_i, out_ii, &w);
+        /*
+        x = in_lower.x - in_upper.x;
+        y = in_lower.y - in_upper.y;
+        out_i->x = in_lower.x + in_upper.x;
+        out_i->y = in_lower.y + in_upper.y;
+        out_ii->x = (w.x * x) - (w.y * y);
+        out_ii->y = (w.y * x) + (w.x * y);
+        */
         SYNC_THREADS;
     }
 }
@@ -248,8 +260,12 @@ __device__ static __inline__ void inner_k2D(cpx *in, cpx *out, int x, int y, flo
 
 __global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
 {
+    cpx w;
     int col_id = blockIdx.y * blockDim.x + threadIdx.x;
-    inner_k2D(in, out, (col_id + (col_id & lmask)), blockIdx.x, angle, steps, dist);
+    int in_low = (col_id + (col_id & lmask)) + blockIdx.x * gridDim.x;
+    int in_high = in_low + dist;
+    SIN_COS_F(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    cpx_add_sub_mul(in, in_low, in_high, &(out[in_low]), &(out[in_high]), w);
 }
 
 __global__ void _kernelAll2DCol(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
@@ -429,7 +445,7 @@ __host__ void _testTex2DShakedown(cpx **in, cpx **ref, cuSurf *sObjIn, cuSurf *s
     }
 }
 
-__host__ void _testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf *surfIn, cuSurf *surfOut, char *image_name, char *type, size_t size, int write, int norm, int n)
+__host__ void _testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf *surfIn, cuSurf *surfOut, char *type, size_t size, int write, int norm, int n)
 {
     tsCombine2DSurf(dir, surfIn, surfOut, n);
     if (write) {
@@ -437,11 +453,11 @@ __host__ void _testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf *surfIn,
         if (norm) {
             normalized_image(in, n);
             cpx *tmp = fftShift(in, n);
-            write_image(image_name, type, tmp, n);
+            write_image("CUDA TEX", type, tmp, n);
             free(tmp);
         }
         else {
-            write_image(image_name, type, in, n);
+            write_image("CUDA TEX", type, in, n);
         }
     }
 }
@@ -463,15 +479,14 @@ __host__ int _testTex2DCompare(cpx *in, cpx *ref, cudaArray *dev, size_t size, i
 __host__ int tsCombine2DSurf_Validate(int n)
 {
     int res;
-    char *image_name = "shore";
     cpx *in, *ref;
     size_t size;
     cudaArray *inArr, *outArr;
     cuSurf inSurf, outSurf;
-    fft2DSurfSetup(&in, &ref, &size, image_name, NO, n, &inArr, &outArr, &inSurf, &outSurf);
+    fft2DSurfSetup(&in, &ref, &size, NO, n, &inArr, &outArr, &inSurf, &outSurf);
     cudaMemcpyToArray(inArr, 0, 0, in, size, cudaMemcpyHostToDevice);
-    _testTex2DRun(FFT_FORWARD, in, inArr, &inSurf, &outSurf, image_name, "surf-frequency-domain", size, YES, YES, n);
-    _testTex2DRun(FFT_INVERSE, in, inArr, &outSurf, &inSurf, image_name, "surf-spatial-domain", size, YES, NO, n);
+    _testTex2DRun(FFT_FORWARD, in, inArr, &inSurf, &outSurf, "surf-frequency-domain", size, YES, YES, n);
+    _testTex2DRun(FFT_INVERSE, in, inArr, &outSurf, &inSurf, "surf-spatial-domain", size, YES, NO, n);
     res = _testTex2DCompare(in, ref, inArr, size, n * n);
     _testTex2DShakedown(&in, &ref, &inSurf, &outSurf, &inArr, &outArr);
     return res;
@@ -480,12 +495,11 @@ __host__ int tsCombine2DSurf_Validate(int n)
 __host__ double tsCombine2DSurf_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
-    char *image_name = "shore";
     cpx *in, *ref;
     size_t size;
     cudaArray *inArr, *outArr;
     cuSurf inSurf, outSurf;
-    fft2DSurfSetup(&in, &ref, &size, image_name, NO, n, &inArr, &outArr, &inSurf, &outSurf);
+    fft2DSurfSetup(&in, &ref, &size, NO, n, &inArr, &outArr, &inSurf, &outSurf);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();

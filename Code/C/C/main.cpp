@@ -46,7 +46,7 @@ int main()
     //test_fft("Radix4 FFT", fft_radix4, n_threads, 1, n);
     test_fft("Const Geom FFT", fft_const_geom, n_threads, 1, n);
     //test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
-    //test_fftw(n);
+    test_fftw(n);
     
     /*
     test_short_fftw(n);

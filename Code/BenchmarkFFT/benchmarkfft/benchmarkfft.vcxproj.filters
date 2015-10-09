@@ -20,29 +20,11 @@
     <ClInclude Include="Common\mymath.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\MyCUDA.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\Platform.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\MyOpenCL.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
     <ClInclude Include="Common\mytimer.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Common\mycomplex.h">
       <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\MyCuFFT.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\MyOpenMP.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="Platforms\MyC.h">
-      <Filter>Platforms</Filter>
     </ClInclude>
     <ClInclude Include="Platforms\OpenMP\omp_fast_index.h">
       <Filter>Platforms\OpenMP</Filter>
@@ -68,6 +50,27 @@
     <ClInclude Include="Platforms\C\c_helper.h">
       <Filter>Platforms\C</Filter>
     </ClInclude>
+    <ClInclude Include="Platforms\MyC.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyCUDA.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyCuFFT.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyFFTW.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyOpenCL.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyOpenMP.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\Platform.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -87,6 +90,9 @@
     </Filter>
     <Filter Include="Platforms\OpenMP">
       <UniqueIdentifier>{9311ef5d-2659-4dbe-a0cb-ca4815ac47d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms\Header Files">
+      <UniqueIdentifier>{776370d0-2cf5-4d6f-97b8-f90c2494b96f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +134,9 @@
     </ClCompile>
     <ClCompile Include="Platforms\C\c_helper.cpp">
       <Filter>Platforms\C</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyFFTW.cpp">
+      <Filter>Platforms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

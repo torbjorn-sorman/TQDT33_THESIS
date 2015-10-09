@@ -277,7 +277,29 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
     return err;
 }
 
-cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
+cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
+{
+    cl_int err = CL_SUCCESS;
+    if (dev_out != NULL) {
+        err = clEnqueueReadBuffer(argGPU->commands, argGPU->output, CL_TRUE, 0, argGPU->data_mem_size, dev_out, 0, NULL, NULL);
+        checkErr(err, "Read Buffer!");
+    }
+    err = clFinish(argGPU->commands);
+    free(argGPU->kernelSource);
+    clReleaseMemObject(argGPU->input);
+    clReleaseMemObject(argGPU->output);
+    clReleaseMemObject(argGPU->sync_in);
+    clReleaseMemObject(argGPU->sync_out);
+    clReleaseProgram(argGPU->program);
+    clReleaseProgram(argCPU->program);
+    clReleaseKernel(argGPU->kernel);
+    clReleaseKernel(argCPU->kernel);
+    clReleaseCommandQueue(argGPU->commands);
+    clReleaseContext(argGPU->context);
+    return err;
+}
+
+cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
 {
     cl_int err = CL_SUCCESS;
     if (dev_out != NULL) {
@@ -289,34 +311,12 @@ cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTr
     free(argTrans->kernelSource);
     clReleaseMemObject(argGPU->input);
     clReleaseMemObject(argGPU->output);
-    clReleaseMemObject(argGPU->sync_in);
-    clReleaseMemObject(argGPU->sync_out);
     clReleaseProgram(argGPU->program);
     clReleaseProgram(argCPU->program);
     clReleaseProgram(argTrans->program);
     clReleaseKernel(argGPU->kernel);
     clReleaseKernel(argCPU->kernel);
     clReleaseKernel(argTrans->kernel);
-    clReleaseCommandQueue(argGPU->commands);
-    clReleaseContext(argGPU->context);
-    return err;
-}
-
-cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
-{
-    cl_int err = CL_SUCCESS;
-    if (dev_out != NULL) {
-        err = clEnqueueReadBuffer(argGPU->commands, argGPU->output, CL_TRUE, 0, argGPU->data_mem_size, dev_out, 0, NULL, NULL);
-        checkErr(err, "Read Buffer!");
-    }
-    err = clFinish(argGPU->commands);
-    free(argGPU->kernelSource);
-    clReleaseMemObject(argGPU->input);
-    clReleaseMemObject(argGPU->output);
-    clReleaseProgram(argGPU->program);
-    clReleaseProgram(argCPU->program);
-    clReleaseKernel(argGPU->kernel);
-    clReleaseKernel(argCPU->kernel);
     clReleaseCommandQueue(argGPU->commands);
     clReleaseContext(argGPU->context);
     return err;

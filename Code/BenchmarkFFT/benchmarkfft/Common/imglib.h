@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../Definitions.h"
 
 typedef unsigned char color_component;
 typedef color_component pixel[3];
@@ -38,5 +39,6 @@ void put_pixel_clip(
 
 image get_ppm(FILE *pf);
 void output_ppm(FILE *fd, image img);
+cpx* read_image(char *name, int *n);
 
 #endif

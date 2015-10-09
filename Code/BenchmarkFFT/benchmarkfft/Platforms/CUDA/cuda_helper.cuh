@@ -79,6 +79,16 @@ __device__ static __inline__ void cpx_add_sub_mul(cpx inL, cpx inU, cpx *outL, c
     outU->y = (W.y * x) + (W.x * y);
 }
 
+__device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, cpx *W)
+{
+    float x = inL->x - inU->x;
+    float y = inL->y - inU->y;
+    outL->x = inL->x + inU->x;
+    outL->y = inL->y + inU->y;
+    outU->x = (W->x * x) - (W->y * y);
+    outU->y = (W->y * x) + (W->x * y);
+}
+
 __device__ static __inline__ void mem_gtos(int low, int high, int offset, cpx *shared, cpx *global)
 {
     shared[low] = global[low + offset];
@@ -187,7 +197,6 @@ void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n);
 void checkCudaError();
 void checkCudaError(char *msg);
 void set2DBlocksNThreads(dim3 *bFFT, dim3 *tFFT, dim3 *bTrans, dim3 *tTrans, int n);
-cpx* read_image(char *name, int *n);
 void write_image(char *name, char *type, cpx* seq, int n);
 void write_normalized_image(char *name, cpx* seq, int n);
 void normalized_image(cpx* seq, int n);
@@ -208,12 +217,12 @@ double avg(double m[], int n);
 
 void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
 int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
-void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int sinus, int n);
+void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
 void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
-void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
+void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
 
 #endif

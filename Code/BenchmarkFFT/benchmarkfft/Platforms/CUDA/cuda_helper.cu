@@ -360,10 +360,10 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, 
     return diff > ERROR_MARGIN;
 }
 
-void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, char *image_name, int n)
+void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n)
 {
     char input_file[40];
-    sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
+    sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
     *in = read_image(input_file, &sz);
     *ref = read_image(input_file, &sz);
@@ -374,7 +374,7 @@ void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, cha
 }
 
 void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
-{
+{    
     free(*in);
     free(*ref);
     cudaFree(*dev_i);
@@ -426,7 +426,7 @@ void cudaCheckError()
     cudaCheckError(cudaGetLastError());
 }
 
-void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
+void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
 {
     if (sinus) {
         *in = get_sin_img(n);
@@ -434,7 +434,7 @@ void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, char *image_name, int sin
     }
     else {
         char input_file[40];
-        sprintf_s(input_file, 40, "%s/%u.ppm", image_name, n);
+        sprintf_s(input_file, 40, "Images/%u.ppm", n);
         int sz;
         *in = read_image(input_file, &sz);
         *ref = read_image(input_file, &sz);

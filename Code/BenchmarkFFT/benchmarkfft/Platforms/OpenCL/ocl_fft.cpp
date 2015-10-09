@@ -80,9 +80,6 @@ int OCL_validate(const int n)
 int OCL2D_validate(const int n)
 {
     cl_int err = CL_SUCCESS;
-    char input_file[40];
-    sprintf_s(input_file, 40, "%s/%u.ppm", "shore", n);
-    int sz;
     cpx *data_in = get_seq(n * n, 1);
     cpx *data_ref = get_seq(n * n, data_in);
 

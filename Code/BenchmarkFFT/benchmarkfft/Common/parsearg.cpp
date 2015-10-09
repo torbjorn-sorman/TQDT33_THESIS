@@ -1,6 +1,9 @@
 
 #include "parsearg.h"
 
+#define MATCH(s) (str.compare((s)) == 0)
+#define MATCHP(s) (tmp.compare((s)) == 0)
+
 int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
 {
     if (argc == 1) {
@@ -8,23 +11,23 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
     }
     for (int i = 1; i < argc; ++i) {        
         std::string str = argv[i];
-        if (str.compare("-dim") == 0) {
+        if (MATCH("-dim")) {
             arg->dimensions = atoi(argv[++i]);
             if (arg->dimensions < 1 || arg->dimensions > 2) {
                 printf("Error parsing #dimensions: must be 1 or 2\n");
                 goto show_usage;
             }
         }
-        else if (str.compare("-r") == 0) {
+        else if (MATCH("-r")) {
             arg->start = atoi(argv[++i]);
             arg->end = atoi(argv[++i]);
             if (arg->end > HIGHEST_EXP) {
                 arg->end = HIGHEST_EXP;
-                printf("Notice: end exponent is set to %u", arg->start);
+                printf("Notice: end exponent is set to %d\n", arg->start);
             }
             if (arg->start > HIGHEST_EXP) {
                 arg->start = HIGHEST_EXP;
-                printf("Notice: start exponent is set to %u", arg->start);
+                printf("Notice: start exponent is set to %d\n", arg->start);
             }
             if (arg->end < arg->start) {
                 printf("Error parsing range of lengths, start exponent must be lower than end exponent.\n");
@@ -32,34 +35,36 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
             }
             arg->number_of_lengths = arg->end - arg->start;
         }
-        else if (str.compare("-platforms") == 0) {
+        else if (MATCH("-platforms")) {
             ++i;
-            while (std::string(argv[i])[0] != '-') {
+            while (i < argc && std::string(argv[i])[0] != '-') {
                 arg->test_platform = true;
                 std::string tmp = argv[i];
-                if (tmp.compare("cuda") == 0) arg->platform_cuda = true;
-                if (tmp.compare("opencl") == 0) arg->platform_opencl = true;
-                if (tmp.compare("opengl") == 0) arg->platform_opengl = true;
-                if (tmp.compare("directx") == 0) arg->platform_directx = true;
-                if (tmp.compare("c") == 0) arg->platform_c = true;
-                if (tmp.compare("openmp") == 0) arg->platform_openmp = true;
-                if (tmp.compare("cufft") == 0) arg->platform_cufft = true;
+                if      (MATCHP("c"))           arg->platform_c = true;
+                else if (MATCHP("cuda"))        arg->platform_cuda = true;
+                else if (MATCHP("cufft"))       arg->platform_cufft = true;
+                else if (MATCHP("directx"))     arg->platform_directx = true;
+                else if (MATCHP("fftw"))        arg->platform_fftw = true;
+                else if (MATCHP("opencl"))      arg->platform_opencl = true;
+                else if (MATCHP("opengl"))      arg->platform_opengl = true;
+                else if (MATCHP("openmp"))      arg->platform_openmp = true;
                 ++i;
             }
+            --i;
         }
-        else if (str.compare("-v") == 0) {
+        else if (MATCH("-v")) {
             arg->validate = true;
         }
-        else if (str.compare("-d") == 0) {
+        else if (MATCH("-d")) {
             arg->display = true;
         }
-        else if (str.compare("-profiler") == 0) {
+        else if (MATCH("-profiler")) {
             arg->profiler = true;
         }
-        else if (str.compare("-p") == 0) {
+        else if (MATCH("-p")) {
             arg->write_file = true;
         }
-        else if (str.compare("-cuprop") == 0) {
+        else if (MATCH("-cuprop")) {
             arg->show_cuprop = true;
         }
         else {
@@ -71,7 +76,12 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
         if (arg->start < log2_32(TILE_DIM >> 1)) {
             arg->start = log2_32(TILE_DIM >> 1);
             arg->number_of_lengths = arg->end - arg->start;
-            printf("Notice: start exponent is set to %u", arg->start);
+            printf("Notice: start exponent is set to %d\n", arg->start);
+        }
+        if (arg->end > HIGHEST_EXP_2D) {
+            arg->end = HIGHEST_EXP_2D;
+            arg->number_of_lengths = arg->end - arg->start;
+            printf("Notice: end exponent is set to %d\n", arg->end);
         }
     }
     return 1;

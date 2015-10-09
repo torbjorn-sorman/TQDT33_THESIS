@@ -125,7 +125,7 @@ _inline void _fft_cgbody(cpx *in, cpx *out, float w_angle, unsigned int mask, co
     float cv, sv, ang;
     cpx tmp;
     n2 = n / 2;
-    old = -1;
+    old = -1;        
 #pragma omp parallel for schedule(static) private(l, u, p, tmp, cv, sv, ang, old)
     for (int i = 0; i < n; i += 2) {
         l = i / 2;

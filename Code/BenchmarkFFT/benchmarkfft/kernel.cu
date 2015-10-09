@@ -15,6 +15,7 @@
 #include "Platforms\MyCuFFT.h"
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"
+#include "Platforms\MyFFTW.h"
 
 void printDevProp(cudaDeviceProp devProp);
 void toFile(std::string name, std::vector<double> results, int ms);
@@ -22,19 +23,21 @@ void toFile(std::string name, std::vector<double> results, int ms);
 std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 {
     std::vector<Platform *> platforms;
-    // cuFFT only shipped for x64
+    // cuFFT only shipped for x64, FFTW x64 selected
 #ifdef _WIN64
     if (args->platform_cufft)
         platforms.insert(platforms.begin(), new MyCuFFT(args->dimensions, args->number_of_lengths));
+    if (args->platform_fftw)
+        platforms.insert(platforms.begin(), new MyFFTW(args->dimensions, args->number_of_lengths));
 #endif
     if (args->platform_cuda)
         platforms.insert(platforms.begin(), new MyCUDA(args->dimensions, args->number_of_lengths));
     if (args->platform_opencl)
         platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
-    if (args->platform_c)
-        platforms.insert(platforms.begin(), new MyC(args->dimensions, args->number_of_lengths));
     if (args->platform_openmp)
         platforms.insert(platforms.begin(), new MyOpenMP(args->dimensions, args->number_of_lengths));
+    if (args->platform_c)
+        platforms.insert(platforms.begin(), new MyC(args->dimensions, args->number_of_lengths));
     return platforms;
 }
 
@@ -45,7 +48,6 @@ int main(int argc, const char* argv[])
         return 0;
     if (args.profiler) {
         if (args.test_platform) {
-            cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::vector<Platform *> platforms = getPlatforms(&args);
             for (int i = args.start; i < args.end; ++i) {
@@ -69,22 +71,30 @@ int main(int argc, const char* argv[])
         cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
         std::vector<Platform *> platforms = getPlatforms(&args);
-        std::cout << "  Running Platforms (might take a while)..." << std::endl;        
+        std::cout << "  Running Platforms (might take a while)";        
         for (int i = args.start; i < args.end; ++i) {
             int n = power2(i);            
             for (Platform *platform : platforms)
                 platform->runPerformance(n);
+            std::cout << '.';
         }
+        std::cout << std::endl;
         if (args.display) {
-            int tabs = 1 + (int)log10(power2(args.start + args.number_of_lengths)) / 8;
+            int tabs = 1 + (int)log10(power2(args.start + args.number_of_lengths)) / 7;
             std::cout << std::string(tabs, '\t');
             for (Platform *platform : platforms)
                 std::cout << platform->name << "\t";
-            std::cout << std::endl << std::setprecision(0);
+            std::cout << std::endl;
+            std::cout << std::fixed;
+            std::cout << std::setprecision(0);
             for (int i = 0; i < args.number_of_lengths; ++i) {
-                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 8, '\t');
-                for (Platform *platform : platforms)
-                    std::cout << platform->results.at(i) << (args.validate != 1 || platform->validate(power2(args.start + i)) ? "" : "!") << "\t";
+                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');
+                for (Platform *platform : platforms) {
+                    std::cout << platform->results.at(i);
+                    if (args.validate && ! platform->validate(power2(args.start + i)))
+                        std::cout << "!";
+                    std::cout << "\t";
+                }
                 std::cout << std::endl;
             }
         }

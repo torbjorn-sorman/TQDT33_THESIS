@@ -20,6 +20,16 @@ void bit_reverse(cpx *x, fft_direction dir, const int lead, const int n);
 void transpose(cpx **seq, const int n);
 void transpose_block(cpx **seq, const int b, const int n);
 
+static __inline void cpxAddSubMul(cpx* in, int l, int u, cpx *outL, cpx *outU, cpx W)
+{
+    float x = in[l].r - in[u].r;
+    float y = in[l].i - in[u].i;
+    outL->r = in[l].r + in[u].r;
+    outL->i = in[l].i + in[u].i;
+    outU->r = (W.r * x) - (W.i * y);
+    outU->i = (W.i * x) + (W.r * y);
+}
+
 __inline static void swap(cpx **in, cpx **out)
 {
     cpx *tmp = *in;

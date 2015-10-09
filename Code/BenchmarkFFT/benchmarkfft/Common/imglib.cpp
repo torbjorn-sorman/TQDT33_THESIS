@@ -108,3 +108,25 @@ void put_pixel_clip(
     if (x < img->width && y < img->height)
         put_pixel_unsafe(img, x, y, r, g, b);
 }
+
+cpx* read_image(char *name, int *n)
+{
+    image image;
+    color_component *cp;
+    FILE *fp;
+    fopen_s(&fp, name, "rb");
+    image = get_ppm(fp);
+    if (!image || image->width != image->height)
+        return NULL;
+
+    int size = *n = image->width;
+    cpx *seq = (cpx *)malloc(sizeof(cpx) * size * size);
+    for (int y = 0; y < (int)image->height; ++y) {
+        for (int x = 0; x < (int)image->width; ++x) {
+            cp = GET_PIXEL(image, x, y);
+            seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
+        }
+    }
+    free_img(image);
+    return seq;
+}

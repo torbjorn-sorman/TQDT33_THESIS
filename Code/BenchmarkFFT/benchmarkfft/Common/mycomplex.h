@@ -5,6 +5,7 @@
 #include "cuComplex.h"
 
 #include "../Definitions.h"
+#include "imglib.h"
 
 static __inline cpx *get_seq(int n, int sinus)
 {
@@ -33,6 +34,16 @@ static __inline cpx *get_seq(int n, cpx *src)
         seq[i].y = src[i].y;
     }
     return seq;
+}
+
+static __inline void setup_seq2D(cpx **in, cpx **buf, cpx **ref, int n)
+{
+    char input_file[40];
+    sprintf_s(input_file, 40, "Images/%u.ppm", n);
+    int sz;
+    *in = read_image(input_file, &sz);
+    *ref = read_image(input_file, &sz);
+    *buf = (cpx *)malloc(sizeof(cpx) * n * n);
 }
 
 static __inline cpx **get_seq2D(const int n, const int type)

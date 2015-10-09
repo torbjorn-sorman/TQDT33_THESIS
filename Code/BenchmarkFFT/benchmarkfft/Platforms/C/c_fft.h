@@ -17,6 +17,6 @@ double cConstantGeometry2D_runPerformance(const int n);
 
 void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n);
 void cConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n);
-void cConstantGeometry2D(fftDir dir, cpx** seq, const int n);
+void cConstantGeometry2D(fftDir dir, cpx* in, cpx* out, const int n);
 
 #endif

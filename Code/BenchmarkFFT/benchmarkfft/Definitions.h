@@ -39,7 +39,8 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 // Test related defines
 //
 #define NUM_PERFORMANCE 9
-#define HIGHEST_EXP 25
+#define HIGHEST_EXP 27
+#define HIGHEST_EXP_2D 14
 
 //
 // CUDA compiler nvcc intrisics related defines.
@@ -85,6 +86,7 @@ struct benchmarkArgument {
     bool platform_directx = 0;
     bool platform_c = 0;
     bool platform_openmp = 0;
+    bool platform_fftw = 0;
     bool profiler = 0;
     bool show_cuprop = 0;
     bool write_file = 0;

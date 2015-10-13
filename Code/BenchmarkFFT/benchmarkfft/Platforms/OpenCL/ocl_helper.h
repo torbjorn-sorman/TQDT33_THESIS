@@ -27,6 +27,9 @@ struct oclArgs {
     char *kernelSource;
 };
 
+int checkErr(cl_int error, char *msg);
+int checkErr(cl_int error, cl_int args, char *msg);
+
 static void __inline oclExecute(oclArgs *args)
 {
     clEnqueueNDRangeKernel(args->commands, args->kernel, 1, NULL, args->global_work_size, &args->local_work_size, 0, NULL, NULL);
@@ -69,10 +72,15 @@ static void __inline oclSetKernelGPUArg(oclArgs *args, float angle, float bAngle
 
 static void __inline oclSetKernelTransposeArg(oclArgs *args)
 {
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
-    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
+    cl_int err = CL_SUCCESS;
+    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
+    checkErr(err, err, "input");
+    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    checkErr(err, err, "output");
+    err = clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    checkErr(err, err, "shmem");
+    err = clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
+    checkErr(err, err, "n");    
 }
 
 std::string getKernel(const char *filename);

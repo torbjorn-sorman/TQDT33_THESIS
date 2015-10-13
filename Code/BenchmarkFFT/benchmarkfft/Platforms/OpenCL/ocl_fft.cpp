@@ -41,15 +41,15 @@ __inline void runCombine(oclArgs *argCPU, oclArgs *argGPU)
 
 __inline void runCombine2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
 {
-    runCombine(argCPU, argGPU);
+    //runCombine(argCPU, argGPU);
+    //oclSetKernelTransposeArg(argTrans);
+    //oclExecute(argTrans);
+
+    //runCombine(argCPU, argGPU);
     oclSetKernelTransposeArg(argTrans);
     oclExecute(argTrans);
 
-    runCombine(argCPU, argGPU);
-    oclSetKernelTransposeArg(argTrans);
-    oclExecute(argTrans);
-
-    swap(&argGPU->input, &argGPU->output);
+    //swap(&argGPU->input, &argGPU->output);
 }
 
 int OCL_validate(const int n)
@@ -77,11 +77,22 @@ int OCL_validate(const int n)
     return freeResults(&data_in, &data_out, &data_ref, n) == 0;
 }
 
+void setupBuffers(cpx **in, cpx **ref, const int n)
+{
+    char input_file[40];
+    sprintf_s(input_file, 40, "Images/%u.ppm", n);
+    int sz;
+    *in = (cpx *)malloc(sizeof(cpx) * n * n);
+    read_image(*in, input_file, &sz);
+    *ref = (cpx *)malloc(sizeof(cpx) * n * n);
+    memcpy(*ref, *in, sizeof(cpx) * n * n);
+}
+
 int OCL2D_validate(const int n)
 {
     cl_int err = CL_SUCCESS;
-    cpx *data_in = get_seq(n * n, 1);
-    cpx *data_ref = get_seq(n * n, data_in);
+    cpx *data_in, *data_ref;
+    setupBuffers(&data_in, &data_ref, n);
 
     oclArgs argGPU, argCPU, argTranspose;
     err = oclCreateKernels2D(&argCPU, &argGPU, &argTranspose, data_in, FFT_FORWARD, n);
@@ -90,6 +101,8 @@ int OCL2D_validate(const int n)
     checkErr(err, err, "Run failed!");
     err = oclRelease2D(data_in, &argCPU, &argGPU, &argTranspose);
     checkErr(err, err, "Release failed!");
+    //write_normalized_image("OpenCL", "freq", data_in, n, true);
+    write_image("OpenCL", "freq", data_in, n);
 
     err = oclCreateKernels2D(&argCPU, &argGPU, &argTranspose, data_in, FFT_INVERSE, n);
     checkErr(err, err, "Create failed!");
@@ -97,6 +110,7 @@ int OCL2D_validate(const int n)
     checkErr(err, err, "Run failed!");
     err = oclRelease2D(data_in, &argCPU, &argGPU, &argTranspose);
     checkErr(err, err, "Release failed!");
+    write_image("OpenCL", "spat", data_in, n);
 
     return freeResults(&data_in, NULL, &data_ref, n) == 0;
 }

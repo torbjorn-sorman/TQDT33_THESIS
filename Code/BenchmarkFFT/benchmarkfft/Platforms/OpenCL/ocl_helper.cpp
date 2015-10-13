@@ -139,7 +139,8 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     const int n = args->n;
     int itmDim = (n / 2) > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (n / 2);
     int nBlock = n / itmDim;
-    size_t data_mem_size = sizeof(cpx) * n * n;
+    int minSize = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
+    size_t data_mem_size = sizeof(cpx) * minSize;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
     cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
@@ -155,7 +156,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     args->data_mem_size = data_mem_size;
     args->nBlock = nBlock;
     args->input = input;
-    args->input = output;
+    args->output = output;
 
     return err;
 }
@@ -205,8 +206,9 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
     argCPU->global_work_size[0] = argGPU->global_work_size[0];
     argCPU->global_work_size[1] = argGPU->global_work_size[1];
     argCPU->local_work_size = argGPU->local_work_size;
-    argCPU->input = argGPU->input;
-    argCPU->output = argGPU->output;
+    argTrans->input = argCPU->input = argGPU->input;
+    argTrans->output = argCPU->output = argGPU->output;
+    argTrans->shared_mem_size = TILE_DIM * (TILE_DIM + 1) * sizeof(cpx);
     argCPU->data_mem_size = argGPU->data_mem_size;
     argCPU->nBlock = argGPU->nBlock;
     return err;
@@ -244,16 +246,25 @@ cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *arg
     err = clFinish(argGPU->commands);
     free(argGPU->kernelSource);
     free(argTrans->kernelSource);
-    clReleaseMemObject(argGPU->input);
-    clReleaseMemObject(argGPU->output);
-    clReleaseProgram(argGPU->program);
-    clReleaseProgram(argCPU->program);
-    clReleaseProgram(argTrans->program);
-    clReleaseKernel(argGPU->kernel);
-    clReleaseKernel(argCPU->kernel);
-    clReleaseKernel(argTrans->kernel);
-    clReleaseCommandQueue(argGPU->commands);
-    clReleaseContext(argGPU->context);
+    err = clReleaseMemObject(argGPU->input);
+    checkErr(err, err, "clReleaseMemObject->input");
+    err = clReleaseMemObject(argGPU->output);
+    checkErr(err, err, "clReleaseMemObject->output");
+    err = clReleaseProgram(argGPU->program);
+    checkErr(err, err, "clReleaseProgram->GPU");
+    err = clReleaseProgram(argCPU->program);
+    checkErr(err, err, "clReleaseProgram->CPU");
+    err = clReleaseProgram(argTrans->program);
+    checkErr(err, err, "clReleaseProgram->Trans");
+    err = clReleaseKernel(argGPU->kernel);
+    checkErr(err, err, "clReleaseKernel->GPU");
+    err = clReleaseKernel(argCPU->kernel);
+    checkErr(err, err, "clReleaseKernel->CPU");
+    err = clReleaseKernel(argTrans->kernel);
+    checkErr(err, err, "clReleaseKernel->Trans");
+    err = clReleaseCommandQueue(argGPU->commands);
+    checkErr(err, err, "clReleaseMemObject");
+    err = clReleaseContext(argGPU->context);
     return err;
 }
 

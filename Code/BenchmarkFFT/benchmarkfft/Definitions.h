@@ -38,7 +38,7 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 //
 // Test related defines
 //
-#define NUM_PERFORMANCE 9
+#define NUM_PERFORMANCE 8
 #define HIGHEST_EXP 27
 #define HIGHEST_EXP_2D 14
 

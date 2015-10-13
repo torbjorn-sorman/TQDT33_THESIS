@@ -41,8 +41,8 @@ __host__ int tsCombine2D_Validate(int n)
     fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
 
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, "frequency-domain", size, true, true, n);
-    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, "spatial-domain", size, true, false, n);
+    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, "freq", size, true, true, n);
+    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, "spat", size, true, false, n);
 
     int res = fft2DCompare(in, ref, dev_in, size, n * n);
     fft2DShakedown(&in, &ref, &dev_in, &dev_out);

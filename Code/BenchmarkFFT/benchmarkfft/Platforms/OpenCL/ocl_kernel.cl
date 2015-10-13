@@ -222,20 +222,28 @@ __kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx *shar
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32
 
-__kernel void kernelTranspose(__global cpx *in, __global cpx *out, __local cpx *tile, int n)
+__kernel void kernelTranspose(__global cpx *in, __global cpx *out, __local cpx tile[], int n)
 {
     // Write to shared from Global (in)
     int x = get_group_id(0) * TILE_DIM + get_local_id(0);
     int y = get_group_id(1) * TILE_DIM + get_local_id(1);
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            tile[(get_local_id(1) + j) * TILE_DIM + (get_local_id(0) + i)] = in[(y + j) * n + (x + i)];
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM) {
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
+            int li = (get_local_id(1) + j) * TILE_DIM + (get_local_id(0) + i);
+            int gi = (y + j) * n + (x + i);
+            if (li > TILE_DIM * TILE_DIM || gi > n * n)
+                printf("li: %d gi: %d TILE_DIM: %d n: %d\n", li, gi, TILE_DIM, n);
+            tile[(get_local_id(1) + j) * TILE_DIM + (get_local_id(0) + i)] = in[(y + j) * n + (x + i)];            
+        }
+    }
 
     barrier(0);
     // Write to global
     x = get_group_id(1) * TILE_DIM + get_local_id(0);
     y = get_group_id(0) * TILE_DIM + get_local_id(1);
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM){ 
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
             out[(y + j) * n + (x + i)] = tile[(get_local_id(0) + i) * TILE_DIM + (get_local_id(1) + j)];
+        }
+    }
 }

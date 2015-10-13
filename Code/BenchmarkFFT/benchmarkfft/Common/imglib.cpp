@@ -109,7 +109,11 @@ void put_pixel_clip(
         put_pixel_unsafe(img, x, y, r, g, b);
 }
 
-cpx* read_image(char *name, int *n)
+//
+// My own additions to handle my custom format
+//
+
+void read_image(cpx *dst, char *name, int *n)
 {
     image image;
     color_component *cp;
@@ -117,16 +121,155 @@ cpx* read_image(char *name, int *n)
     fopen_s(&fp, name, "rb");
     image = get_ppm(fp);
     if (!image || image->width != image->height)
-        return NULL;
+        return;
 
     int size = *n = image->width;
-    cpx *seq = (cpx *)malloc(sizeof(cpx) * size * size);
     for (int y = 0; y < (int)image->height; ++y) {
         for (int x = 0; x < (int)image->width; ++x) {
             cp = GET_PIXEL(image, x, y);
-            seq[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
+            dst[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
         }
     }
     free_img(image);
-    return seq;
+}
+
+cpx *get_flat(cpx **seq, int n)
+{
+    cpx *flat = (cpx *)malloc(sizeof(cpx) * n * n);
+    for (int y = 0; y < n; ++y)
+        for (int x = 0; x < n; ++x)
+            flat[y * n + x] = seq[y][x];
+    return flat;
+}
+
+void write_image(char *name, char *type, cpx* seq, int n)
+{
+    image image;
+    image = alloc_img(n, n);
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            color_component val = (unsigned char)((seq[y * n + x].x) * 255.f);
+            put_pixel_unsafe(image, x, y, val, val, val);
+        }
+    }
+    FILE *fp = getImageFilePointer(name, n, type);
+    output_ppm(fp, image);
+    fclose(fp);
+    free_img(image);
+}
+
+void write_image(char *name, char *type, cpx** seq, int n)
+{
+    cpx *flat = get_flat(seq, n);
+    write_image(name, type, flat, n);
+    free(flat);
+}
+
+void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, double *avg)
+{
+    double min_v = 99999999999;
+    double max_v = -99999999999;
+    double sum_v = 0.0;
+    double tmp = 0.0;
+    for (int i = 0; i < n; ++i) {
+        tmp = cuCabsf(seq[i]);        
+        min_v = min_v < tmp ? min_v : tmp;
+        max_v = max_v > tmp ? max_v : tmp;
+        sum_v += tmp;
+    }
+    *min_val = min_v;
+    *range = max_v - min_v;
+    *avg = sum_v / (double)n;
+}
+
+void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTShift)
+{
+    image image;
+    double minVal, range, avg, mag, val;    
+    if (doFFTShift) {
+        cpx *tmp = (cpx *)malloc(sizeof(cpx) * n * n);
+        fftShift(tmp, seq, n);
+        seq = tmp;
+    }
+    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    double avg_pos = 0.1;
+    double scale = tan(avg_pos * (M_PI / 2.0)) / ((avg - minVal) / range);
+    image = alloc_img(n, n);
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            mag = cuCabsf(seq[y * n + x]);
+            val = ((mag - minVal) / range);
+            val = (atan(val * scale) / (M_PI / 2.0)) * 255.0;
+            color_component col = (unsigned char)(val > 255.0 ? 255 : val);
+            put_pixel_unsafe(image, x, y, col, col, col);
+        }
+    }
+    FILE *fp = getImageFilePointer(name, n, type);
+    output_ppm(fp, image);
+    fclose(fp);
+    free_img(image);
+    if (doFFTShift) {
+        free(seq);
+    }
+}
+
+void write_normalized_image(char *name, char *type, cpx** seq, int n, bool doFFTShift)
+{
+    cpx *flat = get_flat(seq, n);    
+    write_normalized_image(name, type, flat, n, doFFTShift);
+    free(flat);
+}
+
+void normalized_image(cpx* seq, int n)
+{
+    double minVal, range, avg, mag, val;
+    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    double avg_pos = 0.8;
+    double scale = tan(avg_pos * (M_PI / 2.0)) / ((avg - minVal) / range);
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            mag = cuCabsf(seq[y * n + x]);
+            val = ((mag - minVal) / range);
+            val = (atan(val * scale) / (M_PI / 2.0));
+            seq[y * n + x] = make_cuFloatComplex((float)(val > 1.0 ? 1 : val), 0.f);
+        }
+    }
+}
+
+void clear_image(cpx* seq, int n)
+{
+    for (int i = 0; i < n; ++i)
+        seq[i] = make_cuFloatComplex(1.f, 1.f);
+}
+
+void cpPixel(int px, int px2, cpx *in, cpx *out)
+{
+    int p, p2;
+    p = px * 3;
+    p2 = px2 * 3;
+    out[p] = in[p2];
+    out[p + 1] = in[p2 + 1];
+    out[p + 2] = in[p2 + 2];
+}
+
+void fftShift(cpx *dst, cpx *src, int n)
+{
+    int px1, px2;
+    int n2 = n / 2;
+    for (int y = 0; y < n2; ++y) {
+        for (int x = 0; x < n2; ++x) {
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x + n2);
+            dst[px1] = src[px2];
+            dst[px2] = src[px1];
+        }
+    }
+    for (int y = 0; y < n2; ++y) {
+        for (int x = n2; x < n; ++x) {
+            px1 = y * n + x;
+            px2 = (y + n2) * n + (x - n2);
+            dst[px1] = src[px2];
+            dst[px2] = src[px1];
+        }
+    }
 }

@@ -20,6 +20,6 @@ double ompConstantGeometry2D_runPerformance(const int n);
 
 void ompConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n);
 void ompConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n);
-void ompConstantGeometry2D(fftDir dir, cpx** seq, const int n);
+void ompConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n);
 
 #endif

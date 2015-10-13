@@ -71,6 +71,9 @@
     <ClInclude Include="Platforms\Platform.h">
       <Filter>Platforms\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\myfile.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -137,6 +140,9 @@
     </ClCompile>
     <ClCompile Include="Platforms\MyFFTW.cpp">
       <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\mycomplex.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,9 +1,14 @@
 #ifndef C_HELPER_H
 #define C_HELPER_H
 
+#include <stdio.h>
 #include "../../Definitions.h"
+#ifdef _OPENMP
+#include <omp.h> 
+#endif
 
-__host__ __device__ static __inline__ void swap(cpx **in, cpx **out)
+
+__host__ __device__ static __inline__ void swapBuffer(cpx **in, cpx **out)
 {
     cpx *tmp = *in;
     *in = *out;
@@ -127,34 +132,26 @@ static void __inline ompBitReverse(cpx *x, fftDir dir, const int lead, const int
     }
 }
 
-static void __inline transpose(cpx **seq, const int n)
+static void __inline transposeN(cpx *in, cpx *out, const int n)
 {
-    for (int y = 0; y < n; ++y){
-        for (int x = y + 1; x < n; ++x) {
-            swap(&seq[y][x], &seq[x][y]);
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            out[y * n + x] = in[x * n + y];
         }
     }
 }
 
-static void __inline transposeN(cpx *seq, const int n)
+static void __inline transpose(cpx *in, cpx *out, const int n)
 {
-    for (int y = 0; y < n; ++y){
-        for (int x = y + 1; x < n; ++x) {
-            swap(&seq[y*n + x], &seq[x*n + y]);
+    cpx *end = in + n * n;
+    for (int y = 0; y < n; ++y) {
+        for (cpx *_in = in++; _in < end; _in += n) {
+            *(out++) = *_in;
         }
     }
 }
 
-static void __inline transpose(cpx *seq, const int n)
-{
-    for (int y = 0; y < n; ++y){
-        cpx *seqY = &seq[y * n + y];
-        cpx *seqX = &seq[y + y * n];
-        for (int x = y + 1; x < n; ++x) {
-            swap(++seqY, seqX += n);
-        }
-    }
-}
+#ifndef __CUDACC__
 
 static void __inline ompTranspose(cpx **seq, const int n)
 {
@@ -165,5 +162,16 @@ static void __inline ompTranspose(cpx **seq, const int n)
         }
     }
 }
+
+static void __inline ompTranspose(cpx *in, cpx *out, const int n)
+{
+#pragma omp parallel for schedule(static)
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            out[y * n + x] = in[x * n + y];
+        }
+    }
+}
+#endif
 
 #endif

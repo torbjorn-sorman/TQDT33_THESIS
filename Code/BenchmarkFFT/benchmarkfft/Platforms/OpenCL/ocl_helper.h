@@ -79,13 +79,6 @@ std::string getKernel(const char *filename);
 
 int checkErr(cl_int error, char *msg);
 int checkErr(cl_int error, cl_int args, char *msg);
-/*
-cl_int oclSetup(char *kernelName, cpx *dev_in, oclArgs *args);
-cl_int oclSetupKernel(oclArgs *args);
-cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args);
-cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in);
-cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, oclArgs *argsCrossGroups);
-*/
 cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
 cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
 cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);

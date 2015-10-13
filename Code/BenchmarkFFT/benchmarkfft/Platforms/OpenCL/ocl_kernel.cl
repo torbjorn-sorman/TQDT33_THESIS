@@ -63,17 +63,7 @@ cpx cpxMul(const cpx a, const cpx b)
         );
 }
 
-void cpxAddSubMul(__global cpx* in, int l, int u, __global cpx *outL, __global cpx *outU, cpx *W)
-{
-    float x = in[l].x - in[u].x;
-    float y = in[l].y - in[u].y;
-    outL->x = in[l].x + in[u].x;
-    outL->y = in[l].y + in[u].y;
-    outU->x = (W->x * x) - (W->y * y);
-    outU->y = (W->y * x) + (W->x * y);
-}
-/*
-void cpxAddSubMulRef(__global cpx* inL, __global cpx* inU, __global cpx *outL, __global cpx *outU, cpx *W)
+void cpxAddSubMulGlobal(__global cpx* inL, __global cpx* inU, __global cpx *outL, __global cpx *outU, cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -82,8 +72,8 @@ void cpxAddSubMulRef(__global cpx* inL, __global cpx* inU, __global cpx *outL, _
     outU->x = (W->x * x) - (W->y * y);
     outU->y = (W->y * x) + (W->x * y);
 }
-*/
-void cpxAddSubMulR(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, cpx *W)
+
+void cpxAddSubMulLocal(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -92,17 +82,7 @@ void cpxAddSubMulR(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, cpx
     outU->x = (W->x * x) - (W->y * y);
     outU->y = (W->y * x) + (W->x * y);
 }
-/*
-void cpxAddSubMulSync(cpx *inL, cpx *inU, __local cpx *out, cpx *W)
-{
-    float x = inL->x - inU->x;
-    float y = inL->y - inU->y;
-    out->x = inL->x + inU->x;
-    out->y = inL->y + inU->y;
-    (++out)->x = (W->x * x) - (W->y * y);
-    out->y = (W->y * x) + (W->x * y);
-}
-*/
+
 unsigned int reverse(register unsigned int x)
 {
     x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
@@ -157,7 +137,7 @@ void inner_kernel(__global cpx *in, __global cpx *out, float angle, int steps, u
     int in_high = in_low + dist;
     cpx w;
     w.y = sincos(angle * ((get_global_id(0) << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMul(in, in_low, in_high, &out[in_low], &out[in_high], &w);    
+    cpxAddSubMulGlobal(in + in_low, in + in_high, &out[in_low], &out[in_high], &w);    
 }
 
 int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
@@ -190,7 +170,7 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
         in_upper = *in_u;
         barrier(0);
         w.y = sincos(angle * (get_local_id(0) & (0xFFFFFFFF << steps)), &w.x);
-        cpxAddSubMulR(&in_lower, &in_upper, out_i, out_ii, &w);
+        cpxAddSubMulLocal(&in_lower, &in_upper, out_i, out_ii, &w);
         barrier(0);
     }
 }
@@ -226,7 +206,7 @@ __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsi
     int in_low = (col_id + (col_id & lmask)) + get_group_id(0) * get_num_groups(0);
     int in_high = in_low + dist;
     w.y = sincos(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMul(in, in_low, in_high, &out[in_low], &out[in_low], &w);
+    cpxAddSubMulGlobal(in + in_low, in + in_high, &out[in_low], &out[in_low], &w);
 }
 
 __kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx *shared, float angle, float bAngle, int depth, cpx scale, int nBlock)

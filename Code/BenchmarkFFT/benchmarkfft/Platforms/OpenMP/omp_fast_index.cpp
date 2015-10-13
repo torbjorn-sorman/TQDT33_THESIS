@@ -67,7 +67,7 @@ static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lma
     for (int i = 0; i < n2; ++i) {
         int l = i + (i & lmask);
         int u = l + dist;        
-        cpxAddSubMul(in, l, u, &out[l], &out[u], W[(i << steps) & pmask]);
+        cpxAddSubMul(in + l, in + u, out + l, out + u, &W[(i << steps) & pmask]);
     }
 }
 

@@ -59,34 +59,24 @@ static __inline unsigned int power2(const unsigned int exp)
     return power(2, exp);
 }
 
-static __inline void cpxAddSubMul(cpx* in, int l, int u, cpx *outL, cpx *outU, cpx W)
+static __inline void cpxAddSubMul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
 {
-    float x = in[l].x - in[u].x;
-    float y = in[l].y - in[u].y;
-    outL->x = in[l].x + in[u].x;
-    outL->y = in[l].y + in[u].y;
-    outU->x = (W.x * x) - (W.y * y);
-    outU->y = (W.y * x) + (W.x * y);
+    float x = inL->x - inU->x;
+    float y = inL->y - inU->y;
+    outL->x = inL->x + inU->x;
+    outL->y = inL->y + inU->y;
+    outU->x = (W->x * x) - (W->y * y);
+    outU->y = (W->y * x) + (W->x * y);
 }
 
-static __inline void cpxAddSubMulCG(cpx* in, int l, int u, cpx *out, cpx W)
-{
-    float x = in[l].x - in[u].x;
-    float y = in[l].y - in[u].y;
-    out->x = in[l].x + in[u].x;
-    out->y = in[l].y + in[u].y;
-    (++out)->x = (W.x * x) - (W.y * y);
-    out->y = (W.y * x) + (W.x * y);
-}
-
-static __inline void cpxAddSubMulCG(cpx *inL, cpx *inU, cpx *out, cpx W)
+static __inline void cpxAddSubMulCG(cpx *inL, cpx *inU, cpx *out, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     out->x = inL->x + inU->x;
     out->y = inL->y + inU->y;
-    (++out)->x = (W.x * x) - (W.y * y);
-    out->y = (W.y * x) + (W.x * y);
+    (++out)->x = (W->x * x) - (W->y * y);
+    out->y = (W->y * x) + (W->x * y);
 }
 
 #endif

@@ -7,6 +7,7 @@
 #include "../../Common/mymath.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/mytimer.h"
+#include "../../Common/imglib.h"
 #include "c_helper.h"
 
 int cConstantGeometry_validate(const int n);
@@ -17,6 +18,6 @@ double cConstantGeometry2D_runPerformance(const int n);
 
 void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n);
 void cConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n);
-void cConstantGeometry2D(fftDir dir, cpx* in, cpx* out, const int n);
+void cConstantGeometry2D(fftDir dir, cpx** in, cpx** out, const int n);
 
 #endif

@@ -191,6 +191,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <ClInclude Include="Common\imglib.h" />
     <ClInclude Include="Common\mycomplex.h" />
+    <ClInclude Include="Common\myfile.h" />
     <ClInclude Include="Common\mymath.h" />
     <ClInclude Include="Common\mytimer.h" />
     <ClInclude Include="Common\parsearg.h" />
@@ -213,6 +214,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\imglib.cpp" />
+    <ClCompile Include="Common\mycomplex.cpp" />
     <ClCompile Include="Common\parsearg.cpp" />
     <ClCompile Include="Platforms\C\c_fft.cpp" />
     <ClCompile Include="Platforms\C\c_helper.cpp" />

@@ -71,7 +71,7 @@ int main(int argc, const char* argv[])
         cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
         std::vector<Platform *> platforms = getPlatforms(&args);
-        std::cout << "  Running Platforms (might take a while)";        
+        std::cout << "  Running Platform Performance Test (might take a while)";        
         for (int i = args.start; i < args.end; ++i) {
             int n = power2(i);            
             for (Platform *platform : platforms)
@@ -135,13 +135,8 @@ void printDevProp(cudaDeviceProp devProp)
 
 void toFile(std::string name, std::vector<double> results, int ms)
 {
-    #ifdef _WIN64
-    std::string filename = "out/x64/" + name + ".txt";
-    #else
-    std::string filename = "out/Win32/" + name + ".txt";
-    #endif
-    FILE *f;
-    fopen_s(&f, filename.c_str(), "w");
+    std::string filename;
+    FILE *f = getTextFilePointer(name, &filename);
     for (int i = 0; i < ms; ++i) {
         int val = (int)floor(results[i]);
         int dec = (int)floor((results[i] - val) * 10);

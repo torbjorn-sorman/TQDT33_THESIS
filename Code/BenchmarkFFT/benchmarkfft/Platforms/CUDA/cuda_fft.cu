@@ -22,20 +22,15 @@ __host__ int tsCombine_Validate(int n)
     return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
-__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *type, size_t size, int write, int norm, int n)
+__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *type, size_t size, bool write, bool norm, int n)
 {
     tsCombine2D(dir, dev_in, dev_out, n);
     if (write) {
         cudaMemcpy(in, *dev_out, size, cudaMemcpyDeviceToHost);
-        if (norm) {
-            normalized_image(in, n);
-            cpx *tmp = fftShift(in, n);
-            write_image("CUDA", type, tmp, n);
-            free(tmp);
-        }
-        else {
+        if (norm)
+            write_normalized_image("CUDA", type, in, n, true);
+        else
             write_image("CUDA", type, in, n);
-        }
     }
 }
 
@@ -46,8 +41,8 @@ __host__ int tsCombine2D_Validate(int n)
     fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
 
     cudaMemcpy(dev_in, in, size, cudaMemcpyHostToDevice);
-    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, "frequency-domain", size, 1, 1, n);
-    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, "spatial-domain", size, 1, 0, n);
+    testCombine2DRun(FFT_FORWARD, in, &dev_in, &dev_out, "frequency-domain", size, true, true, n);
+    testCombine2DRun(FFT_INVERSE, in, &dev_out, &dev_in, "spatial-domain", size, true, false, n);
 
     int res = fft2DCompare(in, ref, dev_in, size, n * n);
     fft2DShakedown(&in, &ref, &dev_in, &dev_out);
@@ -120,7 +115,7 @@ __host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
             cudaDeviceSynchronize();
             
         }
-        swap(dev_in, dev_out);
+        swapBuffer(dev_in, dev_out);
         ++depth;
         bSize = nBlock / 2;
         numBlocks = 1;
@@ -161,7 +156,7 @@ __host__ static __inline void tsCombine2D_help(fftDir dir, cpx **dev_in, cpx **d
             ROW_COL_KERNEL(rowWise, _kernelAll2DRow, _kernelAll2DCol) KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, w_angle, 0xFFFFFFFF << depth, steps, dist);
             cudaDeviceSynchronize();
         }
-        swap(dev_in, dev_out);
+        swapBuffer(dev_in, dev_out);
         ++depth;
         bSize = nBlock;
     }
@@ -188,7 +183,7 @@ __host__ void tsCombine2D(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
         tsCombine2D_help(dir, dev_in, dev_out, 1, n);
         tsCombine2D_help(dir, dev_out, dev_in, 0, n);
     }
-    swap(dev_in, dev_out);
+    swapBuffer(dev_in, dev_out);
 }
 
 __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, int dist)
@@ -197,8 +192,8 @@ __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int st
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int in_low = tid + (tid & lmask);
     int in_high = in_low + dist;
-    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(&in[in_low], &in[in_high], &out[in_low], &out[in_high], &w);
+    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);    
+    cpx_add_sub_mul(in + in_low, in + in_high, out + in_low, out + in_high, &w);
 }
 
 __device__ static __inline__ int algorithm_c(cpx *in, cpx *out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
@@ -226,19 +221,11 @@ __device__ static __inline__ void algorithm_p(cpx *shared, int in_high, float an
     cpx *in_l = &shared[threadIdx.x];
     cpx *in_u = &shared[in_high];
     for (int steps = 0; steps < bit; ++steps) {
+        SIN_COS_F(angle * ((threadIdx.x & (0xFFFFFFFF << steps))), &w.y, &w.x);
         in_lower = *in_l;
         in_upper = *in_u;
         SYNC_THREADS;
-        SIN_COS_F(angle * ((threadIdx.x & (0xFFFFFFFF << steps))), &w.y, &w.x);
         cpx_add_sub_mul(&in_lower, &in_upper, out_i, out_ii, &w);
-        /*
-        x = in_lower.x - in_upper.x;
-        y = in_lower.y - in_upper.y;
-        out_i->x = in_lower.x + in_upper.x;
-        out_i->y = in_lower.y + in_upper.y;
-        out_ii->x = (w.x * x) - (w.y * y);
-        out_ii->y = (w.y * x) + (w.x * y);
-        */
         SYNC_THREADS;
     }
 }
@@ -249,15 +236,6 @@ __global__ void _kernelAll(cpx *in, cpx *out, float angle, unsigned int lmask, i
     inner_k(in, out, angle, steps, lmask, dist);
 }
 
-__device__ static __inline__ void inner_k2D(cpx *in, cpx *out, int x, int y, float angle, int steps, int dist)
-{
-    cpx w;
-    int in_low = x + y * gridDim.x;
-    int in_high = in_low + dist;
-    SIN_COS_F(angle * (((blockIdx.y * blockDim.x + threadIdx.x) << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in_low, in_high, &(out[in_low]), &(out[in_high]), w);
-}
-
 __global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
@@ -265,13 +243,18 @@ __global__ void _kernelAll2DRow(cpx *in, cpx *out, float angle, unsigned int lma
     int in_low = (col_id + (col_id & lmask)) + blockIdx.x * gridDim.x;
     int in_high = in_low + dist;
     SIN_COS_F(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in_low, in_high, &(out[in_low]), &(out[in_high]), w);
+    cpx_add_sub_mul(in + in_low, in + in_high, out + in_low, out + in_high, &w);
 }
 
 __global__ void _kernelAll2DCol(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
 {
     int row_id = blockIdx.y * blockDim.x + threadIdx.x;
-    inner_k2D(in, out, blockIdx.x, (row_id + (row_id & lmask)), angle, steps, dist);
+    //inner_k2D(in, out, blockIdx.x, (row_id + (row_id & lmask)), angle, steps, dist);
+    cpx w;
+    int in_low = blockIdx.x + (row_id + (row_id & lmask)) * gridDim.x;
+    int in_high = in_low + dist;
+    SIN_COS_F(angle * (((blockIdx.y * blockDim.x + threadIdx.x) << steps) & ((dist - 1) << steps)), &w.y, &w.x);    
+    cpx_add_sub_mul(in + in_low, in + in_high, out + in_low, out + in_high, &w);
 }
 
 // Full blown block syncronized algorithm! In theory this should scale up but is limited by hardware (#cores)
@@ -452,7 +435,8 @@ __host__ void _testTex2DRun(fftDir dir, cpx *in, cudaArray *dev, cuSurf *surfIn,
         cudaMemcpyFromArray(in, dev, 0, 0, size, cudaMemcpyDeviceToHost);
         if (norm) {
             normalized_image(in, n);
-            cpx *tmp = fftShift(in, n);
+            cpx *tmp = (cpx *)malloc(sizeof(cpx) * n * n);
+            fftShift(tmp, in, n);
             write_image("CUDA TEX", type, tmp, n);
             free(tmp);
         }

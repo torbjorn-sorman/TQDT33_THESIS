@@ -39,14 +39,14 @@ int main()
 #ifdef GEN_CODE
     //createFixedSizeFFT("const", n, GEN_TO_FILE);    
 #else
-    //test_fft2d("Constant Geometry 2D", fft2d_const_geom, n_threads, 1, 4096);
+    test_fft2d("Constant Geometry 2D", fft2d_const_geom, n_threads, 1, 4096);
     //test_image(fft2d_const_geom, "splash", n_threads, 4096);
     //test_fft("Reg FFT", fft_reg, n_threads, 1, n);
     //test_fft("Tobb FFT", fft_tobb, n_threads, 1, n);
     //test_fft("Radix4 FFT", fft_radix4, n_threads, 1, n);
-    test_fft("Const Geom FFT", fft_const_geom, n_threads, 1, n);
+    //test_fft("Const Geom FFT", fft_const_geom, n_threads, 1, n);
     //test_fft("Fixed FFT", fft_fixed, n_threads, 1, n);
-    test_fftw(n);
+    //test_fftw(n);
     
     /*
     test_short_fftw(n);

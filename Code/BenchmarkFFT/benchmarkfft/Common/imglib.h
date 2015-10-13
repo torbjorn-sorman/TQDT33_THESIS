@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../Definitions.h"
+#include "myfile.h"
 
 typedef unsigned char color_component;
 typedef color_component pixel[3];
@@ -39,6 +40,18 @@ void put_pixel_clip(
 
 image get_ppm(FILE *pf);
 void output_ppm(FILE *fd, image img);
-cpx* read_image(char *name, int *n);
+
+//
+// Additions to handle my custom format <-> ppm-format
+//
+
+void read_image(cpx *dst, char *name, int *n);
+void write_image(char *name, char *type, cpx* seq, int n);
+void write_image(char *name, char *type, cpx** seq, int n);
+void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTShift);
+void write_normalized_image(char *name, char *type, cpx** seq, int n, bool doFFTShift);
+void normalized_image(cpx* seq, int n);
+void fftShift(cpx *dst, cpx *src, int n);
+void clear_image(cpx* seq, int n);
 
 #endif

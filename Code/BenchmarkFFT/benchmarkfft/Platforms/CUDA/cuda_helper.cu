@@ -126,16 +126,13 @@ cpx *get_sin_img(int n)
     return seq;
 }
 
-void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W)
+void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
 {
     *dev_in = 0;
     *dev_out = 0;
     cudaMalloc((void**)dev_in, n * sizeof(cpx));
-    cudaMalloc((void**)dev_out, n * sizeof(cpx));
-    if (dev_W != NULL) {
-        *dev_W = 0;
-        cudaMalloc((void**)dev_W, (n / 2) * sizeof(cpx));
-    }
+    if (dev_out != NULL)
+        cudaMalloc((void**)dev_out, n * sizeof(cpx));
 }
 
 void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
@@ -145,19 +142,18 @@ void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
     *out = get_seq(n);
 }
 
-void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
+void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
-    _cudaMalloc(n, dev_in, dev_out, dev_W);
+    _cudaMalloc(n, dev_in, dev_out);
     if (in == NULL && ref == NULL && out == NULL)
         return;
     _fftTestSeq(n, in, ref, out);
 }
 
-void _cudaFree(cpx **dev_in, cpx **dev_out, cpx **dev_W)
+void _cudaFree(cpx **dev_in, cpx **dev_out)
 {
     cudaFree(*dev_in);
-    cudaFree(*dev_out);
-    if (dev_W != NULL) cudaFree(*dev_W);
+    if (dev_out != NULL) cudaFree(*dev_out);
 }
 
 void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
@@ -167,9 +163,9 @@ void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
     free(*out);
 }
 
-int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out)
+int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
-    _cudaFree(dev_in, dev_out, dev_W);
+    _cudaFree(dev_in, dev_out);
     cudaDeviceSynchronize();
     if (in == NULL && ref == NULL && out == NULL)
         return 0;
@@ -194,7 +190,8 @@ void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int
     memcpy(*ref, *in, sizeof(cpx) * n * n);
     *size = n * n * sizeof(cpx);
     cudaMalloc((void**)dev_i, *size);
-    cudaMalloc((void**)dev_o, *size);
+    if (dev_o != NULL)
+        cudaMalloc((void**)dev_o, *size);
     cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
 }
 
@@ -203,7 +200,8 @@ void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
     free(*in);
     free(*ref);
     cudaFree(*dev_i);
-    cudaFree(*dev_o);
+    if (dev_o != NULL)
+        cudaFree(*dev_o);
     cudaError_t cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");

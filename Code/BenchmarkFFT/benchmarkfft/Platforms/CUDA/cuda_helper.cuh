@@ -185,8 +185,8 @@ cpx *get_sin_img(int n);
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
 
-void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
-int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **dev_W, cpx **in, cpx **ref, cpx **out);
+void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
+int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
 void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
 void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len);

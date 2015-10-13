@@ -54,7 +54,7 @@ cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
     char *kernelSource;
     // Read kernel file as a char *
     std::string filename = kernelFilename;
-    filename = "Platforms/OpenCL/" + filename + ".cl";
+    filename = "Platforms/OpenCL/" + filename + ".cpp";
     std::string data = getKernel(filename.c_str());
 
     char *src = (char *)malloc(sizeof(char) * (data.size() + 1));
@@ -121,7 +121,9 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     args->global_work_size[0] = grpDim;
     args->global_work_size[1] = 1;
     args->global_work_size[2] = 1;
-    args->local_work_size = itmDim;
+    args->local_work_size[0] = itmDim;
+    args->local_work_size[1] = 1;
+    args->local_work_size[2] = 1;
     args->shared_mem_size = shared_mem_size;
     args->data_mem_size = data_mem_size;
     args->nBlock = nBlock;
@@ -143,15 +145,19 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     size_t data_mem_size = sizeof(cpx) * minSize;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
     cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
+    if (err != CL_SUCCESS)
+        return err;
     cl_mem output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
+    if (err != CL_SUCCESS)
+        return err;
 
     // If successful, store in the argument struct!
-    args->global_work_size[0] = args->n;
-    args->global_work_size[1] = args->n / itmDim;
+    args->global_work_size[0] = n;
+    args->global_work_size[1] = n / (itmDim * 2);
     args->global_work_size[2] = 1;
-    args->local_work_size = itmDim;
+    args->local_work_size[0] = itmDim;
+    args->local_work_size[1] = 1;
+    args->local_work_size[2] = 1;
     args->shared_mem_size = shared_mem_size;
     args->data_mem_size = data_mem_size;
     args->nBlock = nBlock;
@@ -177,12 +183,27 @@ cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir d
     checkErr(err, err, "Failed to setup GPU Program!");
     err = oclSetupDeviceMemoryData(argGPU, data_in);
     argCPU->global_work_size[0] = argGPU->global_work_size[0];
-    argCPU->local_work_size = argGPU->local_work_size;
+    argCPU->local_work_size[0] = argGPU->local_work_size[0];
     argCPU->input = argGPU->input;
     argCPU->output = argGPU->output;
     argCPU->data_mem_size = argGPU->data_mem_size;
     argCPU->nBlock = argGPU->nBlock;
+    argCPU->workDim = 1;
+    argGPU->workDim = 1;
     return err;
+}
+
+void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
+{
+    int minDim = n > TILE_DIM ? (n / TILE_DIM) : 1;
+    argTranspose->global_work_size[2] = 1;
+    argTranspose->global_work_size[1] = minDim * THREAD_TILE_DIM;
+    argTranspose->global_work_size[0] = minDim * THREAD_TILE_DIM;
+    argTranspose->local_work_size[2] = 1;
+    argTranspose->local_work_size[1] = THREAD_TILE_DIM;
+    argTranspose->local_work_size[0] = THREAD_TILE_DIM;
+    argTranspose->shared_mem_size = TILE_DIM * (TILE_DIM + 1) * sizeof(cpx);
+    argTranspose->workDim = 2;
 }
 
 cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n)
@@ -203,14 +224,15 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
     err = oclSetupWorkGroupsAndMemory2D(argGPU);
     checkErr(err, err, "Failed to setup GPU Program!");
     err = oclSetupDeviceMemoryData(argGPU, data_in);
-    argCPU->global_work_size[0] = argGPU->global_work_size[0];
-    argCPU->global_work_size[1] = argGPU->global_work_size[1];
-    argCPU->local_work_size = argGPU->local_work_size;
+    memcpy(argCPU->global_work_size, argGPU->global_work_size, sizeof(size_t) * 3);
+    memcpy(argCPU->local_work_size, argGPU->local_work_size, sizeof(size_t) * 3);
+    setWorkDimForTranspose(argTrans, n);
     argTrans->input = argCPU->input = argGPU->input;
     argTrans->output = argCPU->output = argGPU->output;
-    argTrans->shared_mem_size = TILE_DIM * (TILE_DIM + 1) * sizeof(cpx);
-    argCPU->data_mem_size = argGPU->data_mem_size;
+    argTrans->data_mem_size = argCPU->data_mem_size = argGPU->data_mem_size;
     argCPU->nBlock = argGPU->nBlock;
+    argCPU->workDim = 1;
+    argGPU->workDim = 1;
     return err;
 }
 
@@ -236,12 +258,16 @@ cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
     return err;
 }
 
-cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
+cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
 {
     cl_int err = CL_SUCCESS;
+    if (dev_in != NULL) {        
+        err = clEnqueueReadBuffer(argGPU->commands, argGPU->input, CL_TRUE, 0, argGPU->data_mem_size, dev_in, 0, NULL, NULL);
+        checkErr(err, "Read Input Buffer!");
+    }
     if (dev_out != NULL) {
         err = clEnqueueReadBuffer(argGPU->commands, argGPU->output, CL_TRUE, 0, argGPU->data_mem_size, dev_out, 0, NULL, NULL);
-        checkErr(err, "Read Buffer!");
+        checkErr(err, "Read Output Buffer!");
     }
     err = clFinish(argGPU->commands);
     free(argGPU->kernelSource);
@@ -276,4 +302,17 @@ int freeResults(cpx **din, cpx **dout, cpx **dref, const int n)
     if (dout != NULL)   free(*dout);
     if (dref != NULL)   free(*dref);
     return res;
+}
+
+void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n)
+{
+    char input_file[40];
+    sprintf_s(input_file, 40, "Images/%u.ppm", n);
+    int sz;
+    size_t minSize = (n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n) * sizeof(cpx);
+    *in = (cpx *)malloc(minSize);
+    *out = (cpx *)malloc(minSize);
+    read_image(*in, input_file, &sz);
+    *ref = (cpx *)malloc(minSize);
+    memcpy(*ref, *in, minSize);
 }

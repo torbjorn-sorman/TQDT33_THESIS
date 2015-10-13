@@ -72,8 +72,9 @@ void set_block_and_threads2D(dim3 *numBlocks, int *threadsPerBlock, int n)
 
 void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n)
 {
+    int minDim = n > TILE_DIM ? (n / TILE_DIM) : 1;
     bTrans->z = tTrans->z = 1;
-    bTrans->x = bTrans->y = (n / TILE_DIM);
+    bTrans->x = bTrans->y = minDim;
     tTrans->x = tTrans->y = THREAD_TILE_DIM;
 }
 

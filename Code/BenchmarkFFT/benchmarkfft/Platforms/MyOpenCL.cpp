@@ -19,6 +19,6 @@ bool MyOpenCL::validate(const int n)
 
 void MyOpenCL::runPerformance(const int n)
 {
-    double time = ((dimensions == 1) ? OCL_performance(n) : OCL2D_performance(n));
+    double time = ((dimensions == 1) ? OCL_performance(n) : -1);//OCL2D_performance(n));
     results.push_back(time);
 }

@@ -32,9 +32,6 @@
     <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h">
       <Filter>Platforms\OpenMP</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\OpenCL\ocl_fft.h">
-      <Filter>Platforms\OpenCL</Filter>
-    </ClInclude>
     <ClInclude Include="Platforms\OpenCL\ocl_helper.h">
       <Filter>Platforms\OpenCL</Filter>
     </ClInclude>
@@ -73,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="Common\myfile.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\OpenCL\ocl_fft.h">
+      <Filter>Platforms\OpenCL</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -126,9 +126,6 @@
     <ClCompile Include="Platforms\OpenMP\omp_fast_index.cpp">
       <Filter>Platforms\OpenMP</Filter>
     </ClCompile>
-    <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp">
-      <Filter>Platforms\OpenCL</Filter>
-    </ClCompile>
     <ClCompile Include="Platforms\OpenCL\ocl_helper.cpp">
       <Filter>Platforms\OpenCL</Filter>
     </ClCompile>
@@ -143,6 +140,9 @@
     </ClCompile>
     <ClCompile Include="Common\mycomplex.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp">
+      <Filter>Platforms\OpenCL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

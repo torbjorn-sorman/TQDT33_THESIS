@@ -13,10 +13,11 @@ struct oclArgs {
     int n;
     int nBlock;
     float dir;
+    cl_uint workDim;
     size_t shared_mem_size;
     size_t data_mem_size;
     size_t global_work_size[3];
-    size_t local_work_size;
+    size_t local_work_size[3];
     cl_device_id device_id;
     cl_context context;
     cl_command_queue commands;
@@ -32,7 +33,7 @@ int checkErr(cl_int error, cl_int args, char *msg);
 
 static void __inline oclExecute(oclArgs *args)
 {
-    clEnqueueNDRangeKernel(args->commands, args->kernel, 1, NULL, args->global_work_size, &args->local_work_size, 0, NULL, NULL);
+    clEnqueueNDRangeKernel(args->commands, args->kernel, args->workDim, NULL, args->global_work_size, args->local_work_size, 0, NULL, NULL);
     clFinish(args->commands);
 }
 
@@ -73,9 +74,9 @@ static void __inline oclSetKernelGPUArg(oclArgs *args, float angle, float bAngle
 static void __inline oclSetKernelTransposeArg(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
-    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
+    err = clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->output);
     checkErr(err, err, "input");
-    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    err = clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->input);
     checkErr(err, err, "output");
     err = clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
     checkErr(err, err, "shmem");
@@ -90,7 +91,8 @@ int checkErr(cl_int error, cl_int args, char *msg);
 cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
 cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
 cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
-cl_int oclRelease2D(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans);
+cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
+void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 
 #endif

@@ -10,14 +10,14 @@
 #include "../../Common/imglib.h"
 #include "c_helper.h"
 
-int cConstantGeometry_validate(const int n);
-int cConstantGeometry2D_validate(const int n);
+int c_validate(const int n);
+int c_2d_validate(const int n);
 
-double cConstantGeometry_runPerformance(const int n);
-double cConstantGeometry2D_runPerformance(const int n);
+double c_performance(const int n);
+double c_2d_performance(const int n);
 
-void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n);
-void cConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n);
-void cConstantGeometry2D(fftDir dir, cpx** in, cpx** out, const int n);
+void c_const_geom(fftDir dir, cpx **in, cpx **out, const int n);
+void c_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n);
+void c_const_geom_2d(fftDir dir, cpx** in, cpx** out, const int n);
 
 #endif

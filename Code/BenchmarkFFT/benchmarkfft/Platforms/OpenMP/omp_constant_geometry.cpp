@@ -4,14 +4,14 @@
 // Testing
 //
 
-int ompConstantGeometry_validate(const int n)
+int openmp_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
-    ompConstantGeometry(FFT_FORWARD, &in, &out, n);
+    openmp_const_geom(FFT_FORWARD, &in, &out, n);
     //double diffForward = (abs(in[1].y) - abs(in[n - 1].y)) / (n / 2);    
-    ompConstantGeometry(FFT_INVERSE, &out, &in, n);
+    openmp_const_geom(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
     free(in);
     free(out);
@@ -19,14 +19,14 @@ int ompConstantGeometry_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;// && diffForward < RELATIVE_ERROR_MARGIN;
 }
 
-int ompConstantGeometry2D_validate(const int n)
+int openmp_2d_validate(const int n)
 {
     cpx *in, *buf, *ref;
     setup_seq2D(&in, &buf, &ref, n);
 
-    ompConstantGeometry2D(FFT_FORWARD, &in, &buf, n);
+    openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
     write_normalized_image("OpenMP", "freq", in, n, true);
-    ompConstantGeometry2D(FFT_INVERSE, &in, &buf, n);
+    openmp_const_geom_2d(FFT_INVERSE, &in, &buf, n);
     write_image("OpenMP", "spat", in, n);
 
     double diff = diff_seq(in, ref, n);
@@ -36,27 +36,27 @@ int ompConstantGeometry2D_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-double ompConstantGeometry_runPerformance(const int n)
+double openmp_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        ompConstantGeometry(FFT_FORWARD, &in, &in, n);
+        openmp_const_geom(FFT_FORWARD, &in, &in, n);
         measures[i] = stopTimer();
     }
     free(in);
     return average_best(measures, NUM_PERFORMANCE);
 }
 
-double ompConstantGeometry2D_runPerformance(const int n)
+double openmp_2d_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in = get_seq(n * n);
     cpx *buf = get_seq(n * n);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        ompConstantGeometry2D(FFT_FORWARD, &in, &buf, n);
+        openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
         measures[i] = stopTimer();
     }
     free(in);
@@ -68,64 +68,64 @@ double ompConstantGeometry2D_runPerformance(const int n)
 // Algorithm
 //
 
-_inline void ompCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
+_inline void openmp_inner_body(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
 {
 #pragma omp parallel for schedule(static)
     for (int l = 0; l < n_half; ++l)
-        cpxAddSubMulCG(in + l, in + n_half + l, out + (l << 1), W + (l & mask));
+        c_add_sub_mul_cg(in + l, in + n_half + l, out + (l << 1), W + (l & mask));
 }
 
-void ompConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
 {
     const int n_half = n / 2;
     int steps_left = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     ompTwiddleFactors(W, dir, n);
-    ompCGBody(*in, *out, W, 0xffffffff << steps, n_half);
+    openmp_inner_body(*in, *out, W, 0xffffffff << steps, n_half);
     while (++steps < steps_left) {
-        swapBuffer(in, out);
-        ompCGBody(*in, *out, W, 0xffffffff << steps, n_half);
+        swap_buffer(in, out);
+        openmp_inner_body(*in, *out, W, 0xffffffff << steps, n_half);
     }
-    ompBitReverse(*out, dir, 32 - steps_left, n);
+    openmp_bit_reverse(*out, dir, 32 - steps_left, n);
     free(W);
 }
 
-_inline void ompCG(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
+_inline void openmp_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
     const int n_half = n / 2;
     int steps_left = log2_32(n);
     int steps = 0;
-    ompCGBody(in, out, W, 0xffffffff << steps, n_half);
+    openmp_inner_body(in, out, W, 0xffffffff << steps, n_half);
     while (++steps < steps_left) {
-        swapBuffer(&in, &out);
-        ompCGBody(in, out, W, 0xffffffff << steps, n_half);
+        swap_buffer(&in, &out);
+        openmp_inner_body(in, out, W, 0xffffffff << steps, n_half);
     }
-    ompBitReverse(out, dir, 32 - steps_left, n);
+    openmp_bit_reverse(out, dir, 32 - steps_left, n);
 }
 
-_inline void ompCGDoRows(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
+_inline void openmp_rows(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int row = 0; row < n * n; row += n)
-        ompCG(dir, (*in) + row, (*out) + row, W, n);
+        openmp_const_geom_2d_helper(dir, (*in) + row, (*out) + row, W, n);
     if (log2_32(n) % 2 == 0)
-        swapBuffer(in, out);
+        swap_buffer(in, out);
 }
 
-void ompConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     ompTwiddleFactors(W, dir, n);    
-    ompCGDoRows(dir, in, out, W, n);
+    openmp_rows(dir, in, out, W, n);
     ompTranspose(*out, *in, n);
-    ompCGDoRows(dir, in, out, W, n);
+    openmp_rows(dir, in, out, W, n);
     ompTranspose(*out, *in, n);
-    swapBuffer(in, out);
+    swap_buffer(in, out);
     free(W);
 }
 
-_inline void ompCGBody(cpx *in, cpx *outG, float global_angle, unsigned int mask, const int n)
+_inline void openmp_inner_body(cpx *in, cpx *outG, float global_angle, unsigned int mask, const int n)
 {    
     const int n_half = n / 2;    
 #pragma omp parallel
@@ -141,23 +141,23 @@ _inline void ompCGBody(cpx *in, cpx *outG, float global_angle, unsigned int mask
             w = make_cuFloatComplex(cos(ang), sin(ang));
             old = p;
         }
-        cpxAddSubMulCG(in + l, in + (n / 2) + l, out, &w);
+        c_add_sub_mul_cg(in + l, in + (n / 2) + l, out, &w);
     }
     }
 }
 
-void ompConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n)
 {
     int bit = log2_32(n);
     const int leading_bits = 32 - bit;
     int steps = --bit;
     unsigned int mask = 0xffffffff << (steps - bit);
     float global_angle = dir * M_2_PI / n;
-    ompCGBody(*in, *out, global_angle, mask, n);
+    openmp_inner_body(*in, *out, global_angle, mask, n);
     while (bit-- > 0) {
-        swapBuffer(in, out);
+        swap_buffer(in, out);
         mask = 0xffffffff << (steps - bit);
-        ompCGBody(*in, *out, global_angle, mask, n);
+        openmp_inner_body(*in, *out, global_angle, mask, n);
     }
-    ompBitReverse(*out, dir, leading_bits, n);
+    openmp_bit_reverse(*out, dir, leading_bits, n);
 }

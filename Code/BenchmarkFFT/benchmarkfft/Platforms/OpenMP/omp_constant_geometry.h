@@ -12,14 +12,14 @@
 #include "../../Common/mytimer.h"
 #include "../C/c_helper.h"
 
-int ompConstantGeometry_validate(const int n);
-int ompConstantGeometry2D_validate(const int n);
+int openmp_validate(const int n);
+int openmp_2d_validate(const int n);
 
-double ompConstantGeometry_runPerformance(const int n);
-double ompConstantGeometry2D_runPerformance(const int n);
+double openmp_performance(const int n);
+double openmp_2d_performance(const int n);
 
-void ompConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n);
-void ompConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n);
-void ompConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n);
+void openmp_const_geom(fftDir dir, cpx **in, cpx **out, const int n);
+void openmp_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n);
+void openmp_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n);
 
 #endif

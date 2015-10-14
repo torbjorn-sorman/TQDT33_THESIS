@@ -144,8 +144,10 @@
     <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp">
       <Filter>Platforms\OpenCL</Filter>
     </ClCompile>
-    <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Platforms\OpenCL\ocl_kernel.cl">
       <Filter>Platforms\OpenCL</Filter>
-    </ClCompile>
+    </None>
   </ItemGroup>
 </Project>

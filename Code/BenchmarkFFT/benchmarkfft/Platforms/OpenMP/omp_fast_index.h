@@ -12,7 +12,7 @@
 #include "../../Common/mytimer.h"
 #include "../C/c_helper.h"
 
-int ompFastIndex_validate(const int n);
+int openmp_fast_index_validate(const int n);
 int ompFastIndex2D_validate(const int n);
 
 double ompFastIndex_runPerformance(const int n);

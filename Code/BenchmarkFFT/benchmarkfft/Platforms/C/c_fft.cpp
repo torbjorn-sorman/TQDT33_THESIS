@@ -6,17 +6,17 @@
 
 //#define NO_TWIDDLE_TABLE
 
-int cConstantGeometry_validate(const int n)
+int c_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
 #ifdef NO_TWIDDLE_TABLE
-    cConstantGeometryAlternate(FFT_FORWARD, &in, &out, n);
-    cConstantGeometryAlternate(FFT_INVERSE, &out, &in, n);
+    c_const_geom_alt(FFT_FORWARD, &in, &out, n);
+    c_const_geom_alt(FFT_INVERSE, &out, &in, n);
 #else
-    cConstantGeometry(FFT_FORWARD, &in, &out, n);
-    cConstantGeometry(FFT_INVERSE, &out, &in, n);
+    c_const_geom(FFT_FORWARD, &in, &out, n);
+    c_const_geom(FFT_INVERSE, &out, &in, n);
 #endif
     double diff = diff_seq(in, ref, n);
     free(in);
@@ -25,14 +25,14 @@ int cConstantGeometry_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-int cConstantGeometry2D_validate(const int n)
+int c_2d_validate(const int n)
 {
     cpx *in, *buf, *ref;
     setup_seq2D(&in, &buf, &ref, n);
 
-    cConstantGeometry2D(FFT_FORWARD, &in, &buf, n);
+    c_const_geom_2d(FFT_FORWARD, &in, &buf, n);
     write_normalized_image("C_C++", "freq", in, n, true);
-    cConstantGeometry2D(FFT_INVERSE, &in, &buf, n);
+    c_const_geom_2d(FFT_INVERSE, &in, &buf, n);
     write_image("C_C++", "spat", in, n);
 
     double diff = diff_seq(in, ref, n);
@@ -42,16 +42,16 @@ int cConstantGeometry2D_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-double cConstantGeometry_runPerformance(const int n)
+double c_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
 #ifdef NO_TWIDDLE_TABLE
-        cConstantGeometryAlternate(FFT_FORWARD, &in, &in, n);
+        c_const_geom_alt(FFT_FORWARD, &in, &in, n);
 #else
-        cConstantGeometry(FFT_FORWARD, &in, &in, n);
+        c_const_geom(FFT_FORWARD, &in, &in, n);
 #endif
         measures[i] = stopTimer();
     }
@@ -59,14 +59,14 @@ double cConstantGeometry_runPerformance(const int n)
     return average_best(measures, NUM_PERFORMANCE);
 }
 
-double cConstantGeometry2D_runPerformance(const int n)
+double c_2d_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in = get_seq(n * n);
     cpx *out = get_seq(n * n);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        cConstantGeometry2D(FFT_FORWARD, &in, &out, n);
+        c_const_geom_2d(FFT_FORWARD, &in, &out, n);
         measures[i] = stopTimer();
     }
     free(in);
@@ -78,62 +78,62 @@ double cConstantGeometry2D_runPerformance(const int n)
 // Algorithm
 //
 
-_inline void cCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
+_inline void c_inner_body(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
 {    
     for (int l = 0; l < n_half; ++l) {
-        cpxAddSubMulCG(in + l, in + n_half + l, out, W + (l & mask));
+        c_add_sub_mul_cg(in + l, in + n_half + l, out, W + (l & mask));
         out += 2;
     }
 }
 
-void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
-    cCGBody(*in, *out, W, 0xffffffff << steps, n / 2);
+    c_inner_body(*in, *out, W, 0xffffffff << steps, n / 2);
     while (++steps < steps_left) {
-        swapBuffer(in, out);
-        cCGBody(*in, *out, W, 0xffffffff << steps, n / 2);
+        swap_buffer(in, out);
+        c_inner_body(*in, *out, W, 0xffffffff << steps, n / 2);
     }
 
     bit_reverse(*out, dir, 32 - steps_left, n);
     free(W);
 }
 
-_inline void cCG(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
+_inline void c_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
-    cCGBody(in, out, W, 0xffffffff << steps, n / 2);
+    c_inner_body(in, out, W, 0xffffffff << steps, n / 2);
     while (++steps < steps_left) {
-        swapBuffer(&in, &out);
-        cCGBody(in, out, W, 0xffffffff << steps, n / 2);
+        swap_buffer(&in, &out);
+        c_inner_body(in, out, W, 0xffffffff << steps, n / 2);
     }
     bit_reverse(out, dir, 32 - steps_left, n);
 }
 
 // Result is found in the *in variable
 
-void cConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
     for (int row = 0; row < n * n; row += n)
-        cCG(dir, (*in) + row, (*out) + row, W, n);
+        c_const_geom_2d_helper(dir, (*in) + row, (*out) + row, W, n);
     if (log2_32(n) % 2 == 0) 
-        swapBuffer(in, out);
+        swap_buffer(in, out);
     transpose(*out, *in, n);
     for (int row = 0; row < n * n; row += n)
-        cCG(dir, (*in) + row, (*out) + row, W, n);
+        c_const_geom_2d_helper(dir, (*in) + row, (*out) + row, W, n);
     if (log2_32(n) % 2 == 0) 
-        swapBuffer(in, out);
+        swap_buffer(in, out);
     transpose(*out, *in, n);
     free(W);
 }
 
-_inline void cCGBody(cpx *in, cpx *out, float global_angle, unsigned int mask, const int n)
+_inline void c_inner_body(cpx *in, cpx *out, float global_angle, unsigned int mask, const int n)
 {
     cpx w;
     int old = -1;
@@ -145,19 +145,19 @@ _inline void cCGBody(cpx *in, cpx *out, float global_angle, unsigned int mask, c
             w = make_cuFloatComplex(cos(ang), sin(ang));
             old = p;
         }
-        cpxAddSubMulCG(in + l, in + (n / 2) + l, out, &w);
+        c_add_sub_mul_cg(in + l, in + (n / 2) + l, out, &w);
     }
 }
 
-void cConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
     float global_angle = dir * M_2_PI / n;
-    cCGBody(*in, *out, global_angle, 0xffffffff << steps, n);
+    c_inner_body(*in, *out, global_angle, 0xffffffff << steps, n);
     while (steps++ < steps_left) {
-        swapBuffer(in, out);
-        cCGBody(*in, *out, global_angle, 0xffffffff << steps, n);
+        swap_buffer(in, out);
+        c_inner_body(*in, *out, global_angle, 0xffffffff << steps, n);
     }
     bit_reverse(*out, dir, 32 - steps_left, n);
 }

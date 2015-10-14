@@ -8,7 +8,7 @@
 #endif
 
 
-__host__ __device__ static __inline__ void swapBuffer(cpx **in, cpx **out)
+__host__ __device__ static __inline__ void swap_buffer(cpx **in, cpx **out)
 {
     cpx *tmp = *in;
     *in = *out;
@@ -115,7 +115,7 @@ static void __inline bit_reverse(cpx *x, fftDir dir, const int leading_bits, con
     }
 }
 
-static void __inline ompBitReverse(cpx *x, fftDir dir, const int leading_bits, const int n)
+static void __inline openmp_bit_reverse(cpx *x, fftDir dir, const int leading_bits, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int i = 0; i <= n; ++i) {

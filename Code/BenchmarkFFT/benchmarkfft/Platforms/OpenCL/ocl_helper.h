@@ -32,7 +32,7 @@ struct oclArgs {
 
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
-cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
+cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
 cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
 cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
 cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans);

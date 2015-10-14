@@ -4,7 +4,7 @@
 // Testing
 //
 
-int ompFastIndex_validate(const int n)
+int openmp_fast_index_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
@@ -67,7 +67,7 @@ static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lma
     for (int i = 0; i < n_half; ++i) {
         int l = i + (i & lmask);
         int u = l + dist;        
-        cpxAddSubMul(in + l, in + u, out + l, out + u, &W[(i << steps) & pmask]);
+        c_add_sub_mul(in + l, in + u, out + l, out + u, &W[(i << steps) & pmask]);
     }
 }
 
@@ -84,7 +84,7 @@ __inline void ompFI(fftDir dir, cpx *seq, cpx *W, const int n)
         dist >>= 1;
         ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
-    ompBitReverse(seq, dir, leading_bits, n);
+    openmp_bit_reverse(seq, dir, leading_bits, n);
 }
 
 void ompFastIndex(fftDir dir, cpx **in, cpx **out, const int n)
@@ -102,7 +102,7 @@ void ompFastIndex(fftDir dir, cpx **in, cpx **out, const int n)
         dist >>= 1;
         ompFIBody(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
-    ompBitReverse(*out, dir, leading_bits, n);
+    openmp_bit_reverse(*out, dir, leading_bits, n);
     free(W);
 }
 

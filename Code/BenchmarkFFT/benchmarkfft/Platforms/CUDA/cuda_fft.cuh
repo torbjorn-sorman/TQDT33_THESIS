@@ -14,10 +14,10 @@
 __host__ void cuda_fft(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
 __host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
 
-__host__ int CUDA_validate(int n);
-__host__ int CUDA2D_validate(int n);
+__host__ int cuda_validate(int n);
+__host__ int cuda_2d_validate(int n);
 
-__host__ double CUDA_performance(int n);
-__host__ double CUDA2D_performance(int n);
+__host__ double cuda_performance(int n);
+__host__ double cuda_2d_performance(int n);
 
 #endif

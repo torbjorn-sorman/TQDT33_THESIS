@@ -10,7 +10,7 @@ __global__ void cuda_kernel_local_col   (cpx *in, cpx *out, float global_angle, 
 __device__ volatile int sync_array_in[MAX_BLOCK_SIZE];
 __device__ volatile int sync_array_out[MAX_BLOCK_SIZE];
 
-__host__ int CUDA_validate(int n)
+__host__ int cuda_validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
@@ -35,7 +35,7 @@ __host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out,
     }
 }
 
-__host__ int CUDA2D_validate(int n)
+__host__ int cuda_2d_validate(int n)
 {
     cpx *host_buffer, *ref, *dev_in, *dev_out;
     size_t size;
@@ -55,7 +55,7 @@ __host__ int CUDA2D_validate(int n)
     return res;
 }
 
-__host__ double CUDA_performance(int n)
+__host__ double cuda_performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -72,7 +72,7 @@ __host__ double CUDA_performance(int n)
     return t;
 }
 
-__host__ double CUDA2D_performance(int n)
+__host__ double cuda_2d_performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *dev_in, *dev_out;
@@ -121,7 +121,7 @@ __host__ void cuda_fft(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
             cuda_kernel_global KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             cudaDeviceSynchronize();            
         }
-        swapBuffer(dev_in, dev_out);
+        swap_buffer(dev_in, dev_out);
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
@@ -162,7 +162,7 @@ __host__ static __inline void tsCombine2D_help(fftDir dir, cpx **dev_in, cpx **d
             ROW_COL_KERNEL(rowWise, cuda_kernel_global_row, cuda_kernel_global_col) KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             cudaDeviceSynchronize();
         }
-        swapBuffer(dev_in, dev_out);
+        swap_buffer(dev_in, dev_out);
         ++steps_left;
         bSize = n_per_block;
     }
@@ -189,7 +189,7 @@ __host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
         tsCombine2D_help(dir, dev_in, dev_out, 1, n);
         tsCombine2D_help(dir, dev_out, dev_in, 0, n);
     }
-    swapBuffer(dev_in, dev_out);
+    swap_buffer(dev_in, dev_out);
 }
 
 __device__ static __inline__ void inner_k(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, int dist)

@@ -59,7 +59,7 @@ static __inline unsigned int power2(const unsigned int exp)
     return power(2, exp);
 }
 
-static __inline void cpxAddSubMul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
+static __inline void c_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -69,7 +69,7 @@ static __inline void cpxAddSubMul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, cons
     outU->y = (W->y * x) + (W->x * y);
 }
 
-static __inline void cpxAddSubMulCG(cpx *inL, cpx *inU, cpx *out, const cpx *W)
+static __inline void c_add_sub_mul_cg(cpx *inL, cpx *inU, cpx *out, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;

@@ -18,7 +18,7 @@ int checkErr(cl_int error, char *msg)
     return 0;
 }
 
-cl_int oclSetupKernel(oclArgs *args)
+cl_int opencl_setup_kernels(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
     cl_platform_id platform;
@@ -159,11 +159,11 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     return err;
 }
 
-cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n)
+cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n)
 {
     argGPU->n = argCPU->n = n;
     argGPU->dir = argCPU->dir = dir;
-    oclSetupKernel(argGPU);
+    opencl_setup_kernels(argGPU);
     memcpy(argCPU, argGPU, sizeof(oclArgs));
 
     checkErr(oclSetupProgram("ocl_kernel", "kernelGPU", argGPU), "Failed to setup GPU Program!");
@@ -199,7 +199,7 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
 {
     argGPU->n = argCPU->n = n;
     argGPU->dir = argCPU->dir = dir;
-    oclSetupKernel(argGPU);
+    opencl_setup_kernels(argGPU);
     memcpy(argCPU, argGPU, sizeof(oclArgs));
     memcpy(argTrans, argGPU, sizeof(oclArgs));
 

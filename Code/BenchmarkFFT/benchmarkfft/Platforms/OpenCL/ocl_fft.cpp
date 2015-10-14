@@ -15,7 +15,7 @@ bool OCL_validate(const int n)
     cpx *data_ref = get_seq(n, data_in);
 
     oclArgs argGPU, argCPU;
-    checkErr(oclCreateKernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n), "Create failed!");
+    checkErr(opencl_create_kernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n), "Create failed!");
     checkErr(runCombine(&argCPU, &argGPU), "Run failed");
     checkErr(oclRelease(data_out, &argCPU, &argGPU), "Release failed!");
 
@@ -24,7 +24,7 @@ bool OCL_validate(const int n)
     }
     getchar();
 
-    checkErr(oclCreateKernels(&argCPU, &argGPU, data_out, FFT_INVERSE, n), "Create failed!");
+    checkErr(opencl_create_kernels(&argCPU, &argGPU, data_out, FFT_INVERSE, n), "Create failed!");
     runCombine(&argCPU, &argGPU);
     checkErr(oclRelease(data_in, &argCPU, &argGPU), "Release failed!");
 
@@ -37,7 +37,7 @@ double OCL_performance(const int n)
     double measurements[NUM_PERFORMANCE];
     cpx *data_in = get_seq(n, 1);
     oclArgs argGPU, argCPU;
-    checkErr(oclCreateKernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n), "Create failed!");
+    checkErr(opencl_create_kernels(&argCPU, &argGPU, data_in, FFT_FORWARD, n), "Create failed!");
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
         runCombine(&argCPU, &argGPU);
@@ -141,7 +141,7 @@ __inline cl_int runCombineHelper(oclArgs *argCPU, oclArgs *argGPU, cl_mem in, cl
 }
 /*
 if (blocks >= HW_LIMIT) {
-swapBuffer(dev_in, dev_out);
+swap_buffer(dev_in, dev_out);
 ++steps_left;
 bSize = n_per_block / 2;
 number_of_blocks = 1;

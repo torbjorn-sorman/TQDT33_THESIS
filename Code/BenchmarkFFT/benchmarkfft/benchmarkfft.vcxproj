@@ -114,7 +114,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
-copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -175,7 +178,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </Link>
     <PostBuildEvent>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
-copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>

@@ -87,5 +87,6 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
     return 1;
 show_usage:
     printf("usage: %s [-dim #dimensions] [-r start_exponent last_exponent] [-platforms p1...] [-v] [-d] [-p] [-profiler] [-cuprop]", argv[0]);
+    // -dim 2 -r 10 13 -platforms opencl -v -d -p
     return 0;
 }

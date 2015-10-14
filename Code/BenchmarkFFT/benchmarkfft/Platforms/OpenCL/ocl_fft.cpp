@@ -58,6 +58,7 @@ bool OCL2D_validate(const int n)
         checkErr(runCombine2D(&argCPU, &argGPU, &argTranspose), "Run failed!");
         checkErr(oclRelease2D(NULL, data, &argCPU, &argGPU, &argTranspose), "Release failed!");
         write_normalized_image("OpenCL", "freq", data, n, true);
+        //write_image("OpenCL", "freq", data, n);
     }
     {
         oclArgs argGPU, argCPU, argTranspose;
@@ -144,16 +145,16 @@ __inline cl_int runCombine(oclArgs *argCPU, oclArgs *argGPU)
 __inline cl_int runCombine2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans)
 {    
     cl_mem _in = argGPU->input;
-    cl_mem _out = argGPU->output;
+    cl_mem _out = argGPU->output;    
     // _in -> _out
     checkErr(runCombineHelper(argCPU, argGPU, _in, _out, argGPU->global_work_size[1], 1, true), "Helper 2D");
-    oclSetKernelTransposeArg(argTrans, _out, _in);
     // _out -> _in
+    oclSetKernelTransposeArg(argTrans, _out, _in);    
     checkErr(oclExecute(argTrans), "Transpose");    
-    // _in -> _out
+    // _in -> _out    
     checkErr(runCombineHelper(argCPU, argGPU, _in, _out, argGPU->global_work_size[1], 1, true), "Helper 2D 2");
-    oclSetKernelTransposeArg(argTrans, _out, _in);
     // _out -> _in
+    oclSetKernelTransposeArg(argTrans, _out, _in);    
     checkErr(oclExecute(argTrans), "Transpose 2");
 
     argCPU->input = argGPU->input = _out;

@@ -40,7 +40,7 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
 //
 #define NUM_PERFORMANCE 8
 #define HIGHEST_EXP 27
-#define HIGHEST_EXP_2D 15
+#define HIGHEST_EXP_2D 14
 
 //
 // CUDA compiler nvcc intrisics related defines.

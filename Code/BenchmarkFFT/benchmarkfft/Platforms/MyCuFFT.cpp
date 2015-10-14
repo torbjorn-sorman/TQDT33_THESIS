@@ -19,14 +19,14 @@ void MyCuFFT::runPerformance(const int n)
 {
 #ifdef _WIN64
     double measures[NUM_PERFORMANCE];
-    cpx *dev_in, *dev_out;
+    cpx *dev_in;
     cufftHandle plan;
-    fftMalloc(n, &dev_in, &dev_out, NULL, NULL, NULL);    
+    fftMalloc(n, &dev_in, NULL, NULL, NULL, NULL);    
     if (dimensions == 1) {
         cufftPlan1d(&plan, n, CUFFT_C2C, 1);
         for (int i = 0; i < NUM_PERFORMANCE; ++i) {
             startTimer();
-            cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
+            cufftExecC2C(plan, dev_in, dev_in, CUFFT_FORWARD);
             cudaDeviceSynchronize();
             measures[i] = stopTimer();
         }
@@ -35,13 +35,13 @@ void MyCuFFT::runPerformance(const int n)
         cufftPlan2d(&plan, n, n, CUFFT_C2C);
         for (int i = 0; i < NUM_PERFORMANCE; ++i) {
             startTimer();
-            cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
+            cufftExecC2C(plan, dev_in, dev_in, CUFFT_FORWARD);
             cudaDeviceSynchronize();
             measures[i] = stopTimer();
         }       
     }
     cufftDestroy(plan);
-    fftResultAndFree(n, &dev_in, &dev_out, NULL, NULL, NULL);
+    fftResultAndFree(n, &dev_in, NULL, NULL, NULL, NULL);
     results.push_back(avg(measures, NUM_PERFORMANCE));
 #endif
 }

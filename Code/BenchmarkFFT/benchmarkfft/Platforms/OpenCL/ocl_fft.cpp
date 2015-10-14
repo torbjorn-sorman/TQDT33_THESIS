@@ -113,18 +113,18 @@ __inline cl_int runCombineHelper(oclArgs *argCPU, oclArgs *argGPU, cl_mem in, cl
         int steps = 0;
         int dist = bSize;
         oclSetKernelCPUArg(argCPU, in, out, w_angle, 0xFFFFFFFF << depth, steps, dist);
-        oclExecute(argCPU);
+        checkErr(oclExecute(argCPU), "CPU Sync Kernel");
         // Instead of swapping input/output, run in place. The argGPU kernel needs to swap once.                
         while (--depth > breakSize) {
             dist >>= 1;
             ++steps;
             oclSetKernelCPUArg(argCPU, out, out, w_angle, 0xFFFFFFFF << depth, steps, dist);
-            oclExecute(argCPU);
+            checkErr(oclExecute(argCPU), "CPU Sync Kernel");
         }
         ++depth;
         bSize = nBlock / 2;
         numBlocks = 1;        
-        swap(&in, &out);
+        in = out;
     }
 
     // Calculate complete sequence in one launch and syncronize steps on GPU
@@ -146,15 +146,15 @@ __inline cl_int runCombine2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans
     cl_mem _in = argGPU->input;
     cl_mem _out = argGPU->output;
     // _in -> _out
-    checkErr(runCombineHelper(argCPU, argGPU, _in, _out, 1, 1, true), "Helper 2D");         
+    checkErr(runCombineHelper(argCPU, argGPU, _in, _out, argGPU->global_work_size[1], 1, true), "Helper 2D");
     oclSetKernelTransposeArg(argTrans, _out, _in);
     // _out -> _in
     checkErr(oclExecute(argTrans), "Transpose");    
     // _in -> _out
-    checkErr(runCombineHelper(argCPU, argGPU, _in, _out, 1, 1, true), "Helper 2D 2");    
+    checkErr(runCombineHelper(argCPU, argGPU, _in, _out, argGPU->global_work_size[1], 1, true), "Helper 2D 2");
     oclSetKernelTransposeArg(argTrans, _out, _in);
     // _out -> _in
-    checkErr(oclExecute(argTrans), "Transpose");
+    checkErr(oclExecute(argTrans), "Transpose 2");
 
     argCPU->input = argGPU->input = _out;
     argCPU->output = argGPU->output = _in;

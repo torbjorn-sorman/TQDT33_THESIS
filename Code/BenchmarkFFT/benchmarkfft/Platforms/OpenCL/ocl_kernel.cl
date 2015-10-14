@@ -1,3 +1,4 @@
+/*
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -11,6 +12,7 @@
 #define sincos(a,x) 1
 #define printf(...) 1
 #endif
+*/
 
 typedef struct {
     float x;

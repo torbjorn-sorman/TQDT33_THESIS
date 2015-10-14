@@ -12,7 +12,8 @@ int checkErr(cl_int error, char *msg)
 {
     if (error != CL_SUCCESS) {
         printf("Error Code: %d\nMessage: %s\n", error, msg);
-        return 1;
+        getchar();
+        exit(99);
     }
     return 0;
 }

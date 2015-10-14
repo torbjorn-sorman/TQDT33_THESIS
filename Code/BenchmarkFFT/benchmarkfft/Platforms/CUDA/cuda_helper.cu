@@ -128,11 +128,12 @@ cpx *get_sin_img(int n)
 
 void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
 {
-    *dev_in = 0;
-    *dev_out = 0;
+    *dev_in = 0;    
     cudaMalloc((void**)dev_in, n * sizeof(cpx));
-    if (dev_out != NULL)
+    if (dev_out != NULL) {
+        *dev_out = 0;
         cudaMalloc((void**)dev_out, n * sizeof(cpx));
+    }
 }
 
 void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)

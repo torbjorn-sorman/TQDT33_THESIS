@@ -18,7 +18,6 @@ __host__ int CUDA_validate(int n)
     cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
     cuda_fft(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-
     return cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1;
 }
 
@@ -78,6 +77,7 @@ __host__ double CUDA2D_performance(int n)
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
+
     cuda_setup_buffers_2d(&in, &ref, &dev_in, &dev_out, &size, n);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {

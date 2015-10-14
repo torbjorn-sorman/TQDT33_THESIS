@@ -185,12 +185,12 @@ cpx *get_sin_img(int n);
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
 
-void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
-int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
-void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
-void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
-int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
-int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
-void fft2DSurfSetup(cpx **in, cpx **ref, size_t *size, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
+void cuda_setup_buffers     (int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
+int cuda_shakedown          (int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
+void cuda_setup_buffers_2d  (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
+void cuda_shakedown_2d      (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
+int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len);
+int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
+void fft2DSurfSetup         (cpx **in, cpx **ref, size_t *size, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
 
 #endif

@@ -12,7 +12,7 @@
 
 struct oclArgs {
     int n;
-    int nBlock;
+    int n_per_block;
     float dir;
     cl_uint workDim;
     size_t shared_mem_size;
@@ -53,42 +53,50 @@ static void __inline swap(cl_mem *a, cl_mem *b)
     *b = c;
 }
 
-static void __inline oclSetKernelCPUArg(oclArgs *args, cl_mem in, cl_mem out, float w_angle, unsigned int lmask, int steps, int dist)
+static void __inline oclSetKernelCPUArg(oclArgs *args, cl_mem in, cl_mem out, float global_angle, unsigned int lmask, int steps, int dist)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
-    clSetKernelArg(args->kernel, 2, sizeof(float), &w_angle);
+    clSetKernelArg(args->kernel, 2, sizeof(float), &global_angle);
     clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
     clSetKernelArg(args->kernel, 4, sizeof(int), &steps);
     clSetKernelArg(args->kernel, 5, sizeof(int), &dist);
 }
 
-static void __inline oclSetKernelGPUArg(oclArgs *args, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, int n2)
+static void __inline oclSetKernelGPUArg(oclArgs *args, cl_mem in, cl_mem out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, cpx scale, int number_of_blocks, int range)
 {
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
     clSetKernelArg(args->kernel, 2, sizeof(cl_mem), &args->sync_in);
     clSetKernelArg(args->kernel, 3, sizeof(cl_mem), &args->sync_out);
     clSetKernelArg(args->kernel, 4, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 5, sizeof(float), &angle);
-    clSetKernelArg(args->kernel, 6, sizeof(float), &bAngle);
-    clSetKernelArg(args->kernel, 7, sizeof(int), &depth);
-    clSetKernelArg(args->kernel, 8, sizeof(int), &lead);
-    clSetKernelArg(args->kernel, 9, sizeof(int), &breakSize);
+    clSetKernelArg(args->kernel, 5, sizeof(float), &global_angle);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &local_angle);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &steps_left);
+    clSetKernelArg(args->kernel, 8, sizeof(int), &leading_bits);
+    clSetKernelArg(args->kernel, 9, sizeof(int), &steps_gpu);
     clSetKernelArg(args->kernel, 10, sizeof(cpx), &scale);
-    clSetKernelArg(args->kernel, 11, sizeof(int), &nBlocks);
-    clSetKernelArg(args->kernel, 12, sizeof(int), &n2);
+    clSetKernelArg(args->kernel, 11, sizeof(int), &number_of_blocks);
+    clSetKernelArg(args->kernel, 12, sizeof(int), &range);
 }
 
-static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float bAngle, int depth, cpx scale, int nBlocks2)
+static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, cpx scale, int nBlocks2)
 {
+
+    /*
+    if (args->n == 4096) {
+        printf("\nOpenCL Args: cpx*, cxp*, %u, %f, %d, cpx, %d\n", args->shared_mem_size, local_angle, steps_left, nBlocks2);
+        printf("Dimen: %d\t%d\t/ %d\n",args->global_work_size[0], args->global_work_size[1], args->local_work_size[0]);
+    }
+    */
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
     clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 3, sizeof(float), &bAngle);
-    clSetKernelArg(args->kernel, 4, sizeof(int), &depth);
+    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
     clSetKernelArg(args->kernel, 5, sizeof(cpx), &scale);
     clSetKernelArg(args->kernel, 6, sizeof(int), &nBlocks2);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &args->n);
 }
 
 static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)

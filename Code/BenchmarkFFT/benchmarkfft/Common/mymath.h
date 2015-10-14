@@ -29,7 +29,7 @@ static __inline int cmp(const void *in_l, const void *in_h)
 
 // Run average on 5 of n results (or n / 2 if less then five)
 // Results sorted by ascending order.
-static __inline double avg(double m[], int n)
+static __inline double average_best(double m[], int n)
 {
     double sum = 0.0;
     int samples = 3;

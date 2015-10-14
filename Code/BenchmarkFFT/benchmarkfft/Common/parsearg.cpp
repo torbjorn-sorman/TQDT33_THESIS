@@ -55,6 +55,9 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
         else if (MATCH("-v")) {
             arg->validate = true;
         }
+        else if (MATCH("-t")) {
+            arg->performance_metrics = true;
+        }
         else if (MATCH("-d")) {
             arg->display = true;
         }
@@ -86,7 +89,7 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
     }
     return 1;
 show_usage:
-    printf("usage: %s [-dim #dimensions] [-r start_exponent last_exponent] [-platforms p1...] [-v] [-d] [-p] [-profiler] [-cuprop]", argv[0]);
+    printf("usage: %s [-dim #dimensions] [-r start_exponent last_exponent] [-platforms p1...] [-v] [-t] [-d] [-p] [-profiler] [-cuprop]", argv[0]);
     // -dim 2 -r 10 13 -platforms opencl -v -d -p
     return 0;
 }

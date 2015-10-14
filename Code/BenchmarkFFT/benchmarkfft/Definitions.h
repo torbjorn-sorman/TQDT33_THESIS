@@ -14,7 +14,7 @@ typedef float fftDir;
 typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, int n);
 typedef void(*transposeFunction)(cpx **seq, int, int n);
 typedef void(*twiddleFunction)(cpx *W, int, int n);
-typedef void(*bitReverseFunction)(cpx *seq, double dir, int lead, int n);
+typedef void(*bitReverseFunction)(cpx *seq, double dir, int leading_bits, int n);
 
 //
 // Math & Algorithm defines
@@ -78,20 +78,21 @@ struct benchmarkArgument {
     int start = 2;
     int end = 10;
     int number_of_lengths = 8;
-    bool test_platform = 0;
-    bool platform_cufft = 0;
-    bool platform_cuda = 0;
-    bool platform_opencl = 0;
-    bool platform_opengl = 0;
-    bool platform_directx = 0;
-    bool platform_c = 0;
-    bool platform_openmp = 0;
-    bool platform_fftw = 0;
-    bool profiler = 0;
-    bool show_cuprop = 0;
-    bool write_file = 0;
-    bool validate = 0;
-    bool display = 0;
+    bool test_platform = false;
+    bool performance_metrics = false;
+    bool platform_cufft = false;
+    bool platform_cuda = false;
+    bool platform_opencl = false;
+    bool platform_opengl = false;
+    bool platform_directx = false;
+    bool platform_c = false;
+    bool platform_openmp = false;
+    bool platform_fftw = false;
+    bool profiler = false;
+    bool show_cuprop = false;
+    bool write_file = false;
+    bool validate = false;
+    bool display = false;
 };
 
 #endif

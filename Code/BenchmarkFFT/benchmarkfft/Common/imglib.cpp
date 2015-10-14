@@ -165,7 +165,7 @@ void write_image(char *name, char *type, cpx** seq, int n)
     free(flat);
 }
 
-void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, double *avg)
+void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, double *average_best)
 {
     double min_v = 99999999999;
     double max_v = -99999999999;
@@ -179,21 +179,21 @@ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, doub
     }
     *min_val = min_v;
     *range = max_v - min_v;
-    *avg = sum_v / (double)n;
+    *average_best = sum_v / (double)n;
 }
 
 void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTShift)
 {
     image image;
-    double minVal, range, avg, mag, val;    
+    double minVal, range, average_best, mag, val;    
     if (doFFTShift) {
         cpx *tmp = (cpx *)malloc(sizeof(cpx) * n * n);
         fftShift(tmp, seq, n);
         seq = tmp;
     }
-    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    normalized_cpx_values(seq, n, &minVal, &range, &average_best);
     double avg_pos = 0.1;
-    double scale = tan(avg_pos * (M_PI / 2.0)) / ((avg - minVal) / range);
+    double scale = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     image = alloc_img(n, n);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
@@ -222,10 +222,10 @@ void write_normalized_image(char *name, char *type, cpx** seq, int n, bool doFFT
 
 void normalized_image(cpx* seq, int n)
 {
-    double minVal, range, avg, mag, val;
-    normalized_cpx_values(seq, n, &minVal, &range, &avg);
+    double minVal, range, average_best, mag, val;
+    normalized_cpx_values(seq, n, &minVal, &range, &average_best);
     double avg_pos = 0.8;
-    double scale = tan(avg_pos * (M_PI / 2.0)) / ((avg - minVal) / range);
+    double scale = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
             mag = cuCabsf(seq[y * n + x]);
@@ -255,19 +255,19 @@ void cpPixel(int px, int px2, cpx *in, cpx *out)
 void fftShift(cpx *dst, cpx *src, int n)
 {
     int px1, px2;
-    int n2 = n / 2;
-    for (int y = 0; y < n2; ++y) {
-        for (int x = 0; x < n2; ++x) {
+    int n_half = n / 2;
+    for (int y = 0; y < n_half; ++y) {
+        for (int x = 0; x < n_half; ++x) {
             px1 = y * n + x;
-            px2 = (y + n2) * n + (x + n2);
+            px2 = (y + n_half) * n + (x + n_half);
             dst[px1] = src[px2];
             dst[px2] = src[px1];
         }
     }
-    for (int y = 0; y < n2; ++y) {
-        for (int x = n2; x < n; ++x) {
+    for (int y = 0; y < n_half; ++y) {
+        for (int x = n_half; x < n; ++x) {
             px1 = y * n + x;
-            px2 = (y + n2) * n + (x - n2);
+            px2 = (y + n_half) * n + (x - n_half);
             dst[px1] = src[px2];
             dst[px2] = src[px1];
         }

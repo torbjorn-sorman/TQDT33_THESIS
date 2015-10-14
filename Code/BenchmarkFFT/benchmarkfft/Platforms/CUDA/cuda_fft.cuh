@@ -11,13 +11,13 @@
 #include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 
-__host__ void tsCombine(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
-__host__ void tsCombine2D(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
+__host__ void cuda_fft(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
+__host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n);
 
-__host__ int tsCombine_Validate(int n);
-__host__ int tsCombine2D_Validate(int n);
+__host__ int CUDA_validate(int n);
+__host__ int CUDA2D_validate(int n);
 
-__host__ double tsCombine_Performance(int n);
-__host__ double tsCombine2D_Performance(int n);
+__host__ double CUDA_performance(int n);
+__host__ double CUDA2D_performance(int n);
 
 #endif

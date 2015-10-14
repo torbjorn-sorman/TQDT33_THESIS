@@ -42,9 +42,9 @@ static const unsigned int revTbl256[] =
     0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
 };
 
-static unsigned int __inline bit_reverse(unsigned int x, const int lead)
+static unsigned int __inline bit_reverse(unsigned int x, const int leading_bits)
 {
-    return (((revTbl256[x & 0xff] << 24) | (revTbl256[(x >> 8) & 0xff] << 16) | (revTbl256[(x >> 16) & 0xff] << 8) | (revTbl256[(x >> 24) & 0xff])) >> lead);
+    return (((revTbl256[x & 0xff] << 24) | (revTbl256[(x >> 8) & 0xff] << 16) | (revTbl256[(x >> 16) & 0xff] << 8) | (revTbl256[(x >> 24) & 0xff])) >> leading_bits);
 }
 
 static void __inline twiddle_factors(cpx *W, fftDir dir, const int n)
@@ -100,10 +100,10 @@ static void __inline ompTwiddleFactors(cpx *W, fftDir dir, const int n)
     }
 }
 
-static void __inline bit_reverse(cpx *x, fftDir dir, const int lead, const int n)
+static void __inline bit_reverse(cpx *x, fftDir dir, const int leading_bits, const int n)
 {
     for (int i = 0; i <= n; ++i) {
-        int p = bit_reverse(i, lead);
+        int p = bit_reverse(i, leading_bits);
         if (i < p)
             swap(&(x[i]), &(x[p]));
     }
@@ -115,11 +115,11 @@ static void __inline bit_reverse(cpx *x, fftDir dir, const int lead, const int n
     }
 }
 
-static void __inline ompBitReverse(cpx *x, fftDir dir, const int lead, const int n)
+static void __inline ompBitReverse(cpx *x, fftDir dir, const int leading_bits, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int i = 0; i <= n; ++i) {
-        int p = bit_reverse(i, lead);
+        int p = bit_reverse(i, leading_bits);
         if (i < p)
             swap(&(x[i]), &(x[p]));
     }

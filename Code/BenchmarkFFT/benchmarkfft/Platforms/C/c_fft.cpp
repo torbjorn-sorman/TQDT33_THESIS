@@ -56,7 +56,7 @@ double cConstantGeometry_runPerformance(const int n)
         measures[i] = stopTimer();
     }
     free(in);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 double cConstantGeometry2D_runPerformance(const int n)
@@ -71,47 +71,47 @@ double cConstantGeometry2D_runPerformance(const int n)
     }
     free(in);
     free(out);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 //
 // Algorithm
 //
 
-_inline void cCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n2)
+_inline void cCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
 {    
-    for (int l = 0; l < n2; ++l) {
-        cpxAddSubMulCG(in + l, in + n2 + l, out, W + (l & mask));
+    for (int l = 0; l < n_half; ++l) {
+        cpxAddSubMulCG(in + l, in + n_half + l, out, W + (l & mask));
         out += 2;
     }
 }
 
 void cConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
 {
-    int depth = log2_32(n);
+    int steps_left = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
     cCGBody(*in, *out, W, 0xffffffff << steps, n / 2);
-    while (++steps < depth) {
+    while (++steps < steps_left) {
         swapBuffer(in, out);
         cCGBody(*in, *out, W, 0xffffffff << steps, n / 2);
     }
 
-    bit_reverse(*out, dir, 32 - depth, n);
+    bit_reverse(*out, dir, 32 - steps_left, n);
     free(W);
 }
 
 _inline void cCG(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
-    int depth = log2_32(n);
+    int steps_left = log2_32(n);
     int steps = 0;
     cCGBody(in, out, W, 0xffffffff << steps, n / 2);
-    while (++steps < depth) {
+    while (++steps < steps_left) {
         swapBuffer(&in, &out);
         cCGBody(in, out, W, 0xffffffff << steps, n / 2);
     }
-    bit_reverse(out, dir, 32 - depth, n);
+    bit_reverse(out, dir, 32 - steps_left, n);
 }
 
 // Result is found in the *in variable
@@ -133,7 +133,7 @@ void cConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n)
     free(W);
 }
 
-_inline void cCGBody(cpx *in, cpx *out, float w_angle, unsigned int mask, const int n)
+_inline void cCGBody(cpx *in, cpx *out, float global_angle, unsigned int mask, const int n)
 {
     cpx w;
     int old = -1;
@@ -141,7 +141,7 @@ _inline void cCGBody(cpx *in, cpx *out, float w_angle, unsigned int mask, const 
         int l = i / 2;
         int p = l & mask;
         if (old != p) {
-            float ang = p * w_angle;
+            float ang = p * global_angle;
             w = make_cuFloatComplex(cos(ang), sin(ang));
             old = p;
         }
@@ -151,13 +151,13 @@ _inline void cCGBody(cpx *in, cpx *out, float w_angle, unsigned int mask, const 
 
 void cConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n)
 {
-    int depth = log2_32(n);
+    int steps_left = log2_32(n);
     int steps = 0;
-    float w_angle = dir * M_2_PI / n;
-    cCGBody(*in, *out, w_angle, 0xffffffff << steps, n);
-    while (steps++ < depth) {
+    float global_angle = dir * M_2_PI / n;
+    cCGBody(*in, *out, global_angle, 0xffffffff << steps, n);
+    while (steps++ < steps_left) {
         swapBuffer(in, out);
-        cCGBody(*in, *out, w_angle, 0xffffffff << steps, n);
+        cCGBody(*in, *out, global_angle, 0xffffffff << steps, n);
     }
-    bit_reverse(*out, dir, 32 - depth, n);
+    bit_reverse(*out, dir, 32 - steps_left, n);
 }

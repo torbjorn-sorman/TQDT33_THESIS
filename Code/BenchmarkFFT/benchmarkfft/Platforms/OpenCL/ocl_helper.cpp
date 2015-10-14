@@ -93,10 +93,10 @@ cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in)
 cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
-    const int n2 = args->n / 2;
-    int grpDim = n2;
-    int itmDim = n2 > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n2;
-    int nBlock = args->n / itmDim;
+    const int n_half = args->n / 2;
+    int grpDim = n_half;
+    int itmDim = n_half > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n_half;
+    int n_per_block = args->n / itmDim;
     size_t data_mem_size = sizeof(cpx) * args->n;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
     size_t sync_mem_size = sizeof(int) * HW_LIMIT;
@@ -118,7 +118,7 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     args->local_work_size[2] = 1;
     args->shared_mem_size = shared_mem_size;
     args->data_mem_size = data_mem_size;
-    args->nBlock = nBlock;
+    args->n_per_block = n_per_block;
     args->input = input;
     args->output = output;
     args->sync_in = sync_in;
@@ -132,7 +132,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     cl_int err = CL_SUCCESS;
     const int n = args->n;
     int itmDim = (n / 2) > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (n / 2);
-    int nBlock = n / itmDim;
+    int n_per_block = n / itmDim;
     int minSize = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
     size_t data_mem_size = sizeof(cpx) * minSize;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
@@ -152,7 +152,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     args->local_work_size[2] = 1;
     args->shared_mem_size = shared_mem_size;
     args->data_mem_size = data_mem_size;
-    args->nBlock = nBlock;
+    args->n_per_block = n_per_block;
     args->input = input;
     args->output = output;
 
@@ -176,7 +176,7 @@ cl_int oclCreateKernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir d
     argCPU->input = argGPU->input;
     argCPU->output = argGPU->output;
     argCPU->data_mem_size = argGPU->data_mem_size;
-    argCPU->nBlock = argGPU->nBlock;
+    argCPU->n_per_block = argGPU->n_per_block;
     argCPU->workDim = 1;
     argGPU->workDim = 1;
     return err;
@@ -215,7 +215,7 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
     argTrans->input = argCPU->input = argGPU->input;
     argTrans->output = argCPU->output = argGPU->output;
     argTrans->data_mem_size = argCPU->data_mem_size = argGPU->data_mem_size;
-    argCPU->nBlock = argGPU->nBlock;
+    argCPU->n_per_block = argGPU->n_per_block;
     argCPU->workDim = 2;
     argGPU->workDim = 2;
     return err;

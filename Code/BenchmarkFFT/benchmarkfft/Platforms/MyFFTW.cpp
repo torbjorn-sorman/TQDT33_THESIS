@@ -44,6 +44,6 @@ void MyFFTW::runPerformance(const int n)
     fftwf_destroy_plan(p);
     fftwf_free(fftw_in);
     fftwf_free(fftw_out);
-    results.push_back(avg(measures, NUM_PERFORMANCE));    
+    results.push_back(average_best(measures, NUM_PERFORMANCE));    
 #endif
 }

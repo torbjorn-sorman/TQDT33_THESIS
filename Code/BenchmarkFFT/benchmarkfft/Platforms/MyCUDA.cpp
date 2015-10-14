@@ -13,14 +13,14 @@ MyCUDA::~MyCUDA()
 bool MyCUDA::validate(const int n)
 {   
     if (dimensions == 1)
-        return tsCombine_Validate(n) == 1;
-    return tsCombine2D_Validate(n) == 1;
+        return CUDA_validate(n) == 1;
+    return CUDA2D_validate(n) == 1;
 }
 
 void MyCUDA::runPerformance(const int n)
 {
     cudaProfilerStart();
-    double time = ((dimensions == 1) ? tsCombine_Performance(n) : tsCombine2D_Performance(n));
+    double time = ((dimensions == 1) ? CUDA_performance(n) : CUDA2D_performance(n));
     results.push_back(time);
     cudaProfilerStop();
 }

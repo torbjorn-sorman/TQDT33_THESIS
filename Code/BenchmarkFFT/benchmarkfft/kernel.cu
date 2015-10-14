@@ -67,18 +67,19 @@ int main(int argc, const char* argv[])
     }
     if (args.test_platform) {
         std::cout << "Control Test Platforms" << std::endl;
-        cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
-        cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-
         std::vector<Platform *> platforms = getPlatforms(&args);
-        std::cout << "  Running Platform Performance Test (might take a while)";        
-        for (int i = args.start; i < args.end; ++i) {
-            int n = power2(i);            
-            for (Platform *platform : platforms)
-                platform->runPerformance(n);
-            std::cout << '.';
+        if (args.performance_metrics) {
+            cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+            cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+            std::cout << "  Running Platform Performance Test (might take a while)";        
+            for (int i = args.start; i < args.end; ++i) {
+                int n = power2(i);            
+                for (Platform *platform : platforms)
+                    platform->runPerformance(n);
+                std::cout << '.';
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         if (args.display) {
             int tabs = 1 + (int)log10(power2(args.start + args.number_of_lengths)) / 7;
             std::cout << std::string(tabs, '\t');
@@ -90,7 +91,8 @@ int main(int argc, const char* argv[])
             for (int i = 0; i < args.number_of_lengths; ++i) {
                 std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');
                 for (Platform *platform : platforms) {
-                    std::cout << platform->results.at(i);
+                    if (args.performance_metrics)
+                        std::cout << platform->results.at(i);
                     if (args.validate && ! platform->validate(power2(args.start + i)))
                         std::cout << "!";
                     std::cout << "\t";
@@ -98,9 +100,10 @@ int main(int argc, const char* argv[])
                 std::cout << std::endl;
             }
         }
-        if (args.write_file)
+        if (args.write_file && args.performance_metrics) {
             for (Platform *platform : platforms)
                 toFile(platform->name, platform->results, args.number_of_lengths);
+        }
         std::cout << "  Test Platforms Complete" << std::endl;
         getchar();
         platforms.clear();

@@ -46,7 +46,7 @@ double ompConstantGeometry_runPerformance(const int n)
         measures[i] = stopTimer();
     }
     free(in);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 double ompConstantGeometry2D_runPerformance(const int n)
@@ -61,47 +61,47 @@ double ompConstantGeometry2D_runPerformance(const int n)
     }
     free(in);
     free(buf);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 //
 // Algorithm
 //
 
-_inline void ompCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n2)
+_inline void ompCGBody(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
 {
 #pragma omp parallel for schedule(static)
-    for (int l = 0; l < n2; ++l)
-        cpxAddSubMulCG(in + l, in + n2 + l, out + (l << 1), W + (l & mask));
+    for (int l = 0; l < n_half; ++l)
+        cpxAddSubMulCG(in + l, in + n_half + l, out + (l << 1), W + (l & mask));
 }
 
 void ompConstantGeometry(fftDir dir, cpx **in, cpx **out, const int n)
 {
-    const int n2 = n / 2;
-    int depth = log2_32(n);
+    const int n_half = n / 2;
+    int steps_left = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     ompTwiddleFactors(W, dir, n);
-    ompCGBody(*in, *out, W, 0xffffffff << steps, n2);
-    while (++steps < depth) {
+    ompCGBody(*in, *out, W, 0xffffffff << steps, n_half);
+    while (++steps < steps_left) {
         swapBuffer(in, out);
-        ompCGBody(*in, *out, W, 0xffffffff << steps, n2);
+        ompCGBody(*in, *out, W, 0xffffffff << steps, n_half);
     }
-    ompBitReverse(*out, dir, 32 - depth, n);
+    ompBitReverse(*out, dir, 32 - steps_left, n);
     free(W);
 }
 
 _inline void ompCG(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
-    const int n2 = n / 2;
-    int depth = log2_32(n);
+    const int n_half = n / 2;
+    int steps_left = log2_32(n);
     int steps = 0;
-    ompCGBody(in, out, W, 0xffffffff << steps, n2);
-    while (++steps < depth) {
+    ompCGBody(in, out, W, 0xffffffff << steps, n_half);
+    while (++steps < steps_left) {
         swapBuffer(&in, &out);
-        ompCGBody(in, out, W, 0xffffffff << steps, n2);
+        ompCGBody(in, out, W, 0xffffffff << steps, n_half);
     }
-    ompBitReverse(out, dir, 32 - depth, n);
+    ompBitReverse(out, dir, 32 - steps_left, n);
 }
 
 _inline void ompCGDoRows(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
@@ -125,9 +125,9 @@ void ompConstantGeometry2D(fftDir dir, cpx **in, cpx **out, const int n)
     free(W);
 }
 
-_inline void ompCGBody(cpx *in, cpx *outG, float w_angle, unsigned int mask, const int n)
+_inline void ompCGBody(cpx *in, cpx *outG, float global_angle, unsigned int mask, const int n)
 {    
-    const int n2 = n / 2;    
+    const int n_half = n / 2;    
 #pragma omp parallel
     {
         int old = -1;        
@@ -137,7 +137,7 @@ _inline void ompCGBody(cpx *in, cpx *outG, float w_angle, unsigned int mask, con
         int l = i / 2;
         int p = l & mask;
         if (old != p) {
-            float ang = p * w_angle;
+            float ang = p * global_angle;
             w = make_cuFloatComplex(cos(ang), sin(ang));
             old = p;
         }
@@ -149,15 +149,15 @@ _inline void ompCGBody(cpx *in, cpx *outG, float w_angle, unsigned int mask, con
 void ompConstantGeometryAlternate(fftDir dir, cpx **in, cpx **out, const int n)
 {
     int bit = log2_32(n);
-    const int lead = 32 - bit;
+    const int leading_bits = 32 - bit;
     int steps = --bit;
     unsigned int mask = 0xffffffff << (steps - bit);
-    float w_angle = dir * M_2_PI / n;
-    ompCGBody(*in, *out, w_angle, mask, n);
+    float global_angle = dir * M_2_PI / n;
+    ompCGBody(*in, *out, global_angle, mask, n);
     while (bit-- > 0) {
         swapBuffer(in, out);
         mask = 0xffffffff << (steps - bit);
-        ompCGBody(*in, *out, w_angle, mask, n);
+        ompCGBody(*in, *out, global_angle, mask, n);
     }
-    ompBitReverse(*out, dir, lead, n);
+    ompBitReverse(*out, dir, leading_bits, n);
 }

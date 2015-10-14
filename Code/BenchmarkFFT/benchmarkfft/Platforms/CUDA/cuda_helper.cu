@@ -44,29 +44,29 @@ __global__ void kernelTranspose(cuSurf in, cuSurf out, int n)
     //out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-void set_block_and_threads(int *numBlocks, int *threadsPerBlock, int size)
+void set_block_and_threads(int *number_of_blocks, int *threadsPerBlock, int size)
 {
     if (size > MAX_BLOCK_SIZE) {
-        *numBlocks = size / MAX_BLOCK_SIZE;
+        *number_of_blocks = size / MAX_BLOCK_SIZE;
         *threadsPerBlock = MAX_BLOCK_SIZE;
     }
     else {
-        *numBlocks = 1;
+        *number_of_blocks = 1;
         *threadsPerBlock = size;
     }
 }
 
-void set_block_and_threads2D(dim3 *numBlocks, int *threadsPerBlock, int n)
+void set_block_and_threads2D(dim3 *number_of_blocks, int *threadsPerBlock, int n)
 {
-    numBlocks->x = n;
-    int n2 = n >> 1;
-    if (n2 > MAX_BLOCK_SIZE) {
-        numBlocks->y = n2 / MAX_BLOCK_SIZE;
+    number_of_blocks->x = n;
+    int n_half = n >> 1;
+    if (n_half > MAX_BLOCK_SIZE) {
+        number_of_blocks->y = n_half / MAX_BLOCK_SIZE;
         *threadsPerBlock = MAX_BLOCK_SIZE;
     }
     else {
-        numBlocks->y = 1;
-        *threadsPerBlock = n2;
+        number_of_blocks->y = 1;
+        *threadsPerBlock = n_half;
     }
 }
 
@@ -143,7 +143,7 @@ void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
     *out = get_seq(n);
 }
 
-void fftMalloc(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
+void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
     _cudaMalloc(n, dev_in, dev_out);
     if (in == NULL && ref == NULL && out == NULL)
@@ -164,7 +164,7 @@ void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
     free(*out);
 }
 
-int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
+int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
     _cudaFree(dev_in, dev_out);
     cudaDeviceSynchronize();
@@ -180,7 +180,7 @@ int fftResultAndFree(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cp
     return diff > ERROR_MARGIN;
 }
 
-void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n)
+void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
@@ -196,7 +196,7 @@ void fft2DSetup(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int
     cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
 }
 
-void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
+void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
 {    
     free(*in);
     free(*ref);
@@ -209,7 +209,7 @@ void fft2DShakedown(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
     }
 }
 
-int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
+int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
 {
     cudaMemcpy(in, dev, size, cudaMemcpyDeviceToHost);
     for (int i = 0; i < len; ++i) {
@@ -222,7 +222,7 @@ int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len)
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-int fft2DCompare(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *relDiff)
+int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *relDiff)
 {
     double mDiff = 0.0;
     double mVal = -1;

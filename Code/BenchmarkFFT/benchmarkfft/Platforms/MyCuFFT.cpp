@@ -21,7 +21,7 @@ void MyCuFFT::runPerformance(const int n)
     double measures[NUM_PERFORMANCE];
     cpx *dev_in;
     cufftHandle plan;
-    fftMalloc(n, &dev_in, NULL, NULL, NULL, NULL);    
+    cuda_setup_buffers(n, &dev_in, NULL, NULL, NULL, NULL);    
     if (dimensions == 1) {
         cufftPlan1d(&plan, n, CUFFT_C2C, 1);
         for (int i = 0; i < NUM_PERFORMANCE; ++i) {
@@ -41,7 +41,7 @@ void MyCuFFT::runPerformance(const int n)
         }       
     }
     cufftDestroy(plan);
-    fftResultAndFree(n, &dev_in, NULL, NULL, NULL, NULL);
-    results.push_back(avg(measures, NUM_PERFORMANCE));
+    cuda_shakedown(n, &dev_in, NULL, NULL, NULL, NULL);
+    results.push_back(average_best(measures, NUM_PERFORMANCE));
 #endif
 }

@@ -40,7 +40,7 @@ double ompFastIndex_runPerformance(const int n)
         measures[i] = stopTimer();
     }
     free(in);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 double ompFastIndex2D_runPerformance(const int n)
@@ -53,18 +53,18 @@ double ompFastIndex2D_runPerformance(const int n)
         measures[i] = stopTimer();
     }
     free_seq2D(in, n);
-    return avg(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_PERFORMANCE);
 }
 
 //
 // Algorithm
 //
 
-static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lmask, int steps, int dist, const int n2)
+static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lmask, int steps, int dist, const int n_half)
 {
     const unsigned int pmask = (dist - 1) << steps;
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < n2; ++i) {
+    for (int i = 0; i < n_half; ++i) {
         int l = i + (i & lmask);
         int u = l + dist;        
         cpxAddSubMul(in + l, in + u, out + l, out + u, &W[(i << steps) & pmask]);
@@ -73,36 +73,36 @@ static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lma
 
 __inline void ompFI(fftDir dir, cpx *seq, cpx *W, const int n)
 {
-    const int n2 = (n / 2);
+    const int n_half = (n / 2);
     int bit = log2_32(n);
-    const int lead = 32 - bit;
+    const int leading_bits = 32 - bit;
     int steps = 0;
-    int dist = n2;
+    int dist = n_half;
     --bit;
-    ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, steps, dist, n2);
+    ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n2);
+        ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
-    ompBitReverse(seq, dir, lead, n);
+    ompBitReverse(seq, dir, leading_bits, n);
 }
 
 void ompFastIndex(fftDir dir, cpx **in, cpx **out, const int n)
 {
-    const int n2 = (n / 2);
+    const int n_half = (n / 2);
     int bit = log2_32(n);
-    const int lead = 32 - bit;
+    const int leading_bits = 32 - bit;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     ompTwiddleFactors(W, dir, n);
     int steps = 0;
-    int dist = n2;
+    int dist = n_half;
     --bit;
-    ompFIBody(*in, *out, W, 0xFFFFFFFF << bit, steps, dist, n2);
+    ompFIBody(*in, *out, W, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        ompFIBody(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n2);
+        ompFIBody(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
-    ompBitReverse(*out, dir, lead, n);
+    ompBitReverse(*out, dir, leading_bits, n);
     free(W);
 }
 

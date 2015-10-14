@@ -60,7 +60,7 @@ void cpxAddSubMulGlobal(__global cpx* inL, __global cpx* inU, __global cpx *outL
     outU->y = (W->y * x) + (W->x * y);
 }
 
-void cpxAddSubMulLocal(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, cpx *W)
+void cpxAddSubMulLocal(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -79,33 +79,6 @@ unsigned int reverse(register unsigned int x)
     return((x >> 16) | (x << 16));
 }
 
-void mem_gtos(int low, int high, int offset, __local cpx *shared, __global cpx *device)
-{
-    shared[low] = device[low + offset];
-    shared[high] = device[high + offset];
-}
-
-void mem_stog_db(int low, int high, int offset, unsigned int lead, cpx scale, __local cpx *shared, __global cpx *device)
-{
-    device[(reverse(low + offset) >> lead)] = cpxMul(shared[low], scale);
-    device[(reverse(high + offset) >> lead)] = cpxMul(shared[high], scale);
-}
-/*
-void mem_stog_db(int low, int high, int offset, unsigned int lead, float scale, __local cpx *sLow, __local cpx *sHigh, __global cpx *device)
-{
-    sLow->x *= scale;
-    sHigh->y *= scale;
-    device[(reverse(low + offset) >> lead)] = *sLow;
-    device[(reverse(high + offset) >> lead)] = *sHigh;
-}
-
-void mem_stog_db(int low, int high, int offset, unsigned int lead, __local cpx *sLow, __local cpx *sHigh, __global cpx *device)
-{
-    device[(reverse(low + offset) >> lead)] = *sLow;
-    device[(reverse(high + offset) >> lead)] = *sHigh;
-}
-*/
-
 void group_sync_init(__global int *s_in, __global int *s_out)
 {
     if (get_global_id(0) < get_num_groups(0)) {
@@ -122,55 +95,57 @@ void group_sync_init(__global int *s_in, __global int *s_out)
 void group_sync(__global int *s_in, __global int *s_out, const int goal)
 {
     int failSafe = 0;
-    if (get_local_id(0) == 0) { s_in[get_group_id(0)] = goal; }
+    int local_id = get_local_id(0);
+    if (local_id == 0) { s_in[get_group_id(0)] = goal; }
     if (get_group_id(0) == 1) { // Use get_group_id(0) == 1, if only one block this part will not run.
-        if (get_local_id(0) < get_num_groups(0)) { while (s_in[get_local_id(0)] != goal && failSafe < goal) { ++failSafe; } }
+        if (local_id < get_num_groups(0)) { while (s_in[local_id] != goal && failSafe < goal) { ++failSafe; } }
         barrier(0);
-        if (get_local_id(0) < get_num_groups(0)) { s_out[get_local_id(0)] = goal; }
+        if (local_id < get_num_groups(0)) { s_out[local_id] = goal; }
     }
     failSafe = 0;
-    if (get_local_id(0) == 0) { while (s_out[get_group_id(0)] != goal && failSafe < goal) { ++failSafe; } }
+    if (local_id == 0) { while (s_out[get_group_id(0)] != goal && failSafe < goal) { ++failSafe; } }
     barrier(0);
 }
 
 void inner_kernel(__global cpx *in, __global cpx *out, float angle, int steps, unsigned int lmask, int dist)
 {
-    int in_low = get_global_id(0) + (get_global_id(0) & lmask);
+    int global_id = get_global_id(0);
+    int in_low = global_id + (global_id & lmask);
     int in_high = in_low + dist;
     cpx w;
-    w.y = sincos(angle * ((get_global_id(0) << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMulGlobal(in + in_low, in + in_high, &out[in_low], &out[in_high], &w);    
+    w.y = sincos(angle * ((global_id << steps) & ((dist - 1) << steps)), &w.x);
+    cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_high, &w);    
 }
 
-int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, int bit_start, int breakSize, float angle, int nBlocks, int n2)
+int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
 {    
-    int dist = n2;
+    int dist = n_half;
     int steps = 0;
     group_sync_init(sync_in, sync_out);
     inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    group_sync(sync_in, sync_out, nBlocks + steps);        
-    for (int bit = bit_start - 1; bit > breakSize; --bit) {
+    group_sync(sync_in, sync_out, number_of_blocks + steps);        
+    for (int bit = bit_start - 1; bit > steps_gpu; --bit) {
         dist = dist >> 1;
         ++steps;
         inner_kernel(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
-        group_sync(sync_in, sync_out, nBlocks + steps);
+        group_sync(sync_in, sync_out, number_of_blocks + steps);
     }
-    return breakSize + 1;
+    return steps_gpu + 1;
 }
 
 void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
 {
-    cpx in_lower, in_upper;
-    cpx w;
-    __local cpx *out_i = shared + (get_local_id(0) << 1);
+    cpx w, in_lower, in_upper;
+    int local_id = get_local_id(0);
+    __local cpx *out_i = shared + (local_id << 1);
     __local cpx *out_ii = out_i + 1;
-    __local cpx *in_l = shared + get_local_id(0);
-    __local cpx *in_u = shared + in_high;
+    __local cpx *in_l = shared + local_id;
+    __local cpx *in_u = shared + in_high;    
     for (int steps = 0; steps < bit; ++steps) {
+        w.y = sincos(angle * (local_id & (0xFFFFFFFF << steps)), &w.x);
         in_lower = *in_l;
         in_upper = *in_u;
         barrier(0);
-        w.y = sincos(angle * (get_local_id(0) & (0xFFFFFFFF << steps)), &w.x);
         cpxAddSubMulLocal(&in_lower, &in_upper, out_i, out_ii, &w);
         barrier(0);
     }
@@ -184,21 +159,25 @@ __kernel void kernelCPU(__global cpx *in, __global cpx *out, float angle, unsign
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
 // Can be combined with kernelCPU in a manner that the kernelCPU is run until problem can be split into smaller parts.
-__kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float bAngle, int depth, int lead, int breakSize, cpx scale, int nBlocks, const int n2)
+__kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, cpx scale, int number_of_blocks, const int n_half)
 {    
-    int bit = depth;
-    int in_high = n2;
-    if (nBlocks > 1) {
-        bit = algorithm_cross_group(in, out, sync_in, sync_out, depth - 1, breakSize, angle, nBlocks, in_high);
-        in_high >>= log2_32(nBlocks);
+    int bit = steps_left;
+    int in_high = n_half;
+    if (number_of_blocks > 1) {
+        bit = algorithm_cross_group(in, out, sync_in, sync_out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
+        in_high >>= log2_32(number_of_blocks);
         in = out;
     }
+    int in_low = get_local_id(0);
     int offset = get_group_id(0) * get_local_size(0) * 2;
-    in_high += get_local_id(0);
-    mem_gtos(get_local_id(0), in_high, offset, shared, in);
-    algorithm_partial(shared, in_high, bAngle, bit);
-    mem_stog_db(get_local_id(0), in_high, offset, lead, scale, shared, out);
-    //mem_stog_db(get_local_id(0), in_high, offset, lead, scale.x, shared + get_local_id(0), shared + in_high, out);
+    in_high += in_low;    
+    in += offset;
+
+    shared[in_low] = *(in + in_low);
+    shared[in_high] = *(in + in_high);
+    algorithm_partial(shared, in_high, local_angle, bit);
+    out[(reverse(in_low + offset) >> leading_bits)] = cpxMul(shared[in_low], scale);
+    out[(reverse(in_high + offset) >> leading_bits)] = cpxMul(shared[in_high], scale);
 }
 
 __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
@@ -208,18 +187,29 @@ __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsi
     int in_low = (col_id + (col_id & lmask)) + get_group_id(0) * get_num_groups(0);
     int in_high = in_low + dist;
     w.y = sincos(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_low, &w);
+    cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_high, &w);
 }
 
-__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx *shared, float bAngle, int depth, cpx scale, int nBlock2)
+__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, cpx scale, int n_per_block, int n)
 {
-    int rowStart = get_num_groups(0) * get_group_id(0);
-    int in_high = nBlock2 + get_local_id(0);
+    int leading_bits = (32 - log2_32((int)get_num_groups(0)));
+    int in_low = get_local_id(0);
+    int in_high = (n_per_block >> 1) + in_low;
+    int rowStart = n * get_group_id(0);
     int rowOffset = get_group_id(1) * get_local_size(0) * 2;
-    mem_gtos(get_local_id(0), in_high, rowOffset, shared, in + rowStart);
-    algorithm_partial(shared, in_high, bAngle, depth);
-    mem_stog_db(get_local_id(0), in_high, rowOffset, (32 - log2_32((int)get_num_groups(0))), scale, shared, out + rowStart);
-    //mem_stog_db(get_local_id(0), in_high, rowOffset, (32 - log2_32((int)get_num_groups(0))), scale.x, shared + get_local_id(0), shared + in_high, out + rowStart);
+    in += rowStart + rowOffset;
+    out += rowStart;
+
+    shared[in_low]  = in[in_low];
+    shared[in_high] = in[in_high];
+
+    if (in_low == 666 && get_group_id(0) == 333)
+        printf("\nOCL %d \t%d \t%d \t%d \t%d \t%d \t%d\t-> %d\t%d", steps_left, n_per_block, leading_bits, in_low, in_high, rowStart, rowOffset, (reverse(in_low + rowOffset) >> leading_bits), (reverse(in_high + rowOffset) >> leading_bits));
+
+    algorithm_partial(shared, in_high, local_angle, steps_left);
+        
+    out[(reverse(in_low + rowOffset) >> leading_bits)] = cpxMul(shared[in_low], scale);
+    out[(reverse(in_high + rowOffset) >> leading_bits)] = cpxMul(shared[in_high], scale);
 }
 
 #define TILE_DIM 64

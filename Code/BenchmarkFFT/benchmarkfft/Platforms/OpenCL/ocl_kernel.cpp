@@ -211,10 +211,10 @@ __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsi
     cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_low, &w);
 }
 
-__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx *shared, float bAngle, int depth, cpx scale, int nBlock2)
+__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx *shared, float angle, float bAngle, int depth, cpx scale, int nBlock)
 {
     int rowStart = get_num_groups(0) * get_group_id(0);
-    int in_high = nBlock2 + get_local_id(0);
+    int in_high = (nBlock >> 1) + get_local_id(0);
     int rowOffset = get_group_id(1) * get_local_size(0) * 2;
     mem_gtos(get_local_id(0), in_high, rowOffset, shared, in + rowStart);
     algorithm_partial(shared, in_high, bAngle, depth);

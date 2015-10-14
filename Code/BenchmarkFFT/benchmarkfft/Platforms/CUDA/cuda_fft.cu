@@ -13,13 +13,13 @@ __device__ volatile int _sync_array_out[MAX_BLOCK_SIZE];
 __host__ int tsCombine_Validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
-    fftMalloc(n, &dev_in, &dev_out, &in, &ref, &out);
+    fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     tsCombine(FFT_FORWARD, &dev_in, &dev_out, n);
     tsCombine(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
-    return fftResultAndFree(n, &dev_in, &dev_out, &in, &ref, &out) != 1;
+    return fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out) != 1;
 }
 
 __host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, char *type, size_t size, bool write, bool norm, int n)
@@ -53,7 +53,7 @@ __host__ double tsCombine_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in, *ref, *out, *dev_in, *dev_out;
-    fftMalloc(n, &dev_in, &dev_out, &in, &ref, &out);
+    fftMalloc(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
 
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
@@ -62,7 +62,7 @@ __host__ double tsCombine_Performance(int n)
         measures[i] = stopTimer();
     }
 
-    fftResultAndFree(n, &dev_in, &dev_out, &in, &ref, &out);
+    fftResultAndFree(n, &dev_in, &dev_out, NULL, &in, &ref, &out);
     double t = avg(measures, NUM_PERFORMANCE);
     return t;
 }
@@ -70,21 +70,17 @@ __host__ double tsCombine_Performance(int n)
 __host__ double tsCombine2D_Performance(int n)
 {
     double measures[NUM_PERFORMANCE];
-    cpx *in, *ref, *dev_in;
-    //cpx *in, *ref, *dev_in, *dev_out;
+    cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
-    fft2DSetup(&in, &ref, &dev_in, NULL, &size, n);
-    //fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
+    fft2DSetup(&in, &ref, &dev_in, &dev_out, &size, n);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        tsCombine2D(FFT_FORWARD, &dev_in, &dev_in, n);
-        //tsCombine2D(FFT_FORWARD, &dev_in, &dev_out, n);
+        tsCombine2D(FFT_FORWARD, &dev_in, &dev_out, n);
         measures[i] = stopTimer();
     }
 
-    fft2DShakedown(&in, &ref, &dev_in, NULL);
-    //fft2DShakedown(&in, &ref, &dev_in, &dev_out);
+    fft2DShakedown(&in, &ref, &dev_in, &dev_out);
     return avg(measures, NUM_PERFORMANCE);
 }
 

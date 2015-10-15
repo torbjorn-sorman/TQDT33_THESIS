@@ -132,9 +132,6 @@
     <ClCompile Include="Platforms\C\c_fft.cpp">
       <Filter>Platforms\C</Filter>
     </ClCompile>
-    <ClCompile Include="Platforms\C\c_helper.cpp">
-      <Filter>Platforms\C</Filter>
-    </ClCompile>
     <ClCompile Include="Platforms\MyFFTW.cpp">
       <Filter>Platforms</Filter>
     </ClCompile>

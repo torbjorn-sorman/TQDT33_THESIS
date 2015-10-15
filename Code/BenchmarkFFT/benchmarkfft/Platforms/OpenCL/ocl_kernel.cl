@@ -32,23 +32,7 @@ int log2_32(unsigned int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-cpx make_cpx(const float x, const float y)
-{
-    cpx a;
-    a.x = x;
-    a.y = y;
-    return a;
-}
-
-cpx cpxMul(const cpx a, const cpx b)
-{
-    return make_cpx(
-        a.x * b.x - a.y * b.y,
-        a.x * b.y + a.y * b.x
-        );
-}
-
-void cpxAddSubMulGlobal(__global cpx* inL, __global cpx* inU, __global cpx *outL, __global cpx *outU, cpx *W)
+void add_sub_mul_global(__global cpx* inL, __global cpx* inU, __global cpx *outL, __global cpx *outU, cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -58,7 +42,7 @@ void cpxAddSubMulGlobal(__global cpx* inL, __global cpx* inU, __global cpx *outL
     outU->y = (W->y * x) + (W->x * y);
 }
 
-void cpxAddSubMulLocal(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, const cpx *W)
+void add_sub_mul_local(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -107,12 +91,13 @@ void group_sync(__global int *s_in, __global int *s_out, const int goal)
 
 void inner_kernel(__global cpx *in, __global cpx *out, float angle, int steps, unsigned int lmask, int dist)
 {
-    int global_id = get_global_id(0);
-    int in_low = global_id + (global_id & lmask);
-    int in_high = in_low + dist;
     cpx w;
-    w.y = sincos(angle * ((global_id << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_high, &w);    
+    int tid = get_global_id(0);
+    int in_low = tid + (tid & lmask);
+    in += in_low;
+    out += in_low;
+    w.y = sincos(angle * ((tid << steps) & ((dist - 1) << steps)), &w.x);
+    add_sub_mul_global(in, in + dist, out, out + dist, &w);
 }
 
 int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
@@ -123,7 +108,7 @@ int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *syn
     inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
     group_sync(sync_in, sync_out, number_of_blocks + steps);        
     for (int bit = bit_start - 1; bit > steps_gpu; --bit) {
-        dist = dist >> 1;
+        dist >>= 1;
         ++steps;
         inner_kernel(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
         group_sync(sync_in, sync_out, number_of_blocks + steps);
@@ -144,21 +129,22 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
         in_lower = *in_l;
         in_upper = *in_u;
         barrier(0);
-        cpxAddSubMulLocal(&in_lower, &in_upper, out_i, out_ii, &w);
+        add_sub_mul_local(&in_lower, &in_upper, out_i, out_ii, &w);
         barrier(0);
     }
 }
 
 // GPU takes care of overall syncronization
-__kernel void kernelCPU(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__kernel void opencl_kernel_global(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
 {
     inner_kernel(in, out, angle, steps, lmask, dist);
 }
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
-// Can be combined with kernelCPU in a manner that the kernelCPU is run until problem can be split into smaller parts.
-__kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, cpx scalar, int number_of_blocks, const int n_half)
+// Can be combined with opencl_kernel_global in a manner that the opencl_kernel_global is run until problem can be split into smaller parts.
+__kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, const int n_half)
 {    
+    
     int bit = steps_left;
     int in_high = n_half;
     if (number_of_blocks > 1) {
@@ -170,44 +156,44 @@ __kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_
     int offset = get_group_id(0) * get_local_size(0) * 2;
     in_high += in_low;    
     in += offset;
-
-    shared[in_low] = *(in + in_low);
-    shared[in_high] = *(in + in_high);
+    shared[in_low] = in[in_low];
+    shared[in_high] = in[in_high];
+    barrier(0);
     algorithm_partial(shared, in_high, local_angle, bit);
-    out[(reverse(in_low + offset) >> leading_bits)] = cpxMul(shared[in_low], scalar);
-    out[(reverse(in_high + offset) >> leading_bits)] = cpxMul(shared[in_high], scalar);
+    cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
+    cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };
+    out[(reverse(in_low + offset) >> leading_bits)] = src_low;
+    out[(reverse(in_high + offset) >> leading_bits)] = src_high;
 }
 
-__kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__kernel void opencl_kernel_global_row(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
     int col_id = get_group_id(1) * get_local_size(0) + get_local_id(0);
     int in_low = (col_id + (col_id & lmask)) + get_group_id(0) * get_num_groups(0);
-    int in_high = in_low + dist;
+    in += in_low;
+    out += in_low;
     w.y = sincos(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.x);
-    cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_high, &w);
+    add_sub_mul_global(in, in + dist, out, out + dist, &w);
 }
 
-__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, cpx scalar, int n_per_block, int n)
+__kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, float scalar, int n_per_block)
 {
+
     int leading_bits = (32 - log2_32((int)get_num_groups(0)));
     int in_low = get_local_id(0);
     int in_high = (n_per_block >> 1) + in_low;
-    int rowStart = n * get_group_id(0);
+    int rowStart = get_num_groups(0) * get_group_id(0);
     int rowOffset = get_group_id(1) * get_local_size(0) * 2;
     in += rowStart + rowOffset;
     out += rowStart;
-
     shared[in_low]  = in[in_low];
     shared[in_high] = in[in_high];
-
-    if (in_low == 666 && get_group_id(0) == 333)
-        printf("\nOCL %d \t%d \t%d \t%d \t%d \t%d \t%d\t-> %d\t%d", steps_left, n_per_block, leading_bits, in_low, in_high, rowStart, rowOffset, (reverse(in_low + rowOffset) >> leading_bits), (reverse(in_high + rowOffset) >> leading_bits));
-
     algorithm_partial(shared, in_high, local_angle, steps_left);
-        
-    out[(reverse(in_low + rowOffset) >> leading_bits)] = cpxMul(shared[in_low], scalar);
-    out[(reverse(in_high + rowOffset) >> leading_bits)] = cpxMul(shared[in_high], scalar);
+    cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
+    cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };
+    out[(reverse(in_low + rowOffset) >> leading_bits)] = src_low;
+    out[(reverse(in_high + rowOffset) >> leading_bits)] = src_high;
 }
 
 #define TILE_DIM 64

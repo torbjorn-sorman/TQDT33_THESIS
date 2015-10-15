@@ -81,7 +81,7 @@ void openmp_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
     int steps_left = log2_32(n);
     int steps = 0;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    ompTwiddleFactors(W, dir, n);
+    openmp_twiddle_factors(W, dir, n);
     openmp_inner_body(*in, *out, W, 0xffffffff << steps, n_half);
     while (++steps < steps_left) {
         swap_buffer(in, out);
@@ -116,11 +116,11 @@ _inline void openmp_rows(fftDir dir, cpx **in, cpx **out, const cpx *W, const in
 void openmp_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    ompTwiddleFactors(W, dir, n);    
+    openmp_twiddle_factors(W, dir, n);    
     openmp_rows(dir, in, out, W, n);
-    ompTranspose(*out, *in, n);
+    openmp_transpose(*out, *in, n);
     openmp_rows(dir, in, out, W, n);
-    ompTranspose(*out, *in, n);
+    openmp_transpose(*out, *in, n);
     swap_buffer(in, out);
     free(W);
 }

@@ -72,7 +72,7 @@ static void __inline twiddle_factors(cpx *W, fftDir dir, const int n)
     }
 }
 
-static void __inline ompTwiddleFactors(cpx *W, fftDir dir, const int n)
+static void __inline openmp_twiddle_factors(cpx *W, fftDir dir, const int n)
 {
     float w_ang;
     w_ang = -M_2_PI / n;
@@ -105,12 +105,13 @@ static void __inline bit_reverse(cpx *x, fftDir dir, const int leading_bits, con
     for (int i = 0; i <= n; ++i) {
         int p = bit_reverse(i, leading_bits);
         if (i < p)
-            swap(&(x[i]), &(x[p]));
+            swap(x + i, x + p);
     }
     if (dir == FFT_INVERSE) {
-        cpx scale = make_cuFloatComplex(1.f / n, 0.f);
-        for (int i = 0; i < n; ++i) {
-            x[i] = cuCmulf(x[i], scale);
+        float scalar = 1.f / n;
+        cpx *end = x + n;
+        for (; x < end; ++x) {
+            *x = { x->x * scalar, x->y * scalar };
         }
     }
 }
@@ -124,19 +125,10 @@ static void __inline openmp_bit_reverse(cpx *x, fftDir dir, const int leading_bi
             swap(&(x[i]), &(x[p]));
     }
     if (dir == FFT_INVERSE) {
-        cpx scale = make_cuFloatComplex(1.f / n, 0.f);
+        cpx scalar = make_cuFloatComplex(1.f / n, 0.f);
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < n; ++i) {
-            x[i] = cuCmulf(x[i], scale);
-        }
-    }
-}
-
-static void __inline transposeN(cpx *in, cpx *out, const int n)
-{
-    for (int y = 0; y < n; ++y) {
-        for (int x = 0; x < n; ++x) {
-            out[y * n + x] = in[x * n + y];
+            x[i] = cuCmulf(x[i], scalar);
         }
     }
 }
@@ -153,17 +145,17 @@ static void __inline transpose(cpx *in, cpx *out, const int n)
 
 #ifndef __CUDACC__
 
-static void __inline ompTranspose(cpx **seq, const int n)
+static void __inline openmp_transpose(cpx **seq, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int y = 0; y < n; ++y){
         for (int x = y + 1; x < n; ++x) {
-            swap(&seq[y][x], &seq[x][y]);
+            swap(seq[y] + x, seq[x] + y);
         }
     }
 }
 
-static void __inline ompTranspose(cpx *in, cpx *out, const int n)
+static void __inline openmp_transpose(cpx *in, cpx *out, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int y = 0; y < n; ++y) {

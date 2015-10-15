@@ -96,17 +96,15 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     const int n_half = args->n / 2;
     int grpDim = n_half;
     int itmDim = n_half > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n_half;
-    int n_per_block = args->n / itmDim;
     size_t data_mem_size = sizeof(cpx) * args->n;
-    size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
     size_t sync_mem_size = sizeof(int) * HW_LIMIT;
-    cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);    
+    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
-    cl_mem output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
-    cl_mem sync_in = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
+    args->sync_in = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
-    cl_mem sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
+    args->sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
 
     // If successful, store in the argument struct!
@@ -116,13 +114,9 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     args->local_work_size[0] = itmDim;
     args->local_work_size[1] = 1;
     args->local_work_size[2] = 1;
-    args->shared_mem_size = shared_mem_size;
+    args->shared_mem_size = sizeof(cpx) * itmDim * 2;
     args->data_mem_size = data_mem_size;
-    args->n_per_block = n_per_block;
-    args->input = input;
-    args->output = output;
-    args->sync_in = sync_in;
-    args->sync_out = sync_out;
+    args->n_per_block = args->n / itmDim;
 
     return err;
 }
@@ -166,8 +160,8 @@ cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fft
     opencl_setup_kernels(argGPU);
     memcpy(argCPU, argGPU, sizeof(oclArgs));
 
-    checkErr(oclSetupProgram("ocl_kernel", "kernelGPU", argGPU), "Failed to setup GPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "kernelCPU", argCPU), "Failed to setup CPU Program!");
+    checkErr(oclSetupProgram("ocl_kernel", "opencl_kernel_local", argGPU), "Failed to setup GPU Program!");
+    checkErr(oclSetupProgram("ocl_kernel", "opencl_kernel_global", argCPU), "Failed to setup CPU Program!");
 
     checkErr(oclSetupWorkGroupsAndMemory(argGPU), "Failed to setup GPU Program!");
     cl_int err = oclSetupDeviceMemoryData(argGPU, data_in);
@@ -203,8 +197,8 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
     memcpy(argCPU, argGPU, sizeof(oclArgs));
     memcpy(argTrans, argGPU, sizeof(oclArgs));
 
-    checkErr(oclSetupProgram("ocl_kernel", "kernelGPU2D", argGPU), "Failed to setup GPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "kernelCPU2D", argCPU), "Failed to setup CPU Program!");
+    checkErr(oclSetupProgram("ocl_kernel", "opencl_kernel_local_row", argGPU), "Failed to setup GPU Program!");
+    checkErr(oclSetupProgram("ocl_kernel", "opencl_kernel_global_row", argCPU), "Failed to setup CPU Program!");
     checkErr(oclSetupProgram("ocl_kernel", "opencl_transpose_kernel", argTrans), "Failed to setup Transpose Program!");
 
     checkErr(oclSetupWorkGroupsAndMemory2D(argGPU), "Failed to setup Groups And Memory!");

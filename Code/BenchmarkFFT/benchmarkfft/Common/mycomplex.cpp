@@ -88,11 +88,11 @@ bool invalidCpx(cpx c)
     return std::isnan(c.x) || std::isinf(c.x) || std::isnan(c.y) || std::isinf(c.y);
 }
 
-double diff_seq(cpx *seq, cpx *ref, float scale, const int n)
+double diff_seq(cpx *seq, cpx *ref, float scalar, const int n)
 {
     double mDiff = 0.0;
     double mVal = -1;
-    cpx rScale = make_cuFloatComplex(scale, 0);
+    cpx rScale = make_cuFloatComplex(scalar, 0);
     for (int i = 0; i < n; ++i) {
         cpx norm = cuCmulf(seq[i], rScale);
         if (invalidCpx(norm))        
@@ -114,5 +114,23 @@ double diff_seq(cpx **seq, cpx **ref, const int n)
     double diff = 0.0;
     for (int i = 0; i < n; ++i)
         diff = maxf(diff, diff_seq(seq[i], ref[i], 1.f, n));
+    return diff;
+}
+
+double diff_forward_sinus(cpx *seq, const int n)
+{
+    if (n < 8) {
+        return 0.0;
+    }
+    cpx *neg = seq + 1;
+    cpx *pos = seq + n - 1;
+    double diff = cuCabsf(seq[0]);
+    diff = maxf(diff, neg->x);
+    diff = maxf(diff, pos->x);
+    for (int i = 2; i < n - 3; ++i) {
+        diff = maxf(diff, cuCabsf(seq[i]));
+    }
+    diff = maxf(diff, abs(abs(neg->y) - (n / 2)));
+    diff = maxf(diff, abs(abs(pos->y) - (n / 2)));
     return diff;
 }

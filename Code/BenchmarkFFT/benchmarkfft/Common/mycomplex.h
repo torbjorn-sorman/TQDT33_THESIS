@@ -21,8 +21,9 @@ void free_seq2D(cpx **seq, const int n);
 
 void setup_seq2D(cpx **in, cpx **buf, cpx **ref, int n);
 
-double diff_seq(cpx *seq, cpx *ref, float scale, const int n);
+double diff_seq(cpx *seq, cpx *ref, float scalar, const int n);
 double diff_seq(cpx *seq, cpx *ref, const int n);
 double diff_seq(cpx **seq, cpx **ref, const int n);
+double diff_forward_sinus(cpx *seq, const int n);
 
 #endif

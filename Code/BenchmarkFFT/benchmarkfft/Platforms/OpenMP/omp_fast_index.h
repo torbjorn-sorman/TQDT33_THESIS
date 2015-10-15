@@ -13,12 +13,12 @@
 #include "../C/c_helper.h"
 
 int openmp_fast_index_validate(const int n);
-int ompFastIndex2D_validate(const int n);
+int openmp_fast_index_2d_validate(const int n);
 
-double ompFastIndex_runPerformance(const int n);
-double ompFastIndex2D_runPerformance(const int n);
+double openmp_fast_index_performance(const int n);
+double openmp_fast_index_2d_performance(const int n);
 
-void ompFastIndex(fftDir dir, cpx **in, cpx **out, const int n);
-void ompFastIndex2D(fftDir dir, cpx** seq, const int n);
+void openmp_fast_index(fftDir dir, cpx **in, cpx **out, const int n);
+void openmp_fast_index_2d(fftDir dir, cpx** seq, const int n);
 
 #endif

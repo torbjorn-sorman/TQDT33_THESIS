@@ -9,8 +9,8 @@ int openmp_fast_index_validate(const int n)
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
-    ompFastIndex(FFT_FORWARD, &in, &out, n);
-    ompFastIndex(FFT_INVERSE, &out, &in, n);
+    openmp_fast_index(FFT_FORWARD, &in, &out, n);
+    openmp_fast_index(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
     free(in);
     free(out);
@@ -18,38 +18,38 @@ int openmp_fast_index_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-int ompFastIndex2D_validate(const int n)
+int openmp_fast_index_2d_validate(const int n)
 {
     cpx **in = get_seq2D(n, 1);
     cpx **ref = get_seq2D(n, in);
-    ompFastIndex2D(FFT_FORWARD, in, n);
-    ompFastIndex2D(FFT_INVERSE, in, n);
+    openmp_fast_index_2d(FFT_FORWARD, in, n);
+    openmp_fast_index_2d(FFT_INVERSE, in, n);
     double diff = diff_seq(in, ref, n);
     free_seq2D(in, n);
     free_seq2D(ref, n);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-double ompFastIndex_runPerformance(const int n)
+double openmp_fast_index_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        ompFastIndex(FFT_FORWARD, &in, &in, n);
+        openmp_fast_index(FFT_FORWARD, &in, &in, n);
         measures[i] = stopTimer();
     }
     free(in);
     return average_best(measures, NUM_PERFORMANCE);
 }
 
-double ompFastIndex2D_runPerformance(const int n)
+double openmp_fast_index_2d_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
     cpx **in = get_seq2D(n, 1);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         startTimer();
-        ompFastIndex2D(FFT_FORWARD, in, n);
+        openmp_fast_index_2d(FFT_FORWARD, in, n);
         measures[i] = stopTimer();
     }
     free_seq2D(in, n);
@@ -60,7 +60,7 @@ double ompFastIndex2D_runPerformance(const int n)
 // Algorithm
 //
 
-static void __inline ompFIBody(cpx *in, cpx *out, cpx *W, const unsigned int lmask, int steps, int dist, const int n_half)
+static void __inline openmp_fi_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, int steps, int dist, const int n_half)
 {
     const unsigned int pmask = (dist - 1) << steps;
 #pragma omp parallel for schedule(static)
@@ -79,34 +79,34 @@ __inline void ompFI(fftDir dir, cpx *seq, cpx *W, const int n)
     int steps = 0;
     int dist = n_half;
     --bit;
-    ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, steps, dist, n_half);
+    openmp_fi_body(seq, seq, W, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        ompFIBody(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
+        openmp_fi_body(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
     openmp_bit_reverse(seq, dir, leading_bits, n);
 }
 
-void ompFastIndex(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_fast_index(fftDir dir, cpx **in, cpx **out, const int n)
 {
     const int n_half = (n / 2);
     int bit = log2_32(n);
     const int leading_bits = 32 - bit;
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    ompTwiddleFactors(W, dir, n);
+    openmp_twiddle_factors(W, dir, n);
     int steps = 0;
     int dist = n_half;
     --bit;
-    ompFIBody(*in, *out, W, 0xFFFFFFFF << bit, steps, dist, n_half);
+    openmp_fi_body(*in, *out, W, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        ompFIBody(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
+        openmp_fi_body(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
     openmp_bit_reverse(*out, dir, leading_bits, n);
     free(W);
 }
 
-_inline void ompFIDoRows(fftDir dir, cpx** seq, cpx *W, const int n)
+_inline void openmp_fi_rows(fftDir dir, cpx** seq, cpx *W, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int row = 0; row < n; ++row) {
@@ -114,14 +114,14 @@ _inline void ompFIDoRows(fftDir dir, cpx** seq, cpx *W, const int n)
     }
 }
 
-void ompFastIndex2D(fftDir dir, cpx** seq, const int n)
+void openmp_fast_index_2d(fftDir dir, cpx** seq, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    ompTwiddleFactors(W, dir, n);
-    ompFIDoRows(dir, seq, W, n);
-    ompTranspose(seq, n);
-    ompFIDoRows(dir, seq, W, n);
-    ompTranspose(seq, n);
+    openmp_twiddle_factors(W, dir, n);
+    openmp_fi_rows(dir, seq, W, n);
+    openmp_transpose(seq, n);
+    openmp_fi_rows(dir, seq, W, n);
+    openmp_transpose(seq, n);
     free(W);
 }
 

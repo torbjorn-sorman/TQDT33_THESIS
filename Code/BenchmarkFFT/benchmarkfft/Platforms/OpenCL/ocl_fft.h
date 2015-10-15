@@ -10,10 +10,10 @@
 #include "../../Common/mycomplex.h"
 #include "ocl_helper.h"
 
-bool    OCL_validate(const int n);
-bool    OCL2D_validate(const int n);
+bool    opencl_validate(const int n);
+bool    opencl_2d_validate(const int n);
 
-double  OCL_performance(const int n);
-double  OCL2D_performance(const int n);
+double  opencl_performance(const int n);
+double  opencl_2d_performance(const int n);
 
 #endif

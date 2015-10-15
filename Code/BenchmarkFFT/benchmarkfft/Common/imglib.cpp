@@ -193,13 +193,13 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     }
     normalized_cpx_values(seq, n, &minVal, &range, &average_best);
     double avg_pos = 0.1;
-    double scale = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
+    double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     image = alloc_img(n, n);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
             mag = cuCabsf(seq[y * n + x]);
             val = ((mag - minVal) / range);
-            val = (atan(val * scale) / (M_PI / 2.0)) * 255.0;
+            val = (atan(val * scalar) / (M_PI / 2.0)) * 255.0;
             color_component col = (unsigned char)(val > 255.0 ? 255 : val);
             put_pixel_unsafe(image, x, y, col, col, col);
         }
@@ -225,12 +225,12 @@ void normalized_image(cpx* seq, int n)
     double minVal, range, average_best, mag, val;
     normalized_cpx_values(seq, n, &minVal, &range, &average_best);
     double avg_pos = 0.8;
-    double scale = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
+    double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
             mag = cuCabsf(seq[y * n + x]);
             val = ((mag - minVal) / range);
-            val = (atan(val * scale) / (M_PI / 2.0));
+            val = (atan(val * scalar) / (M_PI / 2.0));
             seq[y * n + x] = make_cuFloatComplex((float)(val > 1.0 ? 1 : val), 0.f);
         }
     }

@@ -223,7 +223,6 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClCompile Include="Common\mycomplex.cpp" />
     <ClCompile Include="Common\parsearg.cpp" />
     <ClCompile Include="Platforms\C\c_fft.cpp" />
-    <ClCompile Include="Platforms\C\c_helper.cpp" />
     <ClCompile Include="Platforms\MyC.cpp" />
     <ClCompile Include="Platforms\MyCUDA.cpp" />
     <ClCompile Include="Platforms\MyCuFFT.cpp" />
@@ -236,12 +235,13 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClCompile Include="Platforms\OpenMP\omp_fast_index.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Platforms\OpenCL\ocl_kernel.cl">
+    <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </None>
+      <FileType>Document</FileType>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

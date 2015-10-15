@@ -9,7 +9,7 @@
 #include "../../Common/mycomplex.h"
 
 /*
-__device__ static __inline__ void devSwap(cpx **in, cpx **out)
+__device__ static __inline__ void cuda_surface_swap(cpx **in, cpx **out)
 {
     cpx *tmp = *in;
     *in = *out;
@@ -17,7 +17,7 @@ __device__ static __inline__ void devSwap(cpx **in, cpx **out)
 }
 */
 
-__host__ __device__ static __inline__ void devSwap(cuSurf *in, cuSurf *out)
+__host__ __device__ static __inline__ void cuda_surface_swap(cuSurf *in, cuSurf *out)
 {
     cuSurf tmp = *in;
     *in = *out;
@@ -35,7 +35,7 @@ __device__ static __inline__ unsigned int devBitReverse32(unsigned int x, int l)
 }
 */
 
-__device__ static __inline__ void init_sync(volatile int sync_in[], volatile int sync_out[], int tid, int blocks)
+__device__ static __inline__ void cuda_block_sync_init(volatile int sync_in[], volatile int sync_out[], int tid, int blocks)
 {
     if (tid < blocks) {
         sync_in[tid] = 0;
@@ -43,7 +43,7 @@ __device__ static __inline__ void init_sync(volatile int sync_in[], volatile int
     }
 }
 
-__device__ static __inline__ void __gpu_sync(volatile int sync_in[], volatile int sync_out[], int goal)
+__device__ static __inline__ void cuda_block_sync(volatile int sync_in[], volatile int sync_out[], int goal)
 {
     int tid = threadIdx.x;
     int bid = blockIdx.x;
@@ -63,7 +63,7 @@ __device__ static inline int log2(int v)
     return FIND_FIRST_BIT(v) - 1;
 }
 
-__device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
+__host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -72,12 +72,13 @@ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL,
     outU->x = (W->x * x) - (W->y * y);
     outU->y = (W->y * x) + (W->x * y);
 }
-
+/*
 __device__ static __inline__ void mem_gtos(int low, int high, int offset, cpx *shared, cpx *global)
 {
     shared[low] = global[low + offset];
     shared[high] = global[high + offset];
 }
+*/
 /*
 __device__ static __inline__ void mem_gtos_db(int low, int high, int offset, unsigned int leading_bits, cpx *shared, cpx *global)
 {
@@ -92,45 +93,49 @@ __device__ static __inline__ void mem_gtos_tb(int low, int high, int offset, uns
     shared[BIT_REVERSE(high, leading_bits)] = global[high + offset];
 }
 */
+/*
 __device__ static __inline__ void mem_gtos_col(int low, int high, int global_low, int offsetHigh, cpx *shared, cpx *global)
 {
     shared[low] = global[global_low];
     shared[high] = global[global_low + offsetHigh];
 }
 
-__device__ static __inline__ void mem_stog_db_col(int shared_low, int shared_high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cpx *global, int n)
+__device__ static __inline__ void mem_stog_db_col(int shared_low, int shared_high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cpx *global, int n)
 {
     int row_low = BIT_REVERSE(shared_low + offset, leading_bits);
     int row_high = BIT_REVERSE(shared_high + offset, leading_bits);
-    global[row_low * n + blockIdx.x] = cuCmulf(shared[shared_low], scale);
-    global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scale);
-}
-/*
-__device__ static __inline__ void mem_stog(int low, int high, int offset, cpx scale, cpx *shared, cpx *global)
-{
-    global[low + offset] = cuCmulf(shared[low], scale);
-    global[high + offset] = cuCmulf(shared[high], scale);
+    global[row_low * n + blockIdx.x] = cuCmulf(shared[shared_low], scalar);
+    global[row_high * n + blockIdx.x] = cuCmulf(shared[shared_high], scalar);
 }
 */
-__device__ static __inline__ void mem_stog_db(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cpx *global)
-{
-    global[BIT_REVERSE(low + offset, leading_bits)] = cuCmulf(shared[low], scale);
-    global[BIT_REVERSE(high + offset, leading_bits)] = cuCmulf(shared[high], scale);
-}
 /*
-__device__ static __inline__ void mem_stog_dbt(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_stog(int low, int high, int offset, cpx scalar, cpx *shared, cpx *global)
+{
+    global[low + offset] = cuCmulf(shared[low], scalar);
+    global[high + offset] = cuCmulf(shared[high], scalar);
+}
+*/
+/*
+__device__ static __inline__ void mem_stog_db(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cpx *global)
+{
+    global[BIT_REVERSE(low + offset, leading_bits)] = cuCmulf(shared[low], scalar);
+    global[BIT_REVERSE(high + offset, leading_bits)] = cuCmulf(shared[high], scalar);
+}
+*/
+/*
+__device__ static __inline__ void mem_stog_dbt(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cpx *global)
 {
     int xl = BIT_REVERSE(low + offset, leading_bits);
     int xh = BIT_REVERSE(high + offset, leading_bits);
-    global[blockIdx.x + xl * gridDim.x] = cuCmulf(shared[low], scale);
-    global[blockIdx.x + xh * gridDim.x] = cuCmulf(shared[high], scale);
+    global[blockIdx.x + xl * gridDim.x] = cuCmulf(shared[low], scalar);
+    global[blockIdx.x + xh * gridDim.x] = cuCmulf(shared[high], scalar);
 }
 */
 /*
-__device__ static __inline__ void mem_stog_tb(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cpx *global)
+__device__ static __inline__ void mem_stog_tb(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cpx *global)
 {
-    global[low + offset] = cuCmulf(shared[BIT_REVERSE(low, leading_bits)], scale);
-    global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, leading_bits)], scale);
+    global[low + offset] = cuCmulf(shared[BIT_REVERSE(low, leading_bits)], scalar);
+    global[high + offset] = cuCmulf(shared[BIT_REVERSE(high, leading_bits)], scalar);
 }
 */
 
@@ -146,32 +151,32 @@ __device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cp
     SURF2D_READ(&(shared[high]), surf, blockIdx.x, high + offset);
 }
 /*
-__device__ static __inline__ void mem_stog_db_row(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_db_row(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cuSurf surf)
 {
     int row_low = BIT_REVERSE(low + offset, leading_bits);
     int row_high = BIT_REVERSE(high + offset, leading_bits);
-    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, row_low, blockIdx.x);
-    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, row_high, blockIdx.x);
+    SURF2D_WRITE(cuCmulf(shared[low], scalar), surf, row_low, blockIdx.x);
+    SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, row_high, blockIdx.x);
 }
 */
-__device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cuSurf surf)
 {
     int row_low = BIT_REVERSE(low + offset, leading_bits);
     int row_high = BIT_REVERSE(high + offset, leading_bits);
-    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, blockIdx.x, row_low);
-    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, row_high);
+    SURF2D_WRITE(cuCmulf(shared[low], scalar), surf, blockIdx.x, row_low);
+    SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, row_high);
 }
 
-__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int leading_bits, cpx scale, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cuSurf surf)
 {
     int col_low = BIT_REVERSE(low + offset, leading_bits);
     int col_high = BIT_REVERSE(high + offset, leading_bits);
-    SURF2D_WRITE(cuCmulf(shared[low], scale), surf, blockIdx.x, col_low);
-    SURF2D_WRITE(cuCmulf(shared[high], scale), surf, blockIdx.x, col_high);
+    SURF2D_WRITE(cuCmulf(shared[low], scalar), surf, blockIdx.x, col_low);
+    SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, col_high);
 }
 
-__global__ void kernelTranspose(cpx *in, cpx *out, int n);
-__global__ void kernelTranspose(cuSurf in, cuSurf out, int n);
+__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
+__global__ void cuda_transpose_kernel(cuSurf in, cuSurf out, int n);
 
 void set_block_and_threads(int *number_of_blocks, int *threadsPerBlock, int size);
 void set_block_and_threads2D(dim3 *number_of_blocks, int *threadsPerBlock, int n);

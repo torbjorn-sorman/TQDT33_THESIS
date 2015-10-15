@@ -1,6 +1,6 @@
 #include "cuda_helper.cuh"
 
-__global__ void kernelTranspose(cpx *in, cpx *out, int n)
+__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
@@ -21,7 +21,7 @@ __global__ void kernelTranspose(cpx *in, cpx *out, int n)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-__global__ void kernelTranspose(cuSurf in, cuSurf out, int n)
+__global__ void cuda_transpose_kernel(cuSurf in, cuSurf out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];

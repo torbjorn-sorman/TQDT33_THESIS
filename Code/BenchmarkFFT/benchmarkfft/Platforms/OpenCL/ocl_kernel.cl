@@ -1,4 +1,3 @@
-/*
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -12,7 +11,6 @@
 #define sincos(a,x) 1
 #define printf(...) 1
 #endif
-*/
 
 typedef struct {
     float x;
@@ -159,7 +157,7 @@ __kernel void kernelCPU(__global cpx *in, __global cpx *out, float angle, unsign
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
 // Can be combined with kernelCPU in a manner that the kernelCPU is run until problem can be split into smaller parts.
-__kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, cpx scale, int number_of_blocks, const int n_half)
+__kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, __local cpx *shared, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, cpx scalar, int number_of_blocks, const int n_half)
 {    
     int bit = steps_left;
     int in_high = n_half;
@@ -176,8 +174,8 @@ __kernel void kernelGPU(__global cpx *in, __global cpx *out, __global int *sync_
     shared[in_low] = *(in + in_low);
     shared[in_high] = *(in + in_high);
     algorithm_partial(shared, in_high, local_angle, bit);
-    out[(reverse(in_low + offset) >> leading_bits)] = cpxMul(shared[in_low], scale);
-    out[(reverse(in_high + offset) >> leading_bits)] = cpxMul(shared[in_high], scale);
+    out[(reverse(in_low + offset) >> leading_bits)] = cpxMul(shared[in_low], scalar);
+    out[(reverse(in_high + offset) >> leading_bits)] = cpxMul(shared[in_high], scalar);
 }
 
 __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
@@ -190,7 +188,7 @@ __kernel void kernelCPU2D(__global cpx *in, __global cpx *out, float angle, unsi
     cpxAddSubMulGlobal(in + in_low, in + in_high, out + in_low, out + in_high, &w);
 }
 
-__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, cpx scale, int n_per_block, int n)
+__kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, cpx scalar, int n_per_block, int n)
 {
     int leading_bits = (32 - log2_32((int)get_num_groups(0)));
     int in_low = get_local_id(0);
@@ -208,14 +206,14 @@ __kernel void kernelGPU2D(__global cpx *in, __global cpx *out, __local cpx share
 
     algorithm_partial(shared, in_high, local_angle, steps_left);
         
-    out[(reverse(in_low + rowOffset) >> leading_bits)] = cpxMul(shared[in_low], scale);
-    out[(reverse(in_high + rowOffset) >> leading_bits)] = cpxMul(shared[in_high], scale);
+    out[(reverse(in_low + rowOffset) >> leading_bits)] = cpxMul(shared[in_low], scalar);
+    out[(reverse(in_high + rowOffset) >> leading_bits)] = cpxMul(shared[in_high], scalar);
 }
 
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32
 
-__kernel void kernelTranspose(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
+__kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
 {
     // Write to shared from Global (in)
     int x = get_group_id(0) * TILE_DIM + get_local_id(0);

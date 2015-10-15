@@ -205,7 +205,7 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, c
 
     checkErr(oclSetupProgram("ocl_kernel", "kernelGPU2D", argGPU), "Failed to setup GPU Program!");
     checkErr(oclSetupProgram("ocl_kernel", "kernelCPU2D", argCPU), "Failed to setup CPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "kernelTranspose", argTrans), "Failed to setup Transpose Program!");
+    checkErr(oclSetupProgram("ocl_kernel", "opencl_transpose_kernel", argTrans), "Failed to setup Transpose Program!");
 
     checkErr(oclSetupWorkGroupsAndMemory2D(argGPU), "Failed to setup Groups And Memory!");
     cl_int err = oclSetupDeviceMemoryData(argGPU, data_in);

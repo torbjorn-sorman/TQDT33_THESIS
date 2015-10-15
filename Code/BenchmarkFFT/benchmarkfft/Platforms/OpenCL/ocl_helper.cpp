@@ -210,6 +210,7 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, 
     memcpy(argGPUCol->local_work_size, argGPU->local_work_size, sizeof(size_t) * 3);
     memcpy(argCPU->local_work_size, argGPU->local_work_size, sizeof(size_t) * 3);
     setWorkDimForTranspose(argTrans, n);
+    argGPUCol->shared_mem_size = argGPU->shared_mem_size;
     argTrans->input = argCPU->input = argGPU->input;
     argTrans->output = argCPU->output = argGPU->output;
     argTrans->data_mem_size = argCPU->data_mem_size = argGPU->data_mem_size;
@@ -220,12 +221,16 @@ cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, 
     return err;
 }
 
-cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
+cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU)
 {
     cl_int err = CL_SUCCESS;
+    if (dev_in != NULL) {
+        err = clEnqueueReadBuffer(argGPU->commands, argGPU->input, CL_TRUE, 0, argGPU->data_mem_size, dev_in, 0, NULL, NULL);
+        checkErr(err, "Read In Buffer!");
+    }
     if (dev_out != NULL) {
         err = clEnqueueReadBuffer(argGPU->commands, argGPU->output, CL_TRUE, 0, argGPU->data_mem_size, dev_out, 0, NULL, NULL);
-        checkErr(err, "Read Buffer!");
+        checkErr(err, "Read Out Buffer!");
     }
     err = clFinish(argGPU->commands);
     free(argGPU->kernelSource);

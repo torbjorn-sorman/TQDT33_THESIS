@@ -34,7 +34,7 @@ cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
 cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
 cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
-cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
+cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
 cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
 void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
@@ -53,14 +53,14 @@ static void __inline swap(cl_mem *a, cl_mem *b)
     *b = c;
 }
 
-static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem *in, cl_mem *out, const float *global_angle, unsigned int lmask, int *steps, int *dist)
+static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, cl_mem out, const float global_angle, unsigned int lmask, int steps, int dist)
 {
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), in);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), out);
-    clSetKernelArg(args->kernel, 2, sizeof(float), global_angle);
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, sizeof(float), &global_angle);
     clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
-    clSetKernelArg(args->kernel, 4, sizeof(int), steps);
-    clSetKernelArg(args->kernel, 5, sizeof(int), dist);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &dist);
 }
 
 static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)
@@ -104,10 +104,10 @@ static void __inline oclSetKernelGPU2DColArg(oclArgs *args, cl_mem in, cl_mem ou
 
 static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)
 {
-    checkErr(clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in), "input");
-    checkErr(clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out), "output");
-    checkErr(clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL), "shmem");
-    checkErr(clSetKernelArg(args->kernel, 3, sizeof(int), &args->n), "n");
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
 }
 
 #endif

@@ -123,6 +123,7 @@ __host__ void cuda_fft(fftDir dir, cpx **in, cpx **out, int n)
             cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*out, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             cudaDeviceSynchronize();
         }
+        //return;
         swap_buffer(in, out);
         ++steps_left;
         number_of_blocks = 1;
@@ -146,7 +147,7 @@ __host__ static __inline void cuda_fft_2d_helper(fftDir dir, cpx **dev_in, cpx *
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);
     const float local_angle = dir * (M_2_PI / n_per_block);
-    int block_range_half = n;
+    int block_range = n;
     if (blocks.y > 1) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         --steps_left;
@@ -163,10 +164,10 @@ __host__ static __inline void cuda_fft_2d_helper(fftDir dir, cpx **dev_in, cpx *
         }
         swap_buffer(dev_in, dev_out);
         ++steps_left;
-        block_range_half = n_per_block;
+        block_range = n_per_block;
     }
     // Calculate complete sequence in one launch and syncronize on GPU
-    ROW_COL_KERNEL(row_wise, cuda_kernel_local_row, cuda_kernel_local_col) KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*dev_in, *dev_out, global_angle, local_angle, steps_left, scalar, block_range_half);
+    ROW_COL_KERNEL(row_wise, cuda_kernel_local_row, cuda_kernel_local_col) KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*dev_in, *dev_out, global_angle, local_angle, steps_left, scalar, block_range);
     cudaDeviceSynchronize();
 }
 
@@ -195,8 +196,6 @@ __host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
         // Calculate complete sequence in one launch and syncronize on GPU
         cuda_kernel_local_col KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (*dev_in, *dev_out, global_angle, global_angle, steps_left, scalar, n);
         cudaDeviceSynchronize();
-        //cuda_fft_2d_helper(dir, dev_in, dev_out, 1, n);
-        //cuda_fft_2d_helper(dir, dev_out, dev_in, 0, n);
     }
     swap_buffer(dev_in, dev_out);
 }

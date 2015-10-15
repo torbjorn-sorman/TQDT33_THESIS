@@ -179,7 +179,6 @@ __kernel void opencl_kernel_global_row(__global cpx *in, __global cpx *out, floa
 
 __kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, float scalar, int n_per_block)
 {
-
     int leading_bits = (32 - log2_32((int)get_num_groups(0)));
     int in_low = get_local_id(0);
     int in_high = (n_per_block >> 1) + in_low;

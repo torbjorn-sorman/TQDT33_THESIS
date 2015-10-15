@@ -33,9 +33,9 @@ struct oclArgs {
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
 cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
-cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
+cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
 cl_int oclRelease(cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
-cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argTrans);
+cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
 void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 
@@ -82,13 +82,24 @@ static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_m
 
 static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, float scalar, int n_per_block)
 {
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &args->input);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &args->output);
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
     clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
     clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
     clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
     clSetKernelArg(args->kernel, 5, sizeof(float), &scalar);
     clSetKernelArg(args->kernel, 6, sizeof(int), &n_per_block);
+}
+
+static void __inline oclSetKernelGPU2DColArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, float scalar, int n)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
+    clSetKernelArg(args->kernel, 5, sizeof(float), &scalar);
+    clSetKernelArg(args->kernel, 6, sizeof(int), &n);
 }
 
 static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)

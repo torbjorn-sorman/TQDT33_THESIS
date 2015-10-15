@@ -172,10 +172,10 @@ __host__ static __inline void cuda_fft_2d_helper(fftDir dir, cpx **dev_in, cpx *
 
 __host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
 {
-    dim3 blocks, threads;
-    set_block_and_threads_transpose(&blocks, &threads, n);
-
+    dim3 blocks;
     if (n > 256) {
+        dim3 threads;
+        set_block_and_threads_transpose(&blocks, &threads, n);
         cuda_fft_2d_helper(dir, dev_in, dev_out, 1, n);
         cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
         cudaDeviceSynchronize();
@@ -184,8 +184,19 @@ __host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
         cudaDeviceSynchronize();
     }
     else {
-        cuda_fft_2d_helper(dir, dev_in, dev_out, 1, n);
-        cuda_fft_2d_helper(dir, dev_out, dev_in, 0, n);
+        int threads;
+        const int steps_left = log2_32(n);
+        const float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
+        const float global_angle = dir * (M_2_PI / n);
+        set_block_and_threads2D(&blocks, &threads, n);
+        // Calculate complete sequence in one launch and syncronize on GPU
+        cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (*dev_in, *dev_out, global_angle, global_angle, steps_left, scalar, n);
+        cudaDeviceSynchronize();
+        // Calculate complete sequence in one launch and syncronize on GPU
+        cuda_kernel_local_col KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (*dev_in, *dev_out, global_angle, global_angle, steps_left, scalar, n);
+        cudaDeviceSynchronize();
+        //cuda_fft_2d_helper(dir, dev_in, dev_out, 1, n);
+        //cuda_fft_2d_helper(dir, dev_out, dev_in, 0, n);
     }
     swap_buffer(dev_in, dev_out);
 }
@@ -310,18 +321,15 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float loca
 __global__ void cuda_kernel_local_col(cpx *in, cpx *out, float angle, float local_angle, int steps_left, float scalar, int n)
 {
     extern __shared__ cpx shared[];
-    int in_high = n >> 1;
-    int colOffset = blockIdx.y * blockDim.x * 2;
-    in_high += threadIdx.x;
 
+    int in_high = (n >> 1) + threadIdx.x;
+    int colOffset = blockIdx.y * blockDim.x * 2;
     in += (threadIdx.x + colOffset) * n + blockIdx.x;
     out += blockIdx.x;
-
     shared[threadIdx.x] = *in;
-    shared[in_high] = *(in + (n >> 1) * n);
+    shared[in_high] = *(in + ((n >> 1) * n));
     SYNC_THREADS;
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
-
     int leading_bits = 32 - log2((int)gridDim.x);
     out[BIT_REVERSE(threadIdx.x + colOffset, leading_bits) * n] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + colOffset, leading_bits) * n] = { shared[in_high].x * scalar, shared[in_high].y *scalar };

@@ -22,13 +22,13 @@ cbuffer dx_cs_args
     int n_half;
 };
 
-StructuredBuffer<float> x;
-StructuredBuffer<float> y;
-RWStructuredBuffer<float> z;
+StructuredBuffer<cpx> dev_in;
+StructuredBuffer<cpx> dev_out;
 
 [numthreads(MAX_BLOCK_SIZE, 1, 1)]
 void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+    
     // Compute the index of the element to be processed by this thread.
     //int n = groupID.x * MAX_BLOCK_SIZE + threadIDInGroup.x;
 

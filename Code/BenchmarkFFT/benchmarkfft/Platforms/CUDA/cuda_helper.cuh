@@ -102,6 +102,5 @@ void cuda_setup_buffers_2d  (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size
 void cuda_shakedown_2d      (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len);
 int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
-void fft2DSurfSetup         (cpx **in, cpx **ref, size_t *size, int sinus, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj);
 
 #endif

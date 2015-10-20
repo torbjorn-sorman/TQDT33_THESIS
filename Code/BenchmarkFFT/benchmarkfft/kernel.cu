@@ -93,8 +93,15 @@ int main(int argc, const char* argv[])
                 for (Platform *platform : platforms) {
                     if (args.performance_metrics)
                         std::cout << platform->results.at(i);
-                    if (args.validate && ! platform->validate(power2(args.start + i)))
-                        std::cout << "!";
+                    if (!args.performance_metrics) {
+                        if (args.validate && !platform->validate(power2(args.start + i)))
+                            std::cout << "FAIL";
+                        else
+                            std::cout << "OK";
+                    } else {
+                        if (args.validate && ! platform->validate(power2(args.start + i)))
+                            std::cout << "!";
+                    }
                     std::cout << "\t";
                 }
                 std::cout << std::endl;

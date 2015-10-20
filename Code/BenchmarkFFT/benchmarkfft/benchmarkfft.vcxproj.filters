@@ -8,6 +8,9 @@
     <CudaCompile Include="Platforms\CUDA\cuda_helper.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
+    <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu">
+      <Filter>Platforms\CUDA</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Definitions.h" />
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="Platforms\OpenCL\ocl_fft.h">
       <Filter>Platforms\OpenCL</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh">
+      <Filter>Platforms\CUDA</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -141,10 +147,8 @@
     <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp">
       <Filter>Platforms\OpenCL</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Platforms\OpenCL\ocl_kernel.cl">
+    <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
       <Filter>Platforms\OpenCL</Filter>
-    </None>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -32,10 +32,10 @@ struct oclArgs {
 
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
-cl_int opencl_create_kernels(oclArgs *argCPU, oclArgs *argGPU, cpx *data_in, fftDir dir, const int n);
-cl_int oclCreateKernels2D(oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans, cpx *data_in, fftDir dir, const int n);
-cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU);
-cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *argCPU, oclArgs *argGPU, oclArgs *argGPUCol, oclArgs *argTrans);
+cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, fftDir dir, const int n);
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose, cpx *data_in, fftDir dir, const int n);
+cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
+cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
 void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 

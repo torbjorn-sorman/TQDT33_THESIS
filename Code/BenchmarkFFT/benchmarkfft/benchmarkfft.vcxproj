@@ -192,6 +192,7 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="Platforms\CUDA\cuda_fft.cu" />
+    <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu" />
     <CudaCompile Include="Platforms\CUDA\cuda_helper.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -203,6 +204,7 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClInclude Include="Common\parsearg.h" />
     <ClInclude Include="Definitions.h" />
     <ClInclude Include="Platforms\CUDA\cuda_fft.cuh" />
+    <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh" />
     <ClInclude Include="Platforms\CUDA\cuda_helper.cuh" />
     <ClInclude Include="Platforms\C\c_fft.h" />
     <ClInclude Include="Platforms\C\c_helper.h" />

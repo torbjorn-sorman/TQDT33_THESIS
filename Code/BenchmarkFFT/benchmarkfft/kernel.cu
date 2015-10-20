@@ -16,6 +16,7 @@
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"
 #include "Platforms\MyFFTW.h"
+#include "Platforms\MyDirectX.h"
 
 void printDevProp(cudaDeviceProp devProp);
 void toFile(std::string name, std::vector<double> results, int ms);
@@ -41,11 +42,22 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     return platforms;
 }
 
+int testground()
+{
+    dx_fft();
+    getchar();
+    return 0;
+}
+
 int main(int argc, const char* argv[])
 {
     benchmarkArgument args;
     if (!parseArguments(&args, argc, argv))
         return 0;
+    if (args.run_testground) {
+        std::cout << "Running Testground" << std::endl;
+        return testground();
+    }
     if (args.profiler) {
         if (args.test_platform) {
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);

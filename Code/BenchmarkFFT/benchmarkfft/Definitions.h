@@ -93,6 +93,7 @@ struct benchmarkArgument {
     bool write_file = false;
     bool validate = false;
     bool display = false;
+    bool run_testground = false;
 };
 
 #endif

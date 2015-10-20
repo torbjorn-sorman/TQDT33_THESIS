@@ -10,6 +10,12 @@ __global__ void cuda_kernel_local_col(cpx *in, cpx *out, float global_angle, flo
 __device__ volatile int sync_array_in[MAX_BLOCK_SIZE];
 __device__ volatile int sync_array_out[MAX_BLOCK_SIZE];
 
+// -------------------------------
+//
+// Testing
+//
+// -------------------------------
+
 __host__ int cuda_validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -89,6 +95,12 @@ __host__ double cuda_2d_performance(int n)
     cuda_shakedown_2d(&in, &ref, &dev_in, &dev_out);
     return average_best(measures, NUM_PERFORMANCE);
 }
+
+// -------------------------------
+//
+// Algorithm
+//
+// -------------------------------
 
 // Seven physical "cores" can run blocks in "parallel" (and most important: sync over blocks).
 // Essentially my algorithm handles (depending on scheduling and other factors) # blocks fewer than HW_LIMIT on the GPU, any # above is not trivially solved. cuFFT solves this.

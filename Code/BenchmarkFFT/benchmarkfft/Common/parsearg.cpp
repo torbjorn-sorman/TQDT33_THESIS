@@ -43,7 +43,7 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
                 if      (MATCHP("c"))           arg->platform_c = true;
                 else if (MATCHP("cuda"))        arg->platform_cuda = true;
                 else if (MATCHP("cufft"))       arg->platform_cufft = true;
-                else if (MATCHP("directx"))     arg->platform_directx = true;
+                else if (MATCHP("dx"))          arg->platform_directx = true;
                 else if (MATCHP("fftw"))        arg->platform_fftw = true;
                 else if (MATCHP("opencl"))      arg->platform_opencl = true;
                 else if (MATCHP("opengl"))      arg->platform_opengl = true;
@@ -69,6 +69,9 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
         }
         else if (MATCH("-cuprop")) {
             arg->show_cuprop = true;
+        }
+        else if (MATCH("-testground")) {
+            arg->run_testground = true;
         }
         else {
             printf("Unknown argument: %s\n", argv[i]);

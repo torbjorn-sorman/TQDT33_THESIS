@@ -80,6 +80,15 @@
     <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh">
       <Filter>Platforms\CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="Platforms\MyDirectX.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\DirectX\dx_fft.h">
+      <Filter>Platforms\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\DirectX\dx_helper.h">
+      <Filter>Platforms\DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -102,6 +111,9 @@
     </Filter>
     <Filter Include="Platforms\Header Files">
       <UniqueIdentifier>{776370d0-2cf5-4d6f-97b8-f90c2494b96f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platforms\DirectX">
+      <UniqueIdentifier>{6e320322-c21c-4559-a991-fc9566aaf759}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -150,5 +162,16 @@
     <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
       <Filter>Platforms\OpenCL</Filter>
     </ClCompile>
+    <ClCompile Include="Platforms\MyDirectX.cpp">
+      <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\DirectX\dx_fft.cpp">
+      <Filter>Platforms\DirectX</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Platforms\DirectX\dx_compute_shader.hlsl">
+      <Filter>Platforms\DirectX</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -208,9 +208,12 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\CUDA\cuda_helper.cuh" />
     <ClInclude Include="Platforms\C\c_fft.h" />
     <ClInclude Include="Platforms\C\c_helper.h" />
+    <ClInclude Include="Platforms\DirectX\dx_fft.h" />
+    <ClInclude Include="Platforms\DirectX\dx_helper.h" />
     <ClInclude Include="Platforms\MyC.h" />
     <ClInclude Include="Platforms\MyCUDA.h" />
     <ClInclude Include="Platforms\MyCuFFT.h" />
+    <ClInclude Include="Platforms\MyDirectX.h" />
     <ClInclude Include="Platforms\MyFFTW.h" />
     <ClInclude Include="Platforms\MyOpenCL.h" />
     <ClInclude Include="Platforms\MyOpenMP.h" />
@@ -225,9 +228,11 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClCompile Include="Common\mycomplex.cpp" />
     <ClCompile Include="Common\parsearg.cpp" />
     <ClCompile Include="Platforms\C\c_fft.cpp" />
+    <ClCompile Include="Platforms\DirectX\dx_fft.cpp" />
     <ClCompile Include="Platforms\MyC.cpp" />
     <ClCompile Include="Platforms\MyCUDA.cpp" />
     <ClCompile Include="Platforms\MyCuFFT.cpp" />
+    <ClCompile Include="Platforms\MyDirectX.cpp" />
     <ClCompile Include="Platforms\MyFFTW.cpp" />
     <ClCompile Include="Platforms\MyOpenCL.cpp" />
     <ClCompile Include="Platforms\MyOpenMP.cpp" />
@@ -244,6 +249,22 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Platforms\DirectX\dx_compute_shader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CSMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CSMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CSMain</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CSMain</EntryPointName>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

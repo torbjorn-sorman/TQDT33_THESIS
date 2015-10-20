@@ -19,22 +19,11 @@ bool opencl_validate(const int n)
         checkErr(opencl_fft(&arg_cpu, &arg_gpu), "Run failed");
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
-    /*
     double diff = diff_forward_sinus(data_out, n);
     if ((diff / (n >> 1)) > RELATIVE_ERROR_MARGIN) {
-
-    int len = n < 16 ? n : 16;
-
-    for (int i = 0; i < len; ++i)
-    printf("\n%f, %f", data_out[i].x, data_out[i].y);
-
-    for (int i = 0; i < len; ++i)
-    printf("\n%f, %f", data_out[i].x, data_out[i].y);
-
-    printf("(%f)", diff);
-    return false && freeResults(&data_in, &data_out, &data_ref, n);
+        printf("(%f)", diff);
+        return false && freeResults(&data_in, &data_out, &data_ref, n);
     }
-    */
     {
         oclArgs arg_gpu, arg_cpu;
         checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_out, FFT_INVERSE, n), "Create failed!");
@@ -42,7 +31,7 @@ bool opencl_validate(const int n)
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
 
-    return freeResults(&data_in, &data_out, &data_ref, n) == 0;
+    return freeResults(&data_out, &data_in, &data_ref, n) == 0;
 }
 
 double opencl_performance(const int n)
@@ -118,74 +107,40 @@ double opencl_2d_performance(const int n)
 //
 // ---------------------------------
 
-__inline cl_int opencl_fft_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *in, cl_mem *out, int number_of_blocks)
+__inline cl_int opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
 {
-    int steps_left = log2_32(arg_cpu->n);
+    const int n = arg_gpu->n;
+    const int n_half = (n >> 1);
+    int steps_left = log2_32(n);
+    const int leading_bits = 32 - steps_left;
     const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
-    float scalar = (arg_cpu->dir == FFT_FORWARD ? 1.f : 1.f / arg_cpu->n);
-
-    const int n_per_block = arg_cpu->n / number_of_blocks;
-    const float global_angle = arg_cpu->dir * (M_2_PI / arg_cpu->n);
-    const float local_angle = arg_cpu->dir * (M_2_PI / n_per_block);
-    int block_range = arg_cpu->n;
-    if (number_of_blocks > 1) {
+    const float scalar = (arg_gpu->dir == FFT_FORWARD ? 1.f : 1.f / n);
+    int number_of_blocks = (int)(arg_gpu->global_work_size[0] / arg_gpu->local_work_size[0]);
+    const int n_per_block = n / number_of_blocks;
+    const float global_angle = arg_gpu->dir * (M_2_PI / n);
+    const float local_angle = arg_gpu->dir * (M_2_PI / n_per_block);
+    int block_range_half = n_half;
+    if (number_of_blocks > HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         --steps_left;
         int steps = 0;
-        int dist = arg_gpu->n >> 1;
-        opencl_set_kernel_args_global(arg_cpu, *in, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+        int dist = n_half;
+        opencl_set_kernel_args_global(arg_cpu, arg_gpu->input, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
         checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
-            opencl_set_kernel_args_global(arg_cpu, *out, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+            opencl_set_kernel_args_global(arg_cpu, arg_gpu->output, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
         }
-        swap(in, out);
-        ++steps_left;
-        block_range = n_per_block;
-    }
-    // Calculate complete sequence in one launch and syncronize steps on GPU    
-    oclSetKernelGPU2DArg(arg_gpu, *in, *out, local_angle, steps_left, scalar, block_range);
-    return opencl_execute(arg_gpu);
-}
-
-__inline cl_int opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
-{
-    cl_mem in = arg_gpu->input;
-    cl_mem out = arg_gpu->output;
-    int n = arg_gpu->n;
-    int n_half = (n >> 1);
-    int steps_left = log2_32(n);
-    int leading_bits = 32 - steps_left;
-    int steps_gpu = log2_32(MAX_BLOCK_SIZE);
-    float scalar = (arg_gpu->dir == FFT_FORWARD ? 1.f : 1.f / n);
-    int number_of_blocks = (int)(arg_gpu->global_work_size[0] / arg_gpu->local_work_size[0]);
-    int n_per_block = n / number_of_blocks;
-    float global_angle = arg_gpu->dir * (M_2_PI / n);
-    float local_angle = arg_gpu->dir * (M_2_PI / n_per_block);
-    int block_range_half = n_half;
-    if (number_of_blocks >= HW_LIMIT) {
-        // Calculate sequence until parts fit into a block, syncronize on CPU until then.
-        --steps_left;
-        int steps = 0;
-        int dist = n_half;
-        opencl_set_kernel_args_global(arg_cpu, in, out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-        checkErr(opencl_execute(arg_cpu), "Failed Global in -> out");
-        // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
-        while (--steps_left > steps_gpu) {
-            dist >>= 1;
-            ++steps;
-            opencl_set_kernel_args_global(arg_cpu, out, out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-            checkErr(opencl_execute(arg_cpu), "Failed Global out -> out");
-        }
-        swap(&in, &out);
+        swap(&(arg_gpu->input), &(arg_gpu->output));
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
     }
-    opencl_set_kernel_args_local(arg_gpu, in, out, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);
+    // Calculate complete sequence in one launch and syncronize steps on GPU  
+    opencl_set_kernel_args_local(arg_gpu, arg_gpu->input, arg_gpu->output, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);
     return opencl_execute(arg_gpu);
 }
 
@@ -194,7 +149,6 @@ __inline cl_int opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem 
     int steps_left = log2_32(arg_cpu->n);
     const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
     float scalar = (arg_cpu->dir == FFT_FORWARD ? 1.f : 1.f / arg_cpu->n);
-
     const int n_per_block = arg_cpu->n / number_of_blocks;
     const float global_angle = arg_cpu->dir * (M_2_PI / arg_cpu->n);
     const float local_angle = arg_cpu->dir * (M_2_PI / n_per_block);
@@ -244,7 +198,7 @@ __inline cl_int opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu_row, oclArgs *a
         const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
         const float scalar = (arg_gpu_row->dir == FFT_FORWARD ? 1.f : 1.f / arg_gpu_row->n);
         const float global_angle = arg_gpu_row->dir * (M_2_PI / arg_gpu_row->n);
-          
+
         oclSetKernelGPU2DArg(arg_gpu_row, _in, _out, global_angle, steps_left, scalar, arg_gpu_row->n);
         checkErr(opencl_execute(arg_gpu_row), "Rows");
 

@@ -44,7 +44,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 
 int testground()
 {
-    dx_fft();
+    std::cout << "Return code: " << dx_fft(8) << std::endl;
+    std::cout << "Press the any key to continue...";
     getchar();
     return 0;
 }
@@ -124,6 +125,7 @@ int main(int argc, const char* argv[])
                 toFile(platform->name, platform->results, args.number_of_lengths);
         }
         std::cout << "  Test Platforms Complete" << std::endl;
+        std::cout << "Press the any key to continue...";
         getchar();
         platforms.clear();
     }

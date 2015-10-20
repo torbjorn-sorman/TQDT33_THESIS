@@ -34,10 +34,10 @@ __host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out,
         cudaMemcpy(in, *dev_out, size, cudaMemcpyDeviceToHost);
         if (norm) {
             write_image("CUDA", "frequency - not norm", in, n);
-            write_normalized_image("CUDA", "frequency", in, n, true);
+            write_normalized_image("CUDA", "freq", in, n, true);
         }
         else
-            write_image("CUDA", "spatial", in, n);
+            write_image("CUDA", "spat", in, n);
     }
 }
 
@@ -50,11 +50,11 @@ __host__ int cuda_2d_validate(int n)
     cudaMemcpy(dev_in, host_buffer, size, cudaMemcpyHostToDevice);
     cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
     cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
-    write_normalized_image("CUDA", "frequency", host_buffer, n, true);
+    write_normalized_image("CUDA", "freq", host_buffer, n, true);
 
     cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(host_buffer, dev_in, size, cudaMemcpyDeviceToHost);
-    write_image("CUDA", "spatial", host_buffer, n);
+    write_image("CUDA", "spat", host_buffer, n);
 
     int res = cuda_compare_result(host_buffer, ref, dev_in, size, n * n);
     cuda_shakedown_2d(&host_buffer, &ref, &dev_in, &dev_out);

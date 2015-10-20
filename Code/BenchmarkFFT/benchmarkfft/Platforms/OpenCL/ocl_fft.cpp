@@ -66,7 +66,7 @@ bool opencl_2d_validate(const int n)
         checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose, data, FFT_FORWARD, n), "Create failed!");
         checkErr(opencl_fft_2d(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Run failed!");
         checkErr(oclRelease2D(NULL, data, &arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Release failed!");
-        write_normalized_image("OpenCL", "frequency", data, n, true);
+        write_normalized_image("OpenCL", "freq", data, n, true);
         write_image("OpenCL", "frequency - not norm", data, n);
     }
     {
@@ -74,7 +74,7 @@ bool opencl_2d_validate(const int n)
         checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose, data, FFT_INVERSE, n), "Create failed!");
         checkErr(opencl_fft_2d(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Run failure!");
         checkErr(oclRelease2D(NULL, data, &arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Release failed!");
-        write_image("OpenCL", "spatial", data, n);
+        write_image("OpenCL", "spat", data, n);
     }
     return freeResults(&data, NULL, &data_ref, n) == 0;
 }

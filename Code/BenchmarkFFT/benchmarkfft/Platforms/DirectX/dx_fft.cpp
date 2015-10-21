@@ -80,86 +80,37 @@ __inline void dx_fft_2d(fftDir dir, cpx **in, cpx **out, const int n)
     return;
 }
 
-__inline size_t padded_size(size_t sz, size_t width)
+void dx_setup(dx_args *args)
 {
-    return sz + ((width - (sz % width)) % width);
-}
+    D3D_FEATURE_LEVEL featureLevel;
+    dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &args->device, &featureLevel, &args->context), "D3D11CreateDevice");
 
-__inline void dx_create_buffer(ID3D11Device* device, ID3D11Buffer** buffer, bool is_staging_buffer, const int n)
-{
-    D3D11_BUFFER_DESC buffer_description;
-    buffer_description.BindFlags = is_staging_buffer ? 0 : D3D11_BIND_UNORDERED_ACCESS;
-    buffer_description.Usage = is_staging_buffer ? D3D11_USAGE_STAGING : D3D11_USAGE_DEFAULT;
-    buffer_description.CPUAccessFlags = is_staging_buffer ? D3D11_CPU_ACCESS_WRITE : D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-    buffer_description.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    buffer_description.StructureByteStride = sizeof(cpx);
-    buffer_description.ByteWidth = padded_size(sizeof(cpx) * n, 16);
-    dx_check_error(device->CreateBuffer(&buffer_description, NULL, buffer), "CreateBuffer");
-}
+    // Input only buffer.
+    D3D11_BUFFER_DESC input_buffer_desc = get_input_buffer_description(args->dimension);
+    dx_check_error(args->device->CreateBuffer(&input_buffer_desc, NULL, &args->buffer_cpu_input), "Create CPU Buffer");
+    dx_check_error(args->device->CreateShaderResourceView(args->buffer_cpu_input, NULL, &args->buffer_cpu_input_srv), "Create CPU Buffer ShaderResourceView");
 
-__inline void dx_create_unordered_access_view(ID3D11Device* device, ID3D11Buffer* buffer, ID3D11UnorderedAccessView** buffer_uav, const int n)
-{
-    D3D11_UNORDERED_ACCESS_VIEW_DESC outputUAVDesc;
-    outputUAVDesc.Buffer.FirstElement = 0;
-    outputUAVDesc.Buffer.Flags = 0;
-    outputUAVDesc.Buffer.NumElements = n;
-    outputUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
-    outputUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    dx_check_error(device->CreateUnorderedAccessView(buffer, &outputUAVDesc, buffer_uav), "CreateUnorderedAccessView");
-}
+    // GPU read/write accessible buffers.
+    D3D11_BUFFER_DESC output_buffer_desc = get_output_buffer_description(args->dimension);
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_in), "Create GPU In Buffer ");
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_out), "Create GPU Out Buffer ");
 
-__inline void dx_create_parameter_buffer(ID3D11Device* device, ID3D11Buffer **arg_buffer)
-{
-    D3D11_BUFFER_DESC const_buffer_description;
-    const_buffer_description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    const_buffer_description.Usage = D3D11_USAGE_DYNAMIC;
-    const_buffer_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    const_buffer_description.MiscFlags = 0;
-    const_buffer_description.ByteWidth = padded_size(sizeof(dx_cs_args), 16);
-    dx_check_error(device->CreateBuffer(&const_buffer_description, NULL, arg_buffer), "CreateBuffer");
-}
+    // Create an unordered access view for the GPU buffers.  
+    D3D11_UNORDERED_ACCESS_VIEW_DESC output_uav_desc = get_unordered_access_view_description(args->dimension);
+    dx_check_error(args->device->CreateUnorderedAccessView(args->buffer_gpu_in, &output_uav_desc, &args->buffer_gpu_in_uav), "Create GPU In UnorderedAccessView");
+    dx_check_error(args->device->CreateUnorderedAccessView(args->buffer_gpu_out, &output_uav_desc, &args->buffer_gpu_out_uav), "Create GPU Out UnorderedAccessView");
 
-__inline void dx_write_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx* in, const int n)
-{
-    D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
-    cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
-    memcpy(data, in, padded_size(sizeof(cpx) * n, 16));
-    data = nullptr;
-    context->Unmap(buffer, 0);
-}
+    // Create a staging buffer, which will be used to copy back from the GPU out buffer.
+    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(args->dimension);
+    dx_check_error(args->device->CreateBuffer(&staging_buffer_desc, NULL, &args->buffer_staging), "Create Staging Buffer");
 
-__inline void dx_read_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx *out, const int n)
-{
-    D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    context->Map(buffer, 0, D3D11_MAP_READ, 0, &mapped_resource);
-    cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
-    memcpy(out, data, sizeof(cpx) * n);
-    data = nullptr;
-    context->Unmap(buffer, 0);
-}
-
-void dx_setup(dx_args *args, cpx *in, const int n)
-{
-    D3D_FEATURE_LEVEL feat_lvl;
-    dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &args->device, &feat_lvl, &args->context), "D3D11CreateDevice");
-
-    dx_create_buffer(args->device, &args->input_buffer, false, n);
-    dx_create_buffer(args->device, &args->output_buffer, false, n);
-    dx_create_buffer(args->device, &args->staging_buffer, true, n);
-
-    //dx_check_error(args->device->CreateShaderResourceView(args->input_buffer, NULL, &args->input_srv), "CreateShaderResourceView");
-    //dx_check_error(args->device->CreateShaderResourceView(args->output_buffer, NULL, &args->output_srv), "CreateShaderResourceView");
-
-    dx_create_unordered_access_view(args->device, args->input_buffer, &args->input_buffer_uav, n);
-    dx_create_unordered_access_view(args->device, args->output_buffer, &args->output_buffer_uav, n);
-
-    dx_create_parameter_buffer(args->device, &args->argument_buffer);
-    dx_write_buffer(args->context, args->input_buffer, in, n);
+    // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
+    D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
+    dx_check_error(args->device->CreateBuffer(&constant_buffer_desc, NULL, &args->buffer_constant), "Create Constant Buffer");
 
     // Compile the compute shader into a blob.
     ID3DBlob* errorBlob = nullptr;
-    dx_check_error(D3DCompileFromFile(L"Platforms/DirectX/dx_compute_shader.hlsl", NULL, NULL, "dx_fft", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &args->shader_blob, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(L"Platforms/DirectX/dx_compute_shader.hlsl", NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->shader_blob, &errorBlob), "D3DCompileFromFile", errorBlob);
 
     // Create a shader object from the compiled blob.
     dx_check_error(args->device->CreateComputeShader(args->shader_blob->GetBufferPointer(), args->shader_blob->GetBufferSize(), NULL, &args->compute_shader), "CreateComputeShader");
@@ -167,41 +118,79 @@ void dx_setup(dx_args *args, cpx *in, const int n)
     // Make the shader active.
     args->context->CSSetShader(args->compute_shader, NULL, 0);
 
-    // Attach the buffers to the output via its unordered access view.    
-    args->context->CSSetUnorderedAccessViews(1, 1, &args->input_buffer_uav, &args->init_counts);
-    args->context->CSSetUnorderedAccessViews(0, 1, &args->output_buffer_uav, &args->init_counts);
+    // Attach the out buffer to the output via its unordered access view.
+    args->context->CSSetUnorderedAccessViews(0, 1, &args->buffer_gpu_in_uav, &args->init_counts);
+    args->context->CSSetUnorderedAccessViews(1, 1, &args->buffer_gpu_out_uav, &args->init_counts);
+
+    // Attach the input buffers via their shader resource views.
+    args->context->CSSetShaderResources(0, 1, &args->buffer_cpu_input_srv);
 
     // Attach the constant buffer
-    args->context->CSSetConstantBuffers(0, 1, &args->argument_buffer);
+    args->context->CSSetConstantBuffers(0, 1, &args->buffer_constant);
 }
 
-__inline void dx_map_parameters(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, dx_cs_args *params)
-{
-    D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    context->Map(arg_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
-    dx_cs_args* constants = reinterpret_cast<dx_cs_args *>(mapped_resource.pData);
-    constants[0] = *params;
-    constants = nullptr;
-    context->Unmap(arg_buffer, 0);
-}
 
 bool dx_fft(const int n)
 {
-    int size = (int)padded_size(n, 4);
-    cpx *in = get_seq(size, 1);
-    cpx *out = get_seq(size);
-    cpx *ref = get_seq(size, in);
     dx_args args;
-    args.number_of_groups = (UINT)(n > MAX_BLOCK_SIZE ? n / MAX_BLOCK_SIZE : 1);
-    dx_setup(&args, in, n);
+    dx_cs_args params;
+    params.n_half = n / 2;
+    cpx *in = get_seq(n, 1);
+    cpx *out = get_seq(n);
+    cpx *ref = get_seq(n, in);
 
-    // Run (?)
+    args.number_of_groups = n > MAX_BLOCK_SIZE ? n / MAX_BLOCK_SIZE : 1;
+    args.dimension = args.number_of_groups * args.group_size;
+
+    
+
+    //
+    // Setup done(?)
+    //
+
+    // Write data to the input buffer.
+    dx_write_buffer(args.context, args.buffer_cpu_input, in, n);
+
+    // Map the constant arguments.
+    dx_map_parameters(args.context, args.buffer_constant, &params);
+
+    // Execute the shader, in 'numGroups' groups of 'groupSize' threads each.
     args.context->Dispatch(args.number_of_groups, 1, 1);
-    args.context->CopyResource(args.staging_buffer, args.output_buffer);
-    // Done (?)
 
-    dx_read_buffer(args.context, args.staging_buffer, out, n);
-    bool result = diff_seq(in, ref, n) > RELATIVE_ERROR_MARGIN;
+    // Copy the out buffer to the staging buffer so that we can 
+    // retrieve the data for accesss by the CPU.
+    args.context->CopyResource(args.buffer_staging, args.buffer_gpu_in);
+
+    dx_read_buffer(args.context, args.buffer_staging, out, n);
+
+    // Now compare the GPU results against expected values.
+    bool resultOK = true;
+    for (size_t i = 0; i < n; ++i)
+    {
+        // NOTE: This comparison assumes the GPU produces *exactly* the 
+        // same result as the CPU.  In general, this will not be the case
+        // with floating-point calculations.
+        cpx expected;
+        expected.x = params.n_half * in[i].x;
+        expected.y = params.n_half * in[i].y;
+        if (out[i].x != expected.x || out[i].y != expected.y)
+        {
+            printf("Unexpected result at position %lu\n", i);
+            resultOK = false;
+        }
+    }
+
+    if (!resultOK)
+    {
+        printf("GPU results differed from the CPU results.\n");
+        OutputDebugStringA("GPU results differed from the CPU results.\n");
+        return 1;
+    }
+
+    printf("GPU output matched the CPU results.\n");
+    OutputDebugStringA("GPU output matched the CPU results.\n");
+
     dx_shakedown(&args);
-    return result;
+
+    return 0;
 }

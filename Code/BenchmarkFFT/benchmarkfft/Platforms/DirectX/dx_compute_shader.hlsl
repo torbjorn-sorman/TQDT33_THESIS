@@ -5,36 +5,39 @@ struct cpx
     float y;
 };
 
-// MAX_BLOCK_SIZE specifies the number of threads in a group; this
+// GROUP_SIZE_X specifies the number of threads in a group; this
 // must be the same number as the constant value groupSize defined
 // in the CPU code.
-#define MAX_BLOCK_SIZE 1024
+#define GROUP_SIZE_X 1024
 
-cbuffer dx_cs_args
+cbuffer Constants
 {
-    float angle;
-    float local_angle;
-    int steps_left;
-    int leading_bits;
-    int steps_gpu;
-    float scalar;
-    int number_of_blocks;
-    int n_half;
+    float   angle;
+    float   local_angle;
+    float   scalar;
+    int     steps_left;
+    int     leading_bits;
+    int     steps_gpu;
+    int     number_of_blocks;
+    int     n_half;
 };
 
-StructuredBuffer<cpx> dev_in;
-StructuredBuffer<cpx> dev_out;
+StructuredBuffer<cpx> x;
+RWStructuredBuffer<cpx> z;
 
-[numthreads(MAX_BLOCK_SIZE, 1, 1)]
-void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 dispatchThreadID : SV_DispatchThreadID)
+[numthreads(GROUP_SIZE_X, 1, 1)]
+void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID,
+    uint3 groupID : SV_GroupID,
+    uint groupIndex : SV_GroupIndex,
+    uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    
     // Compute the index of the element to be processed by this thread.
-    //int n = groupID.x * MAX_BLOCK_SIZE + threadIDInGroup.x;
+    int n = groupID.x*GROUP_SIZE_X + threadIDInGroup.x;
 
     // Compute the output value z from input buffers x, y and the constant
     // value a (which is defined up above in the "Constants" buffer).
-    //z[n] = a * x[n] + y[n];
+    z[n].x = n_half * x[n].x;
+    z[n].y = n_half * x[n].y;
 }
 
 /*

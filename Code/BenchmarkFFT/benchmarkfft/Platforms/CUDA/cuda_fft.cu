@@ -22,6 +22,14 @@ __host__ int cuda_validate(int n)
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
+    /*
+    cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+    // Validate result
+    printf("CUDA\tExpected\t\tActual\n");
+    for (int i = 0; i < n; ++i) {
+        printf("\t%.3f\t%.3f\t\t%.3f\t%.3f\n", ref[i].x, ref[i].y, out[i].x, out[i].y);
+    }
+    */
     cuda_fft(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
     return cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1;
@@ -286,11 +294,11 @@ __global__ void cuda_kernel_global_col(cpx *in, cpx *out, float angle, unsigned 
 }
 
 // Full blown block syncronized algorithm! In theory this should scalar up but is limited by hardware (#cores)
-__global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int n_half)
+__global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)
 {
     extern __shared__ cpx shared[];
     int bit = steps_left;
-    int in_high = n_half;
+    int in_high = block_range_half;
     if (number_of_blocks > 1) {
         bit = cuda_algorithm_global_sync(in, out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
         in_high >>= log2(number_of_blocks);
@@ -304,8 +312,6 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_an
     shared[in_high] = in[in_high];
     SYNC_THREADS;
     cuda_algorithm_local(shared, in_high, local_angle, bit);
-
-
     out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }

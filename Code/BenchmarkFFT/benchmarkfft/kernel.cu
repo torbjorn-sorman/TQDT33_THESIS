@@ -44,10 +44,10 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 
 int testground()
 {
-    std::cout << "Return code: " << dx_fft(8) << std::endl;
+    std::cout << "Return code: " << dx_fft(32) << std::endl;
     std::cout << "Press the any key to continue...";
     getchar();
-    return 0;
+    exit(0);
 }
 
 int main(int argc, const char* argv[])
@@ -57,7 +57,7 @@ int main(int argc, const char* argv[])
         return 0;
     if (args.run_testground) {
         std::cout << "Running Testground" << std::endl;
-        return testground();
+        testground();
     }
     if (args.profiler) {
         if (args.test_platform) {

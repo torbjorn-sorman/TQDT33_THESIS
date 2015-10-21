@@ -35,6 +35,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
         platforms.insert(platforms.begin(), new MyCUDA(args->dimensions, args->number_of_lengths));
     if (args->platform_opencl)
         platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
+    if (args->platform_directx)
+        platforms.insert(platforms.begin(), new MyDirectX(args->dimensions, args->number_of_lengths));
     if (args->platform_openmp)
         platforms.insert(platforms.begin(), new MyOpenMP(args->dimensions, args->number_of_lengths));
     if (args->platform_c)

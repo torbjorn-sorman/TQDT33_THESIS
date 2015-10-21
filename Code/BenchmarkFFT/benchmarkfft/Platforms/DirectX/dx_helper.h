@@ -40,6 +40,18 @@ struct dx_cs_args
     int     block_range_half;
 };
 
+static __inline void swap(ID3D11UnorderedAccessView **a, ID3D11UnorderedAccessView **b)
+{
+    ID3D11UnorderedAccessView *c = *a;
+    *a = *b;
+    *b = c;
+}
+
+static __inline void swap_device_buffers(dx_args *a)
+{
+    swap(&a->buffer_gpu_in_uav, &a->buffer_gpu_out_uav);
+}
+
 static __inline size_t padded_size(size_t sz, size_t width)
 {
     return sz + ((width - (sz % width)) % width);
@@ -200,17 +212,7 @@ static __inline void dx_setup(dx_args *args, LPCWSTR shader_file, const int n)
     
     // Create a shader object from the compiled blob.
     dx_check_error(args->device->CreateComputeShader(args->shader_blob->GetBufferPointer(), args->shader_blob->GetBufferSize(), NULL, &args->compute_shader_fft_local), "CreateComputeShader");
-    /*
-    // Compile the compute shader into a blob.
-    dx_check_error(D3DCompileFromFile(shader_file, NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->shader_blob, &errorBlob), "D3DCompileFromFile", errorBlob);
-
-    // Create a shader object from the compiled blob.
-    dx_check_error(args->device->CreateComputeShader(args->shader_blob->GetBufferPointer(), args->shader_blob->GetBufferSize(), NULL, &args->compute_shader_fft_local_inverse), "CreateComputeShader");
-    */
-    // Attach the out buffer to the output via its unordered access view.
-    args->context->CSSetUnorderedAccessViews(0, 1, &args->buffer_gpu_in_uav, &args->init_counts);
-    args->context->CSSetUnorderedAccessViews(1, 1, &args->buffer_gpu_out_uav, &args->init_counts);
-
+    
     // Attach the input buffers via their shader resource views.
     args->context->CSSetShaderResources(0, 1, &args->buffer_cpu_input_srv);
 
@@ -253,7 +255,8 @@ static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
     std::regex e("(#define\\s*GROUP_SIZE_X)\\s*\\d*$");
     std::ofstream out_file(shader_file);
     std::stringstream fmt;
-    fmt << "$1 " << std::to_string(n >> 1);
+    int number_of_threads = (n >> 1) > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (n >> 1);
+    fmt << "$1 " << std::to_string(number_of_threads);
     out_file << std::regex_replace(buffer.str(), e, fmt.str());
     out_file.close();
 }

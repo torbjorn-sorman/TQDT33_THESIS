@@ -22,17 +22,11 @@ __host__ int cuda_validate(int n)
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
-    /*
     cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    // Validate result
-    printf("CUDA\tExpected\t\tActual\n");
-    for (int i = 0; i < n; ++i) {
-        printf("\t%.3f\t%.3f\t\t%.3f\t%.3f\n", ref[i].x, ref[i].y, out[i].x, out[i].y);
-    }
-    */
+    double diff = diff_forward_sinus(out, n);
     cuda_fft(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    return cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1;
+    return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
 __host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, size_t size, bool write, bool norm, int n)
@@ -320,7 +314,6 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float loca
 {
     extern __shared__ cpx shared[];
     int leading_bits = (32 - log2((int)gridDim.x));
-
     int in_high = (n_per_block >> 1) + threadIdx.x;
     int rowStart = gridDim.x * blockIdx.x;
     int rowOffset = blockIdx.y * blockDim.x * 2;
@@ -329,8 +322,6 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float loca
     shared[threadIdx.x] = in[threadIdx.x];
     shared[in_high] = in[in_high];
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
-
-
     out[BIT_REVERSE(threadIdx.x + rowOffset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + rowOffset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }

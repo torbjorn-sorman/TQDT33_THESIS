@@ -38,7 +38,7 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int leading_bits, int n)
 //
 // Test related defines
 //
-#define NUM_PERFORMANCE 8
+#define NUM_PERFORMANCE 16
 #define HIGHEST_EXP 27
 #define HIGHEST_EXP_2D 14
 
@@ -85,6 +85,7 @@ struct benchmarkArgument {
     bool platform_opencl = false;
     bool platform_opengl = false;
     bool platform_directx = false;
+    bool platform_id3dx11 = false;
     bool platform_c = false;
     bool platform_openmp = false;
     bool platform_fftw = false;

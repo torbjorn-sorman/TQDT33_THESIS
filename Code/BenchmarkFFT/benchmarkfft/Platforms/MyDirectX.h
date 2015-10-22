@@ -7,6 +7,8 @@
 
 class MyDirectX : public Platform
 {
+private:
+    double performanceTime;
 public:
     MyDirectX::MyDirectX(const int dim, const int runs);
     ~MyDirectX();

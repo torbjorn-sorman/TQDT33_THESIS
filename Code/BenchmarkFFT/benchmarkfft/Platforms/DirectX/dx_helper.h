@@ -8,6 +8,14 @@
 #include <fstream>
 #include <regex>
 #include "../../Definitions.h"
+#include <d3d11.h>
+#include <d3dcompiler.h>
+#include "../../Common/mymath.h"
+
+#include <comdef.h>
+#include <comip.h>
+
+_COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 
 struct dx_args
 {
@@ -40,6 +48,60 @@ struct dx_cs_args
     int     block_range_half;
 };
 
+struct profiler_data
+{
+    ID3D11QueryPtr disjoint_query;
+    ID3D11QueryPtr q_start;
+    ID3D11QueryPtr q_end;
+};
+
+static __inline void dx_start_profiling(dx_args *args, profiler_data *p_data)
+{
+    if (p_data->disjoint_query == NULL)
+    {
+        D3D11_QUERY_DESC desc;
+        desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+        desc.MiscFlags = 0;
+        args->device->CreateQuery(&desc, &p_data->disjoint_query);
+        desc.Query = D3D11_QUERY_TIMESTAMP;
+        args->device->CreateQuery(&desc, &p_data->q_start);
+        args->device->CreateQuery(&desc, &p_data->q_end);
+    }
+    args->context->Begin(p_data->disjoint_query);
+    args->context->End(p_data->q_start);
+}
+
+static __inline void dx_end_profiling(dx_args *args, profiler_data *p_data)
+{
+    args->context->End(p_data->q_end);
+    args->context->End(p_data->disjoint_query);
+}
+
+static __inline double dx_avg(profiler_data profiler[], dx_args *args)
+{
+    double m[NUM_PERFORMANCE];
+    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+        profiler_data p = profiler[i];
+        UINT64 ts_start, ts_end;
+        D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
+        while (S_OK != args->context->GetData(p.q_start, &ts_start, sizeof(UINT64), 0)){};
+        while (S_OK != args->context->GetData(p.q_end, &ts_end, sizeof(UINT64), 0)){};
+        while (S_OK != args->context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+        m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
+    }
+    return average_best(m, NUM_PERFORMANCE);
+}
+
+static __inline double dx_time_elapsed(profiler_data *p, dx_args *args)
+{
+    UINT64 ts_start, ts_end;
+    D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
+    while (S_OK != args->context->GetData(p->q_start, &ts_start, sizeof(UINT64), 0)){};
+    while (S_OK != args->context->GetData(p->q_end, &ts_end, sizeof(UINT64), 0)){};
+    while (S_OK != args->context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+    return (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
+}
+
 static __inline void swap(ID3D11UnorderedAccessView **a, ID3D11UnorderedAccessView **b)
 {
     ID3D11UnorderedAccessView *c = *a;
@@ -71,7 +133,7 @@ static __inline void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_bl
             printf("%s\n", message);
             error_blob->Release();
         }
-        printf("%s failed with return code %x\n", method, hr);        
+        printf("%s failed with return code %x\n", method, hr);
         printf("Press the any key to continue...");
         getchar();
         exit(-1);
@@ -209,10 +271,10 @@ static __inline void dx_setup(dx_args *args, LPCWSTR shader_file, const int n)
 
     // Compile the compute shader into a blob.
     dx_check_error(D3DCompileFromFile(shader_file, NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->shader_blob, &errorBlob), "D3DCompileFromFile", errorBlob);
-    
+
     // Create a shader object from the compiled blob.
     dx_check_error(args->device->CreateComputeShader(args->shader_blob->GetBufferPointer(), args->shader_blob->GetBufferSize(), NULL, &args->compute_shader_fft_local), "CreateComputeShader");
-    
+
     // Attach the input buffers via their shader resource views.
     args->context->CSSetShaderResources(0, 1, &args->buffer_cpu_input_srv);
 
@@ -250,14 +312,30 @@ static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
     std::ifstream in_file(shader_file);
     std::stringstream buffer;
     buffer << in_file.rdbuf();
+    std::string new_content = buffer.str();
     in_file.close();
 
-    std::regex e("(#define\\s*GROUP_SIZE_X)\\s*\\d*$");
+    std::regex e_grp_sz("(#define\\s*GROUP_SIZE_X)\\s*\\d*$");
+    std::regex e_num_blk("(#define\\s*NUMBER_OF_BLOCKS)\\s*\\d*$");
+
     std::ofstream out_file(shader_file);
-    std::stringstream fmt;
-    int number_of_threads = (n >> 1) > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (n >> 1);
-    fmt << "$1 " << std::to_string(number_of_threads);
-    out_file << std::regex_replace(buffer.str(), e, fmt.str());
+    std::stringstream fmt1, fmt2;
+    const int n2 = n >> 1;
+    if (n2 > MAX_BLOCK_SIZE) {
+        fmt1 << "$1 " << std::to_string(MAX_BLOCK_SIZE);
+        if ((n2 / MAX_BLOCK_SIZE) > HW_LIMIT)
+            fmt2 << "$1 " << std::to_string(1);
+        else
+            fmt2 << "$1 " << std::to_string((n2 / MAX_BLOCK_SIZE));
+    }
+    else {
+        fmt1 << "$1 " << std::to_string(n2);
+        fmt2 << "$1 " << std::to_string(1);
+    }
+    new_content = std::regex_replace(new_content, e_grp_sz, fmt1.str());
+    new_content = std::regex_replace(new_content, e_num_blk, fmt2.str());
+
+    out_file << new_content;
     out_file.close();
 }
 

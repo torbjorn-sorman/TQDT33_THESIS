@@ -126,13 +126,13 @@ __inline cl_int opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
         int steps = 0;
         int dist = n_half;
         opencl_set_kernel_args_global(arg_cpu, arg_gpu->input, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-        checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
+        opencl_execute(arg_cpu);
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
             opencl_set_kernel_args_global(arg_cpu, arg_gpu->output, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-            checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
+            opencl_execute(arg_cpu);
         }
         swap(&(arg_gpu->input), &(arg_gpu->output));
         ++steps_left;
@@ -159,13 +159,13 @@ __inline cl_int opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem 
         int steps = 0;
         int dist = arg_gpu->n >> 1;
         opencl_set_kernel_args_global(arg_cpu, *in, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-        checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
+        opencl_execute(arg_cpu);
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
             opencl_set_kernel_args_global(arg_cpu, *out, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-            checkErr(opencl_execute(arg_cpu), "CPU Sync Kernel");
+            opencl_execute(arg_cpu);
         }
         swap(in, out);
         ++steps_left;

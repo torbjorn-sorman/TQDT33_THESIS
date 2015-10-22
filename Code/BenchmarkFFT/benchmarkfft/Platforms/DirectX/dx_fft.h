@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -20,8 +21,6 @@
 #include "../../Common/mytimer.h"
 #include "../../Common/imglib.h"
 #include "dx_helper.h"
-
-bool dx_fft(const int n);
 
 int dx_validate(const int n);
 int dx_2d_validate(const int n);

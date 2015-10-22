@@ -2,9 +2,9 @@
 #define MYMATH_H
 
 static int tab32[32] = {
-    0, 9, 1, 10, 13, 21, 2, 29, 
+    0, 9, 1, 10, 13, 21, 2, 29,
     11, 14, 16, 18, 22, 25, 3, 30,
-    8, 12, 20, 28, 15, 17, 24, 7, 
+    8, 12, 20, 28, 15, 17, 24, 7,
     19, 27, 23, 6, 26, 5, 4, 31
 };
 
@@ -32,10 +32,10 @@ static __inline int cmp(const void *in_l, const void *in_h)
 static __inline double average_best(double m[], int n)
 {
     double sum = 0.0;
-    int samples = 3;
-    int end = ((n < samples) ? ((n / 2) < 1 ? 1 : (n / 2)) : samples);
-    qsort(m, n, sizeof(double), cmp);    
-    for (int i = 0; i < end; ++i)
+    int samples = 4;
+    int end = ((n < samples) ? ((n / 2) < 1 ? 1 : (n / 2)) : samples) + 1;
+    qsort(m, n, sizeof(double), cmp);
+    for (int i = 1; i < end; ++i)
         sum += m[i];
     return (sum / (double)end);
 }

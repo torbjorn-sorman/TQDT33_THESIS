@@ -17,6 +17,7 @@
 #include "Platforms\MyC.h"
 #include "Platforms\MyFFTW.h"
 #include "Platforms\MyDirectX.h"
+#include "Platforms\MyID3DX11FFT.h"
 
 void printDevProp(cudaDeviceProp devProp);
 void toFile(std::string name, std::vector<double> results, int ms);
@@ -37,6 +38,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
         platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
     if (args->platform_directx)
         platforms.insert(platforms.begin(), new MyDirectX(args->dimensions, args->number_of_lengths));
+    if (args->platform_id3dx11)
+        platforms.insert(platforms.begin(), new MyID3DX11FFT(args->dimensions, args->number_of_lengths));
     if (args->platform_openmp)
         platforms.insert(platforms.begin(), new MyOpenMP(args->dimensions, args->number_of_lengths));
     if (args->platform_c)
@@ -46,10 +49,7 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 
 int testground()
 {
-    std::cout << "Return code: " << dx_fft(32) << std::endl;
-    std::cout << "Press the any key to continue...";
-    getchar();
-    exit(0);
+    return 0;
 }
 
 int main(int argc, const char* argv[])
@@ -86,9 +86,9 @@ int main(int argc, const char* argv[])
         if (args.performance_metrics) {
             cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-            std::cout << "  Running Platform Performance Test (might take a while)";        
+            std::cout << "  Running Platform Performance Test (might take a while)";
             for (int i = args.start; i < args.end; ++i) {
-                int n = power2(i);            
+                int n = power2(i);
                 for (Platform *platform : platforms)
                     platform->runPerformance(n);
                 std::cout << '.';
@@ -113,8 +113,9 @@ int main(int argc, const char* argv[])
                             std::cout << "FAIL";
                         else
                             std::cout << "OK";
-                    } else {
-                        if (args.validate && ! platform->validate(power2(args.start + i)))
+                    }
+                    else {
+                        if (args.validate && !platform->validate(power2(args.start + i)))
                             std::cout << "!";
                     }
                     std::cout << "\t";

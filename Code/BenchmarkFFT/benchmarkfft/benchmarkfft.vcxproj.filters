@@ -89,6 +89,9 @@
     <ClInclude Include="Platforms\DirectX\dx_helper.h">
       <Filter>Platforms\DirectX</Filter>
     </ClInclude>
+    <ClInclude Include="Platforms\MyID3DX11FFT.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -167,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="Platforms\DirectX\dx_fft.cpp">
       <Filter>Platforms\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyID3DX11FFT.cpp">
+      <Filter>Platforms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

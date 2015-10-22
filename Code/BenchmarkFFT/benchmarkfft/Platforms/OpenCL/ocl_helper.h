@@ -40,7 +40,7 @@ int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
 void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 
 static cl_int __inline opencl_execute(oclArgs *args)
-{    
+{
     cl_int err = clEnqueueNDRangeKernel(args->commands, args->kernel, args->workDim, NULL, args->global_work_size, args->local_work_size, 0, NULL, NULL);
     if (err) return err;
     return clFinish(args->commands);

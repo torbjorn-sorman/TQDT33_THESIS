@@ -95,7 +95,7 @@ double diff_seq(cpx *seq, cpx *ref, float scalar, const int n)
     cpx rScale = make_cuFloatComplex(scalar, 0);
     for (int i = 0; i < n; ++i) {
         cpx norm = cuCmulf(seq[i], rScale);
-        if (invalidCpx(norm))        
+        if (invalidCpx(norm))
             return 1.0;
         mVal = maxf(mVal, maxf(cuCabsf(norm), cuCabsf(ref[i])));
         double tmp = cuCabsf(cuCsubf(norm, ref[i]));
@@ -122,6 +122,7 @@ double diff_forward_sinus(cpx *seq, const int n)
     if (n < 8) {
         return 0.0;
     }
+    const int n2 = (n >> 1);
     cpx *neg = seq + 1;
     cpx *pos = seq + n - 1;
     double diff = cuCabsf(seq[0]);
@@ -130,7 +131,7 @@ double diff_forward_sinus(cpx *seq, const int n)
     for (int i = 2; i < n - 3; ++i) {
         diff = maxf(diff, cuCabsf(seq[i]));
     }
-    diff = maxf(diff, abs(abs(neg->y) - (n / 2)));
-    diff = maxf(diff, abs(abs(pos->y) - (n / 2)));
-    return diff;
+    diff = maxf(diff, abs(abs(neg->y) - n2));
+    diff = maxf(diff, abs(abs(pos->y) - n2));
+    return diff / n2;
 }

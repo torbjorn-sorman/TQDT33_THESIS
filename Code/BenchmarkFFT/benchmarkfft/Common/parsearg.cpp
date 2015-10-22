@@ -44,6 +44,7 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
                 else if (MATCHP("cuda"))        arg->platform_cuda = true;
                 else if (MATCHP("cufft"))       arg->platform_cufft = true;
                 else if (MATCHP("dx"))          arg->platform_directx = true;
+                else if (MATCHP("id3dx11"))     arg->platform_id3dx11 = true;
                 else if (MATCHP("fftw"))        arg->platform_fftw = true;
                 else if (MATCHP("opencl"))      arg->platform_opencl = true;
                 else if (MATCHP("opengl"))      arg->platform_opengl = true;

@@ -1,6 +1,10 @@
 #define GROUP_SIZE_X 1024
 #define NUMBER_OF_BLOCKS 1
 
+//#define BARRIER AllMemoryBarrierWithGroupSync()
+//#define BARRIER DeviceMemoryBarrierWithGroupSync()
+#define BARRIER GroupMemoryBarrierWithGroupSync()
+
 struct cpx
 {
     float x;
@@ -17,7 +21,7 @@ cbuffer Constants
     int     steps_gpu;
     int     number_of_blocks;
     int     block_range_half;
-    int     load_input;
+    bool    load_input;
 };
 
 static int sync_in[GROUP_SIZE_X];
@@ -27,24 +31,6 @@ StructuredBuffer<cpx> input;
 RWStructuredBuffer<cpx> rwbuf_in;
 RWStructuredBuffer<cpx> rwbuf_out;
 groupshared cpx shared_buf[GROUP_SIZE_X << 1];
-
-int tab32[32] =
-{
-    0, 9, 1, 10, 13, 21, 2, 29,
-    11, 14, 16, 18, 22, 25, 3, 30,
-    8, 12, 20, 28, 15, 17, 24, 7,
-    19, 27, 23, 6, 26, 5, 4, 31
-};
-
-int log2(in int value)
-{
-    value |= value >> 1;
-    value |= value >> 2;
-    value |= value >> 4;
-    value |= value >> 8;
-    value |= value >> 16;
-    return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
-}
 
 void dx_group_sync(in int tid, in int gid, uniform int goal)
 {
@@ -58,7 +44,7 @@ void dx_group_sync(in int tid, in int gid, uniform int goal)
         {
             while (sync_in[tid] != goal){}
         }
-        AllMemoryBarrierWithGroupSync();
+        BARRIER;
         if (tid < number_of_blocks)
         {
             sync_out[tid] = goal;
@@ -68,7 +54,7 @@ void dx_group_sync(in int tid, in int gid, uniform int goal)
     {
         while (sync_out[gid] != goal) {}
     }
-    AllMemoryBarrierWithGroupSync();
+    BARRIER;
 }
 
 void dx_algorithm_global_sync(in int tid, in int thread_id, in int group_id, in int bit_start, in int steps_gpu, uniform float angle, uniform int n_half, out int bit_out)
@@ -124,14 +110,14 @@ void dx_algorithm_local(in int in_low, in int in_high, uniform int bit)
         sincos(local_angle * (in_low & (0xFFFFFFFF << steps)), w.y, w.x);
         in_lower = shared_buf[in_low];
         in_upper = shared_buf[in_high];
-        AllMemoryBarrierWithGroupSync();
+        BARRIER;
         x = in_lower.x - in_upper.x;
         y = in_lower.y - in_upper.y;
         shared_buf[out_i].x = in_lower.x + in_upper.x;
         shared_buf[out_i].y = in_lower.y + in_upper.y;
         shared_buf[out_ii].x = (w.x * x) - (w.y * y);
         shared_buf[out_ii].y = (w.y * x) + (w.x * y);
-        AllMemoryBarrierWithGroupSync();
+        BARRIER;
     }
 }
 
@@ -143,15 +129,17 @@ void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID
     int in_high = block_range_half;
     uint tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
     int offset = (groupID.x * GROUP_SIZE_X) << 1;
-    if (load_input != 0) {
+    
+    if (load_input) {
         rwbuf_in[tid] = input[tid];
-        rwbuf_in[block_range_half + tid] = input[block_range_half + tid];
-        AllMemoryBarrierWithGroupSync();
+        rwbuf_in[block_range_half + tid] = input[block_range_half + tid];        
+        BARRIER;
     }
+    
     if (NUMBER_OF_BLOCKS > 1)
     {
         dx_algorithm_global_sync(tid, threadIDInGroup.x, groupID.x, steps_left - 1, steps_gpu, angle, in_high, bit);
-        in_high = (in_high >> log2(number_of_blocks)) + in_low;
+        in_high = (in_high >> (firstbitlow(number_of_blocks) - 1)) + in_low;
         shared_buf[in_low] = rwbuf_out[in_low + offset];
         shared_buf[in_high] = rwbuf_out[in_high + offset];
     }
@@ -162,7 +150,7 @@ void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID
         shared_buf[in_high] = rwbuf_in[in_high + offset];
     }
 
-    AllMemoryBarrierWithGroupSync();
+    
     dx_algorithm_local(in_low, in_high, bit);
     cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
     cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };

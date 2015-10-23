@@ -87,7 +87,7 @@ int main(int argc, const char* argv[])
             cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::cout << "  Running Platform Performance Test (might take a while)";
-            for (int i = args.start; i < args.end; ++i) {
+            for (int i = args.start; i <= args.end; ++i) {
                 int n = power2(i);
                 for (Platform *platform : platforms)
                     platform->runPerformance(n);

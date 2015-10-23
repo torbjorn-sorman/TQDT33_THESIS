@@ -4,18 +4,12 @@
 #include "cuComplex.h"
 
 //
-// Typedefs to improve code readability and better semantics
+// Typedefs to improve code readability and semantics
 //
 
 typedef cuFloatComplex cpx;
-
 typedef float transform_direction;
-/*
-typedef void(*fftFunction)(transform_direction direction, cpx **in, cpx **out, int n);
-typedef void(*transposeFunction)(cpx **seq, int, int n);
-typedef void(*twiddleFunction)(cpx *W, int, int n);
-typedef void(*bitReverseFunction)(cpx *seq, double dir, int leading_bits, int n);
-*/
+
 //
 // Math & Algorithm defines
 //
@@ -28,17 +22,19 @@ typedef void(*bitReverseFunction)(cpx *seq, double dir, int leading_bits, int n)
 //
 // Hardware & Tweak defines, no need to poll this every time program runs.
 //
-#define MAX_BLOCK_SIZE 1024     // this limits tsCombineGPUSync!
+#define MAX_BLOCK_SIZE 1024
 #define TILE_DIM 64
-#define THREAD_TILE_DIM 32      // This squared is the number of threads per block in the transpose kernel.
-#define HW_LIMIT ((1024 / MAX_BLOCK_SIZE) * 7)
-#define NO_STREAMING_MULTIPROCESSORS 7
-#define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if
+#define THREAD_TILE_DIM 32                      // This limits 2D transforms size!
+//#define NUMBER_OF_STREAMING_MULTIPROCESSORS 7   // GTX670 specific
+#define NUMBER_OF_STREAMING_MULTIPROCESSORS 1   // Debugging!
+#define MAX_THREADS_PER_BLOCK 1024              // GTX670 specific
+#define SHARED_MEM_SIZE 49152                   // 48K if preferred otherwise 16K
+#define HW_LIMIT ((MAX_THREADS_PER_BLOCK / MAX_BLOCK_SIZE) * NUMBER_OF_STREAMING_MULTIPROCESSORS)
 
 //
 // Test related defines
 //
-#define NUM_PERFORMANCE 16
+#define NUM_PERFORMANCE 12
 #define HIGHEST_EXP 27
 #define HIGHEST_EXP_2D 14
 

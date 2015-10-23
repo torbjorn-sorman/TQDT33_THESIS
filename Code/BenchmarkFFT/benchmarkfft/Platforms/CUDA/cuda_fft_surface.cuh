@@ -11,6 +11,6 @@
 #include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 
-__host__ void cuda_surface_fft(fftDir dir, cuSurf *surface_in, cuSurf *surface_out, int n);
+__host__ void cuda_surface_fft(transform_direction dir, cudaSurfaceObject_t *surface_in, cudaSurfaceObject_t *surface_out, int n);
 
 #endif

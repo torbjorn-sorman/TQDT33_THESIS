@@ -29,7 +29,7 @@ __host__ int cuda_validate(int n)
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
-__host__ void testCombine2DRun(fftDir dir, cpx *in, cpx **dev_in, cpx **dev_out, size_t size, bool write, bool norm, int n)
+__host__ void testCombine2DRun(transform_direction dir, cpx *in, cpx **dev_in, cpx **dev_out, size_t size, bool write, bool norm, int n)
 {
     cuda_fft_2d(dir, dev_in, dev_out, n);
     if (write) {
@@ -106,11 +106,9 @@ __host__ double cuda_2d_performance(int n)
 
 // Seven physical "cores" can run blocks in "parallel" (and most important: sync over blocks).
 // Essentially my algorithm handles (depending on scheduling and other factors) # blocks fewer than HW_LIMIT on the GPU, any # above is not trivially solved. cuFFT solves this.
-__host__ void cuda_fft(fftDir dir, cpx **in, cpx **out, int n)
+__host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
 {
     int threads, blocks;
-
-
     int n_half = (n >> 1);
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
@@ -137,7 +135,6 @@ __host__ void cuda_fft(fftDir dir, cpx **in, cpx **out, int n)
             cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*out, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             cudaDeviceSynchronize();
         }
-        //return;
         swap_buffer(in, out);
         ++steps_left;
         number_of_blocks = 1;
@@ -150,7 +147,7 @@ __host__ void cuda_fft(fftDir dir, cpx **in, cpx **out, int n)
 
 #define ROW_COL_KERNEL(rw, kr, kc) ((rw) ? (kr) : (kc))
 
-__host__ static __inline void cuda_fft_2d_helper(fftDir dir, cpx **dev_in, cpx **dev_out, int row_wise, int n)
+__host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx **dev_in, cpx **dev_out, int row_wise, int n)
 {
     dim3 blocks;
     int threads;
@@ -185,7 +182,7 @@ __host__ static __inline void cuda_fft_2d_helper(fftDir dir, cpx **dev_in, cpx *
     cudaDeviceSynchronize();
 }
 
-__host__ void cuda_fft_2d(fftDir dir, cpx **dev_in, cpx **dev_out, int n)
+__host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, int n)
 {
     dim3 blocks;
     if (n > 256) {

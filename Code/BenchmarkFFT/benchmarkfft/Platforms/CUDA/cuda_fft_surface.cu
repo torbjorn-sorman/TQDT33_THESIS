@@ -1,6 +1,6 @@
 #include "cuda_fft_surface.cuh"
 
-void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cuSurf *inputSurfObj, cuSurf *outputSurfObj)
+void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cudaSurfaceObject_t *inputSurfObj, cudaSurfaceObject_t *outputSurfObj)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
@@ -34,7 +34,7 @@ void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cu
     }
 }
 
-__host__ void cuda_surface_shakedown(cpx **in, cpx **ref, cuSurf *sObjIn, cuSurf *sObjOut, cudaArray **cuAIn, cudaArray **cuAOut)
+__host__ void cuda_surface_shakedown(cpx **in, cpx **ref, cudaSurfaceObject_t *sObjIn, cudaSurfaceObject_t *sObjOut, cudaArray **cuAIn, cudaArray **cuAOut)
 {
     free(*in);
     free(*ref);
@@ -63,7 +63,7 @@ __host__ int cuda_surface_validate(int n)
     cpx *in, *ref;
     size_t size;
     cudaArray *array_in, *array_out;
-    cuSurf surface_in, surface_out;
+    cudaSurfaceObject_t surface_in, surface_out;
     cuda_surface_setup(&in, &ref, &size, n, &array_in, &array_out, &surface_in, &surface_out);
     cudaMemcpyToArray(array_in, 0, 0, in, size, cudaMemcpyHostToDevice);
 
@@ -86,7 +86,7 @@ __host__ double cuda_surface_performance(int n)
     cpx *in, *ref;
     size_t size;
     cudaArray *array_in, *array_out;
-    cuSurf surface_in, surface_out;
+    cudaSurfaceObject_t surface_in, surface_out;
     cuda_surface_setup(&in, &ref, &size, n, &array_in, &array_out, &surface_in, &surface_out);
 
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
@@ -107,7 +107,7 @@ __host__ double cuda_surface_performance(int n)
 //
 // ---------------------------------------------
 
-__device__ __inline__ void add_sub_mul(cpx *inL, cpx *inU, cuSurf out, int x_add, int y_add, int x_subm, int y_subm, cpx *W)
+__device__ __inline__ void add_sub_mul(cpx *inL, cpx *inU, cudaSurfaceObject_t out, int x_add, int y_add, int x_subm, int y_subm, cpx *W)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
@@ -117,7 +117,7 @@ __device__ __inline__ void add_sub_mul(cpx *inL, cpx *inU, cuSurf out, int x_add
     SURF2D_WRITE(outU, out, x_subm, y_subm);
 }
 
-__global__ void kernel_row(cuSurf in, cuSurf out, float angle, unsigned int lmask, int steps, int dist)
+__global__ void kernel_row(cudaSurfaceObject_t in, cudaSurfaceObject_t out, float angle, unsigned int lmask, int steps, int dist)
 {
     int col_id = blockIdx.y * blockDim.x + threadIdx.x;
     int x = (col_id + (col_id & lmask));
@@ -128,7 +128,7 @@ __global__ void kernel_row(cuSurf in, cuSurf out, float angle, unsigned int lmas
     add_sub_mul(&in_lower, &in_upper, out, x, blockIdx.x, x + dist, blockIdx.x, &w);
 }
 
-__global__ void kernel_col(cuSurf in, cuSurf out, float angle, unsigned int lmask, int steps, int dist)
+__global__ void kernel_col(cudaSurfaceObject_t in, cudaSurfaceObject_t out, float angle, unsigned int lmask, int steps, int dist)
 {
     int row_id = blockIdx.y * blockDim.x + threadIdx.x;
     int y = (row_id + (row_id & lmask));
@@ -156,7 +156,7 @@ __device__ static __inline__ void cuda_algorithm_local(cpx *shared, int in_high,
     }
 }
 
-__global__ void _kernelGPUS2DRowSurf(cuSurf in, cuSurf out, float angle, float local_angle, int steps_left, cpx scalar, int n_per_block)
+__global__ void _kernelGPUS2DRowSurf(cudaSurfaceObject_t in, cudaSurfaceObject_t out, float angle, float local_angle, int steps_left, cpx scalar, int n_per_block)
 {
     extern __shared__ cpx shared[];
     int in_high = (n_per_block >> 1) + threadIdx.x;
@@ -167,7 +167,7 @@ __global__ void _kernelGPUS2DRowSurf(cuSurf in, cuSurf out, float angle, float l
     mem_stog_dbt_row(threadIdx.x, in_high, rowOffset, 32 - log2((int)gridDim.x), scalar, shared, out);
 }
 
-__global__ void _kernelGPUS2DColSurf(cuSurf in, cuSurf out, float angle, float local_angle, int steps_left, cpx scalar, int n)
+__global__ void _kernelGPUS2DColSurf(cudaSurfaceObject_t in, cudaSurfaceObject_t out, float angle, float local_angle, int steps_left, cpx scalar, int n)
 {
     extern __shared__ cpx shared[];
     int in_high = n >> 1;
@@ -181,7 +181,7 @@ __global__ void _kernelGPUS2DColSurf(cuSurf in, cuSurf out, float angle, float l
 
 #define ROW_COL_KERNEL(rw, kr, kc) ((rw) ? (kr) : (kc))
 
-__host__ void cuda_surface_fft_helper(fftDir dir, cuSurf *surface_in, cuSurf *surface_out, int row_wise, int n)
+__host__ void cuda_surface_fft_helper(transform_direction dir, cudaSurfaceObject_t *surface_in, cudaSurfaceObject_t *surface_out, int row_wise, int n)
 {
     dim3 blocks;
     int threads;
@@ -217,7 +217,7 @@ __host__ void cuda_surface_fft_helper(fftDir dir, cuSurf *surface_in, cuSurf *su
     cudaDeviceSynchronize();
 }
 
-__host__ void cuda_surface_fft(fftDir dir, cuSurf *surface_in, cuSurf *surface_out, int n)
+__host__ void cuda_surface_fft(transform_direction dir, cudaSurfaceObject_t *surface_in, cudaSurfaceObject_t *surface_out, int n)
 {
     cuda_surface_fft_helper(dir, surface_in, surface_out, 1, n);
     cuda_surface_fft_helper(dir, surface_out, surface_in, 0, n);

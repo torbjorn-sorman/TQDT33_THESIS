@@ -153,7 +153,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     return err;
 }
 
-cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, fftDir dir, const int n)
+cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n)
 {
     arg_gpu->n = arg_cpu->n = n;
     arg_gpu->dir = arg_cpu->dir = dir;
@@ -189,7 +189,7 @@ void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
     argTranspose->workDim = 2;
 }
 
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose, cpx *data_in, fftDir dir, const int n)
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n)
 {
     arg_gpu->n = arg_gpu_col->n = arg_cpu->n = n;
     arg_gpu->dir = arg_gpu_col->dir = arg_cpu->dir = dir;

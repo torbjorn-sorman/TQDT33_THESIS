@@ -31,12 +31,13 @@ struct dx_args
     ID3D11UnorderedAccessView*  buffer_gpu_out_uav = nullptr;
     ID3D11Buffer*               buffer_staging = nullptr;
     ID3D11Buffer*               buffer_constant = nullptr;
-    ID3DBlob*                   shader_blob = nullptr;
-    ID3D11ComputeShader*        compute_shader_fft_local = nullptr;
-    ID3D11ComputeShader*        compute_shader_fft_local_inverse = nullptr;
+    ID3DBlob*                   cs_blob_local = nullptr;
+    ID3DBlob*                   cs_blob_global = nullptr;
+    ID3D11ComputeShader*        cs_local = nullptr;
+    ID3D11ComputeShader*        cs_global = nullptr;
 };
 
-struct dx_cs_args
+struct dx_cs_args_local
 {
     float   angle;
     float   local_angle;
@@ -46,6 +47,16 @@ struct dx_cs_args
     int     steps_gpu;
     int     number_of_blocks;
     int     block_range_half;
+    int     load_input;
+};
+
+struct dx_cs_args_global
+{
+    float           angle;
+    int             steps;
+    unsigned int    lmask;
+    int             dist;
+    int             load_input;
 };
 
 struct profiler_data
@@ -218,27 +229,28 @@ static __inline void dx_write_buffer(ID3D11DeviceContext* context, ID3D11Buffer*
     context->Unmap(buffer, 0);
 }
 
-static __inline void dx_read_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx *out, const int n)
+static __inline void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
 {
+    args->context->CopyResource(args->buffer_staging, src);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    context->Map(buffer, 0, D3D11_MAP_READ, 0, &mapped_resource);
+    args->context->Map(args->buffer_staging, 0, D3D11_MAP_READ, 0, &mapped_resource);
     cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
-    memcpy(out, data, sizeof(cpx) * n);
+    memcpy(dst, data, sizeof(cpx) * n);
     data = nullptr;
-    context->Unmap(buffer, 0);
+    args->context->Unmap(args->buffer_staging, 0);
 }
 
-static __inline void dx_map_args(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, dx_cs_args *params)
+template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, T *params)
 {
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     context->Map(arg_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
-    dx_cs_args* constants = reinterpret_cast<dx_cs_args *>(mapped_resource.pData);
+    T* constants = reinterpret_cast<T *>(mapped_resource.pData);
     constants[0] = *params;
     constants = nullptr;
     context->Unmap(arg_buffer, 0);
 }
 
-static __inline void dx_setup(dx_args *args, LPCWSTR shader_file, const int n)
+static __inline void dx_setup(dx_args *args, LPCWSTR cs_file_local, LPCWSTR cs_file_global, const int n)
 {
     args->number_of_groups = (n >> 1) > MAX_BLOCK_SIZE ? ((n >> 1) / MAX_BLOCK_SIZE) : 1;
     D3D_FEATURE_LEVEL featureLevel;
@@ -270,10 +282,12 @@ static __inline void dx_setup(dx_args *args, LPCWSTR shader_file, const int n)
     dx_check_error(args->device->CreateBuffer(&constant_buffer_desc, NULL, &args->buffer_constant), "Create Constant Buffer");
 
     // Compile the compute shader into a blob.
-    dx_check_error(D3DCompileFromFile(shader_file, NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->shader_blob, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(cs_file_local, NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->cs_blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);    
+    dx_check_error(D3DCompileFromFile(cs_file_global, NULL, NULL, "dx_fft", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &args->cs_blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 
     // Create a shader object from the compiled blob.
-    dx_check_error(args->device->CreateComputeShader(args->shader_blob->GetBufferPointer(), args->shader_blob->GetBufferSize(), NULL, &args->compute_shader_fft_local), "CreateComputeShader");
+    dx_check_error(args->device->CreateComputeShader(args->cs_blob_local->GetBufferPointer(), args->cs_blob_local->GetBufferSize(), NULL, &args->cs_local), "CreateComputeShader");
+    dx_check_error(args->device->CreateComputeShader(args->cs_blob_global->GetBufferPointer(), args->cs_blob_global->GetBufferSize(), NULL, &args->cs_global), "CreateComputeShader");
 
     // Attach the input buffers via their shader resource views.
     args->context->CSSetShaderResources(0, 1, &args->buffer_cpu_input_srv);
@@ -293,8 +307,10 @@ static __inline void dx_shakedown(dx_args *args)
     ID3D11Buffer* nullBuffer = nullptr;
     args->context->CSSetConstantBuffers(0, 1, &nullBuffer);
 
-    args->compute_shader_fft_local->Release();
-    args->shader_blob->Release();
+    args->cs_local->Release();
+    args->cs_global->Release();
+    args->cs_blob_local->Release();
+    args->cs_blob_global->Release();
     args->buffer_constant->Release();
     args->buffer_staging->Release();
     args->buffer_gpu_out_uav->Release();

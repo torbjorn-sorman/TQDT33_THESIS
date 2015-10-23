@@ -1,5 +1,5 @@
 #define GROUP_SIZE_X 1024
-#define NUMBER_OF_BLOCKS 2
+#define NUMBER_OF_BLOCKS 1
 
 struct cpx
 {
@@ -17,14 +17,15 @@ cbuffer Constants
     int     steps_gpu;
     int     number_of_blocks;
     int     block_range_half;
+    int     load_input;
 };
 
 static int sync_in[GROUP_SIZE_X];
 static int sync_out[GROUP_SIZE_X];
 
 StructuredBuffer<cpx> input;
-RWStructuredBuffer<cpx> dev_in;
-RWStructuredBuffer<cpx> dev_out;
+RWStructuredBuffer<cpx> rwbuf_in;
+RWStructuredBuffer<cpx> rwbuf_out;
 groupshared cpx shared_buf[GROUP_SIZE_X << 1];
 
 int tab32[32] =
@@ -83,14 +84,14 @@ void dx_algorithm_global_sync(in int tid, in int thread_id, in int group_id, in 
     int in_high = in_low + dist;
     cpx w;
     sincos(angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
-    cpx in_lower = dev_in[in_low];
-    cpx in_upper = dev_in[in_high];
+    cpx in_lower = rwbuf_in[in_low];
+    cpx in_upper = rwbuf_in[in_high];
     float x = in_lower.x - in_upper.x;
     float y = in_lower.y - in_upper.y;
-    dev_out[in_low].x = in_lower.x + in_upper.x;
-    dev_out[in_low].y = in_lower.y + in_upper.y;
-    dev_out[in_high].x = (w.x * x) - (w.y * y);
-    dev_out[in_high].y = (w.y * x) + (w.x * y);
+    rwbuf_out[in_low].x = in_lower.x + in_upper.x;
+    rwbuf_out[in_low].y = in_lower.y + in_upper.y;
+    rwbuf_out[in_high].x = (w.x * x) - (w.y * y);
+    rwbuf_out[in_high].y = (w.y * x) + (w.x * y);
     dx_group_sync(thread_id, group_id, number_of_blocks + steps);
     for (int bit = bit_start - 1; bit > steps_gpu; --bit)
     {
@@ -99,14 +100,14 @@ void dx_algorithm_global_sync(in int tid, in int thread_id, in int group_id, in 
         in_low = tid + (tid & (0xFFFFFFFF << bit));
         in_high = in_low + dist;
         sincos(angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
-        in_lower = dev_out[in_low];
-        in_upper = dev_out[in_high];
+        in_lower = rwbuf_out[in_low];
+        in_upper = rwbuf_out[in_high];
         x = in_lower.x - in_upper.x;
         y = in_lower.y - in_upper.y;
-        dev_out[in_low].x = in_lower.x + in_upper.x;
-        dev_out[in_low].y = in_lower.y + in_upper.y;
-        dev_out[in_high].x = (w.x * x) - (w.y * y);
-        dev_out[in_high].y = (w.y * x) + (w.x * y);
+        rwbuf_out[in_low].x = in_lower.x + in_upper.x;
+        rwbuf_out[in_low].y = in_lower.y + in_upper.y;
+        rwbuf_out[in_high].x = (w.x * x) - (w.y * y);
+        rwbuf_out[in_high].y = (w.y * x) + (w.x * y);
         dx_group_sync(thread_id, group_id, number_of_blocks + steps);
     }
     bit_out = steps_gpu + 1;
@@ -142,28 +143,29 @@ void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID
     int in_high = block_range_half;
     uint tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
     int offset = (groupID.x * GROUP_SIZE_X) << 1;
-    dev_in[tid] = input[tid];
-    dev_in[GROUP_SIZE_X + tid] = input[GROUP_SIZE_X + tid];
-    AllMemoryBarrierWithGroupSync();
-
+    if (load_input != 0) {
+        rwbuf_in[tid] = input[tid];
+        rwbuf_in[block_range_half + tid] = input[block_range_half + tid];
+        AllMemoryBarrierWithGroupSync();
+    }
     if (NUMBER_OF_BLOCKS > 1)
     {
         dx_algorithm_global_sync(tid, threadIDInGroup.x, groupID.x, steps_left - 1, steps_gpu, angle, in_high, bit);
         in_high = (in_high >> log2(number_of_blocks)) + in_low;
-        shared_buf[in_low] = dev_out[in_low + offset];
-        shared_buf[in_high] = dev_out[in_high + offset];
+        shared_buf[in_low] = rwbuf_out[in_low + offset];
+        shared_buf[in_high] = rwbuf_out[in_high + offset];
     }
     else
     {
         in_high += in_low;
-        shared_buf[in_low] = dev_in[in_low + offset];
-        shared_buf[in_high] = dev_in[in_high + offset];
+        shared_buf[in_low] = rwbuf_in[in_low + offset];
+        shared_buf[in_high] = rwbuf_in[in_high + offset];
     }
 
     AllMemoryBarrierWithGroupSync();
     dx_algorithm_local(in_low, in_high, bit);
     cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
     cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
-    dev_out[(reversebits((uint)(in_low + offset)) >> leading_bits)] = a;
-    dev_out[(reversebits((uint)(in_high + offset)) >> leading_bits)] = b;
+    rwbuf_out[(reversebits((uint)(in_low + offset)) >> leading_bits)] = a;
+    rwbuf_out[(reversebits((uint)(in_high + offset)) >> leading_bits)] = b;
 }

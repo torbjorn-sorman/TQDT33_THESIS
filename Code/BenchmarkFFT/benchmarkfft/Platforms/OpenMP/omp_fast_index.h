@@ -18,7 +18,7 @@ int openmp_fast_index_2d_validate(const int n);
 double openmp_fast_index_performance(const int n);
 double openmp_fast_index_2d_performance(const int n);
 
-void openmp_fast_index(fftDir dir, cpx **in, cpx **out, const int n);
-void openmp_fast_index_2d(fftDir dir, cpx** seq, const int n);
+void openmp_fast_index(transform_direction dir, cpx **in, cpx **out, const int n);
+void openmp_fast_index_2d(transform_direction dir, cpx** seq, const int n);
 
 #endif

@@ -21,7 +21,7 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-__global__ void cuda_transpose_kernel(cuSurf in, cuSurf out, int n)
+__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n)
 {
     // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
@@ -44,29 +44,29 @@ __global__ void cuda_transpose_kernel(cuSurf in, cuSurf out, int n)
     //out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
 
-void set_block_and_threads(int *number_of_blocks, int *threadsPerBlock, int size)
+void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int size)
 {
     if (size > MAX_BLOCK_SIZE) {
         *number_of_blocks = size / MAX_BLOCK_SIZE;
-        *threadsPerBlock = MAX_BLOCK_SIZE;
+        *threads_per_block = MAX_BLOCK_SIZE;
     }
     else {
         *number_of_blocks = 1;
-        *threadsPerBlock = size;
+        *threads_per_block = size;
     }
 }
 
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threadsPerBlock, int n)
+void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int n)
 {
     number_of_blocks->x = n;
     int n_half = n >> 1;
     if (n_half > MAX_BLOCK_SIZE) {
         number_of_blocks->y = n_half / MAX_BLOCK_SIZE;
-        *threadsPerBlock = MAX_BLOCK_SIZE;
+        *threads_per_block = MAX_BLOCK_SIZE;
     }
     else {
         number_of_blocks->y = 1;
-        *threadsPerBlock = n_half;
+        *threads_per_block = n_half;
     }
 }
 

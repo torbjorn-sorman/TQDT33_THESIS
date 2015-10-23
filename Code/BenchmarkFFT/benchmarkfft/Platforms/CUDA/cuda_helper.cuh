@@ -8,9 +8,9 @@
 #include "../../Common/imglib.h"
 #include "../../Common/mycomplex.h"
 
-__host__ __device__ static __inline__ void cuda_surface_swap(cuSurf *in, cuSurf *out)
+__host__ __device__ static __inline__ void cuda_surface_swap(cudaSurfaceObject_t *in, cudaSurfaceObject_t *out)
 {
-    cuSurf tmp = *in;
+    cudaSurfaceObject_t tmp = *in;
     *in = *out;
     *out = tmp;
 }
@@ -53,19 +53,19 @@ __host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, c
     outU->y = (W->y * x) + (W->x * y);
 }
 
-__device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cudaSurfaceObject_t surf)
 {
     SURF2D_READ(&(shared[low]), surf, low + offset, blockIdx.x);
     SURF2D_READ(&(shared[high]), surf, high + offset, blockIdx.x);
 }
 
-__device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_gtos_col(int low, int high, int offset, cpx *shared, cudaSurfaceObject_t surf)
 {
     SURF2D_READ(&(shared[low]), surf, blockIdx.x, low + offset);
     SURF2D_READ(&(shared[high]), surf, blockIdx.x, high + offset);
 }
 
-__device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cudaSurfaceObject_t surf)
 {
     int row_low = BIT_REVERSE(low + offset, leading_bits);
     int row_high = BIT_REVERSE(high + offset, leading_bits);
@@ -73,7 +73,7 @@ __device__ static __inline__ void mem_stog_dbt_row(int low, int high, int offset
     SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, row_high);
 }
 
-__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cuSurf surf)
+__device__ static __inline__ void mem_stog_db_col(int low, int high, int offset, unsigned int leading_bits, cpx scalar, cpx *shared, cudaSurfaceObject_t surf)
 {
     int col_low = BIT_REVERSE(low + offset, leading_bits);
     int col_high = BIT_REVERSE(high + offset, leading_bits);
@@ -82,10 +82,10 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
 }
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
-__global__ void cuda_transpose_kernel(cuSurf in, cuSurf out, int n);
+__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n);
 
-void set_block_and_threads(int *number_of_blocks, int *threadsPerBlock, int size);
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threadsPerBlock, int n);
+void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int size);
+void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int n);
 void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n);
 void checkCudaError();
 void checkCudaError(char *msg);

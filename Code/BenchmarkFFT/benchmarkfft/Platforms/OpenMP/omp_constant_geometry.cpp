@@ -75,7 +75,7 @@ _inline void openmp_inner_body(cpx *in, cpx *out, const cpx *W, const unsigned i
         c_add_sub_mul_cg(in + l, in + n_half + l, out + (l << 1), W + (l & mask));
 }
 
-void openmp_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     const int n_half = n / 2;
     int steps_left = log2_32(n);
@@ -91,7 +91,7 @@ void openmp_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
     free(W);
 }
 
-_inline void openmp_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
+_inline void openmp_const_geom_2d_helper(transform_direction dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
     const int n_half = n / 2;
     int steps_left = log2_32(n);
@@ -104,7 +104,7 @@ _inline void openmp_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cp
     openmp_bit_reverse(out, dir, 32 - steps_left, n);
 }
 
-_inline void openmp_rows(fftDir dir, cpx **in, cpx **out, const cpx *W, const int n)
+_inline void openmp_rows(transform_direction dir, cpx **in, cpx **out, const cpx *W, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int row = 0; row < n * n; row += n)
@@ -113,7 +113,7 @@ _inline void openmp_rows(fftDir dir, cpx **in, cpx **out, const cpx *W, const in
         swap_buffer(in, out);
 }
 
-void openmp_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom_2d(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     openmp_twiddle_factors(W, dir, n);    
@@ -146,7 +146,7 @@ _inline void openmp_inner_body(cpx *in, cpx *outG, float global_angle, unsigned 
     }
 }
 
-void openmp_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n)
+void openmp_const_geom_alt(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     int bit = log2_32(n);
     const int leading_bits = 32 - bit;

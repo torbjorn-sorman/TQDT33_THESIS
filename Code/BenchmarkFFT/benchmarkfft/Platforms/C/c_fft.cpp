@@ -86,7 +86,7 @@ _inline void c_inner_body(cpx *in, cpx *out, const cpx *W, const unsigned int ma
     }
 }
 
-void c_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
@@ -102,7 +102,7 @@ void c_const_geom(fftDir dir, cpx **in, cpx **out, const int n)
     free(W);
 }
 
-_inline void c_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cpx *W, const int n)
+_inline void c_const_geom_2d_helper(transform_direction dir, cpx *in, cpx *out, const cpx *W, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
@@ -116,7 +116,7 @@ _inline void c_const_geom_2d_helper(fftDir dir, cpx *in, cpx *out, const cpx *W,
 
 // Result is found in the *in variable
 
-void c_const_geom_2d(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom_2d(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     cpx *W = (cpx *)malloc(sizeof(cpx) * n);
     twiddle_factors(W, dir, n);
@@ -149,7 +149,7 @@ _inline void c_inner_body(cpx *in, cpx *out, float global_angle, unsigned int ma
     }
 }
 
-void c_const_geom_alt(fftDir dir, cpx **in, cpx **out, const int n)
+void c_const_geom_alt(transform_direction dir, cpx **in, cpx **out, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;

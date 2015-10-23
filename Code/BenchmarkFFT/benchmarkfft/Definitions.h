@@ -9,13 +9,13 @@
 
 typedef cuFloatComplex cpx;
 
-typedef cudaSurfaceObject_t cuSurf;
-typedef float fftDir;
-typedef void(*fftFunction)(fftDir direction, cpx **in, cpx **out, int n);
+typedef float transform_direction;
+/*
+typedef void(*fftFunction)(transform_direction direction, cpx **in, cpx **out, int n);
 typedef void(*transposeFunction)(cpx **seq, int, int n);
 typedef void(*twiddleFunction)(cpx *W, int, int n);
 typedef void(*bitReverseFunction)(cpx *seq, double dir, int leading_bits, int n);
-
+*/
 //
 // Math & Algorithm defines
 //

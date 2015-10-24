@@ -53,6 +53,16 @@ __host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, c
     outU->y = (W->y * x) + (W->x * y);
 }
 
+__host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *low, cpx *high, const cpx *W)
+{
+    float x = low->x - high->x;
+    float y = low->y - high->y;
+    low->x = low->x + high->x;
+    low->y = low->y + high->y;
+    high->x = (W->x * x) - (W->y * y);
+    high->y = (W->y * x) + (W->x * y);
+}
+
 __device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cudaSurfaceObject_t surf)
 {
     SURF2D_READ(&(shared[low]), surf, low + offset, blockIdx.x);

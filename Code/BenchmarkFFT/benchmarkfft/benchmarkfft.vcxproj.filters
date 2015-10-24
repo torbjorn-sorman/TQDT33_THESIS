@@ -182,10 +182,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Platforms\DirectX\dx_cs_global.hlsl">
-      <Filter>Platforms\DirectX</Filter>
-    </FxCompile>
-    <FxCompile Include="Platforms\DirectX\dx_cs_local.hlsl">
+    <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">
       <Filter>Platforms\DirectX</Filter>
     </FxCompile>
   </ItemGroup>

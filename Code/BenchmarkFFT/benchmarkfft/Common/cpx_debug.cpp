@@ -1,9 +1,9 @@
 #include "cpx_debug.h"
 
-void cpx_to_console(cpx *sequence, char *title)
+void cpx_to_console(cpx *sequence, char *title, int len)
 {
     std::cout << title << ":" << std::endl;
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < len; ++i)
         printf("\t%d: %f\t%f\n", i, sequence[i].x, sequence[i].y);
 }
 

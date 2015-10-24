@@ -17,7 +17,6 @@ cbuffer Constants
 
 StructuredBuffer<cpx> input;
 RWStructuredBuffer<cpx> rwbuf_in;
-RWStructuredBuffer<cpx> rwbuf_out;
 
 [numthreads(GROUP_SIZE_X, 1, 1)]
 void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 dispatchThreadID : SV_DispatchThreadID)
@@ -40,8 +39,8 @@ void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID
     }
     float x = in_lower.x - in_upper.x;
     float y = in_lower.y - in_upper.y;
-    rwbuf_out[in_low].x = in_lower.x + in_upper.x;
-    rwbuf_out[in_low].y = in_lower.y + in_upper.y;
-    rwbuf_out[in_high].x = (w.x * x) - (w.y * y);
-    rwbuf_out[in_high].y = (w.y * x) + (w.x * y);
+    rwbuf_in[in_low].x = in_lower.x + in_upper.x;
+    rwbuf_in[in_low].y = in_lower.y + in_upper.y;
+    rwbuf_in[in_high].x = (w.x * x) - (w.y * y);
+    rwbuf_in[in_high].y = (w.y * x) + (w.x * y);
 }

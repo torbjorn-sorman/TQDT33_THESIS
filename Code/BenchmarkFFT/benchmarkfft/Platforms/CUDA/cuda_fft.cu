@@ -1,6 +1,6 @@
 #include "cuda_fft.cuh"
 
-__global__ void cuda_kernel_global(cpx *in, cpx *out, float global_angle, unsigned int lmask, int steps, int dist);
+__global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, cpx *out, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_col(cpx *in, cpx *out, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int n_half);
@@ -29,7 +29,7 @@ __host__ int cuda_validate(int n)
 #ifdef SHOW_BLOCKING_DEBUG     
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
     //cpx_to_console(in, "CUDA In");
-    cpx_to_console(out, "CUDA Out");
+    cpx_to_console(out, "CUDA Out", 8);
     getchar();
 #endif
 
@@ -136,16 +136,14 @@ __host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
         --steps_left;
         int steps = 0;
         int dist = n_half;
-        cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*in, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-        cudaDeviceSynchronize();
-        // Instead of swapping input/output, run in place. The GPU kernel needs to swap once.                
+        cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*in, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+        cudaDeviceSynchronize();               
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
-            cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*out, *out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+            cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*in, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             cudaDeviceSynchronize();
         }
-        swap_buffer(in, out);
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
@@ -269,10 +267,13 @@ __device__ static __inline__ void cuda_algorithm_local(cpx *shared, int in_high,
     }
 }
 
-// Take no usage of shared mem yet...
-__global__ void cuda_kernel_global(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    cuda_inner_kernel(in, out, angle, steps, lmask, dist);
+    cpx w;
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;    
+    in += tid + (tid & lmask);
+    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    cpx_add_sub_mul(in, in + dist, &w);
 }
 
 __global__ void cuda_kernel_global_row(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)

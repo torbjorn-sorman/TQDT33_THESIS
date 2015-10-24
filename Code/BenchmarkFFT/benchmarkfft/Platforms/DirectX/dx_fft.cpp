@@ -19,8 +19,8 @@ int dx_validate(const int n)
 
 #ifdef SHOW_BLOCKING_DEBUG    
     dx_read_buffer(&args, args.buffer_gpu_in, in, n);
-    cpx_to_console(in, "DX In");
-    cpx_to_console(out, "DX Out");
+    //cpx_to_console(in, "DX In", 8);
+    cpx_to_console(out, "DX Out", 8);
     getchar();
 #endif
 
@@ -53,7 +53,7 @@ int dx_2d_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-//#define DX_TIMESTAMP
+#define DX_TIMESTAMP
 
 #ifndef DX_TIMESTAMP
 double dx_performance(const int n)
@@ -77,7 +77,7 @@ double dx_performance(const int n)
     profiler_data profiler[NUM_PERFORMANCE];
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         profiler_data p;
-        dx_prepare(&args, NULL, n);        
+        dx_setup(&args, NULL, n);        
         dx_start_profiling(&args, &p);
         dx_fft(FFT_FORWARD, &args, n);
         dx_end_profiling(&args, &p);        
@@ -107,9 +107,23 @@ double dx_2d_performance(const int n)
 // Algorithm
 //
 
+/*float           angle;
+    float           local_angle;
+    float           scalar;
+    int             steps_left;
+    int             leading_bits;
+    int             steps_gpu;
+    int             number_of_blocks;
+    int             block_range_half;
+    bool            load_input;
+    int             steps;
+    unsigned int    lmask;
+    int             dist;*/
+
 __inline void dx_set_local_args(dx_args *a, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half, bool load_input)
-{
-    dx_cs_args_local p;
+{    
+    /*
+    dx_cs_args p;
     p.angle = global_angle;
     p.local_angle = local_angle;
     p.block_range_half = block_range_half;
@@ -119,27 +133,35 @@ __inline void dx_set_local_args(dx_args *a, float global_angle, float local_angl
     p.scalar = scalar;
     p.number_of_blocks = number_of_blocks;
     p.load_input = load_input;
+    dx_map_args<dx_cs_args>(a->context, a->buffer_constant, &p);
+    */
+    
+    dx_cs_args cb = { global_angle, local_angle, scalar, steps_left, leading_bits, steps_gpu, number_of_blocks, block_range_half, load_input, 0, 0, 0 };
+    a->context->UpdateSubresource(a->buffer_constant, 0, nullptr, &cb, 0, 0);
+    a->context->CSSetConstantBuffers(0, 1, &a->buffer_constant);
+    
     a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_in_uav, &a->init_counts);
     a->context->CSSetUnorderedAccessViews(1, 1, &a->buffer_gpu_out_uav, &a->init_counts);
     a->context->CSSetShader(a->cs_local, nullptr, 0);
-    dx_map_args<dx_cs_args_local>(a->context, a->buffer_constant, &p);
+
 }
 
-__inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int lmask, int steps, bool load_input, bool use_in_buffer)
-{
-    dx_cs_args_global p;
+__inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int lmask, int steps, bool load_input)
+{   
+    dx_cs_args p;
     p.angle = angle;
     p.dist = dist;
     p.lmask = lmask;
     p.steps = steps;
     p.load_input = load_input;
-    if (use_in_buffer)
-        a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_in_uav, &a->init_counts);
-    else
-        a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_out_uav, &a->init_counts);
-    a->context->CSSetUnorderedAccessViews(1, 1, &a->buffer_gpu_out_uav, &a->init_counts);
+    dx_map_args<dx_cs_args>(a->context, a->buffer_constant, &p);
+    /*
+    dx_cs_args cb = { angle, 0.f, 0.f, 0, 0, 0, 0, 0, load_input, steps, lmask, dist };
+    a->context->UpdateSubresource(a->buffer_constant, 0, nullptr, &cb, 0, 0);
+    a->context->CSSetConstantBuffers(0, 1, &a->buffer_constant);
+    */
+    a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_in_uav, &a->init_counts);
     a->context->CSSetShader(a->cs_global, nullptr, 0);
-    dx_map_args<dx_cs_args_global>(a->context, a->buffer_constant, &p);
 }
 
 __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
@@ -162,16 +184,15 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
         --steps_left;
         int steps = 0;
         int dist = n_half;
-        dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input, true);
+        dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input);
         args->context->Dispatch(args->number_of_groups, 1, 1);
         load_input = false;
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
-            dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input, false);
+            dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input);
             args->context->Dispatch(args->number_of_groups, 1, 1);
         }
-        dx_swap_device_buffers(args);
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;

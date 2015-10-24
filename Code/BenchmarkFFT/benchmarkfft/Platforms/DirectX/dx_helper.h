@@ -27,6 +27,8 @@ struct dx_args
     ID3D11ShaderResourceView*   buffer_cpu_input_srv = nullptr;
     ID3D11Buffer*               buffer_gpu_in = nullptr;
     ID3D11Buffer*               buffer_gpu_out = nullptr;
+    ID3D11Buffer*               buffer_sync_in = nullptr;
+    ID3D11Buffer*               buffer_sync_out = nullptr;
     ID3D11UnorderedAccessView*  buffer_gpu_in_uav = nullptr;
     ID3D11UnorderedAccessView*  buffer_gpu_out_uav = nullptr;
     ID3D11Buffer*               buffer_staging = nullptr;
@@ -37,26 +39,20 @@ struct dx_args
     ID3D11ComputeShader*        cs_global = nullptr;
 };
 
-struct dx_cs_args_local
-{
-    float   angle;
-    float   local_angle;
-    float   scalar;
-    int     steps_left;
-    int     leading_bits;
-    int     steps_gpu;
-    int     number_of_blocks;
-    int     block_range_half;
-    bool    load_input;    
-};
-
-struct dx_cs_args_global
+struct dx_cs_args
 {
     float           angle;
+    float           local_angle;
+    float           scalar;
+    int             steps_left;
+    int             leading_bits;
+    int             steps_gpu;
+    int             number_of_blocks;
+    int             block_range_half;
+    bool            load_input;
     int             steps;
     unsigned int    lmask;
     int             dist;
-    bool            load_input;
 };
 
 struct profiler_data
@@ -123,7 +119,6 @@ template<typename T> static __inline void swap(T **a, T **b)
 static __inline void dx_swap_device_buffers(dx_args *a)
 {
     swap<ID3D11Buffer>(&a->buffer_gpu_in, &a->buffer_gpu_out);
-    //swap<ID3D11UnorderedAccessView>(&a->buffer_gpu_in_uav, &a->buffer_gpu_out_uav);
 }
 
 static __inline size_t padded_size(size_t sz, size_t width)
@@ -285,10 +280,8 @@ static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
 
 static __inline void dx_setup(dx_args* args, cpx* in, const int n)
 {
-    LPCWSTR cs_file_local = L"Platforms/DirectX/dx_cs_local.hlsl";
-    LPCWSTR cs_file_global = L"Platforms/DirectX/dx_cs_global.hlsl";
-    dx_set_dim(cs_file_local, n);
-    dx_set_dim(cs_file_global, n);
+    LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
+    dx_set_dim(cs_file, n);
 
     args->number_of_groups = (n >> 1) > MAX_BLOCK_SIZE ? ((n >> 1) / MAX_BLOCK_SIZE) : 1;
     D3D_FEATURE_LEVEL featureLevel;
@@ -298,20 +291,34 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
     ID3DBlob* errorBlob = nullptr;
-
+    /*
+    ID3D11Buffer *input = nullptr;
+    ID3D11Buffer *sync_in = nullptr;
+    ID3D11Buffer *sync_out = nullptr;
+    ID3D11UnorderedAccessView *uav_sync_in = nullptr;
+    ID3D11UnorderedAccessView *uav_sync_out = nullptr;
+    */
     dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &args->device, &featureLevel, &args->context), "D3D11CreateDevice");
+
+    // GPU read/write accessible buffers.
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_in), "Create GPU In Buffer ");
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_out), "Create GPU Out Buffer ");
+    /*
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &sync_in), "Create GPU Out Buffer ");
+    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &sync_out), "Create GPU Out Buffer ");
+    */
 
     // Input only buffer.
     dx_check_error(args->device->CreateBuffer(&input_buffer_desc, NULL, &args->buffer_cpu_input), "Create CPU Buffer");
     dx_check_error(args->device->CreateShaderResourceView(args->buffer_cpu_input, NULL, &args->buffer_cpu_input_srv), "Create CPU Buffer ShaderResourceView");
 
-    // GPU read/write accessible buffers.
-    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_in), "Create GPU In Buffer ");
-    dx_check_error(args->device->CreateBuffer(&output_buffer_desc, NULL, &args->buffer_gpu_out), "Create GPU Out Buffer ");
-
     // Create an unordered access view for the GPU buffers.  
     dx_check_error(args->device->CreateUnorderedAccessView(args->buffer_gpu_in, &output_uav_desc, &args->buffer_gpu_in_uav), "Create GPU In UnorderedAccessView");
     dx_check_error(args->device->CreateUnorderedAccessView(args->buffer_gpu_out, &output_uav_desc, &args->buffer_gpu_out_uav), "Create GPU Out UnorderedAccessView");
+    /*
+    dx_check_error(args->device->CreateUnorderedAccessView(sync_in, &output_uav_desc, &uav_sync_in), "Create GPU Out UnorderedAccessView");
+    dx_check_error(args->device->CreateUnorderedAccessView(sync_out, &output_uav_desc, &uav_sync_out), "Create GPU Out UnorderedAccessView");
+    */    
 
     // Create a staging buffer, which will be used to copy back from the GPU out buffer.
     dx_check_error(args->device->CreateBuffer(&staging_buffer_desc, NULL, &args->buffer_staging), "Create Staging Buffer");
@@ -320,19 +327,20 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     dx_check_error(args->device->CreateBuffer(&constant_buffer_desc, NULL, &args->buffer_constant), "Create Constant Buffer");
 
     // Compile the compute shader into a blob.
-    dx_check_error(D3DCompileFromFile(cs_file_local, NULL, NULL, "dx_fft", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
-    dx_check_error(D3DCompileFromFile(cs_file_global, NULL, NULL, "dx_fft", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
+    //dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 
     // Create a shader object from the compiled blob.
     dx_check_error(args->device->CreateComputeShader(args->cs_blob_local->GetBufferPointer(), args->cs_blob_local->GetBufferSize(), NULL, &args->cs_local), "CreateComputeShader");
-    dx_check_error(args->device->CreateComputeShader(args->cs_blob_global->GetBufferPointer(), args->cs_blob_global->GetBufferSize(), NULL, &args->cs_global), "CreateComputeShader");
+    //dx_check_error(args->device->CreateComputeShader(args->cs_blob_global->GetBufferPointer(), args->cs_blob_global->GetBufferSize(), NULL, &args->cs_global), "CreateComputeShader");
 
     // Attach the input buffers via their shader resource views.
     args->context->CSSetShaderResources(0, 1, &args->buffer_cpu_input_srv);
 
     // Attach the constant buffer
     args->context->CSSetConstantBuffers(0, 1, &args->buffer_constant);
-    
+
+
     if (in != NULL)
         dx_write_buffer(args->context, args->buffer_cpu_input, in, n);
 }
@@ -349,9 +357,11 @@ static __inline void dx_shakedown(dx_args *args)
     args->context->CSSetConstantBuffers(0, 1, &nullBuffer);
 
     args->cs_local->Release();
-    args->cs_global->Release();
+    if (args->cs_global)
+        args->cs_global->Release();
     args->cs_blob_local->Release();
-    args->cs_blob_global->Release();
+    if (args->cs_blob_global)
+        args->cs_blob_global->Release();
     args->buffer_constant->Release();
     args->buffer_staging->Release();
     args->buffer_gpu_out_uav->Release();

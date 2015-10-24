@@ -116,7 +116,7 @@ template<typename T> static __inline void swap(T **a, T **b)
     *b = c;
 }
 
-static __inline void dx_swap_device_buffers(dx_args *a)
+static __inline void swap_device_buffers(dx_args *a)
 {
     swap<ID3D11Buffer>(&a->buffer_gpu_in, &a->buffer_gpu_out);
 }
@@ -247,7 +247,7 @@ template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* conte
 }
 
 static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
-{
+{ 
     std::ifstream in_file(shader_file);
     std::stringstream buffer;
     buffer << in_file.rdbuf();
@@ -327,6 +327,7 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     dx_check_error(args->device->CreateBuffer(&constant_buffer_desc, NULL, &args->buffer_constant), "Create Constant Buffer");
 
     // Compile the compute shader into a blob.
+
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
     //dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 
@@ -339,7 +340,6 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
 
     // Attach the constant buffer
     args->context->CSSetConstantBuffers(0, 1, &args->buffer_constant);
-
 
     if (in != NULL)
         dx_write_buffer(args->context, args->buffer_cpu_input, in, n);

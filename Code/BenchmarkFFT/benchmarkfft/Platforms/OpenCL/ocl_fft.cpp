@@ -19,7 +19,11 @@ bool opencl_validate(const int n)
         checkErr(opencl_fft(&arg_cpu, &arg_gpu), "Run failed");
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
-    double forward_diff = diff_forward_sinus(data_out, n);
+    double diff = diff_forward_sinus(data_out, n);
+    if ((diff / (n >> 1)) > RELATIVE_ERROR_MARGIN) {
+        printf("(%f)", diff);
+        return false && freeResults(&data_in, &data_out, &data_ref, n);
+    }
     {
         oclArgs arg_gpu, arg_cpu;
         checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_out, FFT_INVERSE, n), "Create failed!");
@@ -27,7 +31,7 @@ bool opencl_validate(const int n)
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
 
-    return freeResults(&data_out, &data_in, &data_ref, n) == 0 || forward_diff > RELATIVE_ERROR_MARGIN;
+    return freeResults(&data_out, &data_in, &data_ref, n) == 0;
 }
 
 double opencl_performance(const int n)

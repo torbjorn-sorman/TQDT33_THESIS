@@ -8,7 +8,6 @@
 #include "../../Common/mymath.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/mycomplex.h"
-#include "../../Common/cpx_debug.h"
 #include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 

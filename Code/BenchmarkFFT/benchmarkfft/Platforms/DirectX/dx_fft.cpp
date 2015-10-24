@@ -7,15 +7,28 @@ __inline void dx_fft_2d(transform_direction dir, cpx **in, cpx **out, const int 
 // Testing
 //
 
+void dx_prepare(dx_args *args, cpx *in, const int n)
+{
+    LPCWSTR cs_file_l = L"Platforms/DirectX/dx_cs_local.hlsl";
+    LPCWSTR cs_file_g = L"Platforms/DirectX/dx_cs_global.hlsl";
+    dx_set_dim(cs_file_l, n);
+    dx_set_dim(cs_file_g, n);
+    dx_setup(args, cs_file_l, cs_file_g, n);
+    if (in != NULL)
+        dx_write_buffer(args->context, args->buffer_cpu_input, in, n);
+}
+
 int dx_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
     dx_args args;
-    dx_setup(&args, in, n);
+    dx_prepare(&args, in, n);
+
     dx_fft(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buffer_gpu_out, out, n);
+<<<<<<< HEAD
 
 #ifdef SHOW_BLOCKING_DEBUG    
     dx_read_buffer(&args, args.buffer_gpu_in, in, n);
@@ -23,11 +36,14 @@ int dx_validate(const int n)
     getchar();
 #endif
 
+=======
+>>>>>>> parent of b3d7254... all is crap
     double forward_diff = diff_forward_sinus(out, n);
-    dx_swap_device_buffers(&args);
+    swap_device_buffers(&args);
     dx_fft(FFT_INVERSE, &args, n);
     dx_read_buffer(&args, args.buffer_gpu_out, out, n);
     double inverse_diff = diff_seq(out, ref, n);
+
     dx_shakedown(&args);
     free(in);
     free(out);
@@ -61,7 +77,7 @@ double dx_performance(const int n)
     dx_args args;
     profiler_data profiler[NUM_PERFORMANCE];
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
-        dx_setup(&args, NULL, n);
+        dx_prepare(&args, NULL, n);
         startTimer();
         dx_fft(FFT_FORWARD, &args, n);
         measures[i] = stopTimer();
@@ -106,6 +122,7 @@ double dx_2d_performance(const int n)
 // Algorithm
 //
 
+<<<<<<< HEAD
 /*float           angle;
     float           local_angle;
     float           scalar;
@@ -123,6 +140,12 @@ __inline void dx_set_local_args(dx_args *a, float global_angle, float local_angl
 {    
     /*
     dx_cs_args p;
+=======
+__inline void dx_set_local_args(dx_args *a, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half, int load_input)
+{
+    dx_cs_args_local p;
+    a->context->CSSetShader(a->cs_local, NULL, 0);
+>>>>>>> parent of b3d7254... all is crap
     p.angle = global_angle;
     p.local_angle = local_angle;
     p.block_range_half = block_range_half;
@@ -141,6 +164,7 @@ __inline void dx_set_local_args(dx_args *a, float global_angle, float local_angl
     
     a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_in_uav, &a->init_counts);
     a->context->CSSetUnorderedAccessViews(1, 1, &a->buffer_gpu_out_uav, &a->init_counts);
+<<<<<<< HEAD
     a->context->CSSetShader(a->cs_local, nullptr, 0);
 
 }
@@ -148,11 +172,21 @@ __inline void dx_set_local_args(dx_args *a, float global_angle, float local_angl
 __inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int lmask, int steps, bool load_input)
 {   
     dx_cs_args p;
+=======
+    dx_map_args<dx_cs_args_local>(a->context, a->buffer_constant, &p);
+}
+
+__inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int lmask, int steps, int load_input, bool use_in_buffer)
+{
+    dx_cs_args_global p;
+    a->context->CSSetShader(a->cs_global, NULL, 0);
+>>>>>>> parent of b3d7254... all is crap
     p.angle = angle;
     p.dist = dist;
     p.lmask = lmask;
     p.steps = steps;
     p.load_input = load_input;
+<<<<<<< HEAD
     dx_map_args<dx_cs_args>(a->context, a->buffer_constant, &p);
     /*
     dx_cs_args cb = { angle, 0.f, 0.f, 0, 0, 0, 0, 0, load_input, steps, lmask, dist };
@@ -161,9 +195,14 @@ __inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int
     */
     a->context->CSSetUnorderedAccessViews(0, 1, &a->buffer_gpu_in_uav, &a->init_counts);
     a->context->CSSetShader(a->cs_global, nullptr, 0);
+=======
+    a->context->CSSetUnorderedAccessViews(0, 1, use_in_buffer ? &a->buffer_gpu_in_uav : &a->buffer_gpu_out_uav, &a->init_counts);
+    a->context->CSSetUnorderedAccessViews(1, 1, &a->buffer_gpu_out_uav, &a->init_counts);
+    dx_map_args<dx_cs_args_global>(a->context, a->buffer_constant, &p);
+>>>>>>> parent of b3d7254... all is crap
 }
 
-__inline void dx_fft(transform_direction dir, dx_args *args, const int n)
+__inline void _dx_fft(transform_direction dir, dx_args *args, const int n)
 {
 
     int n_half = (n >> 1);
@@ -171,13 +210,13 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
     int leading_bits = 32 - steps_left;
     int steps_gpu = log2_32(MAX_BLOCK_SIZE);
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    bool load_input = true;
+    int load_input = 1;
     int number_of_blocks = n_half > MAX_BLOCK_SIZE ? (n_half / MAX_BLOCK_SIZE) : 1;;
     int n_per_block = n / number_of_blocks;
     float global_angle = dir * (M_2_PI / n);
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
-    if (number_of_blocks > HW_LIMIT) {
+    if (number_of_blocks >= HW_LIMIT) {
 
 
         --steps_left;
@@ -185,23 +224,25 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
         int dist = n_half;
         dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input);
         args->context->Dispatch(args->number_of_groups, 1, 1);
-        load_input = false;
+        load_input = 0;
+
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
             dx_set_global_args(args, global_angle, dist, 0xFFFFFFFF << steps_left, steps, load_input);
             args->context->Dispatch(args->number_of_groups, 1, 1);
         }
+<<<<<<< HEAD
+=======
+        swap_device_buffers(args);
+>>>>>>> parent of b3d7254... all is crap
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
     }
-    // TODO: Remove
-    //return;
 
     dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half, load_input);
     args->context->Dispatch(args->number_of_groups, 1, 1);
-
 }
 
 __inline void dx_fft_2d(transform_direction dir, cpx **in, cpx **out, const int n)

@@ -12,7 +12,7 @@ cbuffer Constants
     int             steps;
     unsigned int    lmask;
     int             dist;
-    bool            load_input;
+    int             load_input;
 };
 
 StructuredBuffer<cpx> input;
@@ -21,13 +21,13 @@ RWStructuredBuffer<cpx> rwbuf_in;
 [numthreads(GROUP_SIZE_X, 1, 1)]
 void dx_fft(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    int tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
+    uint tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
     int in_low = tid + (tid & lmask);
     int in_high = in_low + dist;
     cpx w;
     sincos(angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
     cpx in_lower, in_upper;
-    if (load_input)
+    if (load_input != 0)
     {
         in_lower = input[in_low];
         in_upper = input[in_high];

@@ -20,7 +20,6 @@
 #include "../../Common/mycomplex.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/imglib.h"
-#include "../../Common/cpx_debug.h"
 #include "dx_helper.h"
 
 int dx_validate(const int n);

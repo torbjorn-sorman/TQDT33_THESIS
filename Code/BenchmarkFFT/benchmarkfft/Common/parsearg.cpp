@@ -33,7 +33,7 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
                 printf("Error parsing range of lengths, start exponent must be lower than end exponent.\n");
                 goto show_usage;
             }
-            arg->number_of_lengths = arg->end - arg->start + 1;
+            arg->number_of_lengths = arg->end - arg->start;
         }
         else if (MATCH("-platforms")) {
             ++i;

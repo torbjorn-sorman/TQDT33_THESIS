@@ -19,7 +19,6 @@ int dx_validate(const int n)
 
 #ifdef SHOW_BLOCKING_DEBUG    
     dx_read_buffer(&args, args.buffer_gpu_in, in, n);
-    //cpx_to_console(in, "DX In", 8);
     cpx_to_console(out, "DX Out", 8);
     getchar();
 #endif

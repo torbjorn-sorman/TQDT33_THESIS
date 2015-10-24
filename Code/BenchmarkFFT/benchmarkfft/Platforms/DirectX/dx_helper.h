@@ -287,9 +287,9 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC input_buffer_desc = get_input_buffer_description(n);
     D3D11_BUFFER_DESC output_buffer_desc = get_output_buffer_description(n);
-    D3D11_UNORDERED_ACCESS_VIEW_DESC output_uav_desc = get_unordered_access_view_description(n);
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
+    D3D11_UNORDERED_ACCESS_VIEW_DESC output_uav_desc = get_unordered_access_view_description(n);
     ID3DBlob* errorBlob = nullptr;
     /*
     ID3D11Buffer *input = nullptr;

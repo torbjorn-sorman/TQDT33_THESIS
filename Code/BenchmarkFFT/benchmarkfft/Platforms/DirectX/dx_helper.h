@@ -292,7 +292,6 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     D3D11_UNORDERED_ACCESS_VIEW_DESC output_uav_desc = get_unordered_access_view_description(n);
     ID3DBlob* errorBlob = nullptr;
     /*
-    ID3D11Buffer *input = nullptr;
     ID3D11Buffer *sync_in = nullptr;
     ID3D11Buffer *sync_out = nullptr;
     ID3D11UnorderedAccessView *uav_sync_in = nullptr;
@@ -327,7 +326,6 @@ static __inline void dx_setup(dx_args* args, cpx* in, const int n)
     dx_check_error(args->device->CreateBuffer(&constant_buffer_desc, NULL, &args->buffer_constant), "Create Constant Buffer");
 
     // Compile the compute shader into a blob.
-
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
     //dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &args->cs_blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 

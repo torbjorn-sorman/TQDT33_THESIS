@@ -196,6 +196,7 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <CudaCompile Include="Platforms\CUDA\cuda_helper.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common\cpx_debug.h" />
     <ClInclude Include="Common\imglib.h" />
     <ClInclude Include="Common\mycomplex.h" />
     <ClInclude Include="Common\myfile.h" />
@@ -225,6 +226,7 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\Platform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Common\cpx_debug.cpp" />
     <ClCompile Include="Common\imglib.cpp" />
     <ClCompile Include="Common\mycomplex.cpp" />
     <ClCompile Include="Common\parsearg.cpp" />

@@ -92,6 +92,9 @@
     <ClInclude Include="Platforms\MyID3DX11FFT.h">
       <Filter>Platforms</Filter>
     </ClInclude>
+    <ClInclude Include="Common\cpx_debug.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -173,6 +176,9 @@
     </ClCompile>
     <ClCompile Include="Platforms\MyID3DX11FFT.cpp">
       <Filter>Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\cpx_debug.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

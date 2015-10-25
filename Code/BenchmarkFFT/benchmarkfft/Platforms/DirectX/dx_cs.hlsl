@@ -1,5 +1,5 @@
-#define GROUP_SIZE_X 4
-#define NUMBER_OF_BLOCKS 1
+#define GROUP_SIZE_X 1024
+#define NUMBER_OF_BLOCKS 2
 
 //#define BARRIER AllMemoryBarrierWithGroupSync()
 //#define BARRIER DeviceMemoryBarrierWithGroupSync()
@@ -157,6 +157,7 @@ rwbuf_in[in_high].x = (w.x * x) - (w.y * y);
 rwbuf_in[in_high].y = (w.y * x) + (w.x * y);
 }
 */
+
 void dx_algorithm_local(in int in_low, in int in_high, uniform int bit)
 {
     float x, y;
@@ -191,11 +192,8 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_Group
     if (load_input) {
         rwbuf_in[tid] = input[tid];
         rwbuf_in[block_range_half + tid] = input[block_range_half + tid];
-        rwbuf_out[tid] = input[tid];
-        rwbuf_out[block_range_half + tid] = input[block_range_half + tid];
         BARRIER;
     }
-    return;
     /*
     if (NUMBER_OF_BLOCKS > 1)
     {
@@ -208,6 +206,7 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID, uint3 groupID : SV_Group
     shared_buf[in_high] = rwbuf_in[in_high + offset];
 
     dx_algorithm_local(in_low, in_high, bit);
+
     cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
     cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
     rwbuf_out[(reversebits((uint)(in_low + offset)) >> leading_bits)] = a;

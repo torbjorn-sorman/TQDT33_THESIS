@@ -60,14 +60,12 @@ bool opencl_2d_validate(const int n)
     cl_int err = CL_SUCCESS;
     cpx *data, *data_ref;
     setupBuffers(&data, NULL, &data_ref, n);
-    write_image("OpenCL", "original", data, n);
     {
         oclArgs arg_gpu, arg_cpu, arg_gpu_col, argTranspose;
         checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose, data, FFT_FORWARD, n), "Create failed!");
         checkErr(opencl_fft_2d(&arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Run failed!");
         checkErr(oclRelease2D(NULL, data, &arg_cpu, &arg_gpu, &arg_gpu_col, &argTranspose), "Release failed!");
-        write_normalized_image("OpenCL", "freq", data, n, true);
-        write_image("OpenCL", "frequency - not norm", data, n);
+        write_normalized_image("OpenCL", "freq", data, n, true);        
     }
     {
         oclArgs arg_gpu, arg_cpu, arg_gpu_col, argTranspose;
@@ -183,27 +181,26 @@ __inline cl_int opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu_row, oclArgs *a
     if (arg_gpu_row->n > 256) {
         int number_of_blocks = (int)arg_gpu_row->global_work_size[1];
         // _in -> _out
-        checkErr(opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks), "Helper 2D");
+        opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
         // _out -> _in
         oclSetKernelTransposeArg(arg_transpose, _out, _in);
-        checkErr(opencl_execute(arg_transpose), "Transpose");
+        opencl_execute(arg_transpose);
         // _in -> _out    
-        checkErr(opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks), "Helper 2D 2");
+        opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
         // _out -> _in
         oclSetKernelTransposeArg(arg_transpose, _out, _in);
-        checkErr(opencl_execute(arg_transpose), "Transpose 2");
+        opencl_execute(arg_transpose);
     }
     else {
         const int steps_left = log2_32(arg_gpu_row->n);
-        const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
         const float scalar = (arg_gpu_row->dir == FFT_FORWARD ? 1.f : 1.f / arg_gpu_row->n);
         const float global_angle = arg_gpu_row->dir * (M_2_PI / arg_gpu_row->n);
 
         oclSetKernelGPU2DArg(arg_gpu_row, _in, _out, global_angle, steps_left, scalar, arg_gpu_row->n);
-        checkErr(opencl_execute(arg_gpu_row), "Rows");
+        opencl_execute(arg_gpu_row);
 
         oclSetKernelGPU2DColArg(arg_gpu_col, _out, _in, global_angle, steps_left, scalar, arg_gpu_col->n);
-        checkErr(opencl_execute(arg_gpu_col), "Cols");
+        opencl_execute(arg_gpu_col);
     }
     arg_cpu->input = arg_gpu_col->input = arg_gpu_row->input = _out;
     arg_cpu->output = arg_gpu_col->output = arg_gpu_row->output = _in;

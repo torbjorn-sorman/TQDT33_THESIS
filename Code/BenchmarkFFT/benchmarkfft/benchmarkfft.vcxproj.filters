@@ -95,6 +95,9 @@
     <ClInclude Include="Common\cpx_debug.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="Platforms\DirectX\dx_csmanip.h">
+      <Filter>Platforms\DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -183,6 +186,9 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">
+      <Filter>Platforms\DirectX</Filter>
+    </FxCompile>
+    <FxCompile Include="Platforms\DirectX\dx_cs_transpose.hlsl">
       <Filter>Platforms\DirectX</Filter>
     </FxCompile>
   </ItemGroup>

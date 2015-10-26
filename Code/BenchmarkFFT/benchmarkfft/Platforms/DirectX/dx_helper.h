@@ -4,22 +4,18 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <sstream>
-#include <fstream>
-#include <regex>
 #include "../../Definitions.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "../../Common/mymath.h"
+#include "dx_csmanip.h"
 
-#include <comdef.h>
-#include <comip.h>
 
 _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 
 struct dx_args
 {
-    int                         n_groups = 1;
+    dim3                        n_groups = { 1, 1, 1 };
     UINT                        init_cnts = 0xFFFFFFFF;
     ID3D11DeviceContext*        context = nullptr;
     ID3D11Device*               device = nullptr;
@@ -39,9 +35,13 @@ struct dx_args
     ID3D11Buffer*               buf_staging = nullptr;
     ID3D11Buffer*               buf_constant = nullptr;
     ID3DBlob*                   blob_local = nullptr;
+    ID3DBlob*                   blob_local_col = nullptr;
     ID3DBlob*                   blob_global = nullptr;
+    ID3DBlob*                   blob_transpose = nullptr;
     ID3D11ComputeShader*        cs_local = nullptr;
+    ID3D11ComputeShader*        cs_local_col = nullptr;
     ID3D11ComputeShader*        cs_global = nullptr;
+    ID3D11ComputeShader*        cs_transpose = nullptr;
     ID3D11ShaderResourceView*   view_nullptr = nullptr;
 };
 
@@ -164,18 +164,6 @@ static __inline void dx_check_error(HRESULT hr, char *method)
     }
 }
 
-static __inline D3D11_BUFFER_DESC get_input_buffer_description(const int dimension)
-{
-    D3D11_BUFFER_DESC desc;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    desc.StructureByteStride = sizeof(cpx);
-    desc.ByteWidth = sizeof(cpx) * dimension;
-    return desc;
-}
-
 static __inline D3D11_BUFFER_DESC get_output_buffer_description(const int dimension)
 {
     D3D11_BUFFER_DESC desc;
@@ -253,50 +241,17 @@ template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* conte
     context->Unmap(arg_buffer, 0);
 }
 
-static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
-{ 
-    std::ifstream in_file(shader_file);
-    std::stringstream buffer;
-    buffer << in_file.rdbuf();
-    std::string new_content = buffer.str();
-    in_file.close();
-
-    std::regex e_grp_sz("(#define\\s*GROUP_SIZE_X)\\s*\\d*$");
-    std::regex e_num_blk("(#define\\s*NUMBER_OF_BLOCKS)\\s*\\d*$");
-
-    std::ofstream out_file(shader_file);
-    std::stringstream fmt1, fmt2;
-    const int n2 = n >> 1;
-    if (n2 > MAX_BLOCK_SIZE) {
-        fmt1 << "$1 " << std::to_string(MAX_BLOCK_SIZE);
-        if ((n2 / MAX_BLOCK_SIZE) > HW_LIMIT)
-            fmt2 << "$1 " << std::to_string(1);
-        else
-            fmt2 << "$1 " << std::to_string((n2 / MAX_BLOCK_SIZE));
-    }
-    else {
-        fmt1 << "$1 " << std::to_string(n2);
-        fmt2 << "$1 " << std::to_string(1);
-    }
-    new_content = std::regex_replace(new_content, e_grp_sz, fmt1.str());
-    new_content = std::regex_replace(new_content, e_num_blk, fmt2.str());
-
-    out_file << new_content;
-    out_file.close();
-}
-
 static __inline void dx_setup(dx_args* a, cpx* in, const int n)
 {
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
     dx_set_dim(cs_file, n);
 
-    a->n_groups = (n >> 1) > MAX_BLOCK_SIZE ? ((n >> 1) / MAX_BLOCK_SIZE) : 1;
+    a->n_groups.x = (n >> 1) > MAX_BLOCK_SIZE ? ((n >> 1) / MAX_BLOCK_SIZE) : 1;
     D3D_FEATURE_LEVEL featureLevel;
-    //D3D11_BUFFER_DESC input_buffer_desc = get_input_buffer_description(n);
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n);
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
-    D3D11_UNORDERED_ACCESS_VIEW_DESC output_uav_desc = get_unordered_access_view_description(n);
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n);
     ID3DBlob* errorBlob = nullptr;
 
     dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
@@ -310,8 +265,8 @@ static __inline void dx_setup(dx_args* a, cpx* in, const int n)
     dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
 
     // Create unordered access view for IO buffers.  
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &output_uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &output_uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
+    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
+    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
 
     // Create a staging buffer, which will be used to copy back from the GPU out buffer.
     dx_check_error(a->device->CreateBuffer(&staging_buffer_desc, NULL, &a->buf_staging), "Create Staging Buffer");
@@ -330,23 +285,78 @@ static __inline void dx_setup(dx_args* a, cpx* in, const int n)
     // Attach the constant buffer
     a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
 
-    if (a->n_groups > 1 && a->n_groups <= HW_LIMIT) {
+    if (a->n_groups.x > 1 && a->n_groups.x <= HW_LIMIT) {
         dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sin), "Create GPU Sync Buffer ");
         dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sout), "Create GPU Sync Buffer ");
-        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sin, &output_uav_desc, &a->buf_sin_uav), "Create GPU Out UnorderedAccessView");
-        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sout, &output_uav_desc, &a->buf_sout_uav), "Create GPU Out UnorderedAccessView");
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sin, &uav_desc, &a->buf_sin_uav), "Create GPU Out UnorderedAccessView");
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sout, &uav_desc, &a->buf_sout_uav), "Create GPU Out UnorderedAccessView");
     }
 
     if (in != NULL) {
-        
-        //dx_write_buffer(a->context, a->buf_input, in, n);
+        a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
+    }
+}
+
+static __inline void dx_setup_2d(dx_args* a, cpx* in, const int n)
+{
+    LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
+    LPCWSTR cs_file_transpose = L"Platforms/DirectX/dx_cs_transpose.hlsl";
+    dx_set_dim_2d(cs_file, n);
+    dx_set_dim_trans(cs_file_transpose, n);
+
+    a->n_groups.x = n;
+    int n_half = n >> 1;
+    a->n_groups.y = n_half > MAX_BLOCK_SIZE ? n_half / MAX_BLOCK_SIZE : 1;
+
+    D3D_FEATURE_LEVEL featureLevel;
+    D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n * n);
+    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n * n);
+    D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n * n);
+    ID3DBlob* errorBlob = nullptr;
+
+    dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
+
+    // GPU read/write accessible buffers.
+    dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_input), "Create GPU In Buffer ");
+    dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_output), "Create GPU Out Buffer ");
+
+    // Create shader resource view for IO buffers.  
+    dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
+    dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
+
+    // Create unordered access view for IO buffers.  
+    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
+    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
+
+    // Create a staging buffer, which will be used to copy back from the GPU out buffer.
+    dx_check_error(a->device->CreateBuffer(&staging_buffer_desc, NULL, &a->buf_staging), "Create Staging Buffer");
+
+    // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
+    dx_check_error(a->device->CreateBuffer(&constant_buffer_desc, NULL, &a->buf_constant), "Create Constant Buffer");
+
+    // Compile the compute shader into a blob.
+    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_row", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_col", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local_col, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
+    dx_check_error(D3DCompileFromFile(cs_file_transpose, NULL, NULL, "dx_transpose", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_transpose, &errorBlob), "D3DCompileFromFile", errorBlob);
+
+    // Create a shader object from the compiled blob.
+    dx_check_error(a->device->CreateComputeShader(a->blob_local->GetBufferPointer(), a->blob_local->GetBufferSize(), NULL, &a->cs_local), "CreateComputeShader");
+    dx_check_error(a->device->CreateComputeShader(a->blob_local_col->GetBufferPointer(), a->blob_local_col->GetBufferSize(), NULL, &a->cs_local_col), "CreateComputeShader");
+    dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
+    dx_check_error(a->device->CreateComputeShader(a->blob_transpose->GetBufferPointer(), a->blob_transpose->GetBufferSize(), NULL, &a->cs_transpose), "CreateComputeShader");
+
+    // Attach the constant buffer
+    a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
+    
+    if (in != NULL) {
         a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
     }
 }
 
 static __inline void dx_shakedown(dx_args *a)
 {
-    // Disconnect everything from the pipeline.
     ID3D11UnorderedAccessView* nullUAV = nullptr;
     a->context->CSSetUnorderedAccessViews(0, 1, &nullUAV, &a->init_cnts);
     ID3D11ShaderResourceView* nullSRV = nullptr;
@@ -355,9 +365,13 @@ static __inline void dx_shakedown(dx_args *a)
     a->context->CSSetConstantBuffers(0, 1, &nullBuffer);
 
     a->cs_local->Release();
+    if (a->cs_local_col)
+        a->cs_local_col->Release();
     if (a->cs_global)
         a->cs_global->Release();
     a->blob_local->Release();
+    if (a->blob_local_col)
+        a->blob_local_col->Release();
     if (a->blob_global)
         a->blob_global->Release();
     a->buf_constant->Release();
@@ -369,14 +383,18 @@ static __inline void dx_shakedown(dx_args *a)
     a->buf_input_srv->Release();
     a->buf_input->Release();
     if (a->buf_sin) {
+        a->context->CSSetUnorderedAccessViews(1, 1, &nullUAV, &a->init_cnts);
         a->buf_sin->Release();
         a->buf_sin_uav->Release();
-        a->context->CSSetUnorderedAccessViews(1, 1, &nullUAV, &a->init_cnts);
     }
     if (a->buf_sout) {
+        a->context->CSSetUnorderedAccessViews(2, 1, &nullUAV, &a->init_cnts);
         a->buf_sout->Release();
         a->buf_sout_uav->Release();
-        a->context->CSSetUnorderedAccessViews(2, 1, &nullUAV, &a->init_cnts);
+    }
+    if (a->blob_transpose) {
+        a->cs_transpose->Release();
+        a->blob_transpose->Release();
     }
     a->context->Release();
     a->device->Release();

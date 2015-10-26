@@ -182,17 +182,17 @@ __kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __loc
     int leading_bits = (32 - log2_32((int)get_num_groups(0)));
     int in_low = get_local_id(0);
     int in_high = (n_per_block >> 1) + in_low;
-    int rowStart = get_num_groups(0) * get_group_id(0);
-    int rowOffset = get_group_id(1) * get_local_size(0) * 2;
-    in += rowStart + rowOffset;
-    out += rowStart;
+    int row_start = get_num_groups(0) * get_group_id(0);
+    int row_offset = get_group_id(1) * get_local_size(0) * 2;
+    in += row_start + row_offset;
+    out += row_start;
     shared[in_low]  = in[in_low];
     shared[in_high] = in[in_high];
     algorithm_partial(shared, in_high, local_angle, steps_left);
     cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
     cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };
-    out[(reverse(in_low + rowOffset) >> leading_bits)] = src_low;
-    out[(reverse(in_high + rowOffset) >> leading_bits)] = src_high;
+    out[(reverse(in_low + row_offset) >> leading_bits)] = src_low;
+    out[(reverse(in_high + row_offset) >> leading_bits)] = src_high;
 }
 
 __kernel void opencl_kernel_local_col(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, float scalar, int n)

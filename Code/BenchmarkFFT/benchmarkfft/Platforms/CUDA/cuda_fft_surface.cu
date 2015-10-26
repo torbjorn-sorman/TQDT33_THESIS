@@ -160,11 +160,11 @@ __global__ void _kernelGPUS2DRowSurf(cudaSurfaceObject_t in, cudaSurfaceObject_t
 {
     extern __shared__ cpx shared[];
     int in_high = (n_per_block >> 1) + threadIdx.x;
-    int rowOffset = blockIdx.y * blockDim.x * 2;
-    mem_gtos_row(threadIdx.x, in_high, rowOffset, shared, in);
+    int row_offset = blockIdx.y * blockDim.x * 2;
+    mem_gtos_row(threadIdx.x, in_high, row_offset, shared, in);
     SYNC_THREADS;
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
-    mem_stog_dbt_row(threadIdx.x, in_high, rowOffset, 32 - log2((int)gridDim.x), scalar, shared, out);
+    mem_stog_dbt_row(threadIdx.x, in_high, row_offset, 32 - log2((int)gridDim.x), scalar, shared, out);
 }
 
 __global__ void _kernelGPUS2DColSurf(cudaSurfaceObject_t in, cudaSurfaceObject_t out, float angle, float local_angle, int steps_left, cpx scalar, int n)

@@ -25,8 +25,7 @@ __host__ int cuda_validate(int n)
     cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
 
 #ifdef SHOW_BLOCKING_DEBUG     
-    cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-    //cpx_to_console(in, "CUDA In");
+    cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);    
     cpx_to_console(out, "CUDA Out", 8);
     getchar();
 #endif
@@ -128,7 +127,7 @@ __host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
     float global_angle = dir * (M_2_PI / n);
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
-    if (number_of_blocks >= HW_LIMIT) {
+    if (number_of_blocks > HW_LIMIT) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
         cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
         --steps_left;
@@ -145,6 +144,7 @@ __host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
         ++steps_left;
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
+        
     }
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*in, *out, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);
@@ -267,7 +267,7 @@ __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int
     cpx w;
     int tid = blockIdx.x * blockDim.x + threadIdx.x;    
     in += tid + (tid & lmask);
-    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);    
     cpx_add_sub_mul(in, in + dist, &w);
 }
 
@@ -297,10 +297,10 @@ __global__ void cuda_kernel_global_col(cpx *in, cpx *out, float angle, unsigned 
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)
 {
     extern __shared__ cpx shared[];
-    int bit = steps_left;
+    int steps = steps_left;
     int in_high = block_range_half;
     if (number_of_blocks > 1) {
-        bit = cuda_algorithm_global_sync(in, out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
+        steps = cuda_algorithm_global_sync(in, out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
         in_high >>= log2(number_of_blocks);
         in = out;
     }
@@ -311,9 +311,28 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_an
     shared[threadIdx.x] = in[threadIdx.x];
     shared[in_high] = in[in_high];
     SYNC_THREADS;
-    cuda_algorithm_local(shared, in_high, local_angle, bit);
+    cuda_algorithm_local(shared, in_high, local_angle, steps);
     out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
+    /*
+    int out_a = BIT_REVERSE(threadIdx.x + offset, leading_bits);
+    int out_b = BIT_REVERSE(in_high + offset, leading_bits);
+    unsigned int dbg = 200
+    ;
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid == dbg || out_a == 0 || out_b == 0) {
+        if (tid == dbg) {
+            out[0].x = threadIdx.x;
+            out[1].x = in_high;
+            out[2].x = out_a;
+            out[3].x = out_b;
+            out[4].x = offset;
+            out[5].x = scalar;
+            out[6].x = number_of_blocks;
+            out[7].x = block_range_half;
+        }
+    }
+    */
 }
 
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float local_angle, int steps_left, float scalar, int n_per_block)

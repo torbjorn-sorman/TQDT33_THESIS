@@ -8,6 +8,37 @@
 #include "../../Common/imglib.h"
 #include "../../Common/mycomplex.h"
 
+//
+// CUDA compiler nvcc intrisics related defines.
+//
+#ifdef __CUDACC__
+#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
+#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
+#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
+#define SYNC_THREADS __syncthreads()
+#define BIT_REVERSE(x, l) ((__brev((x))) >> (l))
+#define SIN_COS_F(a, x, y) __sincosf(a, x, y)
+#define FIND_FIRST_BIT(v) (__ffs(v))
+#define ATOMIC_CAS(a,c,v) (atomicCAS((int *)(a),(int)(c),(int)(v)))
+#define THREAD_FENCE __threadfence()
+#define ATOMIC_ADD(a, b) (atomicAdd((int *)(a), (int)(b)))
+#define SURF2D_READ(d,s,x,y) (surf2Dread((d), (s), (x) * sizeof(cpx), (y)))
+#define SURF2D_WRITE(d,s,x,y) (surf2Dwrite((d), (s), (x) * sizeof(cpx), (y)));
+#else
+#define SURF2D_READ(d,s,x,y) 1
+#define SURF2D_WRITE(d,s,x,y) 1
+#define ATOMIC_ADD(a, b) 1
+#define ATOMIC_CAS(a, c, v) 1
+#define THREAD_FENCE
+#define KERNEL_ARGS2(grid, block)
+#define KERNEL_ARGS3(grid, block, sh_mem)
+#define KERNEL_ARGS4(grid, block, sh_mem, stream)
+#define SYNC_THREADS
+#define BIT_REVERSE(x, l) 0
+#define SIN_COS_F(a, x, y)
+#define FIND_FIRST_BIT(v)
+#endif
+
 __host__ __device__ static __inline__ void cuda_surface_swap(cudaSurfaceObject_t *in, cudaSurfaceObject_t *out)
 {
     cudaSurfaceObject_t tmp = *in;

@@ -80,7 +80,7 @@ static __inline void dx_set_dim_trans(LPCWSTR shader_file, const int n)
     std::stringstream buffer;
     buffer << in_file.rdbuf();
     std::string new_content = buffer.str();
-    in_file.close();
+    in_file.close();    
     std::regex e_w_sz("(#define\\s*WIDTH)\\s*\\d*$");
     std::ofstream out_file(shader_file);
     std::stringstream fmt_w;

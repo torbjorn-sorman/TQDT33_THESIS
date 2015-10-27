@@ -1,6 +1,6 @@
-#define GROUP_SIZE_X 256
-#define GRID_DIM_X 512
-#define GRID_DIM_Y 1
+#define GROUP_SIZE_X 1024
+#define GRID_DIM_X 8192
+#define GRID_DIM_Y 4
 
 //#define BARRIER AllMemoryBarrierWithGroupSync()
 //#define BARRIER DeviceMemoryBarrierWithGroupSync()
@@ -195,17 +195,22 @@ void dx_2d_local_col(uint3 threadIDInGroup : SV_GroupThreadID,
     uint groupIndex : SV_GroupIndex,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+#if GRID_DIM_X < 4096
     int leading_bits = (32 - log2((int)GRID_DIM_X));
     int in_low = threadIDInGroup.x;
     int in_high = (GRID_DIM_X >> 1) + in_low;
     int colOffset = groupID.y * GROUP_SIZE_X * 2;
 
-    shared_buf[in_low] = input[(in_low + colOffset) * GRID_DIM_X + groupID.x];
-    shared_buf[in_high] = input[(in_low + colOffset) * GRID_DIM_X + groupID.x + ((GRID_DIM_X >> 1) * GRID_DIM_X)];
+    int index = (in_low + colOffset) * GRID_DIM_X + groupID.x;
+    int high_offset = ((GRID_DIM_X >> 1) * GRID_DIM_X);
+
+    shared_buf[in_low] = input[index];
+    shared_buf[in_high] = input[index + high_offset];
     dx_algorithm_local(in_low, in_high, steps_left);
 
     cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y *scalar };
     cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y *scalar };
     rw_buf[(reversebits(in_low + colOffset) >> leading_bits) * GRID_DIM_X + groupID.x] = a;
     rw_buf[(reversebits(in_high + colOffset) >> leading_bits) * GRID_DIM_X + groupID.x] = b;
+#endif
 }

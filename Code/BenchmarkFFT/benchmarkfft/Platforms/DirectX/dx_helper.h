@@ -310,9 +310,9 @@ static __inline void dx_setup_2d(dx_args* a, cpx* in, const int n)
 
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n * n);
-    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n * n);
-    D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
+    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n * n);    
     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n * n);
+    D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
     ID3DBlob* errorBlob = nullptr;
 
     dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
@@ -335,6 +335,9 @@ static __inline void dx_setup_2d(dx_args* a, cpx* in, const int n)
     // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
     dx_check_error(a->device->CreateBuffer(&constant_buffer_desc, NULL, &a->buf_constant), "Create Constant Buffer");
 
+    // Attach the constant buffer
+    a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
+
     // Compile the compute shader into a blob.
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_row", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_col", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local_col, &errorBlob), "D3DCompileFromFile", errorBlob);
@@ -346,10 +349,7 @@ static __inline void dx_setup_2d(dx_args* a, cpx* in, const int n)
     dx_check_error(a->device->CreateComputeShader(a->blob_local_col->GetBufferPointer(), a->blob_local_col->GetBufferSize(), NULL, &a->cs_local_col), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_transpose->GetBufferPointer(), a->blob_transpose->GetBufferSize(), NULL, &a->cs_transpose), "CreateComputeShader");
-
-    // Attach the constant buffer
-    a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
-    
+        
     if (in != NULL) {
         a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
     }
@@ -364,18 +364,22 @@ static __inline void dx_shakedown(dx_args *a)
     ID3D11Buffer* nullBuffer = nullptr;
     a->context->CSSetConstantBuffers(0, 1, &nullBuffer);
 
-    a->cs_local->Release();
+    if (a->cs_local)
+        a->cs_local->Release();
     if (a->cs_local_col)
         a->cs_local_col->Release();
     if (a->cs_global)
         a->cs_global->Release();
-    a->blob_local->Release();
+    if (a->blob_local)
+        a->blob_local->Release();
     if (a->blob_local_col)
         a->blob_local_col->Release();
     if (a->blob_global)
         a->blob_global->Release();
-    a->buf_constant->Release();
-    a->buf_staging->Release();
+    if (a->buf_constant)
+        a->buf_constant->Release();
+    if (a->buf_staging)
+        a->buf_staging->Release();
     a->buf_output_uav->Release();
     a->buf_output_srv->Release();
     a->buf_output->Release();

@@ -29,7 +29,7 @@ cl_int opencl_setup_kernels(oclArgs *args)
     if (err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL) != CL_SUCCESS)  return err;
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     if (err != CL_SUCCESS)                                                                      return err;
-    commands = clCreateCommandQueue(context, device_id, 0, &err);
+    commands = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
     if (err != CL_SUCCESS)                                                                      return err;
     args->platform = platform;
     args->device_id = device_id;

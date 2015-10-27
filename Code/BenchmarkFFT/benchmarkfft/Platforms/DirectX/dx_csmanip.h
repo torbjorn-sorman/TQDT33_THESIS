@@ -51,9 +51,9 @@ static __inline void dx_set_dim_2d(LPCWSTR shader_file, const int n)
     buffer << in_file.rdbuf();
     std::string new_content = buffer.str();
     in_file.close();
-    std::regex e_grpx_sz("(#define\\s*GROUP_SIZE_X)\\s*\\d*$");
-    std::regex e_gridx_sz("(#define\\s*GRID_DIM_X)\\s*\\d*$");
-    std::regex e_gridy_sz("(#define\\s*GRID_DIM_Y)\\s*\\d*$");
+    std::regex e_grpx_sz("(#define\\s*GROUP_SIZE_X)\\s*\\d*\\s*$");
+    std::regex e_gridx_sz("(#define\\s*GRID_DIM_X)\\s*\\d*\\s*$");
+    std::regex e_gridy_sz("(#define\\s*GRID_DIM_Y)\\s*\\d*\\s*$");
     std::ofstream out_file(shader_file);
     std::stringstream fmt_grp, fmt_gridx, fmt_gridy;
     const int n2 = n >> 1;

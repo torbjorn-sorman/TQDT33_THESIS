@@ -55,9 +55,7 @@ int dx_2d_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-#define DX_TIMESTAMP
-
-#ifndef DX_TIMESTAMP
+#ifndef MEASURE_BY_TIMESTAMP
 double dx_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
@@ -88,13 +86,16 @@ double dx_2d_performance(const int n)
 #else
 double dx_performance(const int n)
 {
+    double measures[NUM_PERFORMANCE];
     dx_args args;
     profiler_data profiler[NUM_PERFORMANCE];
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         profiler_data p;
         dx_setup(&args, NULL, n);
         dx_start_profiling(&args, &p);
+
         dx_fft(FFT_FORWARD, &args, n);
+
         dx_end_profiling(&args, &p);
         dx_shakedown(&args);
         profiler[i] = p;
@@ -107,7 +108,7 @@ double dx_2d_performance(const int n)
     profiler_data profiler[NUM_PERFORMANCE];
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         profiler_data p;
-        dx_setup(&args, NULL, n);
+        dx_setup_2d(&args, NULL, n);
         dx_start_profiling(&args, &p);
 
         dx_fft_2d(FFT_FORWARD, &args, n);
@@ -171,10 +172,6 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
         number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
     }
-    // TODO: Remove
-    swap_io(args);
-    return;
-    //
     dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half, false);
     args->context->Dispatch(args->n_groups.x, 1, 1);
 }

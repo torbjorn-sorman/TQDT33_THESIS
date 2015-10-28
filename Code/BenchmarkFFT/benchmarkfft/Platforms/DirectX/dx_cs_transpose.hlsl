@@ -1,4 +1,4 @@
-#define WIDTH 8192
+#define WIDTH 16384
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32  
 

@@ -164,7 +164,9 @@ cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, t
     checkErr(oclSetupProgram("ocl_kernel", "opencl_kernel_global", arg_cpu), "Failed to setup CPU Program!");
 
     checkErr(oclSetupWorkGroupsAndMemory(arg_gpu), "Failed to setup GPU Program!");
-    cl_int err = oclSetupDeviceMemoryData(arg_gpu, data_in);
+    cl_int err = CL_SUCCESS;
+    if (data_in != NULL)
+        err = oclSetupDeviceMemoryData(arg_gpu, data_in);
     arg_cpu->global_work_size[0] = arg_gpu->global_work_size[0];
     arg_cpu->local_work_size[0] = arg_gpu->local_work_size[0];
     arg_cpu->input = arg_gpu->input;
@@ -179,11 +181,12 @@ cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, t
 cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm)
 {
     memcpy(arg_tm, arg_target, sizeof(oclArgs));
-    return checkErr(oclSetupProgram("ocl_kernel", "opencl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
-    arg_target->global_work_size[0] = 1;
-    arg_target->global_work_size[1] = 1;
-    arg_target->local_work_size[0] = 1;
-    arg_target->local_work_size[1] = 1;
+    cl_int err = checkErr(oclSetupProgram("ocl_kernel", "opencl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
+    arg_tm->global_work_size[0] = 1;
+    arg_tm->global_work_size[1] = 1;
+    arg_tm->local_work_size[0] = 1;
+    arg_tm->local_work_size[1] = 1;
+    return err;
 }
 
 void setWorkDimForTranspose(oclArgs *argTranspose, const int n)

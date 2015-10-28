@@ -1,11 +1,10 @@
 #include "cuda_fft.cuh"
 
 __global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
-__global__ void cuda_kernel_global_row(cpx *in, cpx *out, float global_angle, unsigned int lmask, int steps, int dist);
-__global__ void cuda_kernel_global_col(cpx *in, cpx *out, float global_angle, unsigned int lmask, int steps, int dist);
+__global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int n_half);
-__global__ void cuda_kernel_local_row(cpx *in, cpx *out, float global_angle, float local_angle, int steps_left, float scalar, int n);
-__global__ void cuda_kernel_local_col(cpx *in, cpx *out, float global_angle, float local_angle, int steps_left, float scalar, int n);
+__global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, float scalar, int n);
+__global__ void cuda_kernel_local_col(cpx *in, cpx *out, float local_angle, int steps_left, float scalar, int n);
 
 __device__ volatile int sync_array_in[MAX_BLOCK_SIZE];
 __device__ volatile int sync_array_out[MAX_BLOCK_SIZE];
@@ -21,21 +20,21 @@ __host__ int cuda_validate(int n)
     cpx *in, *ref, *out, *dev_in, *dev_out;
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
+    cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
     cudaDeviceSynchronize();
     cudaMemcpy(out, dev_out, n * sizeof(cpx), cudaMemcpyDeviceToHost);
     double diff = diff_forward_sinus(out, n);
-    cuda_fft(FFT_INVERSE, &dev_out, &dev_in, n);
+    cuda_fft(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
-__host__ void testCombine2DRun(transform_direction dir, cpx *in, cpx **dev_in, cpx **dev_out, size_t size, bool write, bool norm, int n)
+__host__ void testCombine2DRun(transform_direction dir, cpx *in, cpx *dev_in, cpx *dev_out, size_t size, bool write, bool norm, int n)
 {
     cuda_fft_2d(dir, dev_in, dev_out, n);
     if (write) {
-        cudaMemcpy(in, *dev_out, size, cudaMemcpyDeviceToHost);
+        cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
         if (norm) {
             write_image("CUDA", "frequency - not norm", in, n);
             write_normalized_image("CUDA", "freq", in, n, true);
@@ -52,12 +51,12 @@ __host__ int cuda_2d_validate(int n)
     cuda_setup_buffers_2d(&host_buffer, &ref, &dev_in, &dev_out, &size, n);
 
     cudaMemcpy(dev_in, host_buffer, size, cudaMemcpyHostToDevice);
-    cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
+    cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
     cudaDeviceSynchronize();
     cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
     write_normalized_image("CUDA", "freq", host_buffer, n, true);
 
-    cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
+    cuda_fft_2d(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(host_buffer, dev_in, size, cudaMemcpyDeviceToHost);
     write_image("CUDA", "spat", host_buffer, n);
@@ -113,7 +112,7 @@ __host__ double cuda_performance(int n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {        
         cudaEventRecord(start);
-        cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
+        cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&milliseconds, start, stop);        
@@ -136,7 +135,7 @@ __host__ double cuda_2d_performance(int n)
     float milliseconds = 0;
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
         cudaEventRecord(start);
-        cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
+        cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&milliseconds, start, stop);
@@ -155,7 +154,7 @@ __host__ double cuda_2d_performance(int n)
 
 // Seven physical "cores" can run blocks in "parallel" (and most important: sync over blocks).
 // Essentially my algorithm handles (depending on scheduling and other factors) # blocks fewer than HW_LIMIT on the GPU, any # above is not trivially solved. cuFFT solves this.
-__host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
+__host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
     int threads, blocks;
     int n_half = (n >> 1);
@@ -174,7 +173,7 @@ __host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
         int steps = 0;
         int dist = n;            
         while (--steps_left > steps_gpu) {
-            cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(*in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
+            cuda_kernel_global KERNEL_ARGS2(number_of_blocks, threads)(in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
         }
         ++steps_left;
         number_of_blocks = 1;
@@ -182,12 +181,10 @@ __host__ void cuda_fft(transform_direction dir, cpx **in, cpx **out, int n)
         
     }
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
-    cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*in, *out, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);    
+    cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (in, out, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);    
 }
 
-#define ROW_COL_KERNEL(rw, kr, kc) ((rw) ? (kr) : (kc))
-
-__host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx **dev_in, cpx **dev_out, int n)
+__host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
 {
     dim3 blocks;
     int threads;
@@ -200,35 +197,30 @@ __host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx **
     int block_range = n;
     if (blocks.y > 1) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
-        --steps_left;
         const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
         int steps = 0;
-        int dist = n >> 1;
-        cuda_kernel_global_row KERNEL_ARGS2(blocks, threads)(*dev_in, *dev_out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+        int dist = n;
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
         while (--steps_left > steps_gpu) {
-            dist >>= 1;
-            ++steps;
-            cuda_kernel_global_row KERNEL_ARGS2(blocks, threads)(*dev_out, *dev_out, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+            cuda_kernel_global_row KERNEL_ARGS2(blocks, threads)(dev_in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
         }
-        swap_buffer(dev_in, dev_out);
         ++steps_left;
         block_range = n_per_block;
     }
     // Calculate complete sequence in one launch and syncronize on GPU
-    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*dev_in, *dev_out, global_angle, local_angle, steps_left, scalar, block_range >> 1);
+    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (dev_in, dev_out, local_angle, steps_left, scalar, block_range >> 1);
 }
 
-__host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, int n)
+__host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
 {
     dim3 blocks;
     if (n > 256) {
         dim3 threads;
         set_block_and_threads_transpose(&blocks, &threads, n);
         cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
         cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
         
     }
     else {
@@ -237,37 +229,31 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
         const float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
         const float global_angle = dir * (M_2_PI / n);
         set_block_and_threads2D(&blocks, &threads, n);
-        // Calculate complete sequence in one launch and syncronize on GPU
-        cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (*dev_in, *dev_out, global_angle, global_angle, steps_left, scalar, n >> 1);
-        // Calculate complete sequence in one launch and syncronize on GPU
-        cuda_kernel_local_col KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (*dev_out, *dev_in, global_angle, global_angle, steps_left, scalar, n);
+        cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (dev_in, dev_out, global_angle, steps_left, scalar, n >> 1);
+        cuda_kernel_local_col KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (dev_out, dev_in, global_angle, steps_left, scalar, n);
     }
-    swap_buffer(dev_in, dev_out);
+    swap_buffer(&dev_in, &dev_out);
 }
 
-__device__ static __inline__ void cuda_inner_kernel(cpx *in, cpx *out, float angle, int steps, unsigned int lmask, int dist)
+__device__ static __inline__ void cuda_inner_kernel(cpx *in, float angle, int steps, unsigned int lmask, int dist)
 {
     cpx w;
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    int in_low = tid + (tid & lmask);
-    in += in_low;
-    out += in_low;
+    in += tid + (tid & lmask);
     SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in + dist, out, out + dist, &w);
+    cpx_add_sub_mul(in, in + dist, &w);
 }
 
-__device__ static __inline__ int cuda_algorithm_global_sync(cpx *in, cpx *out, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
+__device__ static __inline__ int cuda_algorithm_global_sync(cpx *in, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
 {
     int dist = n_half;
     int steps = 0;
     cuda_block_sync_init(sync_array_in, sync_array_out, (blockIdx.x * blockDim.x + threadIdx.x), number_of_blocks);
-    cuda_inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    cuda_block_sync(sync_array_in, sync_array_out, number_of_blocks + steps);
-    for (int bit = bit_start - 1; bit > steps_gpu; --bit) {
+    for (int bit = bit_start; bit > steps_gpu; --bit) {        
+        cuda_inner_kernel(in, angle, steps, 0xFFFFFFFF << bit, dist);
+        cuda_block_sync(sync_array_in, sync_array_out, number_of_blocks + steps);
         dist >>= 1;
         ++steps;
-        cuda_inner_kernel(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
-        cuda_block_sync(sync_array_in, sync_array_out, number_of_blocks + steps);
     }
     return steps_gpu + 1;
 }
@@ -299,26 +285,13 @@ __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int
     cpx_add_sub_mul(in, in + dist, &w);
 }
 
-__global__ void cuda_kernel_global_row(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
     int col_id = blockIdx.y * blockDim.x + threadIdx.x;
-    int in_low = (col_id + (col_id & lmask)) + blockIdx.x * gridDim.x;
-    in += in_low;
-    out += in_low;
+    in += (col_id + (col_id & lmask)) + blockIdx.x * gridDim.x;
     SIN_COS_F(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in + dist, out, out + dist, &w);
-}
-
-__global__ void cuda_kernel_global_col(cpx *in, cpx *out, float angle, unsigned int lmask, int steps, int dist)
-{
-    int row_id = blockIdx.y * blockDim.x + threadIdx.x;
-    cpx w;
-    int in_low = blockIdx.x + (row_id + (row_id & lmask)) * gridDim.x;
-    in += in_low;
-    out += in_low;
-    SIN_COS_F(angle * (((blockIdx.y * blockDim.x + threadIdx.x) << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx_add_sub_mul(in, in + dist, out, out + dist, &w);
+    cpx_add_sub_mul(in, in + dist, &w);
 }
 
 // Full blown block syncronized algorithm! In theory this should scalar up but is limited by hardware (#cores)
@@ -328,9 +301,8 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_an
     int steps = steps_left;
     int in_high = block_range_half;
     if (number_of_blocks > 1) {
-        steps = cuda_algorithm_global_sync(in, out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
+        steps = cuda_algorithm_global_sync(in, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
         in_high >>= log2(number_of_blocks);
-        in = out;
     }
 
     int offset = blockIdx.x * blockDim.x * 2;
@@ -344,7 +316,7 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float angle, float local_an
     out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }
 
-__global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float local_angle, int steps_left, float scalar, int block_range_half)
+__global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, float scalar, int block_range_half)
 {
     extern __shared__ cpx shared[];
     int leading_bits = (32 - log2((int)gridDim.x));
@@ -360,7 +332,7 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float angle, float loca
     out[BIT_REVERSE(in_high + row_offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }
 
-__global__ void cuda_kernel_local_col(cpx *in, cpx *out, float angle, float local_angle, int steps_left, float scalar, int n)
+__global__ void cuda_kernel_local_col(cpx *in, cpx *out, float local_angle, int steps_left, float scalar, int n)
 {
     extern __shared__ cpx shared[];
 

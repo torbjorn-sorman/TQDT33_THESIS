@@ -1,5 +1,3 @@
-#define UNROLL_FACTOR 4096
-
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -34,24 +32,24 @@ int log2_32(unsigned int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-void add_sub_mul_global(__global cpx* inL, __global cpx* inU, __global cpx *outL, __global cpx *outU, cpx *W)
+void add_sub_mul_global(__global cpx* low, __global cpx* high, cpx* w)
 {
-    float x = inL->x - inU->x;
-    float y = inL->y - inU->y;
-    outL->x = inL->x + inU->x;
-    outL->y = inL->y + inU->y;
-    outU->x = (W->x * x) - (W->y * y);
-    outU->y = (W->y * x) + (W->x * y);
+    float x = low->x - high->x;
+    float y = low->y - high->y;
+    low->x = low->x + high->x;
+    low->y = low->y + high->y;
+    high->x = (w->x * x) - (w->y * y);
+    high->y = (w->y * x) + (w->x * y);
 }
 
-void add_sub_mul_local(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, const cpx *W)
+void add_sub_mul_local(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU, const cpx *w)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     outL->x = inL->x + inU->x;
     outL->y = inL->y + inU->y;
-    outU->x = (W->x * x) - (W->y * y);
-    outU->y = (W->y * x) + (W->x * y);
+    outU->x = (w->x * x) - (w->y * y);
+    outU->y = (w->y * x) + (w->x * y);
 }
 
 unsigned int reverse(register unsigned int x)
@@ -91,30 +89,25 @@ void group_sync(__global int *s_in, __global int *s_out, const int goal)
     barrier(0);
 }
 
-void inner_kernel(__global cpx *in, __global cpx *out, float angle, int steps, unsigned int lmask, int dist)
+void inner_kernel(__global cpx *in, float angle, int steps, unsigned int lmask, int dist)
 {
     cpx w;
     int tid = get_global_id(0);
-    int in_low = tid + (tid & lmask);
-    in += in_low;
-    out += in_low;
+    in += tid + (tid & lmask);
     w.y = sincos(angle * ((tid << steps) & ((dist - 1) << steps)), &w.x);
-    add_sub_mul_global(in, in + dist, out, out + dist, &w);
+    add_sub_mul_global(in, in + dist, &w);
 }
 
-int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *sync_in, __global int *sync_out, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
+int algorithm_cross_group(__global cpx *in, __global int *sync_in, __global int *sync_out, int bit_start, int steps_gpu, float angle, int number_of_blocks, int n_half)
 {    
     int dist = n_half;
     int steps = 0;
     group_sync_init(sync_in, sync_out);
-    inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    group_sync(sync_in, sync_out, number_of_blocks + steps); 
-#pragma unroll UNROLL_FACTOR      
-    for (int bit = bit_start - 1; bit > steps_gpu; --bit) {
+    for (int bit = bit_start; bit > steps_gpu; --bit) {        
+        inner_kernel(in, angle, steps, 0xFFFFFFFF << bit, dist);
+        group_sync(sync_in, sync_out, number_of_blocks + steps);
         dist >>= 1;
         ++steps;
-        inner_kernel(out, out, angle, steps, 0xFFFFFFFF << bit, dist);
-        group_sync(sync_in, sync_out, number_of_blocks + steps);
     }
     return steps_gpu + 1;
 }
@@ -126,8 +119,7 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
     __local cpx *out_i = shared + (local_id << 1);
     __local cpx *out_ii = out_i + 1;
     __local cpx *in_l = shared + local_id;
-    __local cpx *in_u = shared + in_high;    
-#pragma unroll UNROLL_FACTOR
+    __local cpx *in_u = shared + in_high;
     for (int steps = 0; steps < bit; ++steps) {
         w.y = sincos(angle * (local_id & (0xFFFFFFFF << steps)), &w.x);
         in_lower = *in_l;
@@ -139,9 +131,13 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
 }
 
 // GPU takes care of overall syncronization
-__kernel void opencl_kernel_global(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__kernel void opencl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    inner_kernel(in, out, angle, steps, lmask, dist);
+    cpx w;
+    int tid = get_global_id(0);
+    in += tid + (tid & lmask);
+    w.y = sincos(angle * ((tid << steps) & ((dist - 1) << steps)), &w.x);
+    add_sub_mul_global(in, in + dist, &w);
 }
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
@@ -150,12 +146,11 @@ __kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __global 
 {    
     
     int bit = steps_left;
-    int in_high = n_half;
+    int in_high = n_half;    
     if (number_of_blocks > 1) {
-        bit = algorithm_cross_group(in, out, sync_in, sync_out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
+        bit = algorithm_cross_group(in, sync_in, sync_out, steps_left - 1, steps_gpu, angle, number_of_blocks, in_high);
         in_high >>= log2_32(number_of_blocks);
-        in = out;
-    }
+    }    
     int in_low = get_local_id(0);
     int offset = get_group_id(0) * get_local_size(0) * 2;
     in_high += in_low;    
@@ -170,15 +165,13 @@ __kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __global 
     out[(reverse(in_high + offset) >> leading_bits)] = src_high;
 }
 
-__kernel void opencl_kernel_global_row(__global cpx *in, __global cpx *out, float angle, unsigned int lmask, int steps, int dist)
+__kernel void opencl_kernel_global_row(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
     int col_id = get_group_id(1) * get_local_size(0) + get_local_id(0);
-    int in_low = (col_id + (col_id & lmask)) + get_group_id(0) * get_num_groups(0);
-    in += in_low;
-    out += in_low;
+    in += (col_id + (col_id & lmask)) + get_group_id(0) * get_num_groups(0);
     w.y = sincos(angle * ((col_id << steps) & ((dist - 1) << steps)), &w.x);
-    add_sub_mul_global(in, in + dist, out, out + dist, &w);
+    add_sub_mul_global(in, in + dist, &w);
 }
 
 __kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, float scalar, int n_per_block)
@@ -226,9 +219,9 @@ __kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __loc
     // Write to shared from Global (in)
     int x = get_group_id(0) * TILE_DIM + get_local_id(0);
     int y = get_group_id(1) * TILE_DIM + get_local_id(1);    
-#pragma unroll UNROLL_FACTOR    
+#pragma unroll    
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM) {
-#pragma unroll UNROLL_FACTOR
+#pragma unroll
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
             tile[get_local_id(1) + j][get_local_id(0) + i] = in[(y + j) * n + (x + i)];            
         }
@@ -237,9 +230,9 @@ __kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __loc
     // Write to global
     x = get_group_id(1) * TILE_DIM + get_local_id(0);
     y = get_group_id(0) * TILE_DIM + get_local_id(1);
-#pragma unroll UNROLL_FACTOR
+#pragma unroll
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM){ 
-#pragma unroll UNROLL_FACTOR
+#pragma unroll
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
             out[(y + j) * n + (x + i)] = tile[get_local_id(0) + i][get_local_id(1) + j];
         }
@@ -249,4 +242,5 @@ __kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __loc
 __kernel void opencl_timestamp_kernel()
 {
     // There be none here!
+    // Kernel only used as event trigger to get timestamps!
 }

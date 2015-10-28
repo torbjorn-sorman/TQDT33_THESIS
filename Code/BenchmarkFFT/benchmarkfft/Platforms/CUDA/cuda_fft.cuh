@@ -12,8 +12,8 @@
 #include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 
-__host__ void cuda_fft(transform_direction dir, cpx **dev_in, cpx **dev_out, int n);
-__host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, int n);
+__host__ void cuda_fft(transform_direction dir, cpx *dev_in, cpx *dev_out, int n);
+__host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, int n);
 
 __host__ int cuda_validate(int n);
 __host__ int cuda_2d_validate(int n);

@@ -1,7 +1,6 @@
 #define GROUP_SIZE_X 1024
-#define GRID_DIM_X 1
-#define GRID_DIM_Y 4
-
+#define GRID_DIM_X 16384
+#define GRID_DIM_Y 8
 //#define BARRIER AllMemoryBarrierWithGroupSync()
 //#define BARRIER DeviceMemoryBarrierWithGroupSync()
 #define BARRIER GroupMemoryBarrierWithGroupSync()

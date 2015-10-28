@@ -47,14 +47,13 @@ static void __inline swap(cl_mem *a, cl_mem *b)
     *b = c;
 }
 
-static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, cl_mem out, const float global_angle, unsigned int lmask, int steps, int dist)
+static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, const float global_angle, unsigned int lmask, int steps, int dist)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
-    clSetKernelArg(args->kernel, 2, sizeof(float), &global_angle);
-    clSetKernelArg(args->kernel, 3, sizeof(unsigned int), &lmask);
-    clSetKernelArg(args->kernel, 4, sizeof(int), &steps);
-    clSetKernelArg(args->kernel, 5, sizeof(int), &dist);
+    clSetKernelArg(args->kernel, 1, sizeof(float), &global_angle);
+    clSetKernelArg(args->kernel, 2, sizeof(unsigned int), &lmask);
+    clSetKernelArg(args->kernel, 3, sizeof(int), &steps);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
 }
 
 static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)

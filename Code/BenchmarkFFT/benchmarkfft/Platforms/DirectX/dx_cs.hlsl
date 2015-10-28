@@ -1,4 +1,4 @@
-#define GROUP_SIZE_X 8
+#define GROUP_SIZE_X 1024
 #define GRID_DIM_X 1
 #define GRID_DIM_Y 4
 

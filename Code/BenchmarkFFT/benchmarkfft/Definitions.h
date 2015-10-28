@@ -35,7 +35,7 @@ typedef float transform_direction;
 //
 #define MEASURE_BY_TIMESTAMP
 #define NUM_PERFORMANCE 12
-#define HIGHEST_EXP 27
+#define HIGHEST_EXP 26
 #define HIGHEST_EXP_2D 14
 
 struct benchmarkArgument {

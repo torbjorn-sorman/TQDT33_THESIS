@@ -72,15 +72,14 @@ double dx_performance(const int n)
 double dx_2d_performance(const int n)
 {
     double measures[NUM_PERFORMANCE];
-    cpx *in = get_seq(n * n);
-    cpx *out = get_seq(n * n);
+    dx_args args;
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+        dx_setup_2d(&args, NULL, n);
         startTimer();
-        dx_fft_2d(FFT_FORWARD, &in, &out, n);
+        dx_fft_2d(FFT_FORWARD, &args, n);
         measures[i] = stopTimer();
+        dx_shakedown(&args);
     }
-    free(in);
-    free(out);
     return average_best(measures, NUM_PERFORMANCE);
 }
 #else

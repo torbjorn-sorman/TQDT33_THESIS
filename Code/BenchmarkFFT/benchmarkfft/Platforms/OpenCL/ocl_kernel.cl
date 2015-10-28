@@ -1,3 +1,5 @@
+#define UNROLL_FACTOR 4096
+
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -106,7 +108,8 @@ int algorithm_cross_group(__global cpx *in, __global cpx *out, __global int *syn
     int steps = 0;
     group_sync_init(sync_in, sync_out);
     inner_kernel(in, out, angle, steps, 0xFFFFFFFF << bit_start, dist);
-    group_sync(sync_in, sync_out, number_of_blocks + steps);        
+    group_sync(sync_in, sync_out, number_of_blocks + steps); 
+#pragma unroll UNROLL_FACTOR      
     for (int bit = bit_start - 1; bit > steps_gpu; --bit) {
         dist >>= 1;
         ++steps;
@@ -124,6 +127,7 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
     __local cpx *out_ii = out_i + 1;
     __local cpx *in_l = shared + local_id;
     __local cpx *in_u = shared + in_high;    
+#pragma unroll UNROLL_FACTOR
     for (int steps = 0; steps < bit; ++steps) {
         w.y = sincos(angle * (local_id & (0xFFFFFFFF << steps)), &w.x);
         in_lower = *in_l;
@@ -221,8 +225,10 @@ __kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __loc
 {
     // Write to shared from Global (in)
     int x = get_group_id(0) * TILE_DIM + get_local_id(0);
-    int y = get_group_id(1) * TILE_DIM + get_local_id(1);        
+    int y = get_group_id(1) * TILE_DIM + get_local_id(1);    
+#pragma unroll UNROLL_FACTOR    
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM) {
+#pragma unroll UNROLL_FACTOR
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
             tile[get_local_id(1) + j][get_local_id(0) + i] = in[(y + j) * n + (x + i)];            
         }
@@ -231,9 +237,16 @@ __kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __loc
     // Write to global
     x = get_group_id(1) * TILE_DIM + get_local_id(0);
     y = get_group_id(0) * TILE_DIM + get_local_id(1);
+#pragma unroll UNROLL_FACTOR
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM){ 
+#pragma unroll UNROLL_FACTOR
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
             out[(y + j) * n + (x + i)] = tile[get_local_id(0) + i][get_local_id(1) + j];
         }
     }
+}
+
+__kernel void opencl_timestamp_kernel()
+{
+    // There be none here!
 }

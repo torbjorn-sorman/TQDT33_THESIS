@@ -33,6 +33,7 @@ struct oclArgs {
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
 cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
 cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n);
 cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
 cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose);

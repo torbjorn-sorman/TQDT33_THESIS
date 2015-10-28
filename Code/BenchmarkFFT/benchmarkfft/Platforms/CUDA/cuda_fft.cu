@@ -113,8 +113,7 @@ __host__ double cuda_performance(int n)
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {        
         cudaEventRecord(start);
-        cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);  
-        cudaDeviceSynchronize();
+        cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&milliseconds, start, stop);        

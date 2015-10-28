@@ -176,6 +176,16 @@ cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, t
     return err;
 }
 
+cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm)
+{
+    memcpy(arg_tm, arg_target, sizeof(oclArgs));
+    return checkErr(oclSetupProgram("ocl_kernel", "opencl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
+    arg_target->global_work_size[0] = 1;
+    arg_target->global_work_size[1] = 1;
+    arg_target->local_work_size[0] = 1;
+    arg_target->local_work_size[1] = 1;
+}
+
 void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
 {
     int minDim = n > TILE_DIM ? (n / TILE_DIM) : 1;

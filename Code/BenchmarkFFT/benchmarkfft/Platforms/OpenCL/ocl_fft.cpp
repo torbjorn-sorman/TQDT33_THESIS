@@ -1,6 +1,6 @@
 #include "ocl_fft.h"
 
-__inline cl_event opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_event **events);
+__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu);//, cl_event *events);
 __inline void opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_gpu_col, oclArgs *arg_transpose);
 
 //
@@ -16,7 +16,7 @@ bool opencl_validate(const int n)
     {
         oclArgs arg_gpu, arg_cpu;
         checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_in, FFT_FORWARD, n), "Create failed!");
-        opencl_fft(&arg_cpu, &arg_gpu, NULL);
+        opencl_fft(&arg_cpu, &arg_gpu);        
         clFinish(arg_gpu.commands);
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
@@ -24,11 +24,10 @@ bool opencl_validate(const int n)
     {
         oclArgs arg_gpu, arg_cpu;
         checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_out, FFT_INVERSE, n), "Create failed!");
-        opencl_fft(&arg_cpu, &arg_gpu, NULL);
+        opencl_fft(&arg_cpu, &arg_gpu);
         clFinish(arg_gpu.commands);
         checkErr(oclRelease(data_in, data_out, &arg_cpu, &arg_gpu), "Release failed!");
     }
-
     return (freeResults(&data_out, &data_in, &data_ref, n) == 0) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
@@ -99,21 +98,23 @@ double opencl_performance(const int n)
     cl_int err = CL_SUCCESS;
     double measurements[NUM_PERFORMANCE];
     cpx *data_in = get_seq(n, 1);
-    oclArgs arg_gpu, arg_cpu;
+    oclArgs arg_gpu, arg_cpu, arg_timestamp;
     checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_in, FFT_FORWARD, n), "Create failed!");
-    int number_of_events = log2_32(n);
-    cl_event *events = (cl_event *)malloc(sizeof(cl_event) * number_of_events);
+    opencl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
+    cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {        
-        opencl_fft(&arg_cpu, &arg_gpu, &events);
-        clFinish(arg_gpu.commands);
-        //clWaitForEvents(1, (events + number_of_events - 1));        
-        clGetEventProfilingInfo(*events, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
-        clGetEventProfilingInfo(*(events + number_of_events - 1), CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-        measurements[i] = (double)(end - start)*(cl_double)(1e-09);
+    for (int i = 0; i < NUM_PERFORMANCE; ++i) {   
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &start_event);
+        opencl_fft(&arg_cpu, &arg_gpu);
+        //clFinish(arg_gpu.commands);
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &end_event);
+        clWaitForEvents(1, &end_event);
+        clGetEventProfilingInfo(start_event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
+        clGetEventProfilingInfo(end_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
+        measurements[i] = (double)(end - start)*(cl_double)(1e-03);
     }
     checkErr(oclRelease(data_in, NULL, &arg_cpu, &arg_gpu), "Release failed!");
-    int res = freeResults(&data_in, NULL, NULL, n);
+    freeResults(&data_in, NULL, NULL, n);
     return average_best(measurements, NUM_PERFORMANCE);
 }
 double opencl_2d_performance(const int n)
@@ -142,7 +143,7 @@ double opencl_2d_performance(const int n)
 //
 // ---------------------------------
 
-__inline cl_event opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_event **events)
+__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu) //, cl_event *events)
 {
     const int n = arg_gpu->n;
     const int n_half = (n >> 1);
@@ -161,13 +162,13 @@ __inline cl_event opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_event **even
         int steps = 0;
         int dist = n_half;
         opencl_set_kernel_args_global(arg_cpu, arg_gpu->input, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-        clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, ((*events)++));
+        clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, NULL);// &events[e_cnt++]);
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
         while (--steps_left > steps_gpu) {
             dist >>= 1;
             ++steps;
             opencl_set_kernel_args_global(arg_cpu, arg_gpu->output, arg_gpu->output, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
-            clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, ((*events)++));
+            clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, NULL);// &events[e_cnt++]);
         }
         swap(&(arg_gpu->input), &(arg_gpu->output));
         ++steps_left;
@@ -176,7 +177,7 @@ __inline cl_event opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_event **even
     }
     // Calculate complete sequence in one launch and syncronize steps on GPU  
     opencl_set_kernel_args_local(arg_gpu, arg_gpu->input, arg_gpu->output, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half);    
-    clEnqueueNDRangeKernel(arg_gpu->commands, arg_gpu->kernel, arg_gpu->workDim, NULL, arg_gpu->global_work_size, arg_gpu->local_work_size, 0, NULL, ((*events)++));
+    clEnqueueNDRangeKernel(arg_gpu->commands, arg_gpu->kernel, arg_gpu->workDim, NULL, arg_gpu->global_work_size, arg_gpu->local_work_size, 0, NULL, NULL);// &events[e_cnt]);
 }
 
 __inline void opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *in, cl_mem *out, int number_of_blocks)

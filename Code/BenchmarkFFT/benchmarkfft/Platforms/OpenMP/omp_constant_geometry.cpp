@@ -19,15 +19,17 @@ int openmp_validate(const int n)
     return diff < RELATIVE_ERROR_MARGIN;// && diffForward < RELATIVE_ERROR_MARGIN;
 }
 
-int openmp_2d_validate(const int n)
+int openmp_2d_validate(const int n, bool write_img)
 {
     cpx *in, *buf, *ref;
     setup_seq2D(&in, &buf, &ref, n);
 
     openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
-    write_normalized_image("OpenMP", "freq", in, n, true);
+    if (write_img)
+        write_normalized_image("OpenMP", "freq", in, n, true);
     openmp_const_geom_2d(FFT_INVERSE, &in, &buf, n);
-    write_image("OpenMP", "spat", in, n);
+    if (write_img)
+        write_image("OpenMP", "spat", in, n);
 
     double diff = diff_seq(in, ref, n);
     free(in);

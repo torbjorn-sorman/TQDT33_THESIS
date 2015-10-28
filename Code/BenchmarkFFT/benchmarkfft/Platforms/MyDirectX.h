@@ -12,7 +12,7 @@ private:
 public:
     MyDirectX::MyDirectX(const int dim, const int runs);
     ~MyDirectX();
-    virtual bool MyDirectX::validate(const int n);
+    virtual bool MyDirectX::validate(const int n, bool write_img);
     virtual void MyDirectX::runPerformance(const int n);
 };
 

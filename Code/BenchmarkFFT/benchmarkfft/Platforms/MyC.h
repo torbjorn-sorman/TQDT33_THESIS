@@ -10,7 +10,7 @@ class MyC : public Platform
 public:
     MyC::MyC(const int dim, const int runs);
     ~MyC();
-    virtual bool MyC::validate(const int n);
+    virtual bool MyC::validate(const int n, bool write_img);
     virtual void MyC::runPerformance(const int n);
 };
 

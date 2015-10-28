@@ -9,7 +9,7 @@ class MyOpenCL : public Platform
 public:
     MyOpenCL::MyOpenCL(const int dim, const int runs);
     ~MyOpenCL();
-    virtual bool MyOpenCL::validate(const int n);
+    virtual bool MyOpenCL::validate(const int n, bool write_img);
     virtual void MyOpenCL::runPerformance(const int n);
 };
 

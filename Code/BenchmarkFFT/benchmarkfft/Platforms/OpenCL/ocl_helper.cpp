@@ -97,14 +97,9 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     int grpDim = n_half;
     int itmDim = n_half > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : n_half;
     size_t data_mem_size = sizeof(cpx) * args->n;
-    size_t sync_mem_size = sizeof(int) * HW_LIMIT;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
     args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
-    args->sync_in = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
-    args->sync_out = clCreateBuffer(args->context, CL_MEM_READ_WRITE, sync_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
 
     // If successful, store in the argument struct!
@@ -249,8 +244,6 @@ cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu)
     free(arg_gpu->kernelSource);
     clReleaseMemObject(arg_gpu->input);
     clReleaseMemObject(arg_gpu->output);
-    clReleaseMemObject(arg_gpu->sync_in);
-    clReleaseMemObject(arg_gpu->sync_out);
     clReleaseProgram(arg_gpu->program);
     clReleaseProgram(arg_cpu->program);
     clReleaseKernel(arg_gpu->kernel);

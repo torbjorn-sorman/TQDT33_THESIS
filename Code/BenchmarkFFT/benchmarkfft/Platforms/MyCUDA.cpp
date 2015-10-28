@@ -10,11 +10,11 @@ MyCUDA::~MyCUDA()
 {
 }
 
-bool MyCUDA::validate(const int n)
+bool MyCUDA::validate(const int n, bool write_img)
 {   
     if (dimensions == 1)
         return cuda_validate(n) == 1;
-    return cuda_2d_validate(n) == 1;
+    return cuda_2d_validate(n, write_img) == 1;
 }
 
 void MyCUDA::runPerformance(const int n)

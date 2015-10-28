@@ -11,7 +11,7 @@
 #include "c_helper.h"
 
 int c_validate(const int n);
-int c_2d_validate(const int n);
+int c_2d_validate(const int n, bool write_img);
 
 double c_performance(const int n);
 double c_2d_performance(const int n);

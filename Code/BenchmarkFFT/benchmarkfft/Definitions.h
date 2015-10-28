@@ -25,10 +25,6 @@ typedef float transform_direction;
 #define MAX_BLOCK_SIZE 1024             
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32              
-#define NO_STREAMING_MULTIPROCESSORS 1 // GTX670 specific, limits block synchronization
-#define MAX_THREADS_PER_BLOCK 1024          // GTX670 specific
-#define HW_LIMIT ((MAX_THREADS_PER_BLOCK / MAX_BLOCK_SIZE) * NO_STREAMING_MULTIPROCESSORS)
-#define SHARED_MEM_SIZE 49152   // 48K assume: 49152 bytes. Total mem size is 65536, where 16384 is cache if
 
 //
 // Test related defines
@@ -57,6 +53,7 @@ struct benchmarkArgument {
     bool profiler = false;
     bool show_cuprop = false;
     bool write_file = false;
+    bool write_img = false;
     bool validate = false;
     bool display = false;
     bool run_testground = false;

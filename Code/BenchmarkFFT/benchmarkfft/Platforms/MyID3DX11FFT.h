@@ -14,7 +14,7 @@ class MyID3DX11FFT : public Platform
 public:
     MyID3DX11FFT::MyID3DX11FFT(const int dim, const int runs);
     ~MyID3DX11FFT();
-    virtual bool MyID3DX11FFT::validate(const int n);
+    virtual bool MyID3DX11FFT::validate(const int n, bool write_img);
     virtual void MyID3DX11FFT::runPerformance(const int n);
 };
 

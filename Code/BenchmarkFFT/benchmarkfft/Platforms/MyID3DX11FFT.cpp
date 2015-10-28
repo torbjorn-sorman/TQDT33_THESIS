@@ -10,9 +10,8 @@ MyID3DX11FFT::~MyID3DX11FFT()
 {
 }
 
-bool MyID3DX11FFT::validate(const int n)
-{   
-    
+bool MyID3DX11FFT::validate(const int n, bool write_img)
+{       
     return false;
 }
 

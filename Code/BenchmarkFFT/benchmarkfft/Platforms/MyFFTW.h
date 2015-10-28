@@ -12,7 +12,7 @@ class MyFFTW : public Platform
 public:
     MyFFTW::MyFFTW(const int dim, const int runs);
     ~MyFFTW();
-    virtual bool MyFFTW::validate(const int n);
+    virtual bool MyFFTW::validate(const int n, bool write_img);
     virtual void MyFFTW::runPerformance(const int n);
 };
 

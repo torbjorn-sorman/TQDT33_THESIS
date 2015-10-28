@@ -10,11 +10,11 @@ MyOpenCL::~MyOpenCL()
 {
 }
 
-bool MyOpenCL::validate(const int n)
+bool MyOpenCL::validate(const int n, bool write_img)
 {   
     if (dimensions == 1)
         return opencl_validate(n) == 1;
-    return opencl_2d_validate(n) == 1;
+    return opencl_2d_validate(n, write_img) == 1;
 }
 
 void MyOpenCL::runPerformance(const int n)

@@ -10,12 +10,12 @@ MyC::~MyC()
 {
 }
 
-bool MyC::validate(const int n)
+bool MyC::validate(const int n, bool write_img)
 {   
     
     if (dimensions == 1)
         return c_validate(n) == 1;
-    return c_2d_validate(n) == 1;
+    return c_2d_validate(n, write_img) == 1;
 }
 
 void MyC::runPerformance(const int n)

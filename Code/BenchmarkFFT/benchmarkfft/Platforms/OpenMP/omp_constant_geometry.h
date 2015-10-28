@@ -13,7 +13,7 @@
 #include "../C/c_helper.h"
 
 int openmp_validate(const int n);
-int openmp_2d_validate(const int n);
+int openmp_2d_validate(const int n, bool write_img);
 
 double openmp_performance(const int n);
 double openmp_2d_performance(const int n);

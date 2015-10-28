@@ -10,7 +10,7 @@ class MyOpenMP : public Platform
 public:
     MyOpenMP::MyOpenMP(const int dim, const int runs);
     ~MyOpenMP();
-    virtual bool MyOpenMP::validate(const int n);
+    virtual bool MyOpenMP::validate(const int n, bool write_img);
     virtual void MyOpenMP::runPerformance(const int n);
 };
 

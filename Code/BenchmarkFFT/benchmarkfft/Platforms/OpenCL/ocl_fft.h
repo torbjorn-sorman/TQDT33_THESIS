@@ -11,7 +11,7 @@
 #include "ocl_helper.h"
 
 bool    opencl_validate(const int n);
-bool    opencl_2d_validate(const int n);
+bool    opencl_2d_validate(const int n, bool write_img);
 
 double  opencl_performance(const int n);
 double  opencl_2d_performance(const int n);

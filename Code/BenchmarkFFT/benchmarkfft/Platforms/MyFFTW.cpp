@@ -10,7 +10,7 @@ MyFFTW::~MyFFTW()
 {
 }
 
-bool MyFFTW::validate(const int n)
+bool MyFFTW::validate(const int n, bool write_img)
 {   
     return true;
 }

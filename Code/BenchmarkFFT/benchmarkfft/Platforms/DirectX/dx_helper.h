@@ -285,7 +285,7 @@ static __inline void dx_setup(dx_args* a, cpx* in, const int n)
     // Attach the constant buffer
     a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
 
-    if (a->n_groups.x > 1 && a->n_groups.x <= HW_LIMIT) {
+    if (a->n_groups.x > 1 && a->n_groups.x == 1) {
         dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sin), "Create GPU Sync Buffer ");
         dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sout), "Create GPU Sync Buffer ");
         dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sin, &uav_desc, &a->buf_sin_uav), "Create GPU Out UnorderedAccessView");

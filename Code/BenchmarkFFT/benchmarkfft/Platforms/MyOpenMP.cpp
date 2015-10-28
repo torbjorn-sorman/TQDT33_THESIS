@@ -12,10 +12,10 @@ MyOpenMP::~MyOpenMP()
 
 //#define OMP_FAST_INDEX
 
-bool MyOpenMP::validate(const int n)
+bool MyOpenMP::validate(const int n, bool write_img)
 {   
 #ifndef OMP_FAST_INDEX
-    bool valid = ((dimensions == 1) ? openmp_validate(n) == 1 : openmp_2d_validate(n) == 1);
+    bool valid = ((dimensions == 1) ? openmp_validate(n) == 1 : openmp_2d_validate(n, write_img) == 1);
 #else
     bool valid = ((dimensions == 1) ? openmp_fast_index_validate(n) == 1 : openmp_fast_index_2d_validate(n) == 1);
 #endif

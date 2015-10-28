@@ -25,7 +25,6 @@ struct oclArgs {
     cl_program program;
     cl_kernel kernel;
     cl_mem input, output;
-    cl_mem sync_in, sync_out;
     cl_platform_id platform;
     char *kernelSource;
 };
@@ -56,43 +55,40 @@ static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, con
     clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
 }
 
-static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)
-{
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
-    clSetKernelArg(args->kernel, 2, sizeof(cl_mem), &args->sync_in);
-    clSetKernelArg(args->kernel, 3, sizeof(cl_mem), &args->sync_out);
-    clSetKernelArg(args->kernel, 4, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 5, sizeof(float), &global_angle);
-    clSetKernelArg(args->kernel, 6, sizeof(float), &local_angle);
-    clSetKernelArg(args->kernel, 7, sizeof(int), &steps_left);
-    clSetKernelArg(args->kernel, 8, sizeof(int), &leading_bits);
-    clSetKernelArg(args->kernel, 9, sizeof(int), &steps_gpu);
-    clSetKernelArg(args->kernel, 10, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 11, sizeof(int), &number_of_blocks);
-    clSetKernelArg(args->kernel, 12, sizeof(int), &block_range_half);
-}
-
-static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, float scalar, int n_per_block)
+static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
     clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
     clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
     clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
-    clSetKernelArg(args->kernel, 5, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 6, sizeof(int), &n_per_block);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &block_range_half);
 }
 
-static void __inline oclSetKernelGPU2DColArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, float scalar, int n)
+static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int n_per_block)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
     clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
     clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
     clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
-    clSetKernelArg(args->kernel, 5, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 6, sizeof(int), &n);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &n_per_block);
+}
+
+static void __inline oclSetKernelGPU2DColArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int n)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &n);
 }
 
 static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)

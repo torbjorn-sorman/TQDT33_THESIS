@@ -28,7 +28,7 @@ static __inline void dx_set_dim(LPCWSTR shader_file, const int n)
     const int n2 = n >> 1;
     if (n2 > MAX_BLOCK_SIZE) {
         fmt1 << "$1 " << std::to_string(MAX_BLOCK_SIZE);
-        if ((n2 / MAX_BLOCK_SIZE) > HW_LIMIT)
+        if ((n2 / MAX_BLOCK_SIZE) > 1)
             fmt2 << "$1 " << std::to_string(1);
         else
             fmt2 << "$1 " << std::to_string((n2 / MAX_BLOCK_SIZE));

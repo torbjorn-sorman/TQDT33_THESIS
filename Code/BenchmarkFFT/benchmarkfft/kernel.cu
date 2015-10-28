@@ -109,13 +109,13 @@ int main(int argc, const char* argv[])
                     if (args.performance_metrics)
                         std::cout << platform->results.at(i);
                     if (!args.performance_metrics) {
-                        if (args.validate && !platform->validate(power2(args.start + i)))
+                        if (args.validate && !platform->validate(power2(args.start + i), args.write_img))
                             std::cout << "FAIL";
                         else
                             std::cout << "OK";
                     }
                     else {
-                        if (args.validate && !platform->validate(power2(args.start + i)))
+                        if (args.validate && !platform->validate(power2(args.start + i), args.write_img))
                             std::cout << "!";
                     }
                     std::cout << "\t";

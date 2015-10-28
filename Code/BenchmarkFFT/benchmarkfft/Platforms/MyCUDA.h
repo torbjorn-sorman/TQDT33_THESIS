@@ -10,7 +10,7 @@ class MyCUDA : public Platform
 public:
     MyCUDA::MyCUDA(const int dim, const int runs);
     ~MyCUDA();
-    virtual bool MyCUDA::validate(const int n);
+    virtual bool MyCUDA::validate(const int n, bool write_img);
     virtual void MyCUDA::runPerformance(const int n);
 };
 

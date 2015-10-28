@@ -23,7 +23,7 @@ public:
     {
     }
 
-    virtual bool validate(const int n)
+    virtual bool validate(const int n, bool write_img)
     {
         return false;
     }

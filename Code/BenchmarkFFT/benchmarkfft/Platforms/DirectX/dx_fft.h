@@ -24,7 +24,7 @@
 #include "dx_helper.h"
 
 int dx_validate(const int n);
-int dx_2d_validate(const int n);
+int dx_2d_validate(const int n, bool write_img);
 
 double dx_performance(const int n);
 double dx_2d_performance(const int n);

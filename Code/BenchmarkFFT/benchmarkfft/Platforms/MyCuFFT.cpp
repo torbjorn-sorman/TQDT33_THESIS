@@ -10,7 +10,7 @@ MyCuFFT::~MyCuFFT()
 {
 }
 
-bool MyCuFFT::validate(const int n)
+bool MyCuFFT::validate(const int n, bool write_img)
 {
     return true;
 }

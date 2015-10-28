@@ -31,7 +31,7 @@ int dx_validate(const int n)
     return forward_diff < RELATIVE_ERROR_MARGIN && inverse_diff < RELATIVE_ERROR_MARGIN;
 }
 
-int dx_2d_validate(const int n)
+int dx_2d_validate(const int n, bool write_img)
 {
     cpx *in, *out, *ref;
     setup_seq2D(&in, &out, &ref, n);
@@ -40,12 +40,14 @@ int dx_2d_validate(const int n)
 
     dx_fft_2d(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buf_output, out, n * n);
-    write_normalized_image("DirectX", "freq", out, n, true);
+    if (write_img)
+        write_normalized_image("DirectX", "freq", out, n, true);
     swap_io(&args);
 
     dx_fft_2d(FFT_INVERSE, &args, n);
     dx_read_buffer(&args, args.buf_output, in, n);
-    write_image("DirectX", "spat", in, n);
+    if (write_img)
+        write_image("DirectX", "spat", in, n);
 
     dx_shakedown(&args);
     double diff = diff_seq(in, ref, n);
@@ -85,7 +87,6 @@ double dx_2d_performance(const int n)
 #else
 double dx_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
     dx_args args;
     profiler_data profiler[NUM_PERFORMANCE];
     for (int i = 0; i < NUM_PERFORMANCE; ++i) {
@@ -159,7 +160,7 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
     float global_angle = dir * (M_2_PI / n);
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
-    if (number_of_blocks > HW_LIMIT) {
+    if (number_of_blocks > 1) {
         int steps = 0;
         int dist = n;
         while (--steps_left > steps_gpu) {
@@ -168,16 +169,16 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
             swap_io(args);
         }
         ++steps_left;
-        number_of_blocks = 1;
         block_range_half = n_per_block >> 1;
     }
-    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, number_of_blocks, block_range_half, false);
+    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, 1, block_range_half, false);
     args->context->Dispatch(args->n_groups.x, 1, 1);
 }
 
 __inline void dx_fft_2d_helper(transform_direction dir, dx_args *args, const int n)
 {
     int steps_left = log2_32(n);
+    int leading_bits = 32 - steps_left;
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
     const int n_per_block = n / args->n_groups.y;
     const float global_angle = dir * (M_2_PI / n);
@@ -199,7 +200,7 @@ __inline void dx_fft_2d_helper(transform_direction dir, dx_args *args, const int
         ++steps_left;
         block_range = n_per_block;
     }
-    dx_set_local_args(args, global_angle, local_angle, steps_left, 0, 0, scalar, 0, block_range >> 1, false);
+    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, 0, scalar, 0, block_range >> 1, false);
     args->context->Dispatch(args->n_groups.x, args->n_groups.y, 1);
 }
 
@@ -224,7 +225,11 @@ __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n)
         args->context->Dispatch(width, width, 1);
     }
     else {
-        dx_cs_args cb = { 0.f, dir * (M_2_PI / n), (dir == FFT_FORWARD ? 1.f : 1.f / n), log2_32(n), 0, 0, 0, n >> 1, 0, 0, 0 };
+        int steps_left = log2_32(n);
+        int leading_bits = 32 - steps_left;
+        const float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
+        const float global_angle = dir * (M_2_PI / n);
+        dx_cs_args cb = { 0.f, global_angle, scalar, steps_left, leading_bits, 0, 0, n >> 1, 0, 0, 0 };
         dx_map_args<dx_cs_args>(args->context, args->buf_constant, &cb);
         dx_set_buffers(args);
         args->context->CSSetShader(args->cs_local, nullptr, 0);

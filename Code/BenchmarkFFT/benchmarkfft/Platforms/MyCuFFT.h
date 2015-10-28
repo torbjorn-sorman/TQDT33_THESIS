@@ -15,7 +15,7 @@ class MyCuFFT : public Platform
 public:
     MyCuFFT::MyCuFFT(const int dim, const int runs);
     ~MyCuFFT();
-    virtual bool MyCuFFT::validate(const int n);
+    virtual bool MyCuFFT::validate(const int n, bool write_img);
     virtual void MyCuFFT::runPerformance(const int n);
 };
 

@@ -1,4 +1,4 @@
-#define WIDTH 2048
+#define WIDTH 8192
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32  
 
@@ -21,13 +21,14 @@ void dx_transpose(uint3 threadIDInGroup : SV_GroupThreadID,
     uint groupIndex : SV_GroupIndex,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+    int i, j;
     int x = groupID.x * TILE_DIM + threadIDInGroup.x;
     int y = groupID.y * TILE_DIM + threadIDInGroup.y;
     [unroll(TILE_DIM / THREAD_TILE_DIM)] 
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
     {
         [unroll(TILE_DIM / THREAD_TILE_DIM)] 
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
         {
             tile[threadIDInGroup.y + j][threadIDInGroup.x + i] = input[(y + j) * WIDTH + (x + i)];
         }
@@ -38,10 +39,10 @@ void dx_transpose(uint3 threadIDInGroup : SV_GroupThreadID,
     x = groupID.y * TILE_DIM + threadIDInGroup.x;
     y = groupID.x * TILE_DIM + threadIDInGroup.y;
     [unroll(TILE_DIM / THREAD_TILE_DIM)] 
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
     {
         [unroll(TILE_DIM / THREAD_TILE_DIM)] 
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
         {
             rw_buf[(y + j) * WIDTH + (x + i)] = tile[threadIDInGroup.x + i][threadIDInGroup.y + j];
         }

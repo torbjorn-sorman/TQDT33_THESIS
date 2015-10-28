@@ -1,5 +1,5 @@
-#define GROUP_SIZE_X 256
-#define GRID_DIM_X 2048
+#define GROUP_SIZE_X 1024
+#define GRID_DIM_X 8192
 struct cpx
 {
     float x;
@@ -122,28 +122,4 @@ void dx_2d_local_row(uint3 threadIDInGroup : SV_GroupThreadID,
     cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y *scalar };
     rw_buf[(reversebits(in_low + row_offset) >> leading_bits) + row_start] = a;
     rw_buf[(reversebits(in_high + row_offset) >> leading_bits) + row_start] = b;
-}
-
-[numthreads(GROUP_SIZE_X, 1, 1)]
-void dx_2d_local_col(uint3 threadIDInGroup : SV_GroupThreadID,
-    uint3 groupID : SV_GroupID,
-    uint groupIndex : SV_GroupIndex,
-    uint3 dispatchThreadID : SV_DispatchThreadID)
-{
-#if GRID_DIM_X < 4096 // Some static compile time check fails, is never called beyond GRID_DIM_X > 256 anyway.    
-    int in_low = threadIDInGroup.x;
-    int in_high = (GRID_DIM_X >> 1) + in_low;
-    int colOffset = groupID.y * GROUP_SIZE_X * 2;
-
-    int index = (in_low + colOffset) * GRID_DIM_X + groupID.x;
-
-    shared_buf[in_low] = input[index];
-    shared_buf[in_high] = input[index + ((GRID_DIM_X >> 1) * GRID_DIM_X)];
-    dx_algorithm_local(in_low, in_high);
-
-    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y *scalar };
-    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y *scalar };
-    rw_buf[(reversebits(in_low + colOffset) >> leading_bits) * GRID_DIM_X + groupID.x] = a;
-    rw_buf[(reversebits(in_high + colOffset) >> leading_bits) * GRID_DIM_X + groupID.x] = b;
-#endif
 }

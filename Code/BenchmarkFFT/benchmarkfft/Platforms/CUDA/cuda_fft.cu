@@ -28,20 +28,6 @@ __host__ int cuda_validate(int n)
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
-__host__ void testCombine2DRun(transform_direction dir, cpx *in, cpx *dev_in, cpx *dev_out, size_t size, bool write, bool norm, int n)
-{
-    cuda_fft_2d(dir, dev_in, dev_out, n);
-    if (write) {
-        cudaMemcpy(in, dev_out, size, cudaMemcpyDeviceToHost);
-        if (norm) {
-            write_image("CUDA", "frequency - not norm", in, n);
-            write_normalized_image("CUDA", "freq", in, n, true);
-        }
-        else
-            write_image("CUDA", "spat", in, n);
-    }
-}
-
 __host__ int cuda_2d_validate(int n, bool write_img)
 {
     cpx *host_buffer, *ref, *dev_in, *dev_out;
@@ -70,39 +56,39 @@ __host__ int cuda_2d_validate(int n, bool write_img)
 #ifndef MEASURE_BY_TIMESTAMP
 __host__ double cuda_performance(int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in, *ref, *out, *dev_in, *dev_out;
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
-        cuda_fft(FFT_FORWARD, &dev_in, &dev_out, n);
+        cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
         cudaDeviceSynchronize();
         measures[i] = stopTimer();
     }
     cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out);
-    double t = average_best(measures, NUM_PERFORMANCE);
+    double t = average_best(measures, NUM_TESTS);
     return t;
 }
 __host__ double cuda_2d_performance(int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
     cuda_setup_buffers_2d(&in, &ref, &dev_in, &dev_out, &size, n);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
-        cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
+        cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
         cudaDeviceSynchronize();
         measures[i] = stopTimer();
     }
     cuda_shakedown_2d(&in, &ref, &dev_in, &dev_out);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 #else
 __host__ double cuda_performance(int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in, *ref, *out, *dev_in, *dev_out;
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
 
@@ -111,21 +97,23 @@ __host__ double cuda_performance(int n)
     cudaEventCreate(&stop);
     float milliseconds = 0;
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {        
+    cudaDeviceSynchronize();
+    for (int i = 0; i < NUM_TESTS; ++i) {        
         cudaEventRecord(start);
         cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
+        cudaDeviceSynchronize();
         cudaEventElapsedTime(&milliseconds, start, stop);        
         measures[i] = milliseconds * 1000;
     }
     cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out);
-    double t = average_best(measures, NUM_PERFORMANCE);
+    double t = average_best(measures, NUM_TESTS);
     return t;
 }
 __host__ double cuda_2d_performance(int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
     cuda_setup_buffers_2d(&in, &ref, &dev_in, &dev_out, &size, n);
@@ -134,16 +122,18 @@ __host__ double cuda_2d_performance(int n)
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     float milliseconds = 0;
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    cudaDeviceSynchronize();
+    for (int i = 0; i < NUM_TESTS; ++i) {
         cudaEventRecord(start);
         cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
+        cudaDeviceSynchronize();
         cudaEventElapsedTime(&milliseconds, start, stop);
         measures[i] = milliseconds * 1000;
     }
     cuda_shakedown_2d(&in, &ref, &dev_in, &dev_out);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 #endif
 
@@ -211,24 +201,12 @@ __host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *d
 __host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
 {
     dim3 blocks;
-    if (n > 1) {
-        dim3 threads;
-        set_block_and_threads_transpose(&blocks, &threads, n);
-        cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
-        cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-        cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);        
-    }
-    else {
-        int threads;
-        const int steps_left = log2_32(n);
-        const int leading_bits = 32 - steps_left;
-        const float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-        const float global_angle = dir * (M_2_PI / n);
-        set_block_and_threads2D(&blocks, &threads, n);
-        cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (dev_in, dev_out, global_angle, steps_left, leading_bits, scalar, n >> 1);
-        cuda_kernel_local_col KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n) (dev_out, dev_in, global_angle, steps_left, leading_bits, scalar, n);
-    }
+    dim3 threads;
+    set_block_and_threads_transpose(&blocks, &threads, n);
+    cuda_fft_2d_helper(dir, dev_in, dev_out, n);
+    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
+    cuda_fft_2d_helper(dir, dev_in, dev_out, n);
+    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);        
     swap_buffer(&dev_in, &dev_out);
 }
 
@@ -296,20 +274,4 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
     out[BIT_REVERSE(threadIdx.x + row_offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + row_offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
-}
-
-__global__ void cuda_kernel_local_col(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range)
-{
-    extern __shared__ cpx shared[];
-
-    int in_high = (block_range >> 1) + threadIdx.x;
-    int colOffset = blockIdx.y * blockDim.x * 2;
-    in += (threadIdx.x + colOffset) * block_range + blockIdx.x;
-    out += blockIdx.x;
-    shared[threadIdx.x] = *in;
-    shared[in_high] = *(in + ((block_range >> 1) * block_range));
-    SYNC_THREADS;
-    cuda_algorithm_local(shared, in_high, local_angle, steps_left);
-    out[BIT_REVERSE(threadIdx.x + colOffset, leading_bits) * block_range] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
-    out[BIT_REVERSE(in_high + colOffset, leading_bits) * block_range] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }

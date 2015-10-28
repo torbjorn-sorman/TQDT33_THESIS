@@ -35,7 +35,8 @@ void setup_seq2D(cpx **in, cpx **buf, cpx **ref, int n)
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
     *in = (cpx *)malloc(sizeof(cpx) * n * n);
-    *buf = (cpx *)malloc(sizeof(cpx) * n * n);
+    if (buf != NULL)
+        *buf = (cpx *)malloc(sizeof(cpx) * n * n);
     *ref = (cpx *)malloc(sizeof(cpx) * n * n);
     read_image(*in, input_file, &sz);
     memcpy(*ref, *in, sizeof(cpx) * n * n);

@@ -33,26 +33,26 @@ int dx_validate(const int n)
 
 int dx_2d_validate(const int n, bool write_img)
 {
-    cpx *in, *out, *ref;
-    setup_seq2D(&in, &out, &ref, n);
+    cpx *data, *ref;
+    setup_seq2D(&data, NULL, &ref, n);
     dx_args args;
-    dx_setup_2d(&args, in, n);
+    dx_setup_2d(&args, data, n);
 
-    dx_fft_2d(FFT_FORWARD, &args, n);
-    dx_read_buffer(&args, args.buf_output, out, n * n);
-    if (write_img)
-        write_normalized_image("DirectX", "freq", out, n, true);
+    dx_fft_2d(FFT_FORWARD, &args, n);    
+    if (write_img) {
+        dx_read_buffer(&args, args.buf_output, data, n * n);
+        write_normalized_image("DirectX", "freq", data, n, true);
+    }
     swap_io(&args);
 
     dx_fft_2d(FFT_INVERSE, &args, n);
-    dx_read_buffer(&args, args.buf_output, in, n);
+    dx_read_buffer(&args, args.buf_output, data, n);
     if (write_img)
-        write_image("DirectX", "spat", in, n);
+        write_image("DirectX", "spat", data, n);
 
     dx_shakedown(&args);
-    double diff = diff_seq(in, ref, n);
-    free(in);
-    free(out);
+    double diff = diff_seq(data, ref, n);
+    free(data);
     free(ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
@@ -60,63 +60,63 @@ int dx_2d_validate(const int n, bool write_img)
 #ifndef MEASURE_BY_TIMESTAMP
 double dx_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     dx_args args;
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         dx_setup(&args, NULL, n);
         startTimer();
         dx_fft(FFT_FORWARD, &args, n);
         measures[i] = stopTimer();
         dx_shakedown(&args);
     }
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 double dx_2d_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     dx_args args;
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         dx_setup_2d(&args, NULL, n);
         startTimer();
         dx_fft_2d(FFT_FORWARD, &args, n);
         measures[i] = stopTimer();
         dx_shakedown(&args);
     }
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 #else
 double dx_performance(const int n)
 {
     dx_args args;
-    profiler_data profiler[NUM_PERFORMANCE];
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    profiler_data profiler[NUM_TESTS];
+    dx_setup(&args, NULL, n);
+    for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;
-        dx_setup(&args, NULL, n);
         dx_start_profiling(&args, &p);
 
         dx_fft(FFT_FORWARD, &args, n);
 
-        dx_end_profiling(&args, &p);
-        dx_shakedown(&args);
+        dx_end_profiling(&args, &p);        
         profiler[i] = p;
     }
+    dx_shakedown(&args);
     return dx_avg(profiler, &args);
 }
 double dx_2d_performance(const int n)
 {
     dx_args args;
-    profiler_data profiler[NUM_PERFORMANCE];
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    dx_setup_2d(&args, NULL, n);
+    profiler_data profiler[NUM_TESTS];
+    for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;
-        dx_setup_2d(&args, NULL, n);
         dx_start_profiling(&args, &p);
 
         dx_fft_2d(FFT_FORWARD, &args, n);
 
         dx_end_profiling(&args, &p);
-        dx_shakedown(&args);
         profiler[i] = p;
     }
+    dx_shakedown(&args);
     return dx_avg(profiler, &args);
 }
 #endif
@@ -132,12 +132,12 @@ __inline void dx_set_buffers(dx_args *a)
     a->context->CSSetShaderResources(0, 1, &a->buf_input_srv);
 }
 
-__inline void dx_set_local_args(dx_args *a, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half, bool col)
+__inline void dx_set_local_args(dx_args *a, float global_angle, float local_angle, int steps_left, int leading_bits, int steps_gpu, float scalar, int number_of_blocks, int block_range_half)
 {
     dx_cs_args cb = { global_angle, local_angle, scalar, steps_left, leading_bits, steps_gpu, number_of_blocks, block_range_half, 0, 0, 0 };
     dx_map_args<dx_cs_args>(a->context, a->buf_constant, &cb);
     dx_set_buffers(a);
-    a->context->CSSetShader(col ? a->cs_local_col : a->cs_local, nullptr, 0);
+    a->context->CSSetShader(a->cs_local, nullptr, 0);
 }
 
 __inline void dx_set_global_args(dx_args *a, float angle, int dist, unsigned int lmask, int steps)
@@ -171,7 +171,7 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
         ++steps_left;
         block_range_half = n_per_block >> 1;
     }
-    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, 1, block_range_half, false);
+    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, steps_gpu, scalar, 1, block_range_half);
     args->context->Dispatch(args->n_groups.x, 1, 1);
 }
 
@@ -200,44 +200,26 @@ __inline void dx_fft_2d_helper(transform_direction dir, dx_args *args, const int
         ++steps_left;
         block_range = n_per_block;
     }
-    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, 0, scalar, 0, block_range >> 1, false);
+    dx_set_local_args(args, global_angle, local_angle, steps_left, leading_bits, 0, scalar, 0, block_range >> 1);
     args->context->Dispatch(args->n_groups.x, args->n_groups.y, 1);
 }
 
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n)
 {
-    if (n > 256) {
-        UINT width = n > TILE_DIM ? (n / TILE_DIM) : 1;
+    UINT width = n > TILE_DIM ? (n / TILE_DIM) : 1;
 
-        dx_fft_2d_helper(dir, args, n);
+    dx_fft_2d_helper(dir, args, n);
 
-        swap_io(args);
-        dx_set_buffers(args);
-        args->context->CSSetShader(args->cs_transpose, nullptr, 0);
-        args->context->Dispatch(width, width, 1);
+    swap_io(args);
+    dx_set_buffers(args);
+    args->context->CSSetShader(args->cs_transpose, nullptr, 0);
+    args->context->Dispatch(width, width, 1);
 
-        swap_io(args);
-        dx_fft_2d_helper(dir, args, n);
+    swap_io(args);
+    dx_fft_2d_helper(dir, args, n);
 
-        swap_io(args);
-        dx_set_buffers(args);
-        args->context->CSSetShader(args->cs_transpose, nullptr, 0);
-        args->context->Dispatch(width, width, 1);
-    }
-    else {
-        int steps_left = log2_32(n);
-        int leading_bits = 32 - steps_left;
-        const float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-        const float global_angle = dir * (M_2_PI / n);
-        dx_cs_args cb = { 0.f, global_angle, scalar, steps_left, leading_bits, 0, 0, n >> 1, 0, 0, 0 };
-        dx_map_args<dx_cs_args>(args->context, args->buf_constant, &cb);
-        dx_set_buffers(args);
-        args->context->CSSetShader(args->cs_local, nullptr, 0);
-        args->context->Dispatch(args->n_groups.x, args->n_groups.y, 1);
-
-        swap_io(args);
-        dx_set_buffers(args);
-        args->context->CSSetShader(args->cs_local_col, nullptr, 0);
-        args->context->Dispatch(args->n_groups.x, args->n_groups.y, 1);
-    }
+    swap_io(args);
+    dx_set_buffers(args);
+    args->context->CSSetShader(args->cs_transpose, nullptr, 0);
+    args->context->Dispatch(width, width, 1);
 }

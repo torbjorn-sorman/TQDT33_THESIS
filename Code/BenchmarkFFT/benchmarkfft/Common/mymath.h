@@ -27,17 +27,16 @@ static __inline int cmp(const void *in_l, const void *in_h)
     return 0;
 }
 
+#define maxi(a, b) (((a) > (b)) ? (a) : (b))
+
 // Run average on 5 of n results (or n / 2 if less then five)
 // Results sorted by ascending order.
 static __inline double average_best(double m[], int n)
 {
-    double sum = 0.0;
-    int samples = 4;
-    int end = ((n < samples) ? ((n / 2) < 1 ? 1 : (n / 2)) : samples) + 1;
+    if (n == 0)
+        return -1.0;
     qsort(m, n, sizeof(double), cmp);
-    for (int i = 1; i < end; ++i)
-        sum += m[i];
-    return (sum / (double)end);
+    return m[0];
 }
 
 

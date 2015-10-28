@@ -10,7 +10,6 @@
 #include "../../Common/mymath.h"
 #include "dx_csmanip.h"
 
-
 _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 
 struct dx_args
@@ -26,20 +25,13 @@ struct dx_args
     ID3D11Buffer*               buf_output = nullptr;
     ID3D11ShaderResourceView*   buf_output_srv = nullptr;
     ID3D11UnorderedAccessView*  buf_output_uav = nullptr;
-    // Group/Block sync buffers (Limited by HW, "experimental")
-    ID3D11Buffer*               buf_sin = nullptr;
-    ID3D11UnorderedAccessView*  buf_sin_uav = nullptr;
-    ID3D11Buffer*               buf_sout = nullptr;
-    ID3D11UnorderedAccessView*  buf_sout_uav = nullptr;
 
     ID3D11Buffer*               buf_staging = nullptr;
     ID3D11Buffer*               buf_constant = nullptr;
     ID3DBlob*                   blob_local = nullptr;
-    ID3DBlob*                   blob_local_col = nullptr;
     ID3DBlob*                   blob_global = nullptr;
     ID3DBlob*                   blob_transpose = nullptr;
     ID3D11ComputeShader*        cs_local = nullptr;
-    ID3D11ComputeShader*        cs_local_col = nullptr;
     ID3D11ComputeShader*        cs_global = nullptr;
     ID3D11ComputeShader*        cs_transpose = nullptr;
     ID3D11ShaderResourceView*   view_nullptr = nullptr;
@@ -91,8 +83,8 @@ static __inline void dx_end_profiling(dx_args *args, profiler_data *p_data)
 
 static __inline double dx_avg(profiler_data profiler[], dx_args *args)
 {
-    double m[NUM_PERFORMANCE];
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    double m[NUM_TESTS];
+    for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p = profiler[i];
         UINT64 ts_start, ts_end;
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
@@ -101,7 +93,7 @@ static __inline double dx_avg(profiler_data profiler[], dx_args *args)
         while (S_OK != args->context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
         m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
     }
-    return average_best(m, NUM_PERFORMANCE);
+    return average_best(m, NUM_TESTS);
 }
 
 static __inline double dx_time_elapsed(profiler_data *p, dx_args *args)
@@ -284,14 +276,7 @@ static __inline void dx_setup(dx_args* a, cpx* in, const int n)
     
     // Attach the constant buffer
     a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
-
-    if (a->n_groups.x > 1 && a->n_groups.x == 1) {
-        dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sin), "Create GPU Sync Buffer ");
-        dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_sout), "Create GPU Sync Buffer ");
-        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sin, &uav_desc, &a->buf_sin_uav), "Create GPU Out UnorderedAccessView");
-        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_sout, &uav_desc, &a->buf_sout_uav), "Create GPU Out UnorderedAccessView");
-    }
-
+    
     if (in != NULL) {
         a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
     }
@@ -340,13 +325,11 @@ static __inline void dx_setup_2d(dx_args* a, cpx* in, const int n)
 
     // Compile the compute shader into a blob.
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_row", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
-    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_col", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local_col, &errorBlob), "D3DCompileFromFile", errorBlob);
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
     dx_check_error(D3DCompileFromFile(cs_file_transpose, NULL, NULL, "dx_transpose", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_transpose, &errorBlob), "D3DCompileFromFile", errorBlob);
 
     // Create a shader object from the compiled blob.
     dx_check_error(a->device->CreateComputeShader(a->blob_local->GetBufferPointer(), a->blob_local->GetBufferSize(), NULL, &a->cs_local), "CreateComputeShader");
-    dx_check_error(a->device->CreateComputeShader(a->blob_local_col->GetBufferPointer(), a->blob_local_col->GetBufferSize(), NULL, &a->cs_local_col), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_transpose->GetBufferPointer(), a->blob_transpose->GetBufferSize(), NULL, &a->cs_transpose), "CreateComputeShader");
         
@@ -366,14 +349,10 @@ static __inline void dx_shakedown(dx_args *a)
 
     if (a->cs_local)
         a->cs_local->Release();
-    if (a->cs_local_col)
-        a->cs_local_col->Release();
     if (a->cs_global)
         a->cs_global->Release();
     if (a->blob_local)
         a->blob_local->Release();
-    if (a->blob_local_col)
-        a->blob_local_col->Release();
     if (a->blob_global)
         a->blob_global->Release();
     if (a->buf_constant)
@@ -386,16 +365,6 @@ static __inline void dx_shakedown(dx_args *a)
     a->buf_input_uav->Release();
     a->buf_input_srv->Release();
     a->buf_input->Release();
-    if (a->buf_sin) {
-        a->context->CSSetUnorderedAccessViews(1, 1, &nullUAV, &a->init_cnts);
-        a->buf_sin->Release();
-        a->buf_sin_uav->Release();
-    }
-    if (a->buf_sout) {
-        a->context->CSSetUnorderedAccessViews(2, 1, &nullUAV, &a->init_cnts);
-        a->buf_sout->Release();
-        a->buf_sout_uav->Release();
-    }
     if (a->blob_transpose) {
         a->cs_transpose->Release();
         a->blob_transpose->Release();

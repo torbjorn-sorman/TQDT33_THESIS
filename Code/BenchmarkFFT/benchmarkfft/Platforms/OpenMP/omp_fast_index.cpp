@@ -32,28 +32,28 @@ int openmp_fast_index_2d_validate(const int n)
 
 double openmp_fast_index_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in = get_seq(n, 1);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         openmp_fast_index(FFT_FORWARD, &in, &in, n);
         measures[i] = stopTimer();
     }
     free(in);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 double openmp_fast_index_2d_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx **in = get_seq2D(n, 1);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         openmp_fast_index_2d(FFT_FORWARD, in, n);
         measures[i] = stopTimer();
     }
     free_seq2D(in, n);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 //

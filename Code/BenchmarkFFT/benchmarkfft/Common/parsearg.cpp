@@ -40,15 +40,15 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
             while (i < argc && std::string(argv[i])[0] != '-') {
                 arg->test_platform = true;
                 std::string tmp = argv[i];
-                if      (MATCHP("c"))           arg->platform_c = true;
-                else if (MATCHP("cuda"))        arg->platform_cuda = true;
-                else if (MATCHP("cufft"))       arg->platform_cufft = true;
-                else if (MATCHP("dx"))          arg->platform_directx = true;
-                else if (MATCHP("id3dx11"))     arg->platform_id3dx11 = true;
-                else if (MATCHP("fftw"))        arg->platform_fftw = true;
-                else if (MATCHP("opencl"))      arg->platform_opencl = true;
-                else if (MATCHP("opengl"))      arg->platform_opengl = true;
-                else if (MATCHP("openmp"))      arg->platform_openmp = true;
+                if      (MATCHP("c"))       arg->platform_c = true;
+                else if (MATCHP("cu"))      arg->platform_cuda = true;
+                else if (MATCHP("dx"))      arg->platform_directx = true;
+                else if (MATCHP("ocl"))     arg->platform_opencl = true;
+                else if (MATCHP("ogl"))     arg->platform_opengl = true;
+                else if (MATCHP("omp"))     arg->platform_openmp = true;
+                else if (MATCHP("fftw"))    arg->platform_fftw = true;      // Open Src lib
+                else if (MATCHP("cufft"))   arg->platform_cufft = true;     // NVidia lib
+                else if (MATCHP("id3dx11")) arg->platform_id3dx11 = true;   // DirectX lib
                 ++i;
             }
             --i;
@@ -83,20 +83,19 @@ int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
         }
     }
     if (arg->dimensions == 2) {
-        if (arg->start < log2_32(TILE_DIM >> 1)) {
-            arg->start = log2_32(TILE_DIM >> 1);
-            arg->number_of_lengths = arg->end - arg->start;
+        if (arg->start < log2_32(TILE_DIM)) {
+            arg->start = log2_32(TILE_DIM);
+            arg->number_of_lengths = arg->end - arg->start + 1;
             printf("Notice: start exponent is set to %d\n", arg->start);
         }
         if (arg->end > HIGHEST_EXP_2D) {
             arg->end = HIGHEST_EXP_2D;
-            arg->number_of_lengths = arg->end - arg->start;
+            arg->number_of_lengths = arg->end - arg->start + 1;
             printf("Notice: end exponent is set to %d\n", arg->end);
         }
     }
     return 1;
 show_usage:
     printf("usage: %s [-dim #dimensions] [-r start_exponent last_exponent] [-platforms p1...] [-v] [-t] [-d] [-img] [-p] [-profiler] [-cuprop]", argv[0]);
-    // -dim 2 -r 10 13 -platforms opencl -v -d -p
     return 0;
 }

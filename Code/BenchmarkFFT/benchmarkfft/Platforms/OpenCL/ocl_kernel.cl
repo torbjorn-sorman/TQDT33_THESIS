@@ -119,23 +119,6 @@ __kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __loc
     out[(reverse(in_high + row_offset) >> leading_bits)] = src_high;
 }
 
-__kernel void opencl_kernel_local_col(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar, int n)
-{
-    int in_low = get_local_id(0);
-    int in_high = (n >> 1) + in_low;
-    int colOffset = get_group_id(1) * get_local_size(0) * 2;
-    in += (in_low + colOffset) * n + get_group_id(0);
-    out += get_group_id(0);
-    shared[in_low] = *in;
-    shared[in_high] = *(in + ((n >> 1) * n));
-    barrier(0);
-    algorithm_partial(shared, in_high, local_angle, steps_left);
-    cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
-    cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };
-    out[(reverse(in_low + colOffset) >> leading_bits) * n] = src_low;
-    out[(reverse(in_high + colOffset) >> leading_bits) * n] = src_high;
-}
-
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32
 

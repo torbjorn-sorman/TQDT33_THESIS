@@ -4,8 +4,6 @@
 // Testing
 //
 
-//#define NO_TWIDDLE_TABLE
-
 int c_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
@@ -46,9 +44,9 @@ int c_2d_validate(const int n, bool write_img)
 
 double c_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in = get_seq(n, 1);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
 #ifdef NO_TWIDDLE_TABLE
         c_const_geom_alt(FFT_FORWARD, &in, &in, n);
@@ -58,22 +56,22 @@ double c_performance(const int n)
         measures[i] = stopTimer();
     }
     free(in);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 double c_2d_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in = get_seq(n * n);
     cpx *out = get_seq(n * n);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         c_const_geom_2d(FFT_FORWARD, &in, &out, n);
         measures[i] = stopTimer();
     }
     free(in);
     free(out);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 //

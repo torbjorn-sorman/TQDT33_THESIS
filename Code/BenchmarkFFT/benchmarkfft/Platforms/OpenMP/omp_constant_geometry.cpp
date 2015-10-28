@@ -40,30 +40,30 @@ int openmp_2d_validate(const int n, bool write_img)
 
 double openmp_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in = get_seq(n, 1);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         openmp_const_geom(FFT_FORWARD, &in, &in, n);
         measures[i] = stopTimer();
     }
     free(in);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 double openmp_2d_performance(const int n)
 {
-    double measures[NUM_PERFORMANCE];
+    double measures[NUM_TESTS];
     cpx *in = get_seq(n * n);
     cpx *buf = get_seq(n * n);
-    for (int i = 0; i < NUM_PERFORMANCE; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
         measures[i] = stopTimer();
     }
     free(in);
     free(buf);
-    return average_best(measures, NUM_PERFORMANCE);
+    return average_best(measures, NUM_TESTS);
 }
 
 //

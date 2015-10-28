@@ -65,7 +65,7 @@ int main(int argc, const char* argv[])
         if (args.test_platform) {
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::vector<Platform *> platforms = getPlatforms(&args);
-            for (int i = args.start; i < args.end; ++i) {
+            for (int i = args.start; i <= args.end; ++i) {
                 int n = power2(i);
                 for (Platform *platform : platforms)
                     platform->runPerformance(n);

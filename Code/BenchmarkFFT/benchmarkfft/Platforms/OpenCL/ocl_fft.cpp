@@ -7,7 +7,7 @@ __inline void opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_tra
 // 1D
 //
 
-bool opencl_validate(const int n)
+bool ocl_validate(const int n)
 {
     cl_int err = CL_SUCCESS;
     cpx *data = get_seq(n, 1);
@@ -28,7 +28,7 @@ bool opencl_validate(const int n)
     return (freeResults(&data, NULL, &data_ref, n) == 0) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
-bool opencl_2d_validate(const int n, bool write_img)
+bool ocl_2d_validate(const int n, bool write_img)
 {
     cl_int err = CL_SUCCESS;
     cpx *data, *data_ref;
@@ -57,7 +57,7 @@ bool opencl_2d_validate(const int n, bool write_img)
 }
 
 #ifndef MEASURE_BY_TIMESTAMP
-double opencl_performance(const int n)
+double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
@@ -75,7 +75,7 @@ double opencl_performance(const int n)
     int res = freeResults(&data_in, NULL, NULL, n);
     return average_best(measurements, NUM_TESTS);
 }
-double opencl_2d_performance(const int n)
+double ocl_2d_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
@@ -94,7 +94,7 @@ double opencl_2d_performance(const int n)
     return average_best(measurements, NUM_TESTS);
     }
 #else
-double opencl_performance(const int n)
+double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
@@ -117,7 +117,7 @@ double opencl_performance(const int n)
     checkErr(oclRelease(NULL, NULL, &arg_cpu, &arg_gpu), "Release failed!");
     return average_best(measurements, NUM_TESTS);
 }
-double opencl_2d_performance(const int n)
+double ocl_2d_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];

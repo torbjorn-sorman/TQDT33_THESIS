@@ -10,7 +10,6 @@
     <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
-    <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Definitions.h" />
@@ -213,6 +212,7 @@
     <ClCompile Include="Platforms\OpenGL\ogl_helper.cpp">
       <Filter>Platforms\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">

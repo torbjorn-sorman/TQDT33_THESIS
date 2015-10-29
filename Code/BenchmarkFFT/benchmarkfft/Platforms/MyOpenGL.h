@@ -1,6 +1,6 @@
 #pragma once
-#ifndef MYOPENCL_H
-#define MYOPENCL_H
+#ifndef MYOPENGL_H
+#define MYOPENGL_H
 
 #include "Platform.h"
 #include "OpenGL/ogl_fft.h"

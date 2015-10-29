@@ -3,7 +3,7 @@
 #define MATCH(s) (str.compare((s)) == 0)
 #define MATCHP(s) (tmp.compare((s)) == 0)
 
-int parseArguments(benchmarkArgument *arg, int argc, const char* argv[])
+int parseArguments(benchmarkArgument *arg, int argc, char* argv[])
 {
     if (argc == 1) {
         goto show_usage;

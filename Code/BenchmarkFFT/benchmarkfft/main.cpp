@@ -7,7 +7,7 @@
 #include "Platforms\Platform.h"
 #include "Platforms\MyCUDA.h"
 #include "Platforms\MyOpenCL.h"
-//#include "Platforms\MyOpenGL.h"
+#include "Platforms\MyOpenGL.h"
 #include "Platforms\MyCuFFT.h"
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"
@@ -17,6 +17,7 @@
 
 void printDevProp(cudaDeviceProp devProp);
 void toFile(std::string name, std::vector<double> results, int ms);
+void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgument *a);
 
 std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 {
@@ -32,6 +33,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
         platforms.insert(platforms.begin(), new MyCUDA(args->dimensions, args->number_of_lengths));
     if (args->platform_opencl)
         platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
+    if (args->platform_opengl)
+        platforms.insert(platforms.begin(), new MyOpenGL(args->dimensions, args->number_of_lengths));
     if (args->platform_directx)
         platforms.insert(platforms.begin(), new MyDirectX(args->dimensions, args->number_of_lengths));
     if (args->platform_id3dx11)
@@ -48,11 +51,16 @@ int testground()
     return 0;
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
     benchmarkArgument args;
     if (!parseArguments(&args, argc, argv))
         return 0;
+    // Special setup!
+    if (args.platform_opengl) {        
+        glutInit(&argc, argv);
+        glutCreateWindow("OpenGL retardness...");
+    }
     if (args.run_testground) {
         std::cout << "Running Testground" << std::endl;
         testground();
@@ -122,6 +130,7 @@ int main(int argc, const char* argv[])
         if (args.write_file && args.performance_metrics) {
             for (Platform *platform : platforms)
                 toFile(platform->name, platform->results, args.number_of_lengths);
+            toFile("all", platforms, &args);
         }
         std::cout << "  Test Platforms Complete" << std::endl;
         std::cout << "Press the any key to continue...";
@@ -164,6 +173,27 @@ void toFile(std::string name, std::vector<double> results, int ms)
         int val = (int)floor(results[i]);
         int dec = (int)floor((results[i] - val) * 10);
         fprintf_s(f, "%d,%1d\n", val, dec);
+    }
+    fclose(f);
+    std::cout << "Wrote '" << filename << "'" << std::endl;
+}
+
+void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgument *a)
+{
+    std::string filename;
+    FILE *f = getTextFilePointer(name, &filename);
+    fprintf_s(f, "\t");
+    for (Platform *platform : platforms)
+        fprintf_s(f, "%s\t", platform->name);
+    fprintf_s(f, "\n");
+    for (int i = 0; i < a->number_of_lengths; ++i) {
+        fprintf_s(f, "%d\t", power2(i) * power2(a->start));
+        for (Platform *platform : platforms) {
+            int val = (int)floor(platform->results[i]);
+            int dec = (int)floor((platform->results[i] - val) * 10);
+            fprintf_s(f, "%d,%1d\t", val, dec);
+        }
+        fprintf_s(f, "\n");
     }
     fclose(f);
     std::cout << "Wrote '" << filename << "'" << std::endl;

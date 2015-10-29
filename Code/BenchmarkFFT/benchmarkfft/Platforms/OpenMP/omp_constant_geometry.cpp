@@ -134,7 +134,7 @@ _inline void openmp_inner_body(cpx *in, cpx *outG, float global_angle, unsigned 
     {
         int old = -1;        
         cpx w, *out = &outG[omp_get_thread_num() * n / omp_get_num_threads()];
-#pragma omp for schedule(static) private(w, old) // might remove this private decl.?
+#pragma omp for schedule(static)// private(w, old) // might remove this private decl.?
     for (int i = 0; i < n; i += 2) {
         int l = i / 2;
         int p = l & mask;

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MYTIMER_H
 #define MYTIMER_H
 

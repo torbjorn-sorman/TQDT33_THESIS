@@ -1,8 +1,8 @@
+#pragma once
 #ifndef CPX_DEBUG_H
 #define CPX_DEBUG_H
 
-#include <stdlib.h>
-#include <iostream>
+#include <iosfwd>
 
 #include "../Definitions.h"
 #include "mycomplex.h"

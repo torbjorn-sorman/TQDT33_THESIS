@@ -1,4 +1,3 @@
-
 #include "parsearg.h"
 
 #define MATCH(s) (str.compare((s)) == 0)

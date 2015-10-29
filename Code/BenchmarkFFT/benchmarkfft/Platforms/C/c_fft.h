@@ -1,8 +1,7 @@
+#pragma once
 #ifndef C_FFT_H
 #define C_FFT_H
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "../../Definitions.h"
 #include "../../Common/mymath.h"
 #include "../../Common/mycomplex.h"

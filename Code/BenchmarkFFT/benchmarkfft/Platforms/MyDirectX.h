@@ -1,7 +1,7 @@
+#pragma once
 #ifndef MYDIRECTX_H
 #define MYDIRECTX_H
 
-#include <iostream>
 #include "Platform.h"
 #include "DirectX\dx_fft.h"
 

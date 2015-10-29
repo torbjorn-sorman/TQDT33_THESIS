@@ -1,7 +1,7 @@
+#pragma once
 #ifndef MYFFTOPENCL_H
 #define MYFFTOPENCL_H
 
-#include <stdio.h>
 #include "CL\cl.h"
 
 #include "../../Definitions.h"

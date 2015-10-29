@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PARSEARG_H
 #define PARSEARG_H
 

@@ -1,5 +1,5 @@
-
 #include "ocl_helper.h"
+#include <iostream>
 
 std::string getKernel(const char *filename)
 {

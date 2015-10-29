@@ -1,7 +1,7 @@
+#pragma once
 #ifndef C_HELPER_H
 #define C_HELPER_H
 
-#include <stdio.h>
 #include "../../Definitions.h"
 #ifdef _OPENMP
 #include <omp.h> 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MYCUDA_H
 #define MYCUDA_H
 

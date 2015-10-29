@@ -5,7 +5,6 @@ __global__ void cuda_kernel_global_row( cpx *in, float global_angle, unsigned in
 
 __global__ void cuda_kernel_local(      cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half);
 __global__ void cuda_kernel_local_row(  cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half);
-__global__ void cuda_kernel_local_col(  cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range);
 
 // -------------------------------
 //

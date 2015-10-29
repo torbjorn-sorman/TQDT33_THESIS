@@ -1,9 +1,8 @@
+#pragma once
 #ifndef _IMGLIB_0
 #define _IMGLIB_0
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "../Definitions.h"
 #include "myfile.h"
 

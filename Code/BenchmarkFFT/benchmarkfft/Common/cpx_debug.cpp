@@ -1,4 +1,5 @@
 #include "cpx_debug.h"
+#include <iostream>
 
 void cpx_to_console(cpx *sequence, char *title, int len)
 {

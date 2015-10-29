@@ -1,5 +1,8 @@
+#pragma once
 #ifndef MYMATH_H
 #define MYMATH_H
+
+#include <cstdlib>
 
 static int tab32[32] = {
     0, 9, 1, 10, 13, 21, 2, 29,

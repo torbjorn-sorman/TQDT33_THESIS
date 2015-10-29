@@ -1,7 +1,7 @@
+#pragma once
 #ifndef MYID3DX11FFT_H
 #define MYID3DX11FFT_H
 
-#include <iostream>
 #include <d3d11.h>
 #include <D3dcsx.h>
 

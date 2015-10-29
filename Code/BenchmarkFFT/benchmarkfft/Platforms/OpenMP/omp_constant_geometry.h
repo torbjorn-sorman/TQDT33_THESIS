@@ -4,8 +4,6 @@
 #ifdef _OPENMP
 #include <omp.h> 
 #endif
-#include <stdlib.h>
-#include <iostream>
 #include "../../Definitions.h"
 #include "../../Common/mymath.h"
 #include "../../Common/mycomplex.h"

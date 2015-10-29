@@ -1,8 +1,8 @@
+#pragma once
 #ifndef CUDAFFTSURFACE_CUH
 #define CUDAFFTSURFACE_CUH
 
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
 #include "../../Definitions.h"
 #include "../../Common/mymath.h"

@@ -1,8 +1,9 @@
+#pragma once
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
-#include <iostream>
-#include <vector>
+#include <iosfwd>
+
 #include <fstream>
 #include <CL\cl.h>
 
@@ -28,16 +29,6 @@ struct oclArgs {
     cl_platform_id platform;
     char *kernelSource;
 };
-
-cl_int checkErr(cl_int error, char *msg);
-std::string getKernel(const char *filename);
-cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
-cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n);
-cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
-cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
-int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
-void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 
 static void __inline swap(cl_mem *a, cl_mem *b)
 {
@@ -98,5 +89,15 @@ static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem o
     clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
     clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
 }
+
+cl_int checkErr(cl_int error, char *msg);
+std::string getKernel(const char *filename);
+cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n);
+cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
+cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
+int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
+void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
 
 #endif

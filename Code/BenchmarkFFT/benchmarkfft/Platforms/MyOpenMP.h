@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MYOPENMP_H
 #define MYOPENMP_H
 

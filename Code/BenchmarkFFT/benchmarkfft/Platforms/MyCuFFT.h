@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MYCUFFT_H
 #define MYCUFFT_H
 
@@ -8,7 +9,9 @@
 #endif
 #include "CUDA/cuda_helper.cuh"
 #include "../Common/mymath.h"
+#ifndef MEASURE_BY_TIMESTAMP
 #include "../Common/mytimer.h"
+#endif
 
 class MyCuFFT : public Platform
 {

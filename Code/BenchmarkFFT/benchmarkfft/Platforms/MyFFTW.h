@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MYFFTW_H
 #define MYFFTW_H
 

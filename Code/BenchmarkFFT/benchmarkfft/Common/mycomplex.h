@@ -1,7 +1,7 @@
+#pragma once
 #ifndef MYCOMPLEX_H
 #define MYCOMPLEX_H
 
-#include <stdlib.h>
 #include <cmath>
 #include "cuComplex.h"
 

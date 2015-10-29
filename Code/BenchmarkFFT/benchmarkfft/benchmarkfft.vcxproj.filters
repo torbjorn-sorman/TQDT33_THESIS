@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="Platforms\CUDA\cuda_fft.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
@@ -11,6 +10,7 @@
     <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu">
       <Filter>Platforms\CUDA</Filter>
     </CudaCompile>
+    <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Definitions.h" />
@@ -80,23 +80,23 @@
     <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh">
       <Filter>Platforms\CUDA</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\MyDirectX.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
     <ClInclude Include="Platforms\DirectX\dx_fft.h">
       <Filter>Platforms\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="Platforms\DirectX\dx_helper.h">
       <Filter>Platforms\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\MyID3DX11FFT.h">
-      <Filter>Platforms</Filter>
-    </ClInclude>
     <ClInclude Include="Common\cpx_debug.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Platforms\DirectX\dx_csmanip.h">
       <Filter>Platforms\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyID3DX11FFT.h">
+      <Filter>Platforms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platforms\MyDirectX.h">
+      <Filter>Platforms\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +182,15 @@
     </ClCompile>
     <ClCompile Include="Common\cpx_debug.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\myfile.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\DirectX\dx_csmanip.cpp">
+      <Filter>Platforms\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\DirectX\dx_helper.cpp">
+      <Filter>Platforms\DirectX</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

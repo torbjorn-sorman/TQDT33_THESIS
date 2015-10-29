@@ -1,14 +1,11 @@
+#pragma once
 #ifndef MYFFTCUDA_CUH
 #define MYFFTCUDA_CUH
-
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
 #include "../../Definitions.h"
 #include "../../Common/mymath.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/mycomplex.h"
-#include "../../Common/cpx_debug.h"
 #include "../C/c_helper.h"
 #include "cuda_helper.cuh"
 

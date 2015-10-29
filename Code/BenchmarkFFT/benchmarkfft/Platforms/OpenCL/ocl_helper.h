@@ -70,18 +70,6 @@ static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, 
     clSetKernelArg(args->kernel, 7, sizeof(int), &n_per_block);
 }
 
-static void __inline oclSetKernelGPU2DColArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int n)
-{
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
-    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
-    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
-    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
-    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 7, sizeof(int), &n);
-}
-
 static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);

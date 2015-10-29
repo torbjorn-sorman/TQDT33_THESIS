@@ -151,11 +151,11 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
     set_block_and_threads(&blocks, &threads, n_half);    
     int n_per_block = n / blocks;
-    float global_angle = dir * (M_2_PI / n);
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
     if (blocks > 1) {
-        cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);        
+        cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+        float global_angle = dir * (M_2_PI / n);
         int steps = 0;
         int dist = n;
         int steps_gpu = log2_32(MAX_BLOCK_SIZE);
@@ -254,7 +254,6 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int step
     in += offset;
     shared[threadIdx.x] = in[threadIdx.x];
     shared[in_high] = in[in_high];
-    SYNC_THREADS;
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
     out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };

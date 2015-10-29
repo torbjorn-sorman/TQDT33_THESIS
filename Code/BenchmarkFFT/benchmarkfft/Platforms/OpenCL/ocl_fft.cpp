@@ -151,7 +151,7 @@ double ocl_2d_performance(const int n)
 //
 // ---------------------------------
 
-__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu) //, cl_event *events)
+__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
 {
     const int n = arg_gpu->n;
     int steps_left = log2_32(n);

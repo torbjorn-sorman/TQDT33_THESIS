@@ -80,12 +80,10 @@ __kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __local c
 {      
     int in_low = get_local_id(0);
     int in_high = n_half + in_low;
-    int offset = get_group_id(0) * get_local_size(0) * 2; 
-         
+    int offset = get_group_id(0) * get_local_size(0) * 2;          
     in += offset;
     shared[in_low] = in[in_low];
     shared[in_high] = in[in_high];
-    barrier(0);
     algorithm_partial(shared, in_high, local_angle, steps_left);
     cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
     cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };

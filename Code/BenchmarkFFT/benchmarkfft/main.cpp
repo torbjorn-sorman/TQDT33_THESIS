@@ -7,6 +7,7 @@
 #include "Platforms\Platform.h"
 #include "Platforms\MyCUDA.h"
 #include "Platforms\MyOpenCL.h"
+#include "Platforms\MyOpenGL.h"
 #include "Platforms\MyCuFFT.h"
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"

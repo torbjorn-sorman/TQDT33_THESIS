@@ -224,9 +224,12 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\MyFFTW.h" />
     <ClInclude Include="Platforms\MyID3DX11FFT.h" />
     <ClInclude Include="Platforms\MyOpenCL.h" />
+    <ClInclude Include="Platforms\MyOpenGL.h" />
     <ClInclude Include="Platforms\MyOpenMP.h" />
     <ClInclude Include="Platforms\OpenCL\ocl_fft.h" />
     <ClInclude Include="Platforms\OpenCL\ocl_helper.h" />
+    <ClInclude Include="Platforms\OpenGL\ogl_fft.h" />
+    <ClInclude Include="Platforms\OpenGL\ogl_helper.h" />
     <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h" />
     <ClInclude Include="Platforms\OpenMP\omp_fast_index.h" />
     <ClInclude Include="Platforms\Platform.h" />
@@ -247,9 +250,12 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"</Command>
     <ClCompile Include="Platforms\MyFFTW.cpp" />
     <ClCompile Include="Platforms\MyID3DX11FFT.cpp" />
     <ClCompile Include="Platforms\MyOpenCL.cpp" />
+    <ClCompile Include="Platforms\MyOpenGL.cpp" />
     <ClCompile Include="Platforms\MyOpenMP.cpp" />
     <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp" />
     <ClCompile Include="Platforms\OpenCL\ocl_helper.cpp" />
+    <ClCompile Include="Platforms\OpenGL\ogl_fft.cpp" />
+    <ClCompile Include="Platforms\OpenGL\ogl_helper.cpp" />
     <ClCompile Include="Platforms\OpenMP\omp_constant_geometry.cpp" />
     <ClCompile Include="Platforms\OpenMP\omp_fast_index.cpp" />
   </ItemGroup>

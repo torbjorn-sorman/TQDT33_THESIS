@@ -8,11 +8,13 @@
 
 typedef unsigned char color_component;
 typedef color_component pixel[3];
-typedef struct {
+struct image_t;
+/*{
     unsigned int width;
     unsigned int height;
     pixel * buf;
 } image_t;
+*/
 typedef image_t * image;
 
 image alloc_img(unsigned int width, unsigned int height);

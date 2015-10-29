@@ -1,14 +1,15 @@
 #include "ogl_fft.h"
-
+/*
 __inline void ogl_fft(transform_direction dir, ogl_args *args, const int n);
 __inline void ogl_fft_2d(transform_direction dir, ogl_args *args, const int n);
-
+*/
 //
 // Testing
 //
 
 int ogl_validate(const int n)
 {
+    /*
     cpx *in = get_seq(n, 1);
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
@@ -29,10 +30,13 @@ int ogl_validate(const int n)
     free(out);
     free(ref);
     return forward_diff < RELATIVE_ERROR_MARGIN && inverse_diff < RELATIVE_ERROR_MARGIN;
+    */
+    return 0;
 }
 
 int ogl_2d_validate(const int n, bool write_img)
 {
+    /*
     cpx *data, *ref;
     setup_seq2D(&data, NULL, &ref, n);
     ogl_args args;
@@ -55,6 +59,8 @@ int ogl_2d_validate(const int n, bool write_img)
     free(data);
     free(ref);
     return diff < RELATIVE_ERROR_MARGIN;
+    */
+    return 0;
 }
 
 #ifndef MEASURE_BY_TIMESTAMP
@@ -87,6 +93,7 @@ double ogl_2d_performance(const int n)
 #else
 double ogl_performance(const int n)
 {
+    /*
     ogl_args args;
     profiler_data profiler[NUM_TESTS];
     ogl_setup(&args, NULL, n);
@@ -101,9 +108,12 @@ double ogl_performance(const int n)
     }
     ogl_shakedown(&args);
     return ogl_avg(profiler, &args);
+    */
+    return -1;
 }
 double ogl_2d_performance(const int n)
 {
+    /*
     ogl_args args;
     ogl_setup_2d(&args, NULL, n);
     profiler_data profiler[NUM_TESTS];
@@ -118,13 +128,15 @@ double ogl_2d_performance(const int n)
     }
     ogl_shakedown(&args);
     return ogl_avg(profiler, &args);
+    */
+        return -1;
 }
 #endif
 
 //
 // Algorithm
 //
-
+/*
 __inline void ogl_set_buffers(ogl_args *a)
 {
     a->context->CSSetShaderResources(0, 1, &a->view_nullptr);
@@ -223,3 +235,4 @@ __inline void ogl_fft_2d(transform_direction dir, ogl_args *args, const int n)
     args->context->CSSetShader(args->cs_transpose, nullptr, 0);
     args->context->Dispatch(width, width, 1);
 }
+*/

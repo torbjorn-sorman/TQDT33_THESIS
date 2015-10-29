@@ -2,10 +2,12 @@
 #ifndef OGL_FFT_H
 #define OGL_FFT_H
 
+/*
 #include "../../Common/mymath.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/imglib.h"
+*/
 #include "ogl_helper.h"
 
 int ogl_validate(const int n);

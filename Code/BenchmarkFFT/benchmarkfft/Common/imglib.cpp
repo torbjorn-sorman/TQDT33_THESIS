@@ -2,6 +2,13 @@
 
 #define PPMREADBUFLEN 256
 
+struct image_t 
+{
+    unsigned int width;
+    unsigned int height;
+    pixel * buf;
+};
+
 image get_ppm(FILE *pf)
 {
     char buf[PPMREADBUFLEN], *t;

@@ -173,10 +173,10 @@ GLuint genComputeProg(GLuint texHandle) {
 
 void testrun()
 {
-    GLuint renderHandle, computeHandle, texHandle;
-    texHandle = genTexture();
+    //GLuint renderHandle, computeHandle, texHandle;
+    //texHandle = genTexture();
     //renderHandle = genRenderProg(texHandle);
-    computeHandle = genComputeProg(texHandle);
+    //computeHandle = genComputeProg(texHandle);
     //glutCreateWindow("SAXPY TESTS");
     //GLuint computeHandle = genComputeProg();
     

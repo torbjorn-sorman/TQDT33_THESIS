@@ -1,5 +1,7 @@
 #include "cuda_fft_surface.cuh"
 
+#include "../gpu_definitions.h"
+
 #define CUSURFACE_TESTS 8
 
 void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cudaSurfaceObject_t *inputSurfObj, cudaSurfaceObject_t *outputSurfObj)

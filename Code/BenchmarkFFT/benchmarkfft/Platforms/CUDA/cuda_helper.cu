@@ -1,4 +1,5 @@
 #include "cuda_helper.cuh"
+#include "../gpu_definitions.h"
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
 {
@@ -7,7 +8,7 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
 
     // Write to shared from Global (in)
     int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;        
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
             tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];

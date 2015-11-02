@@ -1,7 +1,7 @@
 #include "dx_csmanip.h"
 #include <iostream>
 
-void dx_set_dim(LPCWSTR shader_file, const int n)
+void dx_set_dim(LPCWSTR shader_file, int group_size, const int n)
 {
     std::ifstream in_file(shader_file);
     std::stringstream buffer;
@@ -15,12 +15,12 @@ void dx_set_dim(LPCWSTR shader_file, const int n)
     std::ofstream out_file(shader_file);
     std::stringstream fmt1, fmt2;
     const int n2 = n >> 1;
-    if (n2 > MAX_BLOCK_SIZE) {
-        fmt1 << "$1 " << std::to_string(MAX_BLOCK_SIZE);
-        if ((n2 / MAX_BLOCK_SIZE) > 1)
+    if (n2 > group_size) {
+        fmt1 << "$1 " << std::to_string(group_size);
+        if ((n2 / group_size) > 1)
             fmt2 << "$1 " << std::to_string(1);
         else
-            fmt2 << "$1 " << std::to_string((n2 / MAX_BLOCK_SIZE));
+            fmt2 << "$1 " << std::to_string((n2 / group_size));
     }
     else {
         fmt1 << "$1 " << std::to_string(n2);
@@ -33,7 +33,7 @@ void dx_set_dim(LPCWSTR shader_file, const int n)
     out_file.close();
 }
 
-void dx_set_dim_2d(LPCWSTR shader_file, const int n)
+void dx_set_dim_2d(LPCWSTR shader_file, int group_size, const int n)
 {
     std::ifstream in_file(shader_file);
     std::stringstream buffer;
@@ -46,9 +46,9 @@ void dx_set_dim_2d(LPCWSTR shader_file, const int n)
     std::stringstream fmt_grp, fmt_gridx, fmt_gridy;
     const int n2 = n >> 1;
     fmt_gridx << "$1 " << std::to_string(n);
-    if (n2 > MAX_BLOCK_SIZE) {
-        fmt_grp << "$1 " << std::to_string(MAX_BLOCK_SIZE);
-        fmt_gridy << "$1 " << std::to_string((n2 / MAX_BLOCK_SIZE));
+    if (n2 > group_size) {
+        fmt_grp << "$1 " << std::to_string(group_size);
+        fmt_gridy << "$1 " << std::to_string((n2 / group_size));
     }
     else {
         fmt_grp << "$1 " << std::to_string(n2);

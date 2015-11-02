@@ -1,5 +1,7 @@
 #include "dx_fft.h"
 
+#include "../gpu_definitions.h"
+
 __inline void dx_fft(transform_direction dir, dx_args *args, const int n);
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n);
 
@@ -13,7 +15,7 @@ int dx_validate(const int n)
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
     dx_args args;
-    dx_setup(&args, in, n);
+    dx_setup(&args, in, MAX_BLOCK_SIZE, n);
 
     dx_fft(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buf_output, out, n);
@@ -36,7 +38,7 @@ int dx_2d_validate(const int n, bool write_img)
     cpx *data, *ref;
     setup_seq2D(&data, NULL, &ref, n);
     dx_args args;
-    dx_setup_2d(&args, data, n);
+    dx_setup_2d(&args, data, MAX_BLOCK_SIZE, n);
 
     dx_fft_2d(FFT_FORWARD, &args, n);    
     if (write_img) {
@@ -89,7 +91,7 @@ double dx_performance(const int n)
 {
     dx_args args;
     profiler_data profiler[NUM_TESTS];
-    dx_setup(&args, NULL, n);
+    dx_setup(&args, NULL, MAX_BLOCK_SIZE, n);
     for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;
         dx_start_profiling(&args, &p);
@@ -105,7 +107,7 @@ double dx_performance(const int n)
 double dx_2d_performance(const int n)
 {
     dx_args args;
-    dx_setup_2d(&args, NULL, n);
+    dx_setup_2d(&args, NULL, MAX_BLOCK_SIZE, n);
     profiler_data profiler[NUM_TESTS];
     for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;

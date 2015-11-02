@@ -1,3 +1,5 @@
+#include "gpu_definitions.h"
+
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -58,14 +60,14 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
         w.y = sincos(angle * (local_id & (0xFFFFFFFF << steps)), &w.x);
         in_lower = *in_l;
         in_upper = *in_u;
-        barrier(0);
+        barrier(CLK_LOCAL_MEM_FENCE);
         add_sub_mul_local(&in_lower, &in_upper, out_i, out_ii, &w);
-        barrier(0);
+        barrier(CLK_LOCAL_MEM_FENCE);
     }
 }
 
 // GPU takes care of overall syncronization
-__kernel void opencl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
+__kernel void ocl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
     int tid = get_global_id(0);
@@ -75,8 +77,8 @@ __kernel void opencl_kernel_global(__global cpx *in, float angle, unsigned int l
 }
 
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
-// Can be combined with opencl_kernel_global in a manner that the opencl_kernel_global is run until problem can be split into smaller parts.
-__kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __local cpx *shared, float local_angle, int steps_left, int leading_bits, float scalar, const int n_half)
+// Can be combined with ocl_kernel_global in a manner that the ocl_kernel_global is run until problem can be split into smaller parts.
+__kernel void ocl_kernel_local(__global cpx *in, __global cpx *out, __local cpx *shared, float local_angle, int steps_left, int leading_bits, float scalar, const int n_half)
 {      
     int in_low = get_local_id(0);
     int in_high = n_half + in_low;
@@ -91,7 +93,7 @@ __kernel void opencl_kernel_local(__global cpx *in, __global cpx *out, __local c
     out[(reverse(in_high + offset) >> leading_bits)] = src_high;
 }
 
-__kernel void opencl_kernel_global_row(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
+__kernel void ocl_kernel_global_row(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
     int col_id = get_group_id(1) * get_local_size(0) + get_local_id(0);
@@ -100,7 +102,7 @@ __kernel void opencl_kernel_global_row(__global cpx *in, float angle, unsigned i
     add_sub_mul_global(in, in + dist, &w);
 }
 
-__kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar, int n_per_block)
+__kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar, int n_per_block)
 {
     int in_low = get_local_id(0);
     int in_high = (n_per_block >> 1) + in_low;
@@ -117,35 +119,32 @@ __kernel void opencl_kernel_local_row(__global cpx *in, __global cpx *out, __loc
     out[(reverse(in_high + row_offset) >> leading_bits)] = src_high;
 }
 
-#define TILE_DIM 64
-#define THREAD_TILE_DIM 32
-
-__kernel void opencl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
+__kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
 {
     // Write to shared from Global (in)
-    int x = get_group_id(0) * TILE_DIM + get_local_id(0);
-    int y = get_group_id(1) * TILE_DIM + get_local_id(1);    
-#pragma unroll    
+    int bx = get_group_id(0),
+        by = get_group_id(1);
+    int ix = get_local_id(0),
+        iy = get_local_id(1);
+
+    int x = bx * TILE_DIM + ix;
+    int y = by * TILE_DIM + iy;
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM) {
-#pragma unroll
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
-            tile[get_local_id(1) + j][get_local_id(0) + i] = in[(y + j) * n + (x + i)];            
+            tile[iy + j][ix + i] = in[(y + j) * n + (x + i)];
         }
     }
-    barrier(0);
-    // Write to global
-    x = get_group_id(1) * TILE_DIM + get_local_id(0);
-    y = get_group_id(0) * TILE_DIM + get_local_id(1);
-#pragma unroll
+    barrier(CLK_LOCAL_MEM_FENCE);
+    x = by * TILE_DIM + ix;
+    y = bx * TILE_DIM + iy;
     for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM){ 
-#pragma unroll
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
-            out[(y + j) * n + (x + i)] = tile[get_local_id(0) + i][get_local_id(1) + j];
+            out[(y + j) * n + (x + i)] = tile[ix + i][iy + j];
         }
     }
 }
 
-__kernel void opencl_timestamp_kernel()
+__kernel void ocl_timestamp_kernel()
 {
     // There be none here!
     // Kernel only used as event trigger to get timestamps!

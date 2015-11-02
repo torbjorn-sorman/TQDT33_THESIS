@@ -1,7 +1,7 @@
 #include "ocl_fft.h"
 
-__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu);
-__inline void opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
+__inline void ocl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu);
+__inline void ocl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
 
 //
 // 1D
@@ -13,16 +13,16 @@ bool ocl_validate(const int n)
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     oclArgs arg_gpu, arg_cpu;
-    checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, n), "Create failed!");
-    
-    opencl_fft(&arg_cpu, &arg_gpu);
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, n), "Create failed!");
+
+    ocl_fft(&arg_cpu, &arg_gpu);
     clFinish(arg_gpu.commands);
     checkErr(clEnqueueReadBuffer(arg_gpu.commands, arg_gpu.output, CL_TRUE, 0, arg_gpu.data_mem_size, data, 0, NULL, NULL), "Read output for validation failed!");
     double diff = diff_forward_sinus(data, n);
-    
-    arg_gpu.dir = arg_cpu.dir = FFT_INVERSE;    
+
+    arg_gpu.dir = arg_cpu.dir = FFT_INVERSE;
     swap(&arg_gpu.input, &arg_gpu.output);
-    opencl_fft(&arg_cpu, &arg_gpu);
+    ocl_fft(&arg_cpu, &arg_gpu);
     clFinish(arg_gpu.commands);
     checkErr(oclRelease(NULL, data, &arg_cpu, &arg_gpu), "Release failed!");
     return (freeResults(&data, NULL, &data_ref, n) == 0) && (diff <= RELATIVE_ERROR_MARGIN);
@@ -34,24 +34,28 @@ bool ocl_2d_validate(const int n, bool write_img)
     cpx *data, *data_ref;
     setupBuffers(&data, NULL, &data_ref, n);
     oclArgs arg_gpu, arg_cpu, argTranspose;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, n), "Create failed!");
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
 
-    opencl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
-    clFinish(arg_gpu.commands);    
-    
+    ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
+    clFinish(arg_gpu.commands);
+
     if (write_img) {
         checkErr(clEnqueueReadBuffer(arg_gpu.commands, arg_gpu.input, CL_TRUE, 0, arg_gpu.data_mem_size, data, 0, NULL, NULL), "Read Output Buffer!");
+#ifndef TRANSPOSE_ONLY
         write_normalized_image("OpenCL", "freq", data, n, true);
+#else
+        write_image("OpenCL", "trans", data, n);
+#endif
     }
-    
+
     arg_gpu.dir = arg_cpu.dir = FFT_INVERSE;
     swap(&arg_gpu.input, &arg_gpu.output);
-    opencl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
+    ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
     clFinish(arg_gpu.commands);
     checkErr(oclRelease2D(NULL, data, &arg_cpu, &arg_gpu, &argTranspose), "Release failed!");
-    
+
     if (write_img) {
-        write_image("OpenCL", "spat", data, n);    
+        write_image("OpenCL", "spat", data, n);
     }
     return freeResults(&data, NULL, &data_ref, n) == 0;
 }
@@ -63,10 +67,10 @@ double ocl_performance(const int n)
     double measurements[NUM_TESTS];
     cpx *data_in = get_seq(n, 1);
     oclArgs arg_gpu, arg_cpu;
-    checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, data_in, FFT_FORWARD, n), "Create failed!");
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data_in, FFT_FORWARD, n), "Create failed!");
     for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
-        opencl_fft(&arg_cpu, &arg_gpu);
+        ocl_fft(&arg_cpu, &arg_gpu);
 
         clFinish(arg_gpu.commands);
         measurements[i] = stopTimer();
@@ -85,28 +89,28 @@ double ocl_2d_performance(const int n)
     checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
     for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
-        opencl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
+        ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
         clFinish(arg_gpu.commands);
         measurements[i] = stopTimer();
     }
     checkErr(oclRelease2D(data_in, NULL, &arg_cpu, &arg_gpu, &argTranspose), "Release failed!");
     int res = freeResults(&data_in, NULL, NULL, n);
     return average_best(measurements, NUM_TESTS);
-    }
+}
 #else
 double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
     oclArgs arg_gpu, arg_cpu, arg_timestamp;
-    checkErr(opencl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, n), "Create failed!");
-    opencl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, n), "Create failed!");
+    ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
     for (int i = 0; i < NUM_TESTS; ++i) {
         clFinish(arg_gpu.commands);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &start_event);
-        opencl_fft(&arg_cpu, &arg_gpu);
+        ocl_fft(&arg_cpu, &arg_gpu);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &end_event);
         clWaitForEvents(1, &end_event);
         clGetEventProfilingInfo(start_event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
@@ -124,14 +128,14 @@ double ocl_2d_performance(const int n)
     int minDim = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
     cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
     oclArgs arg_gpu, arg_cpu, argTranspose, arg_timestamp;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
-    opencl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
+    ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
     clFinish(arg_gpu.commands);
-    for (int i = 0; i < NUM_TESTS; ++i) {        
+    for (int i = 0; i < NUM_TESTS; ++i) {
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &start_event);
-        opencl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
+        ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &end_event);
         clWaitForEvents(1, &end_event);
         clFinish(arg_gpu.commands);
@@ -151,7 +155,7 @@ double ocl_2d_performance(const int n)
 //
 // ---------------------------------
 
-__inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
+__inline void ocl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
 {
     const int n = arg_gpu->n;
     int steps_left = log2_32(n);
@@ -169,7 +173,7 @@ __inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
         int dist = n;
         while (--steps_left > steps_gpu) {
             dist >>= 1;
-            opencl_set_kernel_args_global(arg_cpu, arg_gpu->input, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+            ocl_set_kernel_args_global(arg_cpu, arg_gpu->input, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, NULL);
             ++steps;
         }
@@ -177,11 +181,11 @@ __inline void opencl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
         block_range_half = n_per_block >> 1;
     }
     // Calculate complete sequence in one launch and syncronize steps on GPU  
-    opencl_set_kernel_args_local(arg_gpu, arg_gpu->input, arg_gpu->output, local_angle, steps_left, leading_bits, scalar, block_range_half);
+    ocl_set_kernel_args_local(arg_gpu, arg_gpu->input, arg_gpu->output, local_angle, steps_left, leading_bits, scalar, block_range_half);
     clEnqueueNDRangeKernel(arg_gpu->commands, arg_gpu->kernel, arg_gpu->workDim, NULL, arg_gpu->global_work_size, arg_gpu->local_work_size, 0, NULL, NULL);
 }
 
-__inline void opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *in, cl_mem *out, int number_of_blocks)
+__inline void ocl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *in, cl_mem *out, int number_of_blocks)
 {
     int steps_left = log2_32(arg_cpu->n);
     const int leading_bits = 32 - steps_left;
@@ -197,7 +201,7 @@ __inline void opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *i
         int dist = arg_gpu->n;
         while (--steps_left > steps_gpu) {
             dist >>= 1;
-            opencl_set_kernel_args_global(arg_cpu, *in, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
+            ocl_set_kernel_args_global(arg_cpu, *in, global_angle, 0xFFFFFFFF << steps_left, steps, dist);
             clEnqueueNDRangeKernel(arg_cpu->commands, arg_cpu->kernel, arg_cpu->workDim, NULL, arg_cpu->global_work_size, arg_cpu->local_work_size, 0, NULL, NULL);
             ++steps;
         }
@@ -209,23 +213,29 @@ __inline void opencl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *i
     clEnqueueNDRangeKernel(arg_gpu->commands, arg_gpu->kernel, arg_gpu->workDim, NULL, arg_gpu->global_work_size, arg_gpu->local_work_size, 0, NULL, NULL);
 }
 
-__inline void opencl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu_row, oclArgs *arg_transpose)
+__inline void ocl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu_row, oclArgs *arg_transpose)
 {
     cl_mem _in = arg_gpu_row->input;
     cl_mem _out = arg_gpu_row->output;
-        
+#ifndef TRANSPOSE_ONLY
     int number_of_blocks = (int)arg_gpu_row->global_work_size[1];
     // _in -> _out
-    opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
+    ocl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
     // _out -> _in
     oclSetKernelTransposeArg(arg_transpose, _out, _in);
     clEnqueueNDRangeKernel(arg_transpose->commands, arg_transpose->kernel, arg_transpose->workDim, NULL, arg_transpose->global_work_size, arg_transpose->local_work_size, 0, NULL, NULL);
     // _in -> _out    
-    opencl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
+    ocl_fft_2d_helper(arg_cpu, arg_gpu_row, &_in, &_out, number_of_blocks);
     // _out -> _in
     oclSetKernelTransposeArg(arg_transpose, _out, _in);
     clEnqueueNDRangeKernel(arg_transpose->commands, arg_transpose->kernel, arg_transpose->workDim, NULL, arg_transpose->global_work_size, arg_transpose->local_work_size, 0, NULL, NULL);
 
     arg_cpu->input = arg_gpu_row->input = _out;
     arg_cpu->output = arg_gpu_row->output = _in;
+#else
+    oclSetKernelTransposeArg(arg_transpose, _in, _out);
+    clEnqueueNDRangeKernel(arg_transpose->commands, arg_transpose->kernel, arg_transpose->workDim, NULL, arg_transpose->global_work_size, arg_transpose->local_work_size, 0, NULL, NULL);
+    arg_cpu->input = arg_gpu_row->input = _out;
+    arg_cpu->output = arg_gpu_row->output = _in;
+#endif
 }

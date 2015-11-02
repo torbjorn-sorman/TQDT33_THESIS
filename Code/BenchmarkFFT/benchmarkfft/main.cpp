@@ -54,7 +54,7 @@ int testground()
 int main(int argc, char* argv[])
 {
     benchmarkArgument args;
-    if (!parseArguments(&args, argc, argv))
+    if (!parseArguments(&args, TILE_DIM, argc, argv))
         return 0;
     // Special setup!
     if (args.platform_opengl) {        

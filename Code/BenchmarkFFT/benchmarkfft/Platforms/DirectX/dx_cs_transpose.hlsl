@@ -1,6 +1,5 @@
 #define WIDTH 8192
-#define TILE_DIM 64
-#define THREAD_TILE_DIM 32  
+#include "../gpu_definitions.h"
 
 struct cpx
 {

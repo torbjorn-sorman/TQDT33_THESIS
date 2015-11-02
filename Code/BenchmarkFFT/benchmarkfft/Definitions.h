@@ -21,23 +21,13 @@ typedef float transform_direction;
 #define FFT_INVERSE 1.0f
 
 //
-// Hardware & Tweak defines, no need to poll this every time program runs.
-//
-#define MAX_BLOCK_SIZE 1024             
-#define TILE_DIM 64
-#define THREAD_TILE_DIM 32              
-
-//
 // Test related defines
 //
 #define MEASURE_BY_TIMESTAMP
-#ifdef _DEBUG
-#define NUM_TESTS 1
-#else
 #define NUM_TESTS 16
-#endif
 #define HIGHEST_EXP 26
 #define HIGHEST_EXP_2D 13 // 8192 -> the limit of a 2GB primary mem device. Two buffers cover 8192 * 8192 * 8 * 2 = 1 073 741 824 bytes of memory.
+#define TRANSPOSE_ONLY
 
 struct benchmarkArgument {
     int dimensions = 1;

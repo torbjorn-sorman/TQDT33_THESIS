@@ -128,12 +128,12 @@ void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
     args->context->Unmap(args->buf_staging, 0);
 }
 
-void dx_setup(dx_args* a, cpx* in, const int n)
+void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
-    dx_set_dim(cs_file, n);
+    dx_set_dim(cs_file, group_size, n);
 
-    a->n_groups.x = (n >> 1) > MAX_BLOCK_SIZE ? ((n >> 1) / MAX_BLOCK_SIZE) : 1;
+    a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n);
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
@@ -177,16 +177,16 @@ void dx_setup(dx_args* a, cpx* in, const int n)
     }
 }
 
-void dx_setup_2d(dx_args* a, cpx* in, const int n)
+void dx_setup_2d(dx_args* a, cpx* in, int group_size, const int n)
 {
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
     LPCWSTR cs_file_transpose = L"Platforms/DirectX/dx_cs_transpose.hlsl";
-    dx_set_dim_2d(cs_file, n);
+    dx_set_dim_2d(cs_file, group_size, n);
     dx_set_dim_trans(cs_file_transpose, n);
 
     a->n_groups.x = n;
     int n_half = n >> 1;
-    a->n_groups.y = n_half > MAX_BLOCK_SIZE ? n_half / MAX_BLOCK_SIZE : 1;
+    a->n_groups.y = n_half > group_size ? n_half / group_size : 1;
 
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n * n);

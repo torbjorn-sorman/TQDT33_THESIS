@@ -237,6 +237,7 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h" />
     <ClInclude Include="Platforms\OpenMP\omp_fast_index.h" />
     <ClInclude Include="Platforms\Platform.h" />
+    <ClInclude Include="Platforms\gpu_definitions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\cpx_debug.cpp" />

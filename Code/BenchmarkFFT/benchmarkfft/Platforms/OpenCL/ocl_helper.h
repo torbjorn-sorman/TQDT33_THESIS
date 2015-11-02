@@ -8,6 +8,7 @@
 #include <CL\cl.h>
 
 #include "../../Definitions.h"
+#include "../gpu_definitions.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/imglib.h"
 
@@ -27,7 +28,7 @@ struct oclArgs {
     cl_kernel kernel;
     cl_mem input, output;
     cl_platform_id platform;
-    char *kernelSource;
+    char *kernel_strings[2];
 };
 
 static void __inline swap(cl_mem *a, cl_mem *b)
@@ -37,7 +38,7 @@ static void __inline swap(cl_mem *a, cl_mem *b)
     *b = c;
 }
 
-static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, const float global_angle, unsigned int lmask, int steps, int dist)
+static void __inline ocl_set_kernel_args_global(oclArgs *args, cl_mem in, const float global_angle, unsigned int lmask, int steps, int dist)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(float), &global_angle);
@@ -46,7 +47,7 @@ static void __inline opencl_set_kernel_args_global(oclArgs *args, cl_mem in, con
     clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
 }
 
-static void __inline opencl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
+static void __inline ocl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
@@ -80,9 +81,9 @@ static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem o
 
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
-cl_int opencl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
-cl_int opencl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, int tile_dimension, int block_dimension, const int n);
 cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
 cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);

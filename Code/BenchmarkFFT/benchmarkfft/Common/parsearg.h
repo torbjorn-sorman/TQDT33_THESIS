@@ -7,6 +7,6 @@
 #include "../Definitions.h"
 #include "mymath.h"
 
-int parseArguments(benchmarkArgument *arg, int argc, char* argv[]);
+int parseArguments(benchmarkArgument *arg, int tile_dimension, int argc, char* argv[]);
 
 #endif

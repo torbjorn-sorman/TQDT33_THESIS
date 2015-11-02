@@ -124,12 +124,10 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
     SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, col_high);
 }
 
-__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
-__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n);
+void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size);
+void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n);
+void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n);
 
-void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int size);
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int n);
-void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n);
 void checkCudaError();
 void checkCudaError(char *msg);
 

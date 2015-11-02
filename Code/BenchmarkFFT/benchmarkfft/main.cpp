@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Definitions.h"
+#include "Platforms\gpu_definitions.h"
 #include "Common\parsearg.h"
 #include "Platforms\Platform.h"
 #include "Platforms\MyCUDA.h"

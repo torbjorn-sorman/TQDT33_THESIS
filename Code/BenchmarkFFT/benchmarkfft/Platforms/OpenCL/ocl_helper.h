@@ -8,7 +8,6 @@
 #include <CL\cl.h>
 
 #include "../../Definitions.h"
-#include "../gpu_definitions.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/imglib.h"
 
@@ -81,12 +80,12 @@ static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem o
 
 cl_int checkErr(cl_int error, char *msg);
 std::string getKernel(const char *filename);
-cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int work_group_dim, const int n);
 cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, int tile_dimension, int block_dimension, const int n);
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, int work_group_dim, int tile_dimension, int block_dimension, const int n);
 cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
 cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
 int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
-void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
+void setupBuffers(cpx **in, cpx **out, cpx **ref, int tile_dim, const int n);
 
 #endif

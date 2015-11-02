@@ -1,5 +1,7 @@
 #include "ocl_fft.h"
 
+#include "../gpu_definitions.h"
+
 __inline void ocl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu);
 __inline void ocl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
 
@@ -13,7 +15,7 @@ bool ocl_validate(const int n)
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     oclArgs arg_gpu, arg_cpu;
-    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, n), "Create failed!");
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, MAX_BLOCK_SIZE, n), "Create failed!");
 
     ocl_fft(&arg_cpu, &arg_gpu);
     clFinish(arg_gpu.commands);
@@ -32,9 +34,9 @@ bool ocl_2d_validate(const int n, bool write_img)
 {
     cl_int err = CL_SUCCESS;
     cpx *data, *data_ref;
-    setupBuffers(&data, NULL, &data_ref, n);
+    setupBuffers(&data, NULL, &data_ref, TILE_DIM, n);
     oclArgs arg_gpu, arg_cpu, argTranspose;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, MAX_BLOCK_SIZE, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
 
     ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
     clFinish(arg_gpu.commands);
@@ -103,7 +105,7 @@ double ocl_performance(const int n)
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
     oclArgs arg_gpu, arg_cpu, arg_timestamp;
-    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, n), "Create failed!");
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, MAX_BLOCK_SIZE, n), "Create failed!");
     ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
@@ -128,7 +130,7 @@ double ocl_2d_performance(const int n)
     int minDim = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
     cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
     oclArgs arg_gpu, arg_cpu, argTranspose, arg_timestamp;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, MAX_BLOCK_SIZE, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
     ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;

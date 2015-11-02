@@ -8,6 +8,8 @@ __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half);
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half);
 
+__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
+
 // -------------------------------
 //
 // Testing
@@ -155,7 +157,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    set_block_and_threads(&blocks, &threads, n_half);
+    set_block_and_threads(&blocks, &threads, MAX_BLOCK_SIZE, n_half);
     int n_per_block = n / blocks;
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
@@ -182,7 +184,7 @@ __host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *d
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    set_block_and_threads2D(&blocks, &threads, n);
+    set_block_and_threads2D(&blocks, &threads, MAX_BLOCK_SIZE, n);
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);
     const float local_angle = dir * (M_2_PI / n_per_block);
@@ -207,7 +209,7 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, in
 {
     dim3 blocks;
     dim3 threads;
-    set_block_and_threads_transpose(&blocks, &threads, n);
+    set_block_and_threads_transpose(&blocks, &threads, TILE_DIM, THREAD_TILE_DIM, n);
 #ifndef TRANSPOSE_ONLY
     cuda_fft_2d_helper(dir, dev_in, dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
@@ -282,4 +284,25 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
     out[BIT_REVERSE(threadIdx.x + row_offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
     out[BIT_REVERSE(in_high + row_offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
+}
+
+__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
+{
+    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
+    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
+
+    // Write to shared from Global (in)
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
+
+    SYNC_THREADS;
+    // Write to global
+    x = blockIdx.y * TILE_DIM + threadIdx.x;
+    y = blockIdx.x * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }

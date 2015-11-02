@@ -121,27 +121,25 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
 
 __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
 {
+    int x, y, i, j;
     // Write to shared from Global (in)
     int bx = get_group_id(0),
         by = get_group_id(1);
     int ix = get_local_id(0),
         iy = get_local_id(1);
 
-    int x = bx * TILE_DIM + ix;
-    int y = by * TILE_DIM + iy;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM) {
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
+    x = bx * TILE_DIM + ix;
+    y = by * TILE_DIM + iy;
+    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
             tile[iy + j][ix + i] = in[(y + j) * n + (x + i)];
-        }
-    }
+
     barrier(CLK_LOCAL_MEM_FENCE);
     x = by * TILE_DIM + ix;
     y = bx * TILE_DIM + iy;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM){ 
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM) {
+    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
             out[(y + j) * n + (x + i)] = tile[ix + i][iy + j];
-        }
-    }
 }
 
 __kernel void ocl_timestamp_kernel()

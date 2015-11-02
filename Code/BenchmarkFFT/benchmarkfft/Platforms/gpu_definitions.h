@@ -10,7 +10,7 @@
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32
 */
-#define MAX_BLOCK_SIZE 256
-#define TILE_DIM 32
+#define MAX_BLOCK_SIZE 1024
+#define TILE_DIM 64
 #define THREAD_TILE_DIM 16
 #endif

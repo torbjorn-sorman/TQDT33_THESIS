@@ -2,7 +2,7 @@
 
 #include "../gpu_definitions.h"
 
-#define CUSURFACE_TESTS 8
+__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n);
 
 void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cuInputArray, cudaArray **cuOutputArray, cudaSurfaceObject_t *inputSurfObj, cudaSurfaceObject_t *outputSurfObj)
 {
@@ -86,21 +86,21 @@ __host__ int cuda_surface_validate(int n)
 
 __host__ double cuda_surface_performance(int n)
 {
-    double measures[CUSURFACE_TESTS];
+    double measures[NUM_TESTS];
     cpx *in, *ref;
     size_t size;
     cudaArray *array_in, *array_out;
     cudaSurfaceObject_t surface_in, surface_out;
     cuda_surface_setup(&in, &ref, &size, n, &array_in, &array_out, &surface_in, &surface_out);
 
-    for (int i = 0; i < CUSURFACE_TESTS; ++i) {
+    for (int i = 0; i < NUM_TESTS; ++i) {
         startTimer();
         cuda_surface_fft(FFT_FORWARD, &surface_in, &surface_out, n);
         cudaCheckError();
         measures[i] = stopTimer();
     }
     cuda_surface_shakedown(&in, &ref, &surface_in, &surface_out, &array_in, &array_out);
-    return average_best(measures, CUSURFACE_TESTS);
+    return average_best(measures, NUM_TESTS);
 }
 
 // ---------------------------------------------
@@ -192,7 +192,7 @@ __host__ void cuda_surface_fft_helper(transform_direction dir, cudaSurfaceObject
     int steps_left = log2_32(n);
     const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
     cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    set_block_and_threads2D(&blocks, &threads, n);
+    set_block_and_threads2D(&blocks, &threads, MAX_BLOCK_SIZE, n);
 
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);
@@ -224,4 +224,25 @@ __host__ void cuda_surface_fft(transform_direction dir, cudaSurfaceObject_t *sur
     cuda_surface_fft_helper(dir, surface_out, surface_in, 0, n);
     cuda_surface_swap(surface_in, surface_out);
     cudaDeviceSynchronize();
+}
+
+__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n)
+{
+    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
+    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
+
+    // Write to shared from Global (in)
+    int x = blockIdx.x * TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            SURF2D_READ(&(tile[threadIdx.y + j][threadIdx.x + i]), in, x + i, y + j);
+
+    SYNC_THREADS;
+    // Write to global
+    x = blockIdx.y * TILE_DIM + threadIdx.x;
+    y = blockIdx.x * TILE_DIM + threadIdx.y;
+    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
+        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+            SURF2D_WRITE(tile[threadIdx.x + i][threadIdx.y + j], out, x + i, y + j);
 }

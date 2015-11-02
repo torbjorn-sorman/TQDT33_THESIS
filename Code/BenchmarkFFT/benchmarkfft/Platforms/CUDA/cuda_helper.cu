@@ -1,55 +1,10 @@
 #include "cuda_helper.cuh"
-#include "../gpu_definitions.h"
 
-__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
+void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size)
 {
-    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
-    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
-
-    // Write to shared from Global (in)
-    int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;        
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
-
-    SYNC_THREADS;
-    // Write to global
-    x = blockIdx.y * TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
-}
-
-__global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n)
-{
-    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
-    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
-
-    // Write to shared from Global (in)
-    int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            SURF2D_READ(&(tile[threadIdx.y + j][threadIdx.x + i]), in, x + i, y + j);
-    //tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
-
-    SYNC_THREADS;
-    // Write to global
-    x = blockIdx.y * TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
-            SURF2D_WRITE(tile[threadIdx.x + i][threadIdx.y + j], out, x + i, y + j);
-    //out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
-}
-
-void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int size)
-{
-    if (size > MAX_BLOCK_SIZE) {
-        *number_of_blocks = size / MAX_BLOCK_SIZE;
-        *threads_per_block = MAX_BLOCK_SIZE;
+    if (size > block_size) {
+        *number_of_blocks = size / block_size;
+        *threads_per_block = block_size;
     }
     else {
         *number_of_blocks = 1;
@@ -57,13 +12,13 @@ void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int si
     }
 }
 
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int n)
+void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
 {
     number_of_blocks->x = n;
     int n_half = n >> 1;
-    if (n_half > MAX_BLOCK_SIZE) {
-        number_of_blocks->y = n_half / MAX_BLOCK_SIZE;
-        *threads_per_block = MAX_BLOCK_SIZE;
+    if (n_half > block_size) {
+        number_of_blocks->y = n_half / block_size;
+        *threads_per_block = block_size;
     }
     else {
         number_of_blocks->y = 1;
@@ -71,12 +26,12 @@ void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int
     }
 }
 
-void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int n)
+void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n)
 {
-    int minDim = n > TILE_DIM ? (n / TILE_DIM) : 1;
+    int minDim = n > tile_dim ? (n / tile_dim) : 1;
     bTrans->z = tTrans->z = 1;
     bTrans->x = bTrans->y = minDim;
-    tTrans->x = tTrans->y = THREAD_TILE_DIM;
+    tTrans->x = tTrans->y = block_dim;
 }
 
 void checkCudaError(char *msg)

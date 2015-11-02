@@ -1,7 +1,5 @@
 #include "ocl_fft.h"
 
-#include "../gpu_definitions.h"
-
 __inline void ocl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu);
 __inline void ocl_fft_2d(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
 
@@ -15,7 +13,7 @@ bool ocl_validate(const int n)
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     oclArgs arg_gpu, arg_cpu;
-    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, MAX_BLOCK_SIZE, n), "Create failed!");
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, data, FFT_FORWARD, n), "Create failed!");
 
     ocl_fft(&arg_cpu, &arg_gpu);
     clFinish(arg_gpu.commands);
@@ -34,9 +32,9 @@ bool ocl_2d_validate(const int n, bool write_img)
 {
     cl_int err = CL_SUCCESS;
     cpx *data, *data_ref;
-    setupBuffers(&data, NULL, &data_ref, TILE_DIM, n);
+    setupBuffers(&data, NULL, &data_ref, n);
     oclArgs arg_gpu, arg_cpu, argTranspose;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, MAX_BLOCK_SIZE, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data, FFT_FORWARD, n), "Create failed!");
 
     ocl_fft_2d(&arg_cpu, &arg_gpu, &argTranspose);
     clFinish(arg_gpu.commands);
@@ -105,7 +103,7 @@ double ocl_performance(const int n)
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
     oclArgs arg_gpu, arg_cpu, arg_timestamp;
-    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, MAX_BLOCK_SIZE, n), "Create failed!");
+    checkErr(ocl_create_kernels(&arg_cpu, &arg_gpu, NULL, FFT_FORWARD, n), "Create failed!");
     ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
@@ -127,10 +125,10 @@ double ocl_2d_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
-    int minDim = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
+    int minDim = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
     cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
     oclArgs arg_gpu, arg_cpu, argTranspose, arg_timestamp;
-    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, MAX_BLOCK_SIZE, TILE_DIM, THREAD_TILE_DIM, n), "Create failed!");
+    checkErr(oclCreateKernels2D(&arg_cpu, &arg_gpu, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
     ocl_create_timestamp_kernel(&arg_gpu, &arg_timestamp);
     cl_event start_event, end_event;
     cl_ulong start = 0, end = 0;
@@ -168,7 +166,7 @@ __inline void ocl_fft(oclArgs *arg_cpu, oclArgs *arg_gpu)
     const float local_angle = arg_gpu->dir * (M_2_PI / n_per_block);
     int block_range_half = (n >> 1);
     if (number_of_blocks > 1) {
-        const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+        const int steps_gpu = log2_32(OCL_GROUP_SIZE);
         const float global_angle = arg_gpu->dir * (M_2_PI / n);
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.        
         int steps = 0;
@@ -191,7 +189,7 @@ __inline void ocl_fft_2d_helper(oclArgs *arg_cpu, oclArgs *arg_gpu, cl_mem *in, 
 {
     int steps_left = log2_32(arg_cpu->n);
     const int leading_bits = 32 - steps_left;
-    const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+    const int steps_gpu = log2_32(OCL_GROUP_SIZE);
     float scalar = (arg_cpu->dir == FFT_FORWARD ? 1.f : 1.f / arg_cpu->n);
     const int n_per_block = arg_cpu->n / number_of_blocks;
     const float global_angle = arg_cpu->dir * (M_2_PI / arg_cpu->n);

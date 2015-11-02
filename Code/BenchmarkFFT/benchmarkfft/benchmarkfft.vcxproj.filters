@@ -106,9 +106,6 @@
     <ClInclude Include="Platforms\OpenGL\ogl_helper.h">
       <Filter>Platforms\OpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\gpu_definitions.h">
-      <Filter>Platforms\Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">

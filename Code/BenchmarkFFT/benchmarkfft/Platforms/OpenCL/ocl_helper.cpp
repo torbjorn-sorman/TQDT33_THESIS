@@ -58,7 +58,7 @@ cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
     if (err != CL_SUCCESS) return err;
 
     // Build the program executable
-    if (err = clBuildProgram(program, 0, NULL, "-I G:/GitHub/TQDT33_THESIS/Code/BenchmarkFFT/benchmarkfft/Platforms", NULL, NULL) != CL_SUCCESS) {
+    if (err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL) != CL_SUCCESS) {
         size_t len;
         clGetProgramBuildInfo(program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
         char *buffer = (char *)malloc(sizeof(char) * len);
@@ -89,12 +89,12 @@ cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in)
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, int work_group_dim)
+cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
     const int n_half = args->n / 2;
     int grpDim = n_half;
-    int itmDim = n_half > work_group_dim ? work_group_dim : n_half;
+    int itmDim = n_half > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : n_half;
     size_t data_mem_size = sizeof(cpx) * args->n;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
@@ -115,13 +115,13 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args, int work_group_dim)
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args, int work_group_dim, int tile_dim)
+cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
     const int n = args->n;
-    int itmDim = (n / 2) > work_group_dim ? work_group_dim : (n / 2);
+    int itmDim = (n / 2) > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : (n / 2);
     int n_per_block = n / itmDim;
-    int minSize = n < tile_dim ? tile_dim * tile_dim : n * n;
+    int minSize = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
     size_t data_mem_size = sizeof(cpx) * minSize;
     size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
     cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
@@ -147,7 +147,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args, int work_group_dim, int tile
     return err;
 }
 
-cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int work_group_dim, const int n)
+cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n)
 {
     arg_gpu->n = arg_cpu->n = n;
     arg_gpu->dir = arg_cpu->dir = dir;
@@ -157,7 +157,7 @@ cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, tran
     checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_local", arg_gpu), "Failed to setup GPU Program!");
     checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_global", arg_cpu), "Failed to setup CPU Program!");
 
-    checkErr(oclSetupWorkGroupsAndMemory(arg_gpu, work_group_dim), "Failed to setup GPU Program!");
+    checkErr(oclSetupWorkGroupsAndMemory(arg_gpu), "Failed to setup GPU Program!");
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
         err = oclSetupDeviceMemoryData(arg_gpu, data_in);
@@ -183,20 +183,20 @@ cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm)
     return err;
 }
 
-void setWorkDimForTranspose(oclArgs *argTranspose, int tile_dimension, int block_dimension, const int n)
+void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
 {
-    int minDim = n > tile_dimension ? (n / tile_dimension) : 1;
+    int minDim = n > OCL_TILE_DIM ? (n / OCL_TILE_DIM) : 1;
     argTranspose->global_work_size[2] = 1;
-    argTranspose->global_work_size[1] = minDim * block_dimension;
-    argTranspose->global_work_size[0] = minDim * block_dimension;
+    argTranspose->global_work_size[1] = minDim * OCL_BLOCK_DIM;
+    argTranspose->global_work_size[0] = minDim * OCL_BLOCK_DIM;
     argTranspose->local_work_size[2] = 1;
-    argTranspose->local_work_size[1] = block_dimension;
-    argTranspose->local_work_size[0] = block_dimension;
-    argTranspose->shared_mem_size = tile_dimension * (tile_dimension + 1) * sizeof(cpx);
+    argTranspose->local_work_size[1] = OCL_BLOCK_DIM;
+    argTranspose->local_work_size[0] = OCL_BLOCK_DIM;
+    argTranspose->shared_mem_size = OCL_TILE_DIM * (OCL_TILE_DIM + 1) * sizeof(cpx);
     argTranspose->workDim = 2;
 }
 
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int work_group_dim, int tile_dimension, int block_dimension, const int n)
+cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n)
 {
     arg_gpu->n = arg_cpu->n = n;
     arg_gpu->dir = arg_cpu->dir = dir;
@@ -208,11 +208,11 @@ cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_trans
     checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_global_row", arg_cpu), "Failed to setup CPU Program!");
     checkErr(oclSetupProgram("ocl_kernel", "ocl_transpose_kernel", arg_transpose), "Failed to setup Transpose Program!");
 
-    checkErr(oclSetupWorkGroupsAndMemory2D(arg_gpu, work_group_dim, tile_dimension), "Failed to setup Groups And Memory!");
+    checkErr(oclSetupWorkGroupsAndMemory2D(arg_gpu), "Failed to setup Groups And Memory!");
     cl_int err = oclSetupDeviceMemoryData(arg_gpu, data_in);
     memcpy(arg_cpu->global_work_size, arg_gpu->global_work_size, sizeof(size_t) * 3);
     memcpy(arg_cpu->local_work_size, arg_gpu->local_work_size, sizeof(size_t) * 3);
-    setWorkDimForTranspose(arg_transpose, tile_dimension, block_dimension, n);
+    setWorkDimForTranspose(arg_transpose, n);
     arg_transpose->input = arg_cpu->input = arg_gpu->input;
     arg_transpose->output = arg_cpu->output = arg_gpu->output;
     arg_transpose->data_mem_size = arg_cpu->data_mem_size = arg_gpu->data_mem_size;
@@ -282,12 +282,12 @@ int freeResults(cpx **din, cpx **dout, cpx **dref, const int n)
     return res;
 }
 
-void setupBuffers(cpx **in, cpx **out, cpx **ref, int tile_dim, const int n)
+void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
-    size_t minSize = (n < tile_dim ? tile_dim * tile_dim : n * n) * sizeof(cpx);
+    size_t minSize = (n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n) * sizeof(cpx);
     *in = (cpx *)malloc(minSize);
     if (out != NULL)
         *out = (cpx *)malloc(minSize);

@@ -3,7 +3,7 @@
 #define MATCH(s) (str.compare((s)) == 0)
 #define MATCHP(s) (tmp.compare((s)) == 0)
 
-int parseArguments(benchmarkArgument *arg, int tile_dimension, int argc, char* argv[])
+int parseArguments(benchmarkArgument *arg, int argc, char* argv[])
 {
     if (argc == 1) {
         goto show_usage;
@@ -82,8 +82,8 @@ int parseArguments(benchmarkArgument *arg, int tile_dimension, int argc, char* a
         }
     }
     if (arg->dimensions == 2) {
-        if (arg->start < log2_32(tile_dimension)) {
-            arg->start = log2_32(tile_dimension);
+        if (arg->start < log2_32(64)) {
+            arg->start = log2_32(64);
             arg->number_of_lengths = arg->end - arg->start + 1;
             printf("Notice: start exponent is set to %d\n", arg->start);
         }

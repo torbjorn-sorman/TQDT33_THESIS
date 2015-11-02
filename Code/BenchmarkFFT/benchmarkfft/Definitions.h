@@ -27,7 +27,7 @@ typedef float transform_direction;
 #define NUM_TESTS 16
 #define HIGHEST_EXP 26
 #define HIGHEST_EXP_2D 13 // 8192 -> the limit of a 2GB primary mem device. Two buffers cover 8192 * 8192 * 8 * 2 = 1 073 741 824 bytes of memory.
-#define TRANSPOSE_ONLY
+#define TRANSPOSE_ONLY_
 
 struct benchmarkArgument {
     int dimensions = 1;

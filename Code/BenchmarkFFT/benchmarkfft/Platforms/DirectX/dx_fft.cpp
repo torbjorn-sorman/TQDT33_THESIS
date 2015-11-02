@@ -1,6 +1,7 @@
 #include "dx_fft.h"
 
-#include "../gpu_definitions.h"
+#define DX_BLOCK_SIZE 1024
+#define DX_TILE_DIM 32
 
 __inline void dx_fft(transform_direction dir, dx_args *args, const int n);
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n);
@@ -15,7 +16,7 @@ int dx_validate(const int n)
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
     dx_args args;
-    dx_setup(&args, in, MAX_BLOCK_SIZE, n);
+    dx_setup(&args, in, DX_BLOCK_SIZE, n);
 
     dx_fft(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buf_output, out, n);
@@ -38,7 +39,7 @@ int dx_2d_validate(const int n, bool write_img)
     cpx *data, *ref;
     setup_seq2D(&data, NULL, &ref, n);
     dx_args args;
-    dx_setup_2d(&args, data, MAX_BLOCK_SIZE, n);
+    dx_setup_2d(&args, data, DX_BLOCK_SIZE, DX_TILE_DIM, n);
 
     dx_fft_2d(FFT_FORWARD, &args, n);    
     if (write_img) {
@@ -91,7 +92,7 @@ double dx_performance(const int n)
 {
     dx_args args;
     profiler_data profiler[NUM_TESTS];
-    dx_setup(&args, NULL, MAX_BLOCK_SIZE, n);
+    dx_setup(&args, NULL, DX_BLOCK_SIZE, n);
     for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;
         dx_start_profiling(&args, &p);
@@ -107,7 +108,7 @@ double dx_performance(const int n)
 double dx_2d_performance(const int n)
 {
     dx_args args;
-    dx_setup_2d(&args, NULL, MAX_BLOCK_SIZE, n);
+    dx_setup_2d(&args, NULL, DX_BLOCK_SIZE, DX_TILE_DIM, n);
     profiler_data profiler[NUM_TESTS];
     for (int i = 0; i < NUM_TESTS; ++i) {
         profiler_data p;
@@ -155,9 +156,9 @@ __inline void dx_fft(transform_direction dir, dx_args *args, const int n)
     int n_half = (n >> 1);
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
-    int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+    int steps_gpu = log2_32(DX_BLOCK_SIZE);
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    int number_of_blocks = n_half > MAX_BLOCK_SIZE ? (n_half / MAX_BLOCK_SIZE) : 1;;
+    int number_of_blocks = n_half > DX_BLOCK_SIZE ? (n_half / DX_BLOCK_SIZE) : 1;;
     int n_per_block = n / number_of_blocks;
     float global_angle = dir * (M_2_PI / n);
     float local_angle = dir * (M_2_PI / n_per_block);
@@ -187,7 +188,7 @@ __inline void dx_fft_2d_helper(transform_direction dir, dx_args *args, const int
     const float local_angle = dir * (M_2_PI / n_per_block);
     int block_range = n;
     if (args->n_groups.y > 1) {
-        const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+        const int steps_gpu = log2_32(DX_BLOCK_SIZE);
         dx_cs_args cb = { global_angle, 0.f, 0.f, 0, 0, 0, 0, 0, 0, 0xFFFFFFFF << steps_left, n };
         args->context->CSSetShader(args->cs_global, nullptr, 0);
         while (--steps_left > steps_gpu) {
@@ -208,7 +209,7 @@ __inline void dx_fft_2d_helper(transform_direction dir, dx_args *args, const int
 
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n)
 {
-    UINT width = n > TILE_DIM ? (n / TILE_DIM) : 1;
+    UINT width = n > DX_TILE_DIM ? (n / DX_TILE_DIM) : 1;
 
     dx_fft_2d_helper(dir, args, n);
 

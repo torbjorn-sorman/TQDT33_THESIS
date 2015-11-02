@@ -1,5 +1,3 @@
-#include "gpu_definitions.h"
-
 #ifndef __OPENCL_VERSION__
 #define __kernel
 #define __global
@@ -79,10 +77,10 @@ __kernel void ocl_kernel_global(__global cpx *in, float angle, unsigned int lmas
 // CPU takes care of overall syncronization, limited in problem sizes that can be solved.
 // Can be combined with ocl_kernel_global in a manner that the ocl_kernel_global is run until problem can be split into smaller parts.
 __kernel void ocl_kernel_local(__global cpx *in, __global cpx *out, __local cpx *shared, float local_angle, int steps_left, int leading_bits, float scalar, const int n_half)
-{      
+{
     int in_low = get_local_id(0);
     int in_high = n_half + in_low;
-    int offset = get_group_id(0) * get_local_size(0) * 2;          
+    int offset = get_group_id(0) * get_local_size(0) * 2;
     in += offset;
     shared[in_low] = in[in_low];
     shared[in_high] = in[in_high];
@@ -110,7 +108,7 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
     int row_offset = get_group_id(1) * get_local_size(0) * 2;
     in += row_start + row_offset;
     out += row_start;
-    shared[in_low]  = in[in_low];
+    shared[in_low] = in[in_low];
     shared[in_high] = in[in_high];
     algorithm_partial(shared, in_high, local_angle, steps_left);
     cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
@@ -119,26 +117,35 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
     out[(reverse(in_high + row_offset) >> leading_bits)] = src_high;
 }
 
-__kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[TILE_DIM][TILE_DIM + 1], int n)
+#define OCL_TILE_DIM 32
+#define OCL_BLOCK_DIM 16
+
+__kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[OCL_TILE_DIM][OCL_TILE_DIM + 1], int n)
 {
-    int x, y, i, j;
+    int i, j;
     // Write to shared from Global (in)
     int bx = get_group_id(0),
-        by = get_group_id(1);
-    int ix = get_local_id(0),
+        by = get_group_id(1),
+        ix = get_local_id(0),
         iy = get_local_id(1);
 
+#ifdef TICK
+    int x, y;
     x = bx * TILE_DIM + ix;
     y = by * TILE_DIM + iy;
-    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+#else
+    int x = bx * OCL_TILE_DIM + ix;
+    int y = by * OCL_TILE_DIM + iy;
+#endif
+    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM)
+        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM)
             tile[iy + j][ix + i] = in[(y + j) * n + (x + i)];
 
     barrier(CLK_LOCAL_MEM_FENCE);
-    x = by * TILE_DIM + ix;
-    y = bx * TILE_DIM + iy;
-    for (j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+    x = by * OCL_TILE_DIM + ix;
+    y = bx * OCL_TILE_DIM + iy;
+    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM)
+        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM)
             out[(y + j) * n + (x + i)] = tile[ix + i][iy + j];
 }
 

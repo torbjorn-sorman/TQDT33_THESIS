@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "Definitions.h"
-#include "Platforms\gpu_definitions.h"
 #include "Common\parsearg.h"
 #include "Platforms\Platform.h"
 #include "Platforms\MyCUDA.h"
@@ -55,16 +54,12 @@ int testground()
 int main(int argc, char* argv[])
 {
     benchmarkArgument args;
-    if (!parseArguments(&args, TILE_DIM, argc, argv))
+    if (!parseArguments(&args, argc, argv))
         return 0;
     // Special setup!
     if (args.platform_opengl) {        
         glutInit(&argc, argv);
         glutCreateWindow("OpenGL retardness...");
-    }
-    if (args.run_testground) {
-        std::cout << "Running Testground" << std::endl;
-        testground();
     }
     if (args.profiler) {
         if (args.test_platform) {

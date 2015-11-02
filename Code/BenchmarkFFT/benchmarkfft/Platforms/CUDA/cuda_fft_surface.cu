@@ -1,6 +1,8 @@
 #include "cuda_fft_surface.cuh"
 
-#include "../gpu_definitions.h"
+#define MAX_BLOCK_SIZE 1024
+#define TILE_DIM 64
+#define THREAD_TILE_DIM 32
 
 __global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_t out, int n);
 

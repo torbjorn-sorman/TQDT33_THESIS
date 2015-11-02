@@ -47,7 +47,7 @@ __host__ __device__ static __inline__ void cuda_surface_swap(cudaSurfaceObject_t
     *in = *out;
     *out = tmp;
 }
-
+/*
 __device__ static __inline__ void cuda_block_sync_init(volatile int sync_in[], volatile int sync_out[], int tid, int blocks)
 {
     if (tid < blocks) {
@@ -70,6 +70,7 @@ __device__ static __inline__ void cuda_block_sync(volatile int sync_in[], volati
     if (tid == 0) { while (sync_out[bid] != goal) {} }
     SYNC_THREADS;
 }
+*/
 
 __device__ static inline int log2(int v)
 {

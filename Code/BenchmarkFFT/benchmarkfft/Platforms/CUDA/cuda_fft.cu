@@ -1,6 +1,8 @@
 #include "cuda_fft.cuh"
 
-#include "../gpu_definitions.h"
+#define CU_BLOCK_SIZE 1024
+#define CU_TILE_DIM 64 // 32K local/shared mem
+#define CU_BLOCK_DIM 32 // 1024 Threads
 
 __global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
@@ -157,7 +159,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    set_block_and_threads(&blocks, &threads, MAX_BLOCK_SIZE, n_half);
+    set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, n_half);
     int n_per_block = n / blocks;
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
@@ -166,7 +168,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
         float global_angle = dir * (M_2_PI / n);
         int steps = 0;
         int dist = n;
-        int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+        int steps_gpu = log2_32(CU_BLOCK_SIZE);
         while (--steps_left > steps_gpu) {
             cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
         }
@@ -184,14 +186,14 @@ __host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *d
     int steps_left = log2_32(n);
     int leading_bits = 32 - steps_left;
     float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    set_block_and_threads2D(&blocks, &threads, MAX_BLOCK_SIZE, n);
+    set_block_and_threads2D(&blocks, &threads, CU_BLOCK_SIZE, n);
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);
     const float local_angle = dir * (M_2_PI / n_per_block);
     int block_range = n;
     if (blocks.y > 1) {
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
-        const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
+        const int steps_gpu = log2_32(CU_BLOCK_SIZE);
         int steps = 0;
         int dist = n;
         // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
@@ -209,7 +211,7 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, in
 {
     dim3 blocks;
     dim3 threads;
-    set_block_and_threads_transpose(&blocks, &threads, TILE_DIM, THREAD_TILE_DIM, n);
+    set_block_and_threads_transpose(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);
 #ifndef TRANSPOSE_ONLY
     cuda_fft_2d_helper(dir, dev_in, dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
@@ -288,21 +290,21 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
 {
-    // Banking issues when TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
-    __shared__ cpx tile[TILE_DIM][TILE_DIM + 1];
+    // Banking issues when CU_TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
+    __shared__ cpx tile[CU_TILE_DIM][CU_TILE_DIM + 1];
 
     // Write to shared from Global (in)
-    int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+    int x = blockIdx.x * CU_TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * CU_TILE_DIM + threadIdx.y;
+    for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
+        for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
             tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
 
     SYNC_THREADS;
     // Write to global
-    x = blockIdx.y * TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TILE_DIM + threadIdx.y;
-    for (int j = 0; j < TILE_DIM; j += THREAD_TILE_DIM)
-        for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
+    x = blockIdx.y * CU_TILE_DIM + threadIdx.x;
+    y = blockIdx.x * CU_TILE_DIM + threadIdx.y;
+    for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
+        for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }

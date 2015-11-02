@@ -237,7 +237,6 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h" />
     <ClInclude Include="Platforms\OpenMP\omp_fast_index.h" />
     <ClInclude Include="Platforms\Platform.h" />
-    <ClInclude Include="Platforms\gpu_definitions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\cpx_debug.cpp" />
@@ -268,8 +267,8 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
     </ClCompile>
   </ItemGroup>

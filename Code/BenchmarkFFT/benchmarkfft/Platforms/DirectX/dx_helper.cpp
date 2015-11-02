@@ -177,12 +177,12 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     }
 }
 
-void dx_setup_2d(dx_args* a, cpx* in, int group_size, const int n)
+void dx_setup_2d(dx_args* a, cpx* in, int group_size, int tile_dim, const int n)
 {
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
     LPCWSTR cs_file_transpose = L"Platforms/DirectX/dx_cs_transpose.hlsl";
     dx_set_dim_2d(cs_file, group_size, n);
-    dx_set_dim_trans(cs_file_transpose, n);
+    dx_set_dim_trans(cs_file_transpose, tile_dim, n);
 
     a->n_groups.x = n;
     int n_half = n >> 1;

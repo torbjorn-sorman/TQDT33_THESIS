@@ -61,18 +61,21 @@ void dx_set_dim_2d(LPCWSTR shader_file, int group_size, const int n)
 }
 
 
-void dx_set_dim_trans(LPCWSTR shader_file, const int n)
+void dx_set_dim_trans(LPCWSTR shader_file, const int tile_dim, const int n)
 {
     std::ifstream in_file(shader_file);
     std::stringstream buffer;
     buffer << in_file.rdbuf();
     std::string new_content = buffer.str();
     in_file.close();    
-    std::regex e_w_sz("(#define\\s*WIDTH)\\s*\\d*\\s*$");
+    std::regex e_w_sz(      "(#define\\s*WIDTH)\\s*\\d*\\s*$");
+    std::regex e_tile_dim(  "(#define\\s*DX_TILE_DIM)\\s*\\d*\\s*$");
     std::ofstream out_file(shader_file);
-    std::stringstream fmt_w;
+    std::stringstream fmt_w, fmt_t;
     fmt_w << "$1 " << std::to_string(n);
+    fmt_t << "$1 " << std::to_string(tile_dim);
     new_content = std::regex_replace(new_content, e_w_sz, fmt_w.str());
+    new_content = std::regex_replace(new_content, e_tile_dim, fmt_t.str());
     out_file << new_content;
     out_file.close();
 }

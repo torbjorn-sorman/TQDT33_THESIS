@@ -120,7 +120,7 @@ D3D11_BUFFER_DESC get_constant_buffer_description();
 void dx_write_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx* in, const int n);
 void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n);
 void dx_setup(dx_args* a, cpx* in, int group_size, const int n);
-void dx_setup_2d(dx_args* a, cpx* in, int group_size, const int n);
+void dx_setup_2d(dx_args* a, cpx* in, int group_size, int tile_dim, const int n);
 void dx_shakedown(dx_args *a);
 
 #endif

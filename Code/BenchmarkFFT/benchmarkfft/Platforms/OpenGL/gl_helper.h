@@ -23,9 +23,17 @@ struct gl_args {
     char *shader_src;
 };
 
+static __inline void gl_swap_buffers(gl_args *a_l, gl_args *a_g)
+{
+    GLuint buf_i = a_l->buf_in;
+    GLuint buf_o = a_l->buf_out;
+    a_g->buf_in = a_l->buf_in = buf_o;
+    a_g->buf_out = a_l->buf_out = buf_i;
+}
+
 void gl_swap_io(gl_args* a);
 double gl_query_time(unsigned int q[NUM_TESTS][2]);
-void gl_setup(gl_args* args, cpx* in, cpx* out, const int groups_size, const int n);
+void gl_setup(gl_args* a_local, gl_args* a_global, cpx* in, cpx* out, const int groups_size, const int n);
 void gl_read_buffer(GLuint buffer, cpx** data, const int n);
 void gl_shakedown(gl_args *a);
 

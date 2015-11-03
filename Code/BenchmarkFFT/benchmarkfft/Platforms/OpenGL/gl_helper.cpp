@@ -1,13 +1,6 @@
 #include "gl_helper.h"
 #include "../../Common/mymath.h"
 
-void gl_swap_io(gl_args *a)
-{
-    GLuint buf = a->buf_out;
-    a->buf_out = a->buf_in;
-    a->buf_in = buf;
-}
-
 double gl_query_time(GLuint q[NUM_TESTS][2])
 {
     double measures[NUM_TESTS];
@@ -24,8 +17,17 @@ double gl_query_time(GLuint q[NUM_TESTS][2])
     return average_best(measures, NUM_TESTS);
 }
 
-void gl_setup_program(gl_args *a, LPCWSTR shader_file)
+void gl_prepare_file(gl_args* args, LPCWSTR shader_file)
 {
+    std::string str = get_file_content(shader_file);
+    manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
+    manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
+    set_file_content(shader_file, str);
+}
+
+void gl_setup_program(gl_args *a, bool gen_buffers, LPCWSTR shader_file)
+{
+    gl_prepare_file(a, shader_file);
     GLuint program = glCreateProgram();
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     GLint length;
@@ -55,17 +57,20 @@ void gl_setup_program(gl_args *a, LPCWSTR shader_file)
         getchar();
         exit(41);
     }
-    GLuint buffers[2];
-    glGenBuffers(2, buffers);
-    a->buf_in = buffers[0];
-    a->buf_out = buffers[1];
+    if (gen_buffers) {
+        GLuint buffers[2];
+        glGenBuffers(2, buffers);
+        a->buf_in = buffers[0];
+        a->buf_out = buffers[1];
+    }
     a->program = program;
 }
 
-void gl_load_buffer(GLuint buffer, cpx* data, const int n)
-{    
+void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n)
+{
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data ? &data[0] : NULL, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
 }
 
 void gl_read_buffer(GLuint buffer, cpx** data, const int n)
@@ -74,104 +79,25 @@ void gl_read_buffer(GLuint buffer, cpx** data, const int n)
     *data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 }
 
-void gl_setup_file(gl_args* args, LPCWSTR shader_file)
+void gl_setup(gl_args* a_local, gl_args* a_global, cpx* in, cpx* out, int group_size, const int n)
 {
-    std::string str = get_file_content(shader_file);
-    manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
-    manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
-    set_file_content(shader_file, str);
-}
+    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.glsl";
+    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.glsl";
 
-void gl_setup(gl_args* args, cpx* in, cpx* out, int group_size, const int n)
-{    
-    args->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
-    args->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
-    LPCWSTR shader_file = L"Platforms/OpenGL/gl_cs.glsl";
-    gl_setup_file(args, shader_file);
-    gl_setup_program(args, shader_file);
-    gl_load_buffer(args->buf_in, in, n);
-    gl_load_buffer(args->buf_out, out, n);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, args->buf_in);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, args->buf_out);
+    // "Local" compute shader
+    a_local->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    a_local->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
+    gl_setup_program(a_local, true, shader_file_local);
+    gl_load_buffer(a_local->buf_in, in, 0, n);
+    gl_load_buffer(a_local->buf_out, out, 1, n);
+
+    // "Global" compute shader
+    memcpy(a_global, a_local, sizeof(gl_args));
+    gl_setup_program(a_global, false, shader_file_global);
 }
 
 void gl_shakedown(gl_args *a)
 {
     if (a->shader_src != NULL)
         free(a->shader_src);
-}
-
-void testrun()
-{
-    GLuint program = glCreateProgram();
-    GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-
-    //std::string str_source = getKernel(filename.c_str());
-    std::string str_source = { "#version 430\n\
-                               #define width 16\n\
-                               #define height 16\n\
-                               layout(std430, binding = 5) buffer bbs{ int bs[]; };\n\
-                               layout(local_size_x = width, local_size_y = height) in;\n\
-                               void main()\n\
-                               {\n\
-                                   int i = int(gl_LocalInvocationID.x * 2);\n\
-                                       bs[gl_LocalInvocationID.x] = -bs[gl_LocalInvocationID.x];\n\
-                                       }" };
-    const GLint length = str_source.size() + 1;
-
-    char *src = (char *)malloc(sizeof(char) * (str_source.size() + 1));
-    strcpy_s(src, sizeof(char) * (str_source.size() + 1), str_source.c_str());
-    src[str_source.size()] = '\0';
-
-
-    glShaderSource(shader, 1, &src, &length);
-    glCompileShader(shader);
-
-    int rvalue;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &rvalue);
-    if (!rvalue) {
-        fprintf(stderr, "Error in compiling the compute shader\n");
-        GLchar log[10240];
-        GLsizei length;
-        glGetShaderInfoLog(shader, 10239, &length, log);
-        fprintf(stderr, "Compiler log:\n%s\n", log);
-        exit(40);
-    }
-
-    glAttachShader(program, shader);
-    glLinkProgram(program);
-
-    glGetProgramiv(program, GL_LINK_STATUS, &rvalue);
-    if (!rvalue) {
-        fprintf(stderr, "Error in linking compute shader program\n");
-        GLchar log[10240];
-        GLsizei length;
-        glGetProgramInfoLog(program, 10239, &length, log);
-        fprintf(stderr, "Linker log:\n%s\n", log);
-        exit(41);
-    }
-    glUseProgram(program);
-
-    GLuint ssbo; //Shader Storage Buffer Object
-    int buf[16] = { 1, 2, -3, 4, 5, -6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
-    int *ptr;
-
-    // Create buffer, upload data
-    glGenBuffers(1, &ssbo);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 16 * sizeof(int), &buf, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssbo);
-
-    //glUseProgram(program);
-    glDispatchCompute(16, 1, 1);
-
-    // Get data back!
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    ptr = (int *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-    printf("\nRESULT:\n");
-    for (int i = 0; i < 16; i++)
-    {
-        printf("%d\n", ptr[i]);
-    }
-    getchar();
 }

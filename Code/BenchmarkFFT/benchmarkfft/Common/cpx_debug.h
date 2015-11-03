@@ -7,7 +7,7 @@
 #include "../Definitions.h"
 #include "mycomplex.h"
 
-//#define SHOW_BLOCKING_DEBUG
+#define SHOW_BLOCKING_DEBUG
 
 void cpx_to_console(cpx *sequence, char *title, int len);
 void cpx2d_to_console(cpx *sequence, char *title, int len);

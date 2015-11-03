@@ -301,8 +301,9 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Platforms\OpenGL\gl_cs.glsl" />
-    <None Include="Platforms\OpenGL\gl_cs_transpose.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_global.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_local.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_trans.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

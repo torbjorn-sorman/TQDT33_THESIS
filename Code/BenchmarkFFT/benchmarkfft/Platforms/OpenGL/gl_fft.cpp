@@ -4,7 +4,7 @@
 #include <string>
 #include "../../Common/cpx_debug.h"
 
-__inline void gl_fft(transform_direction dir, gl_args *args, const int n);
+__inline void gl_fft(transform_direction dir, gl_args *args_local, gl_args *args_global, const int n);
 __inline void gl_fft_2d(transform_direction dir, gl_args *args, const int n);
 
 
@@ -17,27 +17,31 @@ __inline void gl_fft_2d(transform_direction dir, gl_args *args, const int n);
 int gl_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
-    cpx *out = 0;
+    cpx *out = 0,
+        *tmp = 0;
     cpx *ref = get_seq(n, in);
-    gl_args args;
-    gl_setup(&args, in, NULL, GL_GROUP_SIZE, n);
+    gl_args args_local, args_global;
+    gl_setup(&args_local, &args_global, in, NULL, GL_GROUP_SIZE, n);
 
-    gl_fft(FFT_FORWARD, &args, n);
-    gl_read_buffer(args.buf_out, &out, n);
+    gl_fft(FFT_FORWARD, &args_local, &args_global, n);
+    gl_read_buffer(args_local.buf_out, &out, n);
     double forward_diff = diff_forward_sinus(out, n);
 
+    gl_swap_buffers(&args_local, &args_global);
+    gl_fft(FFT_INVERSE, &args_local, &args_global, n);
+    out = 0;
+    gl_read_buffer(args_local.buf_out, &out, n);
+    double inverse_diff = diff_seq(out, ref, n);
+
 #ifdef SHOW_BLOCKING_DEBUG
-    cpx_to_console(in, "Buf In", n);
-    cpx_to_console(out, "Buf Out", n);
+    cpx_to_console(in, "GL In", 32);
+    cpx_to_console(out, "GL Out", 32);
+    printf("%f and %f\n", forward_diff, inverse_diff);
     getchar();
 #endif
 
-    gl_swap_io(&args);
-    gl_fft(FFT_INVERSE, &args, n);
-    gl_read_buffer(args.buf_out, &out, n);
-    double inverse_diff = diff_seq(out, ref, n);
-
-    gl_shakedown(&args);
+    gl_shakedown(&args_local);
+    gl_shakedown(&args_global);
     free(in);
     free(ref);
     return forward_diff < RELATIVE_ERROR_MARGIN && inverse_diff < RELATIVE_ERROR_MARGIN;
@@ -102,20 +106,21 @@ double gl_2d_performance(const int n)
 #else
 double gl_performance(const int n)
 {
-    gl_args args;    
+    gl_args a_local, a_global;
     GLuint queries[NUM_TESTS][2];
-    
+
     //profiler_data profiler[NUM_TESTS];
-    gl_setup(&args, NULL, NULL, GL_GROUP_SIZE, n);
+    gl_setup(&a_local, &a_global, NULL, NULL, GL_GROUP_SIZE, n);
     for (int i = 0; i < NUM_TESTS; ++i) {
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
 
-        gl_fft(FFT_FORWARD, &args, n);
+        gl_fft(FFT_FORWARD, &a_local, &a_global, n);
 
         glQueryCounter(queries[i][1], GL_TIMESTAMP);
     }
-    gl_shakedown(&args);
+    gl_shakedown(&a_local);
+    gl_shakedown(&a_global);
     return gl_query_time(queries);
 }
 double gl_2d_performance(const int n)
@@ -151,24 +156,29 @@ a->context->CSSetUnorderedAccessViews(0, 1, &a->buf_output_uav, &a->init_cnts);
 a->context->CSSetShaderResources(0, 1, &a->buf_input_srv);
 }
 */
+
+__inline void gl_bind_io_buffers(gl_args *a)
+{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a->buf_in);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a->buf_out);
+}
+
 __inline void gl_set_local_args(gl_args *a, float local_angle, unsigned int steps_left, unsigned int leading_bits, float scalar, unsigned int block_range_half)
 {
     glUniform1f(glGetUniformLocation(a->program, "local_angle"), local_angle);
     glUniform1ui(glGetUniformLocation(a->program, "steps_left"), steps_left);
     glUniform1f(glGetUniformLocation(a->program, "scalar"), scalar);
-    GLuint loc = glGetUniformLocation(a->program, "leading_bits");
-    glUniform1ui(loc, leading_bits);
+    glUniform1ui(glGetUniformLocation(a->program, "leading_bits"), leading_bits);
     glUniform1ui(glGetUniformLocation(a->program, "block_range_half"), block_range_half);
 }
-/*
-__inline void gl_set_global_args(gl_args *a, float angle, int dist, unsigned int lmask, int steps)
+
+__inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int dist, unsigned int lmask, unsigned int steps)
 {
-gl_cs_args cb = { angle, 0.f, 0.f, 0, 0, 0, 0, 0, steps, lmask, dist };
-gl_map_args<gl_cs_args>(a->context, a->buf_constant, &cb);
-gl_set_buffers(a);
-a->context->CSSetShader(a->cs_global, nullptr, 0);
+    glUniform1f(glGetUniformLocation(a->program, "global_angle"), global_angle);
+    glUniform1ui(glGetUniformLocation(a->program, "dist"), dist);
+    glUniform1ui(glGetUniformLocation(a->program, "lmask"), lmask);
+    glUniform1ui(glGetUniformLocation(a->program, "steps"), steps);
 }
-*/
 
 static int tab32[32] = {
     0, 9, 1, 10, 13, 21, 2, 29,
@@ -188,7 +198,7 @@ static __inline int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
-__inline void gl_fft(transform_direction dir, gl_args *args, const int n)
+__inline void gl_fft(transform_direction dir, gl_args *a_local, gl_args* a_global, const int n)
 {
     int n_half = (n >> 1);
     int steps_left = log2_32(n);
@@ -202,20 +212,20 @@ __inline void gl_fft(transform_direction dir, gl_args *args, const int n)
     int block_range_half = n_half;
     /*
     if (number_of_blocks > 1) {
-    int steps = 0;
-    int dist = n;
-    while (--steps_left > steps_gpu) {
-    gl_set_global_args(args, global_angle, dist >>= 1, 0xFFFFFFFF << steps_left, steps++);
-    args->context->Dispatch(args->n_groups.x, 1, 1);
-    //swap_io(args);
-    }
-    ++steps_left;
-    block_range_half = n_per_block >> 1;
+        int steps = 0;
+        int dist = n;
+        glUseProgram(a_global->program);
+        while (--steps_left > steps_gpu) {
+            gl_set_global_args(a_global, global_angle, dist >>= 1, 0xFFFFFFFF << steps_left, steps++);
+            glDispatchCompute(a_global->groups.x, a_global->groups.y, a_global->groups.z);
+        }
+        ++steps_left;
+        block_range_half = n_per_block >> 1;
     }
     */
-    glUseProgram(args->program);
-    gl_set_local_args(args, local_angle, steps_left, leading_bits, scalar, block_range_half);
-    glDispatchCompute(args->groups.x, 1, 1);
+    glUseProgram(a_local->program);
+    gl_set_local_args(a_local, local_angle, steps_left, leading_bits, scalar, block_range_half);
+    glDispatchCompute(a_local->groups.x, a_local->groups.y, a_local->groups.z);
 }
 /*
 __inline void gl_fft_2d_helper(transform_direction dir, gl_args *args, const int n)

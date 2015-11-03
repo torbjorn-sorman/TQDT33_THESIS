@@ -18,6 +18,8 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
 //
 // -------------------------------
 
+#include "../../Common/cpx_debug.h"
+
 __host__ int cuda_validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -30,6 +32,13 @@ __host__ int cuda_validate(int n)
     cuda_fft(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
+
+#ifdef SHOW_BLOCKING_DEBUG
+    cpx_to_console(in, "CUDA Out", 32);
+    printf("%f\n", diff);
+    getchar();
+#endif
+
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
@@ -163,6 +172,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     int n_per_block = n / blocks;
     float local_angle = dir * (M_2_PI / n_per_block);
     int block_range_half = n_half;
+    /*
     if (blocks > 1) {
         cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
         float global_angle = dir * (M_2_PI / n);
@@ -175,6 +185,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
         ++steps_left;
         block_range_half = n_per_block >> 1;
     }
+    */
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
     cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (in, out, local_angle, steps_left, leading_bits, scalar, block_range_half);
 }

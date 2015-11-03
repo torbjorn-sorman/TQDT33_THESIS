@@ -217,10 +217,13 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Platforms\OpenGL\gl_cs.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_trans.glsl">
       <Filter>Platforms\OpenGL</Filter>
     </None>
-    <None Include="Platforms\OpenGL\gl_cs_transpose.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_global.glsl">
+      <Filter>Platforms\OpenGL</Filter>
+    </None>
+    <None Include="Platforms\OpenGL\gl_cshader_local.glsl">
       <Filter>Platforms\OpenGL</Filter>
     </None>
   </ItemGroup>

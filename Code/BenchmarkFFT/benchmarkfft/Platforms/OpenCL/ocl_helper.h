@@ -2,9 +2,6 @@
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
-#include <iosfwd>
-
-#include <fstream>
 #include <CL\cl.h>
 
 #include "../../Definitions.h"

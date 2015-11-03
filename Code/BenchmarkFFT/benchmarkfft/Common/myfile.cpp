@@ -39,3 +39,15 @@ FILE *getTextFilePointer(std::string name, std::string *fname)
     *fname = dir + name;
     return fp;
 }
+
+char *get_kernel_src(const char *filename, int *length)
+{
+    std::ifstream in(filename);
+    std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    size_t len = contents.size() + 1;
+    char *src = (char *)malloc(sizeof(char) * len);
+    strcpy_s(src, sizeof(char) * len, contents.c_str());
+    src[contents.size()] = '\0';
+    *length = len;
+    return src;
+}

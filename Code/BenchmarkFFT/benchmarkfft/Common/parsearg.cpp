@@ -43,7 +43,7 @@ int parseArguments(benchmarkArgument *arg, int argc, char* argv[])
                 else if (MATCHP("cu"))      arg->platform_cuda = true;
                 else if (MATCHP("dx"))      arg->platform_directx = true;
                 else if (MATCHP("ocl"))     arg->platform_opencl = true;
-                else if (MATCHP("ogl"))     arg->platform_opengl = true;
+                else if (MATCHP("gl"))      arg->platform_opengl = true;
                 else if (MATCHP("omp"))     arg->platform_openmp = true;
                 else if (MATCHP("fftw"))    arg->platform_fftw = true;      // Open Src lib
                 else if (MATCHP("cufft"))   arg->platform_cufft = true;     // NVidia lib

@@ -23,12 +23,12 @@ MyOpenGL::~MyOpenGL()
 bool MyOpenGL::validate(const int n, bool write_img)
 {   
     if (dimensions == 1)
-        return ogl_validate(n) == 1;
-    return ogl_2d_validate(n, write_img) == 1;
+        return gl_validate(n) == 1;
+    return gl_2d_validate(n, write_img) == 1;
 }
 
 void MyOpenGL::runPerformance(const int n)
 {
-    double time = ((dimensions == 1) ? ogl_performance(n) : ogl_2d_performance(n));
+    double time = ((dimensions == 1) ? gl_performance(n) : gl_2d_performance(n));
     results.push_back(time);
 }

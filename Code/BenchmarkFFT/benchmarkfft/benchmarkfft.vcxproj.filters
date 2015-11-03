@@ -100,10 +100,10 @@
     <ClInclude Include="Platforms\MyOpenGL.h">
       <Filter>Platforms\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\OpenGL\ogl_fft.h">
+    <ClInclude Include="Platforms\OpenGL\gl_fft.h">
       <Filter>Platforms\OpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\OpenGL\ogl_helper.h">
+    <ClInclude Include="Platforms\OpenGL\gl_helper.h">
       <Filter>Platforms\OpenGL</Filter>
     </ClInclude>
   </ItemGroup>
@@ -206,13 +206,13 @@
     <ClCompile Include="Platforms\MyOpenGL.cpp">
       <Filter>Platforms</Filter>
     </ClCompile>
-    <ClCompile Include="Platforms\OpenGL\ogl_fft.cpp">
-      <Filter>Platforms\OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="Platforms\OpenGL\ogl_helper.cpp">
-      <Filter>Platforms\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Platforms\OpenGL\gl_fft.cpp">
+      <Filter>Platforms\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\OpenGL\gl_helper.cpp">
+      <Filter>Platforms\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">
@@ -221,5 +221,13 @@
     <FxCompile Include="Platforms\DirectX\dx_cs_transpose.hlsl">
       <Filter>Platforms\DirectX</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Platforms\OpenGL\gl_cs.glsl">
+      <Filter>Platforms\OpenGL</Filter>
+    </None>
+    <None Include="Platforms\OpenGL\gl_cs_transpose.glsl">
+      <Filter>Platforms\OpenGL</Filter>
+    </None>
   </ItemGroup>
 </Project>

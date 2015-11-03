@@ -3,7 +3,7 @@
 #define MYOPENGL_H
 
 #include "Platform.h"
-#include "OpenGL/ogl_fft.h"
+#include "OpenGL/gl_fft.h"
 
 class MyOpenGL : public Platform
 {

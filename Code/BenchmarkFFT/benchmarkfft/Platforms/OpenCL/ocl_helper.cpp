@@ -1,12 +1,4 @@
 #include "ocl_helper.h"
-#include <iostream>
-
-std::string getKernel(const char *filename)
-{
-    std::ifstream in(filename);
-    std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    return contents;
-}
 
 int checkErr(cl_int error, char *msg)
 {
@@ -47,7 +39,7 @@ cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
     // Read kernel file as a char *
     std::string filename = kernelFilename;
     filename = "Platforms/OpenCL/" + filename + ".cl";
-    std::string data = getKernel(filename.c_str());
+    std::string data = get_kernel_src(filename.c_str(), NULL);
 
     char *src = (char *)malloc(sizeof(char) * (data.size() + 1));
     strcpy_s(src, sizeof(char) * (data.size() + 1), data.c_str());

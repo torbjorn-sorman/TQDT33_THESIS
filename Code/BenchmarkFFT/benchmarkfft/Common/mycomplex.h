@@ -10,6 +10,13 @@
 
 #define maxf(a, b) (((a)>(b))?(a):(b))
 
+template<typename T> static __inline void swap(T *a, T *b)
+{
+    T c = *a;
+    *a = *b;
+    *b = c;
+}
+
 cpx *get_seq(int n, int sinus);
 cpx *get_seq(int n);
 cpx *get_seq(int n, cpx *src);

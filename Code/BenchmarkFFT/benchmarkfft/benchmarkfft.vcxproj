@@ -232,8 +232,8 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\MyOpenMP.h" />
     <ClInclude Include="Platforms\OpenCL\ocl_fft.h" />
     <ClInclude Include="Platforms\OpenCL\ocl_helper.h" />
-    <ClInclude Include="Platforms\OpenGL\ogl_fft.h" />
-    <ClInclude Include="Platforms\OpenGL\ogl_helper.h" />
+    <ClInclude Include="Platforms\OpenGL\gl_fft.h" />
+    <ClInclude Include="Platforms\OpenGL\gl_helper.h" />
     <ClInclude Include="Platforms\OpenMP\omp_constant_geometry.h" />
     <ClInclude Include="Platforms\OpenMP\omp_fast_index.h" />
     <ClInclude Include="Platforms\Platform.h" />
@@ -258,8 +258,8 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClCompile Include="Platforms\MyOpenMP.cpp" />
     <ClCompile Include="Platforms\OpenCL\ocl_fft.cpp" />
     <ClCompile Include="Platforms\OpenCL\ocl_helper.cpp" />
-    <ClCompile Include="Platforms\OpenGL\ogl_fft.cpp" />
-    <ClCompile Include="Platforms\OpenGL\ogl_helper.cpp" />
+    <ClCompile Include="Platforms\OpenGL\gl_fft.cpp" />
+    <ClCompile Include="Platforms\OpenGL\gl_helper.cpp" />
     <ClCompile Include="Platforms\OpenMP\omp_constant_geometry.cpp" />
     <ClCompile Include="Platforms\OpenMP\omp_fast_index.cpp" />
   </ItemGroup>
@@ -301,6 +301,10 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Platforms\OpenGL\gl_cs.glsl" />
+    <None Include="Platforms\OpenGL\gl_cs_transpose.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -79,7 +79,7 @@ static __inline void dx_end_profiling(dx_args *args, profiler_data *p_data)
     args->context->End(p_data->disjoint_query);
 }
 
-template<typename T> static __inline void swap(T **a, T **b)
+template<typename T> static __inline void dx_swap(T **a, T **b)
 {
     T *c = *a;
     *a = *b;
@@ -88,9 +88,9 @@ template<typename T> static __inline void swap(T **a, T **b)
 
 static __inline void swap_io(dx_args *a)
 {
-    swap<ID3D11Buffer>(&a->buf_input, &a->buf_output);
-    swap<ID3D11ShaderResourceView>(&a->buf_input_srv, &a->buf_output_srv);
-    swap<ID3D11UnorderedAccessView>(&a->buf_input_uav, &a->buf_output_uav);
+    dx_swap<ID3D11Buffer>(&a->buf_input, &a->buf_output);
+    dx_swap<ID3D11ShaderResourceView>(&a->buf_input_srv, &a->buf_output_srv);
+    dx_swap<ID3D11UnorderedAccessView>(&a->buf_input_uav, &a->buf_output_uav);
 }
 
 template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, T *params)

@@ -30,6 +30,18 @@ cl_int ocl_setup_kernels(oclArgs *args)
     return err;
 }
 
+std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+
 cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
 {
     cl_int err = CL_SUCCESS;
@@ -39,7 +51,7 @@ cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
     // Read kernel file as a char *
     std::string filename = kernelFilename;
     filename = "Platforms/OpenCL/" + filename + ".cl";
-    std::string data = get_kernel_src(filename.c_str(), NULL);
+    std::string data = get_kernel_src(s2ws(filename).c_str(), NULL);
 
     char *src = (char *)malloc(sizeof(char) * (data.size() + 1));
     strcpy_s(src, sizeof(char) * (data.size() + 1), data.c_str());

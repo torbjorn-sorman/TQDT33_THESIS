@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
             std::cout << std::string(tabs, '\t');
             for (Platform *platform : platforms)
                 std::cout << platform->name << "\t";
+            std::reverse(begin(platforms), end(platforms));
             std::cout << std::endl;
             std::cout << std::fixed;
             std::cout << std::setprecision(0);
@@ -181,6 +182,7 @@ void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgume
     fprintf_s(f, "\t");
     for (Platform *platform : platforms)
         fprintf_s(f, "%s\t", platform->name);
+    std::reverse(begin(platforms), end(platforms));
     fprintf_s(f, "\n");
     for (int i = 0; i < a->number_of_lengths; ++i) {
         fprintf_s(f, "%d\t", power2(i) * power2(a->start));

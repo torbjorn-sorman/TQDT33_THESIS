@@ -1,4 +1,5 @@
 #include "gl_helper.h"
+#include "../../Common/mymath.h"
 
 void gl_swap_io(gl_args *a)
 {
@@ -7,12 +8,28 @@ void gl_swap_io(gl_args *a)
     a->buf_in = buf;
 }
 
-void gl_setup_program(gl_args *a, std::string shader_file)
+double gl_query_time(GLuint q[NUM_TESTS][2])
+{
+    double measures[NUM_TESTS];
+    GLint stopTimerAvailable = 0;
+    while (!stopTimerAvailable)
+        glGetQueryObjectiv(q[NUM_TESTS - 1][1], GL_QUERY_RESULT_AVAILABLE, &stopTimerAvailable);
+    double best_time = 99999999999.9;
+    for (int i = 0; i < NUM_TESTS; ++i) {
+        GLuint64 start, stop;
+        glGetQueryObjectui64v(q[i][0], GL_QUERY_RESULT, &start);
+        glGetQueryObjectui64v(q[i][1], GL_QUERY_RESULT, &stop);
+        measures[i] = (stop - start) / 1000.0;
+    }
+    return average_best(measures, NUM_TESTS);
+}
+
+void gl_setup_program(gl_args *a, LPCWSTR shader_file)
 {
     GLuint program = glCreateProgram();
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     GLint length;
-    a->shader_src = get_kernel_src(shader_file.c_str(), &length);
+    a->shader_src = get_kernel_src(shader_file, &length);
     glShaderSource(shader, 1, &a->shader_src, &length);
     glCompileShader(shader);
     int rvalue;
@@ -23,6 +40,7 @@ void gl_setup_program(gl_args *a, std::string shader_file)
         GLsizei length;
         glGetShaderInfoLog(shader, 10239, &length, log);
         fprintf(stderr, "Compiler log:\n%s\n", log);
+        getchar();
         exit(40);
     }
     glAttachShader(program, shader);
@@ -34,33 +52,47 @@ void gl_setup_program(gl_args *a, std::string shader_file)
         GLsizei length;
         glGetProgramInfoLog(program, 10239, &length, log);
         fprintf(stderr, "Linker log:\n%s\n", log);
+        getchar();
         exit(41);
     }
     GLuint buffers[2];
-    glGenBuffers(a->number_of_buffers, buffers);
+    glGenBuffers(2, buffers);
     a->buf_in = buffers[0];
     a->buf_out = buffers[1];
     a->program = program;
 }
 
-void gl_load_input(GLuint buffer, cpx* data, const int n)
+void gl_load_buffer(GLuint buffer, cpx* data, const int n)
 {    
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data, GL_STREAM_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, buffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data ? &data[0] : NULL, GL_DYNAMIC_DRAW);
 }
 
-void gl_read_buffer(GLuint buffer, cpx* data, const int n)
+void gl_read_buffer(GLuint buffer, cpx** data, const int n)
 {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-    data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    *data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 }
 
-void gl_setup(gl_args* args, cpx* data, const int n)
+void gl_setup_file(gl_args* args, LPCWSTR shader_file)
 {
-    gl_setup_program(args, "Platforms/OpenGL/gl_cs.glsl");
-    if (data != NULL)
-        gl_load_input(args->buf_in, data, n);
+    std::string str = get_file_content(shader_file);
+    manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
+    manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
+    set_file_content(shader_file, str);
+}
+
+void gl_setup(gl_args* args, cpx* in, cpx* out, int group_size, const int n)
+{    
+    args->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    args->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
+    LPCWSTR shader_file = L"Platforms/OpenGL/gl_cs.glsl";
+    gl_setup_file(args, shader_file);
+    gl_setup_program(args, shader_file);
+    gl_load_buffer(args->buf_in, in, n);
+    gl_load_buffer(args->buf_out, out, n);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, args->buf_in);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, args->buf_out);
 }
 
 void gl_shakedown(gl_args *a)
@@ -134,8 +166,7 @@ void testrun()
     glDispatchCompute(16, 1, 1);
 
     // Get data back!
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER,
-        ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
     ptr = (int *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
     printf("\nRESULT:\n");
     for (int i = 0; i < 16; i++)

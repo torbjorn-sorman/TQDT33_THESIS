@@ -218,7 +218,6 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClInclude Include="Platforms\CUDA\cuda_helper.cuh" />
     <ClInclude Include="Platforms\C\c_fft.h" />
     <ClInclude Include="Platforms\C\c_helper.h" />
-    <ClInclude Include="Platforms\DirectX\dx_csmanip.h" />
     <ClInclude Include="Platforms\DirectX\dx_fft.h" />
     <ClInclude Include="Platforms\DirectX\dx_helper.h" />
     <ClInclude Include="Platforms\MyC.h" />
@@ -244,7 +243,6 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
     <ClCompile Include="Common\mycomplex.cpp" />
     <ClCompile Include="Common\parsearg.cpp" />
     <ClCompile Include="Platforms\C\c_fft.cpp" />
-    <ClCompile Include="Platforms\DirectX\dx_csmanip.cpp" />
     <ClCompile Include="Platforms\DirectX\dx_fft.cpp" />
     <ClCompile Include="Platforms\DirectX\dx_helper.cpp" />
     <ClCompile Include="Platforms\MyC.cpp" />

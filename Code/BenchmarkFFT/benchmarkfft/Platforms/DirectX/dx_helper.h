@@ -4,9 +4,12 @@
 
 #include <d3d11.h>
 #include <D3Dcompiler.h>
+#include <comdef.h>
+
 #include "../../Definitions.h"
 #include "../../Common/mymath.h"
-#include "dx_csmanip.h"
+#include "../../Common/myfile.h"
+
 
 _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 

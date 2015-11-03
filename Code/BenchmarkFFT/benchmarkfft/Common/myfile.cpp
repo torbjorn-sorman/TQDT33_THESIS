@@ -1,4 +1,8 @@
 #include "myfile.h"
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <regex>
 
 bool dirExists(const std::string& dirName_in)
 {
@@ -40,14 +44,44 @@ FILE *getTextFilePointer(std::string name, std::string *fname)
     return fp;
 }
 
-char *get_kernel_src(const char *filename, int *length)
+char *get_kernel_src(LPCWSTR file_name, int *length)
 {
-    std::ifstream in(filename);
+    std::ifstream in(file_name);
     std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     size_t len = contents.size() + 1;
     char *src = (char *)malloc(sizeof(char) * len);
     strcpy_s(src, sizeof(char) * len, contents.c_str());
     src[contents.size()] = '\0';
-    *length = len;
+    if (length)
+        *length = len;
     return src;
+}
+
+std::string get_file_content(LPCWSTR shader_file)
+{
+    std::ifstream in_file(shader_file);
+    std::stringstream buffer;
+    buffer << in_file.rdbuf();
+    std::string content = buffer.str();
+    in_file.close();
+    return content;
+}
+
+#include "atlstr.h"
+
+void manip_content(std::string* content, LPCWSTR var_name, int value)
+{
+    std::stringstream reg_expr;
+    reg_expr << "(#define\\s*" << CW2A(var_name) << ")\\s*\\d*$";
+    std::regex e(reg_expr.str());
+    std::stringstream fmt;
+    fmt << "$1 " << value;
+    *content = std::regex_replace(*content, e, fmt.str());
+}
+
+void set_file_content(LPCWSTR shader_file, std::string content)
+{
+    std::ofstream out_file(shader_file);
+    out_file << content;
+    out_file.close();
 }

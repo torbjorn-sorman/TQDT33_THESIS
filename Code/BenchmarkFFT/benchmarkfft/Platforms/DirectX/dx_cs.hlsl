@@ -1,5 +1,6 @@
 #define GROUP_SIZE_X 1024
 #define GRID_DIM_X 8192
+
 struct cpx
 {
     float x;

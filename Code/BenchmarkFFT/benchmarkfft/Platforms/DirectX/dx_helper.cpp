@@ -128,12 +128,21 @@ void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
     args->context->Unmap(args->buf_staging, 0);
 }
 
+void dx_setup_file(dx_args *a, LPCWSTR cs_file, const int group_size, const int n)
+{
+    std::string str(get_file_content(cs_file));
+    manip_content(&str, L"GROUP_SIZE_X", (n >> 1) > group_size ? group_size : (n >> 1));
+    manip_content(&str, L"GRID_SIZE_X", a->n_groups.x);
+    set_file_content(cs_file, str);
+}
+
 void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
-    LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
-    dx_set_dim(cs_file, group_size, n);
-
     a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
+    
+    dx_setup_file(a, cs_file, group_size, n);
+        
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n);
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
@@ -177,12 +186,25 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     }
 }
 
+void dx_setup_2d_files(dx_args *a, LPCWSTR cs_file, LPCWSTR cs_file_tr, const int group_size, const int tile_dim, const int n)
+{
+    std::string str(get_file_content(cs_file));
+    const int n2 = n >> 1;
+    manip_content(&str, L"GROUP_SIZE_X", n2 > group_size ? group_size : n2);
+    manip_content(&str, L"GRID_DIM_X", n2 > group_size ? (n2 / group_size) : 1);
+    set_file_content(cs_file, str);
+    str = get_file_content(cs_file_tr);
+    manip_content(&str, L"WIDTH", n);
+    manip_content(&str, L"DX_TILE_DIM", tile_dim);
+    set_file_content(cs_file_tr, str);
+}
+
 void dx_setup_2d(dx_args* a, cpx* in, int group_size, int tile_dim, const int n)
 {
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
     LPCWSTR cs_file_transpose = L"Platforms/DirectX/dx_cs_transpose.hlsl";
-    dx_set_dim_2d(cs_file, group_size, n);
-    dx_set_dim_trans(cs_file_transpose, tile_dim, n);
+
+    dx_setup_2d_files(a, cs_file, cs_file_transpose, group_size, tile_dim, n);
 
     a->n_groups.x = n;
     int n_half = n >> 1;

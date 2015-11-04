@@ -69,11 +69,11 @@ static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)
 }
 
 cl_int ocl_check_err(cl_int error, char *msg);
-cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_direction dir, const int n);
 cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm);
-cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int n);
-cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu);
-cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans);
+cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev);
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);
 void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n);
 

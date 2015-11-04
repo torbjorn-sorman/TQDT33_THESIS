@@ -20,6 +20,7 @@ struct gl_args {
     GLuint buf_out;
     dim3 groups = { 1, 1, 1 };
     dim3 threads = { 1, 1, 1 };
+    int number_of_blocks = 1;
     char *shader_src;
 };
 
@@ -31,9 +32,10 @@ static __inline void gl_swap_buffers(gl_args *a_l, gl_args *a_g)
     a_g->buf_out = a_l->buf_out = buf_i;
 }
 
+void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n);
 void gl_swap_io(gl_args* a);
 double gl_query_time(unsigned int q[NUM_TESTS][2]);
-void gl_setup(gl_args* a_local, gl_args* a_global, cpx* in, cpx* out, const int groups_size, const int n);
+void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, const int groups_size, const int n);
 void gl_read_buffer(GLuint buffer, cpx** data, const int n);
 void gl_shakedown(gl_args *a);
 

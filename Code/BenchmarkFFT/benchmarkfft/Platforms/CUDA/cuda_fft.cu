@@ -152,6 +152,15 @@ __host__ double cuda_2d_performance(int n)
 //
 // -------------------------------
 
+__host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *threads_per_block, const int block_size, const bool dim2, const int n)
+{
+    const int n_half = n >> 1;
+    const bool multi_blocks = (n_half > block_size);
+    *threads_per_block = multi_blocks ? block_size : n_half;
+    number_of_blocks->x = dim2 ? n : multi_blocks ? n_half / block_size : 1;
+    number_of_blocks->y = dim2 ? multi_blocks ? n_half / block_size : 1 : number_of_blocks->x;
+}
+
 __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
     fft_args args;
@@ -167,7 +176,7 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (in, out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
 }
 
-__host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
+__host__ __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
 {
     fft_args args;
     dim3 blocks;

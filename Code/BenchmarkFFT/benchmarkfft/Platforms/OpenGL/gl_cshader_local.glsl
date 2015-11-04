@@ -9,8 +9,8 @@ struct cpx {
 
 layout(local_size_x = LOCAL_DIM_X) in;
 
-layout(std430, binding = 0) buffer ssbo0{ cpx input_data[]; };
-layout(std430, binding = 1) buffer ssbo1{ cpx output_data[]; };
+layout(std430, binding = 0) buffer ssbo0 { cpx input_data[]; };
+layout(std430, binding = 1) buffer ssbo1 { cpx output_data[]; };
 
 shared cpx shared_buf[SHARED_MEM_SIZE];
 
@@ -27,7 +27,7 @@ void main()
 {
     uint in_low = gl_LocalInvocationID.x;
     uint in_high = in_low + block_range_half;
-    uint offset = (gl_WorkGroupID.x * LOCAL_DIM_X) << 1;
+    uint offset = (gl_WorkGroupID.x * LOCAL_DIM_X) * 2;
     shared_buf[in_low] = input_data[in_low + offset];
     shared_buf[in_high] = input_data[in_high + offset];
 
@@ -41,15 +41,15 @@ void main()
 
 void dx_algorithm_local(uint in_low, uint in_high)
 {
-    float a, x, y;
+    float angle, x, y;
     cpx w, in_lower, in_upper;
-    uint out_i = (in_low << 1);
+    uint out_i = (in_low * 1);
     uint out_ii = out_i + 1;
-    for (int steps = 0; steps < steps_left; ++steps)
+    for (uint steps = 0; steps < steps_left; ++steps)
     {
-        a = local_angle * (in_low & (0xFFFFFFFF << steps));
-        w.x = cos(a);
-        w.y = sin(a);
+        angle = local_angle * int(in_low & (0xFFFFFFFF << steps));
+        w.x = cos(angle);
+        w.y = sin(angle);
         in_lower = shared_buf[in_low];
         in_upper = shared_buf[in_high];
         barrier();

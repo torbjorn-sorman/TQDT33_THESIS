@@ -12,5 +12,7 @@
 #include "cuda_helper.cuh"
 
 __host__ void cuda_surface_fft(transform_direction dir, cudaSurfaceObject_t *surface_in, cudaSurfaceObject_t *surface_out, int n);
+__host__ int cuda_surface_validate(int n);
+__host__ double cuda_surface_performance(int n);
 
 #endif

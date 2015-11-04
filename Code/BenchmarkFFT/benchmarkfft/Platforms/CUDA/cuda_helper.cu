@@ -1,39 +1,5 @@
 #include "cuda_helper.cuh"
 
-void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size)
-{
-    if (size > block_size) {
-        *number_of_blocks = size / block_size;
-        *threads_per_block = block_size;
-    }
-    else {
-        *number_of_blocks = 1;
-        *threads_per_block = size;
-    }
-}
-
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
-{
-    number_of_blocks->x = n;
-    int n_half = n >> 1;
-    if (n_half > block_size) {
-        number_of_blocks->y = n_half / block_size;
-        *threads_per_block = block_size;
-    }
-    else {
-        number_of_blocks->y = 1;
-        *threads_per_block = n_half;
-    }
-}
-
-void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n)
-{
-    int minDim = n > tile_dim ? (n / tile_dim) : 1;
-    bTrans->z = tTrans->z = 1;
-    bTrans->x = bTrans->y = minDim;
-    tTrans->x = tTrans->y = block_dim;
-}
-
 void checkCudaError(char *msg)
 {
     cudaError_t e;

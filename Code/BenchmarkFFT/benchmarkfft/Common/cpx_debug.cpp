@@ -3,6 +3,10 @@
 
 void cpx_to_console(cpx *sequence, char *title, int len)
 {
+    if (sequence == NULL) {
+        printf("\tSequence is NULL\n");
+        return;
+    }
     std::cout << title << ":" << std::endl;
     for (int i = 0; i < len; ++i)
         printf("\t%d: %f\t%f\n", i, sequence[i].x, sequence[i].y);

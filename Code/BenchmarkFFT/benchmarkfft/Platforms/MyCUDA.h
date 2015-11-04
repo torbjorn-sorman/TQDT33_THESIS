@@ -5,6 +5,7 @@
 #include "cuda_profiler_api.h"
 #include "Platform.h"
 #include "CUDA/cuda_fft.cuh"
+#include "CUDA/cuda_fft_surface.cuh"
 
 class MyCUDA : public Platform
 {

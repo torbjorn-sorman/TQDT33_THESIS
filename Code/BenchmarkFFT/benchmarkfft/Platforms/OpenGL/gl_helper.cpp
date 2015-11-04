@@ -79,21 +79,23 @@ void gl_read_buffer(GLuint buffer, cpx** data, const int n)
     *data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 }
 
-void gl_setup(gl_args* a_local, gl_args* a_global, cpx* in, cpx* out, int group_size, const int n)
+void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size, const int n)
 {
     LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.glsl";
     LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.glsl";
 
     // "Local" compute shader
-    a_local->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
-    a_local->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
-    gl_setup_program(a_local, true, shader_file_local);
-    gl_load_buffer(a_local->buf_in, in, 0, n);
-    gl_load_buffer(a_local->buf_out, out, 1, n);
+    a_dev->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    a_dev->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
+    a_dev->number_of_blocks = a_dev->groups.x;
+    gl_setup_program(a_dev, true, shader_file_local);
+    gl_load_buffer(a_dev->buf_in, in, 0, n);
+    gl_load_buffer(a_dev->buf_out, out, 1, n);
 
     // "Global" compute shader
-    memcpy(a_global, a_local, sizeof(gl_args));
-    gl_setup_program(a_global, false, shader_file_global);
+    memcpy(a_host, a_dev, sizeof(gl_args));
+    gl_setup_program(a_host, false, shader_file_global);
+    gl_load_buffer(a_host->buf_in, in, 2, n);
 }
 
 void gl_shakedown(gl_args *a)

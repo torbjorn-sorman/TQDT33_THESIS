@@ -91,6 +91,8 @@ bool invalidCpx(cpx c)
 
 double diff_seq(cpx *seq, cpx *ref, float scalar, const int n)
 {
+    if (seq == NULL)
+        return 1;
     double mDiff = 0.0;
     double mVal = -1;
     cpx rScale = make_cuFloatComplex(scalar, 0);

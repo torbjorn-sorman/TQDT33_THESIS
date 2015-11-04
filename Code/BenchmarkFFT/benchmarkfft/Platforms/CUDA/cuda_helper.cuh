@@ -125,10 +125,39 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
     SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, col_high);
 }
 
-void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size);
-void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n);
-void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n);
+__host__ static __inline void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size)
+{
+    if (size > block_size) {
+        *number_of_blocks = size / block_size;
+        *threads_per_block = block_size;
+    }
+    else {
+        *number_of_blocks = 1;
+        *threads_per_block = size;
+    }
+}
 
+__host__ static __inline void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
+{
+    number_of_blocks->x = n;
+    int n_half = n >> 1;
+    if (n_half > block_size) {
+        number_of_blocks->y = n_half / block_size;
+        *threads_per_block = block_size;
+    }
+    else {
+        number_of_blocks->y = 1;
+        *threads_per_block = n_half;
+    }
+}
+
+__host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n)
+{
+    int minDim = n > tile_dim ? (n / tile_dim) : 1;
+    bTrans->z = tTrans->z = 1;
+    bTrans->x = bTrans->y = minDim;
+    tTrans->x = tTrans->y = block_dim;
+}
 void checkCudaError();
 void checkCudaError(char *msg);
 

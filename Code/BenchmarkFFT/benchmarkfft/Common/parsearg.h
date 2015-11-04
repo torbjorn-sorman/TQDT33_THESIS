@@ -5,7 +5,7 @@
 #include <string>
 
 #include "../Definitions.h"
-#include "mymath.h"
+#include "mathutil.h"
 
 int parseArguments(benchmarkArgument *arg, int argc, char* argv[]);
 

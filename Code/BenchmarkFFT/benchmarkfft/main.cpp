@@ -100,7 +100,6 @@ int main(int argc, char* argv[])
             std::cout << std::string(tabs, '\t');
             for (Platform *platform : platforms)
                 std::cout << platform->name << "\t";
-            std::reverse(begin(platforms), end(platforms));
             std::cout << std::endl;
             std::cout << std::fixed;
             std::cout << std::setprecision(0);

@@ -138,7 +138,7 @@ void dx_setup_file(dx_args *a, LPCWSTR cs_file, const int group_size, const int 
 
 void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
-    a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    a->number_of_blocks = a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
     
     dx_setup_file(a, cs_file, group_size, n);
@@ -188,10 +188,10 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 
 void dx_setup_2d_files(dx_args *a, LPCWSTR cs_file, LPCWSTR cs_file_tr, const int group_size, const int tile_dim, const int n)
 {
-    std::string str(get_file_content(cs_file));
+    std::string str = get_file_content(cs_file);
     const int n2 = n >> 1;
     manip_content(&str, L"GROUP_SIZE_X", n2 > group_size ? group_size : n2);
-    manip_content(&str, L"GRID_DIM_X", n2 > group_size ? (n2 / group_size) : 1);
+    manip_content(&str, L"GRID_DIM_X", n);
     set_file_content(cs_file, str);
     str = get_file_content(cs_file_tr);
     manip_content(&str, L"WIDTH", n);
@@ -208,7 +208,7 @@ void dx_setup_2d(dx_args* a, cpx* in, int group_size, int tile_dim, const int n)
 
     a->n_groups.x = n;
     int n_half = n >> 1;
-    a->n_groups.y = n_half > group_size ? n_half / group_size : 1;
+    a->number_of_blocks = a->n_groups.y = n_half > group_size ? n_half / group_size : 1;
 
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n * n);

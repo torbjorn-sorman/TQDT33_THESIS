@@ -5,7 +5,7 @@
 #include <cuda_runtime.h>
 
 #include "../../Definitions.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/mycomplex.h"
 #include "../C/c_helper.h"

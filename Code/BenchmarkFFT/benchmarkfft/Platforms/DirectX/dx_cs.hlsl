@@ -1,5 +1,5 @@
-#define GROUP_SIZE_X 1024
-#define GRID_DIM_X 8192
+#define GROUP_SIZE_X 512
+#define GRID_DIM_X 1024
 
 struct cpx
 {
@@ -9,7 +9,7 @@ struct cpx
 
 cbuffer Constants : register(b0)
 {
-    float           angle;
+    float           global_angle;
     float           local_angle;
     float           scalar;
     int             steps_left;
@@ -47,7 +47,7 @@ void dx_global(uint3 threadIDInGroup : SV_GroupThreadID,
     int in_low = tid + (tid & lmask);
     int in_high = in_low + dist;
     cpx w;
-    sincos(angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
+    sincos(global_angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
     add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
 }
 
@@ -61,7 +61,7 @@ void dx_2d_global(uint3 threadIDInGroup : SV_GroupThreadID,
     int col_id = groupID.y * GROUP_SIZE_X + threadIDInGroup.x;
     int in_low = (col_id + (col_id & lmask)) + groupID.x * GRID_DIM_X;
     int in_high = in_low + dist;
-    sincos(angle * ((col_id << steps) & ((dist - 1) << steps)), w.y, w.x);
+    sincos(global_angle * ((col_id << steps) & ((dist - 1) << steps)), w.y, w.x);
     add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
 }
 
@@ -119,8 +119,8 @@ void dx_2d_local_row(uint3 threadIDInGroup : SV_GroupThreadID,
 
     dx_algorithm_local(in_low, in_high);
 
-    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y *scalar };
-    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y *scalar };
+    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
+    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
     rw_buf[(reversebits(in_low + row_offset) >> leading_bits) + row_start] = a;
     rw_buf[(reversebits(in_high + row_offset) >> leading_bits) + row_start] = b;
 }

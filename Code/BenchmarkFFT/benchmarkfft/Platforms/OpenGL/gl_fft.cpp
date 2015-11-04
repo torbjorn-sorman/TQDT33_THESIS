@@ -1,12 +1,7 @@
 #include "gl_fft.h"
 
-#include <stdio.h>
-#include <string>
-#include "../../Common/cpx_debug.h"
-
 __inline void gl_fft(transform_direction dir, gl_args *args_local, gl_args *args_global, const int n);
 __inline void gl_fft_2d(transform_direction dir, gl_args *args, const int n);
-
 
 #define GL_GROUP_SIZE 1024
 
@@ -33,7 +28,7 @@ int gl_validate(const int n)
     gl_read_buffer(args_local.buf_out, &out, n);
     double inverse_diff = diff_seq(out, ref, n);
 
-#ifdef SHOW_BLOCKING_DEBUG
+#if 0 && defined(SHOW_BLOCKING_DEBUG)
     cpx_to_console(in, "GL In", 32);
     cpx_to_console(out, "GL Out", 32);
     printf("%f and %f\n", forward_diff, inverse_diff);
@@ -180,51 +175,22 @@ __inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int di
     glUniform1ui(glGetUniformLocation(a->program, "steps"), steps);
 }
 
-static int tab32[32] = {
-    0, 9, 1, 10, 13, 21, 2, 29,
-    11, 14, 16, 18, 22, 25, 3, 30,
-    8, 12, 20, 28, 15, 17, 24, 7,
-    19, 27, 23, 6, 26, 5, 4, 31
-};
-
-// Integer, base 2 log
-static __inline int log2_32(int value)
-{
-    value |= value >> 1;
-    value |= value >> 2;
-    value |= value >> 4;
-    value |= value >> 8;
-    value |= value >> 16;
-    return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
-}
-
 __inline void gl_fft(transform_direction dir, gl_args *a_local, gl_args* a_global, const int n)
 {
+    fft_args args;
     int n_half = (n >> 1);
-    int steps_left = log2_32(n);
-    int leading_bits = 32 - steps_left;
-    int steps_gpu = log2_32(GL_GROUP_SIZE);
-    float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    int number_of_blocks = n_half > GL_GROUP_SIZE ? (n_half / GL_GROUP_SIZE) : 1;;
-    int n_per_block = n / number_of_blocks;
-    float global_angle = dir * (M_2_PI / n);
-    float local_angle = dir * (M_2_PI / n_per_block);
-    int block_range_half = n_half;
-    /*
+    int number_of_blocks = n_half > GL_GROUP_SIZE ? (n_half / GL_GROUP_SIZE) : 1;
+    set_fft_arguments(&args, dir, number_of_blocks, GL_GROUP_SIZE, n);
     if (number_of_blocks > 1) {
-        int steps = 0;
-        int dist = n;
         glUseProgram(a_global->program);
-        while (--steps_left > steps_gpu) {
-            gl_set_global_args(a_global, global_angle, dist >>= 1, 0xFFFFFFFF << steps_left, steps++);
+        while (--args.steps_left > args.steps_gpu) {
+            gl_set_global_args(a_global, args.global_angle, args.dist >>= 1, 0xFFFFFFFF << args.steps_left, args.steps++);
             glDispatchCompute(a_global->groups.x, a_global->groups.y, a_global->groups.z);
         }
-        ++steps_left;
-        block_range_half = n_per_block >> 1;
+        ++args.steps_left;
     }
-    */
     glUseProgram(a_local->program);
-    gl_set_local_args(a_local, local_angle, steps_left, leading_bits, scalar, block_range_half);
+    gl_set_local_args(a_local, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
     glDispatchCompute(a_local->groups.x, a_local->groups.y, a_local->groups.z);
 }
 /*

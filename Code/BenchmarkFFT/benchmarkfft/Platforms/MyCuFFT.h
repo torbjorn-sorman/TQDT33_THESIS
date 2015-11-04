@@ -8,7 +8,7 @@
 #include <cufft.h>
 #endif
 #include "CUDA/cuda_helper.cuh"
-#include "../Common/mymath.h"
+#include "../Common/mathutil.h"
 #ifndef MEASURE_BY_TIMESTAMP
 #include "../Common/mytimer.h"
 #endif

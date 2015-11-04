@@ -192,19 +192,19 @@ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, doub
 void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTShift)
 {
     image image;
-    double minVal, range, average_best, mag, val;    
+    double minVal, range, average_best, mag, val;
+    cpx *tmp = 0;
     if (doFFTShift) {
-        cpx *tmp = (cpx *)malloc(sizeof(cpx) * n * n);
+        tmp = (cpx *)malloc(sizeof(cpx) * n * n);
         fftShift(tmp, seq, n);
-        seq = tmp;
     }
-    normalized_cpx_values(seq, n, &minVal, &range, &average_best);
+    normalized_cpx_values(tmp, n, &minVal, &range, &average_best);
     double avg_pos = 0.1;
     double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     image = alloc_img(n, n);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
-            mag = cuCabsf(seq[y * n + x]);
+            mag = cuCabsf(tmp[y * n + x]);
             val = ((mag - minVal) / range);
             val = (atan(val * scalar) / (M_PI / 2.0)) * 255.0;
             color_component col = (unsigned char)(val > 255.0 ? 255 : val);
@@ -215,8 +215,8 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     output_ppm(fp, image);
     fclose(fp);
     free_img(image);
-    if (doFFTShift) {
-        free(seq);
+    if (tmp) {
+        free(tmp);
     }
 }
 

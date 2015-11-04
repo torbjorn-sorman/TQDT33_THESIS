@@ -72,7 +72,7 @@ std::string get_file_content(LPCWSTR shader_file)
 void manip_content(std::string* content, LPCWSTR var_name, int value)
 {
     std::stringstream reg_expr;
-    reg_expr << "(#define\\s*" << CW2A(var_name) << ")\\s*\\d*$";
+    reg_expr << "(#define\\s*" << CW2A(var_name) << ")\\s*\\d*";
     std::regex e(reg_expr.str());
     std::stringstream fmt;
     fmt << "$1 " << value;

@@ -1,5 +1,5 @@
 #include "gl_helper.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
 
 double gl_query_time(GLuint q[NUM_TESTS][2])
 {

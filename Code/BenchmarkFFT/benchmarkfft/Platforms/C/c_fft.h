@@ -3,7 +3,7 @@
 #define C_FFT_H
 
 #include "../../Definitions.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/imglib.h"

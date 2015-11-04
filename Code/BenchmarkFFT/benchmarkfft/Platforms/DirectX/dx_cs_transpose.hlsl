@@ -1,6 +1,7 @@
 // Auto update, do not alter
-#define WIDTH 8192
+#define WIDTH 1024
 #define DX_TILE_DIM 32
+
 // Tweak here!
 #define DX_BLOCK_DIM 16
 

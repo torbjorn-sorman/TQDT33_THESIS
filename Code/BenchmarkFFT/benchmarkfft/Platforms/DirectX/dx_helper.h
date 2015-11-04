@@ -7,7 +7,7 @@
 #include <comdef.h>
 
 #include "../../Definitions.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
 #include "../../Common/myfile.h"
 
 
@@ -16,6 +16,7 @@ _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 struct dx_args
 {
     dim3                        n_groups = { 1, 1, 1 };
+    int                         number_of_blocks = 1;
     UINT                        init_cnts = 0xFFFFFFFF;
     ID3D11DeviceContext*        context = nullptr;
     ID3D11Device*               device = nullptr;
@@ -40,7 +41,7 @@ struct dx_args
 
 struct dx_cs_args
 {
-    float           angle;
+    float           global_angle;
     float           local_angle;
     float           scalar;
     int             steps_left;

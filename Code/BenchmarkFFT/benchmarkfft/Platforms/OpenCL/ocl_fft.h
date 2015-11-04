@@ -6,7 +6,8 @@
 
 #include "../../Definitions.h"
 #include "../../Common/mytimer.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
+#include "../../Common/fftutil.h"
 #include "../../Common/mycomplex.h"
 #include "ocl_helper.h"
 

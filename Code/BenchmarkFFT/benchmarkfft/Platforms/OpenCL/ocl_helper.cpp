@@ -1,6 +1,9 @@
 #include "ocl_helper.h"
 
-int checkErr(cl_int error, char *msg)
+cl_int oclSetupWorkGroupsAndMemory(ocl_args *args);
+cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args);
+
+int ocl_check_err(cl_int error, char *msg)
 {
     if (error != CL_SUCCESS) {
         printf("Error Code: %d\nMessage: %s\n", error, msg);
@@ -10,7 +13,7 @@ int checkErr(cl_int error, char *msg)
     return 0;
 }
 
-cl_int ocl_setup_kernels(oclArgs *args)
+cl_int ocl_setup_kernels(ocl_args *args, bool dim2)
 {
     cl_int err = CL_SUCCESS;
     cl_platform_id platform;
@@ -27,7 +30,9 @@ cl_int ocl_setup_kernels(oclArgs *args)
     args->device_id = device_id;
     args->context = context;
     args->commands = commands;
-    return err;
+    if (dim2)
+        return oclSetupWorkGroupsAndMemory2D(args);
+    return oclSetupWorkGroupsAndMemory(args);
 }
 
 std::wstring s2ws(const std::string& s)
@@ -42,7 +47,7 @@ std::wstring s2ws(const std::string& s)
     return r;
 }
 
-cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
+cl_int oclSetupProgram(char *kernelFilename, char *kernelName, ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     cl_program program;
@@ -82,7 +87,7 @@ cl_int oclSetupProgram(char *kernelFilename, char *kernelName, oclArgs *args)
     return err;
 }
 
-cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in)
+cl_int oclSetupDeviceMemoryData(ocl_args *args, cpx *dev_in)
 {
     cl_int err = CL_SUCCESS;
     if (dev_in != NULL) {
@@ -93,12 +98,12 @@ cl_int oclSetupDeviceMemoryData(oclArgs *args, cpx *dev_in)
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
+cl_int oclSetupWorkGroupsAndMemory(ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     const int n_half = args->n / 2;
-    int grpDim = n_half;
-    int itmDim = n_half > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : n_half;
+    int group_dim = n_half;
+    int item_dim = n_half > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : n_half;
     size_t data_mem_size = sizeof(cpx) * args->n;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) return err;
@@ -106,20 +111,20 @@ cl_int oclSetupWorkGroupsAndMemory(oclArgs *args)
     if (err != CL_SUCCESS) return err;
 
     // If successful, store in the argument struct!
-    args->global_work_size[0] = grpDim;
+    args->global_work_size[0] = group_dim;
     args->global_work_size[1] = 1;
     args->global_work_size[2] = 1;
-    args->local_work_size[0] = itmDim;
+    args->local_work_size[0] = item_dim;
     args->local_work_size[1] = 1;
     args->local_work_size[2] = 1;
-    args->shared_mem_size = sizeof(cpx) * itmDim * 2;
+    args->shared_mem_size = sizeof(cpx) * item_dim * 2;
     args->data_mem_size = data_mem_size;
-    args->n_per_block = args->n / itmDim;
-
+    args->n_per_block = args->n / item_dim;
+    args->number_of_blocks = group_dim / item_dim;
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
+cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     const int n = args->n;
@@ -147,39 +152,31 @@ cl_int oclSetupWorkGroupsAndMemory2D(oclArgs *args)
     args->n_per_block = n_per_block;
     args->input = input;
     args->output = output;
-
+    args->number_of_blocks = n / (itmDim * 2);
     return err;
 }
 
-cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n)
+cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, cpx *data_in, transform_direction dir, const int n)
 {
-    arg_gpu->n = arg_cpu->n = n;
-    arg_gpu->dir = arg_cpu->dir = dir;
-    ocl_setup_kernels(arg_gpu);
-    memcpy(arg_cpu, arg_gpu, sizeof(oclArgs));
+    a_gpu->n = a_cpu->n = n;
+    a_gpu->dir = a_cpu->dir = dir;
+    ocl_setup_kernels(a_gpu, false);
+    memcpy(a_cpu, a_gpu, sizeof(ocl_args));
 
-    checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_local", arg_gpu), "Failed to setup GPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_global", arg_cpu), "Failed to setup CPU Program!");
-
-    checkErr(oclSetupWorkGroupsAndMemory(arg_gpu), "Failed to setup GPU Program!");
+    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local", a_gpu), "Failed to setup GPU Program!");
+    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global", a_cpu), "Failed to setup CPU Program!");
+        
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
-        err = oclSetupDeviceMemoryData(arg_gpu, data_in);
-    arg_cpu->global_work_size[0] = arg_gpu->global_work_size[0];
-    arg_cpu->local_work_size[0] = arg_gpu->local_work_size[0];
-    arg_cpu->input = arg_gpu->input;
-    arg_cpu->output = arg_gpu->output;
-    arg_cpu->data_mem_size = arg_gpu->data_mem_size;
-    arg_cpu->n_per_block = arg_gpu->n_per_block;
-    arg_cpu->workDim = 1;
-    arg_gpu->workDim = 1;
+        err = oclSetupDeviceMemoryData(a_gpu, data_in);
+    a_cpu->workDim = a_gpu->workDim = 1;
     return err;
 }
 
-cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm)
+cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm)
 {
-    memcpy(arg_tm, arg_target, sizeof(oclArgs));
-    cl_int err = checkErr(oclSetupProgram("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
+    memcpy(arg_tm, arg_target, sizeof(ocl_args));
+    cl_int err = ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
     arg_tm->global_work_size[0] = 1;
     arg_tm->global_work_size[1] = 1;
     arg_tm->local_work_size[0] = 1;
@@ -187,7 +184,7 @@ cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm)
     return err;
 }
 
-void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
+void setWorkDimForTranspose(ocl_args *argTranspose, const int n)
 {
     int minDim = n > OCL_TILE_DIM ? (n / OCL_TILE_DIM) : 1;
     argTranspose->global_work_size[2] = 1;
@@ -200,83 +197,82 @@ void setWorkDimForTranspose(oclArgs *argTranspose, const int n)
     argTranspose->workDim = 2;
 }
 
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n)
+cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int n)
 {
-    arg_gpu->n = arg_cpu->n = n;
-    arg_gpu->dir = arg_cpu->dir = dir;
-    ocl_setup_kernels(arg_gpu);
-    memcpy(arg_cpu, arg_gpu, sizeof(oclArgs));
-    memcpy(arg_transpose, arg_gpu, sizeof(oclArgs));
+    a_gpu->n = a_cpu->n = n;
+    a_gpu->dir = a_cpu->dir = dir;
+    ocl_setup_kernels(a_gpu, true);
+    memcpy(a_cpu, a_gpu, sizeof(ocl_args));
+    memcpy(a_trans, a_gpu, sizeof(ocl_args));
 
-    checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_local_row", arg_gpu), "Failed to setup GPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "ocl_kernel_global_row", arg_cpu), "Failed to setup CPU Program!");
-    checkErr(oclSetupProgram("ocl_kernel", "ocl_transpose_kernel", arg_transpose), "Failed to setup Transpose Program!");
-
-    checkErr(oclSetupWorkGroupsAndMemory2D(arg_gpu), "Failed to setup Groups And Memory!");
-    cl_int err = oclSetupDeviceMemoryData(arg_gpu, data_in);
-    memcpy(arg_cpu->global_work_size, arg_gpu->global_work_size, sizeof(size_t) * 3);
-    memcpy(arg_cpu->local_work_size, arg_gpu->local_work_size, sizeof(size_t) * 3);
-    setWorkDimForTranspose(arg_transpose, n);
-    arg_transpose->input = arg_cpu->input = arg_gpu->input;
-    arg_transpose->output = arg_cpu->output = arg_gpu->output;
-    arg_transpose->data_mem_size = arg_cpu->data_mem_size = arg_gpu->data_mem_size;
-    arg_cpu->workDim = 2;
-    arg_gpu->workDim = 2;
+    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local_row", a_gpu), "Failed to setup GPU Program!");
+    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global_row", a_cpu), "Failed to setup CPU Program!");
+    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_transpose_kernel", a_trans), "Failed to setup Transpose Program!");
+        
+    cl_int err = oclSetupDeviceMemoryData(a_gpu, data_in);
+    memcpy(a_cpu->global_work_size, a_gpu->global_work_size, sizeof(size_t) * 3);
+    memcpy(a_cpu->local_work_size, a_gpu->local_work_size, sizeof(size_t) * 3);
+    setWorkDimForTranspose(a_trans, n);
+    a_trans->input = a_cpu->input = a_gpu->input;
+    a_trans->output = a_cpu->output = a_gpu->output;
+    a_trans->data_mem_size = a_cpu->data_mem_size = a_gpu->data_mem_size;
+    a_cpu->workDim = 2;
+    a_gpu->workDim = 2;
     return err;
 }
 
-cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu)
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu)
 {
     cl_int err = CL_SUCCESS;
     if (dev_in != NULL) {
-        err = clEnqueueReadBuffer(arg_gpu->commands, arg_gpu->input, CL_TRUE, 0, arg_gpu->data_mem_size, dev_in, 0, NULL, NULL);
-        checkErr(err, "Read In Buffer!");
+        err = clEnqueueReadBuffer(a_gpu->commands, a_gpu->input, CL_TRUE, 0, a_gpu->data_mem_size, dev_in, 0, NULL, NULL);
+        ocl_check_err(err, "Read In Buffer!");
     }
     if (dev_out != NULL) {
-        err = clEnqueueReadBuffer(arg_gpu->commands, arg_gpu->output, CL_TRUE, 0, arg_gpu->data_mem_size, dev_out, 0, NULL, NULL);
-        checkErr(err, "Read Out Buffer!");
+        err = clEnqueueReadBuffer(a_gpu->commands, a_gpu->output, CL_TRUE, 0, a_gpu->data_mem_size, dev_out, 0, NULL, NULL);
+        ocl_check_err(err, "Read Out Buffer!");
     }
-    err = clFinish(arg_gpu->commands);
-    free(arg_gpu->kernel_strings[0]);
-    free(arg_cpu->kernel_strings[0]);
-    clReleaseMemObject(arg_gpu->input);
-    clReleaseMemObject(arg_gpu->output);
-    clReleaseProgram(arg_gpu->program);
-    clReleaseProgram(arg_cpu->program);
-    clReleaseKernel(arg_gpu->kernel);
-    clReleaseKernel(arg_cpu->kernel);
-    clReleaseCommandQueue(arg_gpu->commands);
-    clReleaseContext(arg_gpu->context);
+    err = clFinish(a_gpu->commands);
+    free(a_gpu->kernel_strings[0]);
+    free(a_cpu->kernel_strings[0]);
+    clReleaseMemObject(a_gpu->input);
+    clReleaseMemObject(a_gpu->output);
+    clReleaseProgram(a_gpu->program);
+    clReleaseProgram(a_cpu->program);
+    clReleaseKernel(a_gpu->kernel);
+    clReleaseKernel(a_cpu->kernel);
+    clReleaseCommandQueue(a_gpu->commands);
+    clReleaseContext(a_gpu->context);
     return err;
 }
 
-cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose)
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans)
 {
     cl_int err = CL_SUCCESS;
     if (dev_in != NULL) {    
-        checkErr(clEnqueueReadBuffer(arg_gpu->commands, arg_gpu->input, CL_TRUE, 0, arg_gpu->data_mem_size, dev_in, 0, NULL, NULL), "Read Input Buffer!");
+        ocl_check_err(clEnqueueReadBuffer(a_gpu->commands, a_gpu->input, CL_TRUE, 0, a_gpu->data_mem_size, dev_in, 0, NULL, NULL), "Read Input Buffer!");
     }
     if (dev_out != NULL) {
-        checkErr(clEnqueueReadBuffer(arg_gpu->commands, arg_gpu->output, CL_TRUE, 0, arg_gpu->data_mem_size, dev_out, 0, NULL, NULL), "Read Output Buffer!");
+        ocl_check_err(clEnqueueReadBuffer(a_gpu->commands, a_gpu->output, CL_TRUE, 0, a_gpu->data_mem_size, dev_out, 0, NULL, NULL), "Read Output Buffer!");
     }
-    err = clFinish(arg_gpu->commands);
-    free(arg_gpu->kernel_strings[0]);
-    free(arg_cpu->kernel_strings[0]);    
-    free(arg_transpose->kernel_strings[0]);    
-    checkErr(clReleaseMemObject(arg_gpu->input), "clReleaseMemObject->input");
-    checkErr(clReleaseMemObject(arg_gpu->output), "clReleaseMemObject->output");
-    checkErr(clReleaseProgram(arg_gpu->program), "clReleaseProgram->GPU");
-    checkErr(clReleaseProgram(arg_cpu->program), "clReleaseProgram->CPU");
-    checkErr(clReleaseProgram(arg_transpose->program), "clReleaseProgram->Trans");
-    checkErr(clReleaseKernel(arg_gpu->kernel), "clReleaseKernel->GPU");
-    checkErr(clReleaseKernel(arg_cpu->kernel), "clReleaseKernel->CPU");
-    checkErr(clReleaseKernel(arg_transpose->kernel), "clReleaseKernel->Trans");
-    checkErr(clReleaseCommandQueue(arg_gpu->commands), "clReleaseMemObject");
-    err = clReleaseContext(arg_gpu->context);
+    err = clFinish(a_gpu->commands);
+    free(a_gpu->kernel_strings[0]);
+    free(a_cpu->kernel_strings[0]);    
+    free(a_trans->kernel_strings[0]);    
+    ocl_check_err(clReleaseMemObject(a_gpu->input), "clReleaseMemObject->input");
+    ocl_check_err(clReleaseMemObject(a_gpu->output), "clReleaseMemObject->output");
+    ocl_check_err(clReleaseProgram(a_gpu->program), "clReleaseProgram->GPU");
+    ocl_check_err(clReleaseProgram(a_cpu->program), "clReleaseProgram->CPU");
+    ocl_check_err(clReleaseProgram(a_trans->program), "clReleaseProgram->Trans");
+    ocl_check_err(clReleaseKernel(a_gpu->kernel), "clReleaseKernel->GPU");
+    ocl_check_err(clReleaseKernel(a_cpu->kernel), "clReleaseKernel->CPU");
+    ocl_check_err(clReleaseKernel(a_trans->kernel), "clReleaseKernel->Trans");
+    ocl_check_err(clReleaseCommandQueue(a_gpu->commands), "clReleaseMemObject");
+    err = clReleaseContext(a_gpu->context);
     return err;
 }
 
-int freeResults(cpx **din, cpx **dout, cpx **dref, const int n)
+int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n)
 {
     int res = 0;
     if (dref != NULL)   res = diff_seq(*din, *dref, n) > RELATIVE_ERROR_MARGIN;
@@ -286,7 +282,7 @@ int freeResults(cpx **din, cpx **dout, cpx **dref, const int n)
     return res;
 }
 
-void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n)
+void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);

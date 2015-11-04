@@ -4,7 +4,7 @@
 
 #include "Platform.h"
 #include "../Definitions.h"
-#include "../Common/mymath.h"
+#include "../Common/mathutil.h"
 #include "../Common/mytimer.h"
 #include "FFTW\fftw3.h"
 

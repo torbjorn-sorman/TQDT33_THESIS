@@ -5,7 +5,7 @@
 #include <omp.h> 
 #endif
 #include "../../Definitions.h"
-#include "../../Common/mymath.h"
+#include "../../Common/mathutil.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/mytimer.h"
 #include "../C/c_helper.h"

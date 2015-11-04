@@ -12,9 +12,10 @@
 #define OCL_TILE_DIM 32 // This is 8K local/shared mem
 #define OCL_BLOCK_DIM 16 // This is 256 Work Items / Group
 
-struct oclArgs {
+struct ocl_args {
     int n;
     int n_per_block;
+    int number_of_blocks;
     float dir;
     cl_uint workDim;
     size_t shared_mem_size;
@@ -38,7 +39,7 @@ static void __inline swap(cl_mem *a, cl_mem *b)
     *b = c;
 }
 
-static void __inline ocl_set_kernel_args_global(oclArgs *args, cl_mem in, const float global_angle, unsigned int lmask, int steps, int dist)
+static void __inline ocl_set_args(ocl_args *args, cl_mem in, const float global_angle, unsigned int lmask, int steps, int dist)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(float), &global_angle);
@@ -47,7 +48,7 @@ static void __inline ocl_set_kernel_args_global(oclArgs *args, cl_mem in, const 
     clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
 }
 
-static void __inline ocl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
+static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
@@ -59,19 +60,7 @@ static void __inline ocl_set_kernel_args_local(oclArgs *args, cl_mem in, cl_mem 
     clSetKernelArg(args->kernel, 7, sizeof(int), &block_range_half);
 }
 
-static void __inline oclSetKernelGPU2DArg(oclArgs *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int n_per_block)
-{
-    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
-    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
-    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
-    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
-    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
-    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
-    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 7, sizeof(int), &n_per_block);
-}
-
-static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem out)
+static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
@@ -79,14 +68,13 @@ static void __inline oclSetKernelTransposeArg(oclArgs *args, cl_mem in, cl_mem o
     clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
 }
 
-cl_int checkErr(cl_int error, char *msg);
-std::string getKernel(const char *filename);
-cl_int ocl_create_kernels(oclArgs *arg_cpu, oclArgs *arg_gpu, cpx *data_in, transform_direction dir, const int n);
-cl_int ocl_create_timestamp_kernel(oclArgs *arg_target, oclArgs *arg_tm);
-cl_int oclCreateKernels2D(oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose, cpx *data_in, transform_direction dir, const int n);
-cl_int oclRelease(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu);
-cl_int oclRelease2D(cpx *dev_in, cpx *dev_out, oclArgs *arg_cpu, oclArgs *arg_gpu, oclArgs *arg_transpose);
-int freeResults(cpx **din, cpx **dout, cpx **dref, const int n);
-void setupBuffers(cpx **in, cpx **out, cpx **ref, const int n);
+cl_int ocl_check_err(cl_int error, char *msg);
+cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm);
+cl_int ocl_setup(ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu);
+cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_cpu, ocl_args *a_gpu, ocl_args *a_trans);
+int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);
+void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n);
 
 #endif

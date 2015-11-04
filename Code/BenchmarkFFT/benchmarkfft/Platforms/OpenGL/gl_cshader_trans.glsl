@@ -17,11 +17,7 @@ RWStructuredBuffer<cpx> rw_buf : register(u0);
 // Alternative is to use less shared memory. (32 x 32 instead of 64 x 64)
 groupshared cpx tile[DX_TILE_DIM][DX_TILE_DIM + 1];
 
-[numthreads(DX_BLOCK_DIM, DX_BLOCK_DIM, 1)]
-void dx_transpose(uint3 threadIDInGroup : SV_GroupThreadID,
-    uint3 groupID : SV_GroupID,
-    uint groupIndex : SV_GroupIndex,
-    uint3 dispatchThreadID : SV_DispatchThreadID)
+void main()
 {
     int i, j;
     int x = groupID.x * DX_TILE_DIM + threadIDInGroup.x;

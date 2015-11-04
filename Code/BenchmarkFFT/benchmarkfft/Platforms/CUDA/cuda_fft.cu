@@ -18,8 +18,6 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
 //
 // -------------------------------
 
-#include "../../Common/cpx_debug.h"
-
 __host__ int cuda_validate(int n)
 {
     cpx *in, *ref, *out, *dev_in, *dev_out;
@@ -32,13 +30,6 @@ __host__ int cuda_validate(int n)
     cuda_fft(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(in, dev_in, n * sizeof(cpx), cudaMemcpyDeviceToHost);
-
-#ifdef SHOW_BLOCKING_DEBUG
-    cpx_to_console(in, "CUDA Out", 32);
-    printf("%f\n", diff);
-    getchar();
-#endif
-
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
@@ -49,7 +40,7 @@ __host__ int cuda_2d_validate(int n, bool write_img)
     cuda_setup_buffers_2d(&host_buffer, &ref, &dev_in, &dev_out, &size, n);
 
     cudaMemcpy(dev_in, host_buffer, size, cudaMemcpyHostToDevice);
-    cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
+    cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
     cudaDeviceSynchronize();
     if (write_img) {
         cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
@@ -59,7 +50,7 @@ __host__ int cuda_2d_validate(int n, bool write_img)
         write_image("CUDA", "trans", host_buffer, n);
 #endif
     }
-    cuda_fft_2d(FFT_INVERSE, dev_out, dev_in, n);
+    cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaDeviceSynchronize();
     if (write_img) {
         cudaMemcpy(host_buffer, dev_in, size, cudaMemcpyDeviceToHost);
@@ -143,7 +134,7 @@ __host__ double cuda_2d_performance(int n)
     cudaDeviceSynchronize();
     for (int i = 0; i < NUM_TESTS; ++i) {
         cudaEventRecord(start);
-        cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
+        cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaDeviceSynchronize();
@@ -163,74 +154,48 @@ __host__ double cuda_2d_performance(int n)
 
 __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
-    int threads, blocks;
-    int n_half = (n >> 1);
-    int steps_left = log2_32(n);
-    int leading_bits = 32 - steps_left;
-    float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
-    set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, n_half);
-    int n_per_block = n / blocks;
-    float local_angle = dir * (M_2_PI / n_per_block);
-    int block_range_half = n_half;
-    /*
+    fft_args args;
+    int threads, blocks;  
+    set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, (n >> 1));
+    set_fft_arguments(&args, dir, blocks, CU_BLOCK_SIZE, n);
     if (blocks > 1) {
-        cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
-        float global_angle = dir * (M_2_PI / n);
-        int steps = 0;
-        int dist = n;
-        int steps_gpu = log2_32(CU_BLOCK_SIZE);
-        while (--steps_left > steps_gpu) {
-            cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
+        while (--args.steps_left > args.steps_gpu) {
+            cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
         }
-        ++steps_left;
-        block_range_half = n_per_block >> 1;
+        ++args.steps_left;
     }
-    */
-    cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
-    cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (in, out, local_angle, steps_left, leading_bits, scalar, block_range_half);
+    cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (in, out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
 }
 
 __host__ static __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
 {
+    fft_args args;
     dim3 blocks;
     int threads;
-    int steps_left = log2_32(n);
-    int leading_bits = 32 - steps_left;
-    float scalar = (dir == FFT_FORWARD ? 1.f : 1.f / n);
     set_block_and_threads2D(&blocks, &threads, CU_BLOCK_SIZE, n);
-    const int n_per_block = n / blocks.y;
-    const float global_angle = dir * (M_2_PI / n);
-    const float local_angle = dir * (M_2_PI / n_per_block);
-    int block_range = n;
+    set_fft_arguments(&args, dir, blocks.y, CU_BLOCK_SIZE, n);
     if (blocks.y > 1) {
-        // Calculate sequence until parts fit into a block, syncronize on CPU until then.
-        const int steps_gpu = log2_32(CU_BLOCK_SIZE);
-        int steps = 0;
-        int dist = n;
-        // Instead of swapping input/output, run in place. The arg_gpu kernel needs to swap once.                
-        while (--steps_left > steps_gpu) {
-            cuda_kernel_global_row KERNEL_ARGS2(blocks, threads)(dev_in, global_angle, 0xFFFFFFFF << steps_left, steps++, dist >>= 1);
+        while (--args.steps_left > args.steps_gpu) {
+            cuda_kernel_global_row KERNEL_ARGS2(blocks, threads)(dev_in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
         }
-        ++steps_left;
-        block_range = n_per_block;
+        ++args.steps_left;
     }
-    // Calculate complete sequence in one launch and syncronize on GPU
-    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (dev_in, dev_out, local_angle, steps_left, leading_bits, scalar, block_range >> 1);
+    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (dev_in, dev_out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
 }
 
-__host__ void cuda_fft_2d(transform_direction dir, cpx *dev_in, cpx *dev_out, int n)
+__host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, int n)
 {
     dim3 blocks;
     dim3 threads;
     set_block_and_threads_transpose(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);
 #ifndef TRANSPOSE_ONLY
-    cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);
-    cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_out, dev_in, n);        
-    swap_buffer(&dev_in, &dev_out);
+    cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
+    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
+    cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
+    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);        
+    swap_buffer(dev_in, dev_out);
 #else
-    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (dev_in, dev_out, n);
+    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_in, *dev_out, n);
 #endif
 }
 

@@ -100,10 +100,10 @@ __kernel void ocl_kernel_global_row(__global cpx *in, float angle, unsigned int 
     add_sub_mul_global(in, in + dist, &w);
 }
 
-__kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
+__kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar, int block_range)
 {
     int in_low = get_local_id(0);
-    int in_high = block_range_half + in_low;
+    int in_high = block_range + in_low;
     int row_start = get_num_groups(0) * get_group_id(0);
     int row_offset = get_group_id(1) * get_local_size(0) * 2;
     in += row_start + row_offset;

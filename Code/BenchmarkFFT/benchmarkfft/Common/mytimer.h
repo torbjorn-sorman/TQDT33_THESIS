@@ -6,13 +6,13 @@
 
 static LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds, Frequency;
 
-static void __inline startTimer()
+static void __inline start_timer()
 {
     QueryPerformanceFrequency(&Frequency);
     QueryPerformanceCounter(&StartingTime);
 }
 
-static double __inline stopTimer()
+static double __inline stop_timer()
 {
     QueryPerformanceCounter(&EndingTime);
     ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;

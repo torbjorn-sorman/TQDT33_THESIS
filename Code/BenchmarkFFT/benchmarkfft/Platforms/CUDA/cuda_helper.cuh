@@ -47,30 +47,6 @@ __host__ __device__ static __inline__ void cuda_surface_swap(cudaSurfaceObject_t
     *in = *out;
     *out = tmp;
 }
-/*
-__device__ static __inline__ void cuda_block_sync_init(volatile int sync_in[], volatile int sync_out[], int tid, int blocks)
-{
-    if (tid < blocks) {
-        sync_in[tid] = 0;
-        sync_out[tid] = 0;
-    }
-}
-
-__device__ static __inline__ void cuda_block_sync(volatile int sync_in[], volatile int sync_out[], int goal)
-{
-    int tid = threadIdx.x;
-    int bid = blockIdx.x;
-    int number_of_blocks = gridDim.x;
-    if (tid == 0) { sync_in[bid] = goal; }
-    if (bid == 1) { // Use bid == 1, if only one block this part will not run.
-        if (tid < number_of_blocks) { while (sync_in[tid] != goal){} }
-        SYNC_THREADS;
-        if (tid < number_of_blocks) { sync_out[tid] = goal; }
-    }
-    if (tid == 0) { while (sync_out[bid] != goal) {} }
-    SYNC_THREADS;
-}
-*/
 
 __device__ static inline int log2(int v)
 {

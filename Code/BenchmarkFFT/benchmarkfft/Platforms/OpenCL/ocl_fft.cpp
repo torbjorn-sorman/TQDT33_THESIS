@@ -69,11 +69,11 @@ double ocl_performance(const int n)
     ocl_args a_dev, a_host;
     ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, n), "Create failed!");
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         ocl_fft(&a_host, &a_dev);
 
         clFinish(a_dev.commands);
-        measurements[i] = stopTimer();
+        measurements[i] = stop_timer();
     }
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev), "Release failed!");
     int res = ocl_free(&data_in, NULL, NULL, n);
@@ -88,10 +88,10 @@ double ocl_2d_performance(const int n)
     ocl_args a_dev, a_host, argTranspose;
     ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);
         clFinish(a_dev.commands);
-        measurements[i] = stopTimer();
+        measurements[i] = stop_timer();
     }
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
     int res = ocl_free(&data_in, NULL, NULL, n);
@@ -166,7 +166,7 @@ __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev)
         }
         ++args.steps_left;
     }
-    ocl_set_args(a_dev, a_dev->input, a_dev->output, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
+    ocl_set_args(a_dev, a_dev->input, a_dev->output, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
     clEnqueueNDRangeKernel(a_dev->commands, a_dev->kernel, a_dev->workDim, NULL, a_dev->global_work_size, a_dev->local_work_size, 0, NULL, NULL);
 }
 

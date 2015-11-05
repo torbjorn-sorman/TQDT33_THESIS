@@ -15,7 +15,7 @@ struct fft_args
     int steps_left;
     int steps_gpu;
     int dist;
-    int block_range_half;
+    int block_range;
     int n_per_block;
 };
 
@@ -32,10 +32,10 @@ static __inline void set_fft_arguments(fft_args *args, transform_direction dir, 
         args->steps = 0;
         args->dist = n;
         args->steps_gpu = log2_32(block_size);
-        args->block_range_half = args->n_per_block >> 1;
+        args->block_range = args->n_per_block >> 1;
     }
     else {
-        args->block_range_half = n >> 1;
+        args->block_range = n >> 1;
     }
 }
 

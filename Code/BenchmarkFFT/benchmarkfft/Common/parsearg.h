@@ -7,6 +7,6 @@
 #include "../Definitions.h"
 #include "mathutil.h"
 
-int parseArguments(benchmarkArgument *arg, int argc, char* argv[]);
+int parse_args(benchmarkArgument *arg, int argc, char* argv[]);
 
 #endif

@@ -26,7 +26,7 @@ int c_validate(const int n)
 int c_2d_validate(const int n, bool write_img)
 {
     cpx *in, *buf, *ref;
-    setup_seq2D(&in, &buf, &ref, n);
+    setup_seq_2d(&in, &buf, &ref, n);
 
     c_const_geom_2d(FFT_FORWARD, &in, &buf, n);
     if (write_img)
@@ -47,13 +47,13 @@ double c_performance(const int n)
     double measures[NUM_TESTS];
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
 #ifdef NO_TWIDDLE_TABLE
         c_const_geom_alt(FFT_FORWARD, &in, &in, n);
 #else
         c_const_geom(FFT_FORWARD, &in, &in, n);
 #endif
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
     }
     free(in);
     return average_best(measures, NUM_TESTS);
@@ -65,9 +65,9 @@ double c_2d_performance(const int n)
     cpx *in = get_seq(n * n);
     cpx *out = get_seq(n * n);
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         c_const_geom_2d(FFT_FORWARD, &in, &out, n);
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
     }
     free(in);
     free(out);

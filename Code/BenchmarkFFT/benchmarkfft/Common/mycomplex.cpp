@@ -29,7 +29,7 @@ cpx *get_seq(int n, cpx *src)
     return seq;
 }
 
-void setup_seq2D(cpx **in, cpx **buf, cpx **ref, int n)
+void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int n)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
@@ -42,7 +42,7 @@ void setup_seq2D(cpx **in, cpx **buf, cpx **ref, int n)
     memcpy(*ref, *in, sizeof(cpx) * n * n);
 }
 
-cpx **get_seq2D(const int n, const int type)
+cpx **get_seq_2d(const int n, const int type)
 {
     cpx **seq;
     seq = (cpx **)malloc(sizeof(cpx *) * n);
@@ -62,7 +62,7 @@ cpx **get_seq2D(const int n, const int type)
     return seq;
 }
 
-cpx **get_seq2D(const int n, cpx **src)
+cpx **get_seq_2d(const int n, cpx **src)
 {
     cpx **seq = (cpx **)malloc(sizeof(cpx *) * n);
     for (int i = 0; i < n; ++i)
@@ -70,12 +70,12 @@ cpx **get_seq2D(const int n, cpx **src)
     return seq;
 }
 
-cpx **get_seq2D(const int n)
+cpx **get_seq_2d(const int n)
 {
-    return get_seq2D(n, 0);
+    return get_seq_2d(n, 0);
 }
 
-void free_seq2D(cpx **seq, const int n)
+void free_seq_2d(cpx **seq, const int n)
 {
     for (int i = 0; i < n; ++i)
         free(seq[i]);

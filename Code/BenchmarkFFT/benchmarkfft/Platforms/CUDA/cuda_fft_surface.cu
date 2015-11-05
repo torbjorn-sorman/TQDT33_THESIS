@@ -96,10 +96,10 @@ __host__ double cuda_surface_performance(int n)
     cuda_surface_setup(&in, &ref, &size, n, &array_in, &array_out, &surface_in, &surface_out);
 
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         cuda_surface_fft(FFT_FORWARD, &surface_in, &surface_out, n);
         cudaCheckError();
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
     }
     cuda_surface_shakedown(&in, &ref, &surface_in, &surface_out, &array_in, &array_out);
     return average_best(measures, NUM_TESTS);
@@ -199,7 +199,7 @@ __host__ void cuda_surface_fft_helper(transform_direction dir, cudaSurfaceObject
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);
     const float local_angle = dir * (M_2_PI / n_per_block);
-    int block_range_half = n;
+    int block_range = n;
     if (blocks.y > 1) {
 
         // Calculate sequence until parts fit into a block, syncronize on CPU until then.
@@ -214,10 +214,10 @@ __host__ void cuda_surface_fft_helper(transform_direction dir, cudaSurfaceObject
         }
         cuda_surface_swap(surface_in, surface_out);
         ++steps_left;
-        block_range_half = n_per_block;
+        block_range = n_per_block;
     }
     // Calculate complete sequence in one launch and syncronize on GPU
-    ROW_COL_KERNEL(row_wise, _kernelGPUS2DRowSurf, _kernelGPUS2DColSurf) KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*surface_in, *surface_out, global_angle, local_angle, steps_left, scaleCpx, block_range_half);
+    ROW_COL_KERNEL(row_wise, _kernelGPUS2DRowSurf, _kernelGPUS2DColSurf) KERNEL_ARGS3(blocks, threads, sizeof(cpx) * n_per_block) (*surface_in, *surface_out, global_angle, local_angle, steps_left, scaleCpx, block_range);
 }
 
 __host__ void cuda_surface_fft(transform_direction dir, cudaSurfaceObject_t *surface_in, cudaSurfaceObject_t *surface_out, int n)

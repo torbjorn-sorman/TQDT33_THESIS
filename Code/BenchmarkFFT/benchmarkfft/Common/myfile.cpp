@@ -16,7 +16,7 @@ bool dirExists(const std::string& dirName_in)
     return false;    // this is not a directory!
 }
 
-FILE *getImageFilePointer(char *name, int n, char *type)
+FILE *get_img_file_pntr(char *name, int n, char *type)
 {
     FILE  *fp;
     std::string dir = "out/img/" + std::string(name);
@@ -29,7 +29,7 @@ FILE *getImageFilePointer(char *name, int n, char *type)
     return fp;
 }
 
-FILE *getTextFilePointer(std::string name, std::string *fname)
+FILE *get_txt_file_pntr(std::string name, std::string *fname)
 {
     FILE  *fp;
 #ifdef _WIN64

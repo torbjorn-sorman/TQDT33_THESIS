@@ -18,36 +18,34 @@ uniform float local_angle;
 uniform float scalar;
 uniform uint leading_bits;
 uniform uint steps_left;
-uniform uint block_range_half;
+uniform uint block_range;
 
 void add_sub_mul(cpx low, cpx high, out cpx o_low, out cpx o_high, cpx w);
 void dx_algorithm_local(uint in_low, uint in_high);
 
 void main()
 {
-    uint in_low = gl_LocalInvocationID.x;
-    uint in_high = in_low + block_range_half;
-    uint offset = (gl_WorkGroupID.x * LOCAL_DIM_X) * 2;
-    shared_buf[in_low] = input_data[in_low + offset];
-    shared_buf[in_high] = input_data[in_high + offset];
+    uint in_low = (gl_LocalInvocationID.x);
+    uint in_high = (in_low + block_range);
+    uint offset = ((gl_WorkGroupID.x * LOCAL_DIM_X) * 2);
+    shared_buf[in_low] = input_data[(in_low + offset)];
+    shared_buf[in_high] = input_data[(in_high + offset)];
 
     dx_algorithm_local(in_low, in_high);
 
-    cpx a = cpx(shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar);
-    cpx b = cpx(shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar);
-    output_data[(bitfieldReverse(in_low + offset) >> leading_bits)] = a;
-    output_data[(bitfieldReverse(in_high + offset) >> leading_bits)] = b;
+    output_data[(bitfieldReverse((in_low + offset)) >> leading_bits)] = cpx((shared_buf[in_low].x * scalar), (shared_buf[in_low].y * scalar));
+    output_data[(bitfieldReverse((in_high + offset)) >> leading_bits)] = cpx((shared_buf[in_high].x * scalar), (shared_buf[in_high].y * scalar));
 }
 
 void dx_algorithm_local(uint in_low, uint in_high)
 {
     float angle, x, y;
     cpx w, in_lower, in_upper;
-    uint out_i = (in_low * 1);
-    uint out_ii = out_i + 1;
+    uint out_i = (in_low * 2);
+    uint out_ii = (out_i + 1);
     for (uint steps = 0; steps < steps_left; ++steps)
     {
-        angle = local_angle * int(in_low & (0xFFFFFFFF << steps));
+        angle = (local_angle * (int(in_low & (0xFFFFFFFF << steps))));
         w.x = cos(angle);
         w.y = sin(angle);
         in_lower = shared_buf[in_low];

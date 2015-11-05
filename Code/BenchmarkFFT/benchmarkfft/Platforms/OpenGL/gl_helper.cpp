@@ -13,6 +13,7 @@ double gl_query_time(GLuint q[NUM_TESTS][2])
         glGetQueryObjectui64v(q[i][0], GL_QUERY_RESULT, &start);
         glGetQueryObjectui64v(q[i][1], GL_QUERY_RESULT, &stop);
         measures[i] = (stop - start) / 1000.0;
+        glDeleteQueries(2, q[i]);
     }
     return average_best(measures, NUM_TESTS);
 }
@@ -64,18 +65,21 @@ void gl_setup_program(gl_args *a, bool gen_buffers, LPCWSTR shader_file)
         a->buf_out = buffers[1];
     }
     a->program = program;
+    a->shader = shader;
 }
 
 void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n)
 {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data ? &data[0] : NULL, GL_DYNAMIC_DRAW);
+    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data ? &data[0] : NULL, GL_STREAM_DRAW);
+    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
 }
 
 void gl_read_buffer(GLuint buffer, cpx** data, const int n)
 {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
+    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer);
     *data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 }
 
@@ -102,4 +106,14 @@ void gl_shakedown(gl_args *a)
 {
     if (a->shader_src != NULL)
         free(a->shader_src);
+    if (a->buf_in && a->buf_out) {
+        GLuint buffers[2];
+        buffers[0] = a->buf_in;
+        buffers[1] = a->buf_out;
+        glDeleteBuffers(2, buffers);
+        a->buf_in = 0;
+        a->buf_out = 0;
+    }
+    glDeleteProgram(a->program);
+    glDeleteShader(a->shader);
 }

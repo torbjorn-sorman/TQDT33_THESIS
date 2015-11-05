@@ -6,9 +6,8 @@
 #include <string>
 #include <fstream>
 
-bool dirExists(const std::string& dirName_in);
-FILE *getImageFilePointer(char *name, int n, char *type);
-FILE *getTextFilePointer(std::string name, std::string *fname);
+FILE *get_img_file_pntr(char *name, int n, char *type);
+FILE *get_txt_file_pntr(std::string name, std::string *fname);
 char *get_kernel_src(LPCWSTR file_name, int *length);
 
 std::string get_file_content(LPCWSTR shader_file);

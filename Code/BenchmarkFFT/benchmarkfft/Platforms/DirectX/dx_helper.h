@@ -48,7 +48,7 @@ struct dx_cs_args
     int             leading_bits;
     int             steps_gpu;
     int             number_of_blocks;
-    int             block_range_half;
+    int             block_range;
     int             steps;
     unsigned int    lmask;
     int             dist;

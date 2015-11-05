@@ -26,18 +26,18 @@ void MyCuFFT::runPerformance(const int n)
     if (dimensions == 1) {
         cufftPlan1d(&plan, n, CUFFT_C2C, 1);
         for (int i = 0; i < NUM_TESTS; ++i) {
-            startTimer();
+            start_timer();
             cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
             cudaDeviceSynchronize();            
-            measures[i] = stopTimer();
+            measures[i] = stop_timer();
         }
     }
     else {
         cufftPlan2d(&plan, n, n, CUFFT_C2C);
         for (int i = 0; i < NUM_TESTS; ++i) {
-            startTimer();
+            start_timer();
             cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
-            measures[i] = stopTimer();
+            measures[i] = stop_timer();
         }       
     }
     cufftDestroy(plan);

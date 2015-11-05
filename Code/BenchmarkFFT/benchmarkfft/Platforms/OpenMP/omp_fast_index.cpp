@@ -20,13 +20,13 @@ int openmp_fast_index_validate(const int n)
 
 int openmp_fast_index_2d_validate(const int n)
 {
-    cpx **in = get_seq2D(n, 1);
-    cpx **ref = get_seq2D(n, in);
+    cpx **in = get_seq_2d(n, 1);
+    cpx **ref = get_seq_2d(n, in);
     openmp_fast_index_2d(FFT_FORWARD, in, n);
     openmp_fast_index_2d(FFT_INVERSE, in, n);
     double diff = diff_seq(in, ref, n);
-    free_seq2D(in, n);
-    free_seq2D(ref, n);
+    free_seq_2d(in, n);
+    free_seq_2d(ref, n);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -35,9 +35,9 @@ double openmp_fast_index_performance(const int n)
     double measures[NUM_TESTS];
     cpx *in = get_seq(n, 1);
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         openmp_fast_index(FFT_FORWARD, &in, &in, n);
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
     }
     free(in);
     return average_best(measures, NUM_TESTS);
@@ -46,13 +46,13 @@ double openmp_fast_index_performance(const int n)
 double openmp_fast_index_2d_performance(const int n)
 {
     double measures[NUM_TESTS];
-    cpx **in = get_seq2D(n, 1);
+    cpx **in = get_seq_2d(n, 1);
     for (int i = 0; i < NUM_TESTS; ++i) {
-        startTimer();
+        start_timer();
         openmp_fast_index_2d(FFT_FORWARD, in, n);
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
     }
-    free_seq2D(in, n);
+    free_seq_2d(in, n);
     return average_best(measures, NUM_TESTS);
 }
 

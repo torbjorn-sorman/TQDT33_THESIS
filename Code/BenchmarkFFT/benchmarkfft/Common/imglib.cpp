@@ -159,7 +159,7 @@ void write_image(char *name, char *type, cpx* seq, int n)
             put_pixel_unsafe(image, x, y, val, val, val);
         }
     }
-    FILE *fp = getImageFilePointer(name, n, type);
+    FILE *fp = get_img_file_pntr(name, n, type);
     output_ppm(fp, image);
     fclose(fp);
     free_img(image);
@@ -211,7 +211,7 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
             put_pixel_unsafe(image, x, y, col, col, col);
         }
     }
-    FILE *fp = getImageFilePointer(name, n, type);
+    FILE *fp = get_img_file_pntr(name, n, type);
     output_ppm(fp, image);
     fclose(fp);
     free_img(image);

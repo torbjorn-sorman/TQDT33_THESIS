@@ -48,7 +48,7 @@ static void __inline ocl_set_args(ocl_args *args, cl_mem in, const float global_
     clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
 }
 
-static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range_half)
+static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range)
 {
     clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
     clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
@@ -57,7 +57,7 @@ static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out, float l
     clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
     clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
     clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
-    clSetKernelArg(args->kernel, 7, sizeof(int), &block_range_half);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &block_range);
 }
 
 static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)

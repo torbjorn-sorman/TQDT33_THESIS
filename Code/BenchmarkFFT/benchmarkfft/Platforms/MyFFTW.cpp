@@ -27,17 +27,17 @@ void MyFFTW::runPerformance(const int n)
     if (dim1) {
         p = fftwf_plan_dft_1d(n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);
         for (int i = 0; i < NUM_TESTS; ++i) {
-            startTimer();
+            start_timer();
             fftwf_execute(p);
-            measures[i] = stopTimer();
+            measures[i] = stop_timer();
         }
     }
     else {
         p = fftwf_plan_dft_2d(n, n, fftw_in, fftw_out, FFTW_FORWARD, FFTW_MEASURE);
         for (int i = 0; i < NUM_TESTS; ++i) {
-            startTimer();
+            start_timer();
             fftwf_execute(p);
-            measures[i] = stopTimer();
+            measures[i] = stop_timer();
         }
     }
     

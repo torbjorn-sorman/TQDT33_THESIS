@@ -19,11 +19,11 @@ void add_sub_mul(inout cpx low, inout cpx high, cpx w);
 
 void main()
 {
-    uint tid = gl_LocalInvocationID.x + gl_WorkGroupID.x * LOCAL_DIM_X;
-    //uint tid = gl_GlobalInvocationID.x;
+    //uint tid = gl_LocalInvocationID.x + gl_WorkGroupID.x * LOCAL_DIM_X;
+    uint tid = gl_GlobalInvocationID.x;
     uint in_low = tid + (tid & lmask);
     uint in_high = in_low + dist;
-    float a = global_angle * int((tid << steps) & ((dist - 1) << steps));
+    float a = global_angle * float((tid << steps) & ((dist - 1U) << steps));
     cpx w;
     w.x = cos(a);
     w.y = sin(a);

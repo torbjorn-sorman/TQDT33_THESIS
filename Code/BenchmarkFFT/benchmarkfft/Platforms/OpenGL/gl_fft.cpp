@@ -22,9 +22,8 @@ int gl_validate(const int n)
     gl_read_buffer(a_dev.buf_out, &out, n);
     double forward_diff = diff_forward_sinus(out, n);
     
-#if defined(SHOW_BLOCKING_DEBUG)
-    cpx_to_console(out, "GL FFT Out", 32);
-    getchar();
+#if defined(_SHOW_BLOCKING_DEBUG)
+    cpx_to_console(out, "GL FFT Out", 8);
 #endif
 
     gl_swap_buffers(&a_dev, &a_host);
@@ -33,9 +32,9 @@ int gl_validate(const int n)
     gl_read_buffer(a_dev.buf_out, &out, n);
     double inverse_diff = diff_seq(out, ref, n);
 
-#if defined(SHOW_BLOCKING_DEBUG)
-    cpx_to_console(ref, "GL Ref", 32);
-    cpx_to_console(out, "GL Out", 32);
+#if defined(_SHOW_BLOCKING_DEBUG)
+    cpx_to_console(ref, "GL Ref", 8);
+    cpx_to_console(out, "GL Out", 8);
     printf("%f and %f\n", forward_diff, inverse_diff);
     getchar();
 #endif
@@ -51,7 +50,7 @@ int gl_2d_validate(const int n, bool write_img)
 {
     /*
     cpx *data, *ref;
-    setup_seq2D(&data, NULL, &ref, n);
+    setup_seq_2d(&data, NULL, &ref, n);
     gl_args a_dev, a_host, a_trans;
     gl_setup_2d(&args, data, n);
 
@@ -83,9 +82,9 @@ double gl_performance(const int n)
     gl_args args;
     for (int i = 0; i < NUM_TESTS; ++i) {
         gl_setup(&args, NULL, n);
-        startTimer();
+        start_timer();
         gl_fft(FFT_FORWARD, &args, n);
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
         gl_shakedown(&args);
     }
     return average_best(measures, NUM_TESTS);
@@ -96,9 +95,9 @@ double gl_2d_performance(const int n)
     gl_args args;
     for (int i = 0; i < NUM_TESTS; ++i) {
         gl_setup_2d(&args, NULL, n);
-        startTimer();
+        start_timer();
         gl_fft_2d(FFT_FORWARD, &args, n);
-        measures[i] = stopTimer();
+        measures[i] = stop_timer();
         gl_shakedown(&args);
     }
     return average_best(measures, NUM_TESTS);
@@ -155,13 +154,13 @@ __inline void gl_bind_io_buffers(gl_args *a)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a->buf_out);
 }
 
-__inline void gl_set_local_args(gl_args *a, float local_angle, unsigned int steps_left, unsigned int leading_bits, float scalar, unsigned int block_range_half)
+__inline void gl_set_local_args(gl_args *a, float local_angle, unsigned int steps_left, unsigned int leading_bits, float scalar, unsigned int block_range)
 {
     glUniform1f(glGetUniformLocation(a->program, "local_angle"), local_angle);
     glUniform1ui(glGetUniformLocation(a->program, "steps_left"), steps_left);
     glUniform1f(glGetUniformLocation(a->program, "scalar"), scalar);
     glUniform1ui(glGetUniformLocation(a->program, "leading_bits"), leading_bits);
-    glUniform1ui(glGetUniformLocation(a->program, "block_range_half"), block_range_half);
+    glUniform1ui(glGetUniformLocation(a->program, "block_range"), block_range);
 }
 
 __inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int dist, unsigned int lmask, unsigned int steps)
@@ -182,7 +181,7 @@ __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, c
     fft_args args;
     set_fft_arguments(&args, dir, a_dev->number_of_blocks, GL_GROUP_SIZE, n);    
     if (a_dev->number_of_blocks > 1) {
-        glUseProgram(a_host->program);
+        glUseProgram(a_host->program);        
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a_host->buf_in);
         while (--args.steps_left > args.steps_gpu) {
             gl_set_global_args(a_host, args.global_angle, args.dist >>= 1, 0xFFFFFFFF << args.steps_left, args.steps++);
@@ -191,9 +190,8 @@ __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, c
         ++args.steps_left;
     }
     glUseProgram(a_dev->program);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a_dev->buf_in);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a_dev->buf_out);    
-    gl_set_local_args(a_dev, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range_half);
+    gl_bind_io_buffers(a_dev);    
+    gl_set_local_args(a_dev, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
     glDispatchCompute(a_dev->groups.x, a_dev->groups.y, a_dev->groups.z);
 }
 

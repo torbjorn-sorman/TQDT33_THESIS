@@ -16,6 +16,7 @@
 
 struct gl_args {
     GLuint program;
+    GLuint shader;
     GLuint buf_in;
     GLuint buf_out;
     dim3 groups = { 1, 1, 1 };

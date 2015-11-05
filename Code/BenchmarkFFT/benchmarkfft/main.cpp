@@ -54,7 +54,7 @@ int testground()
 int main(int argc, char* argv[])
 {
     benchmarkArgument args;
-    if (!parseArguments(&args, argc, argv))
+    if (!parse_args(&args, argc, argv))
         return 0;
     // Special setup!
     if (args.platform_opengl) {        
@@ -164,7 +164,7 @@ void printDevProp(cudaDeviceProp devProp)
 void toFile(std::string name, std::vector<double> results, int ms)
 {
     std::string filename;
-    FILE *f = getTextFilePointer(name, &filename);
+    FILE *f = get_txt_file_pntr(name, &filename);
     for (int i = 0; i < ms; ++i) {
         int val = (int)floor(results[i]);
         int dec = (int)floor((results[i] - val) * 10);
@@ -177,7 +177,7 @@ void toFile(std::string name, std::vector<double> results, int ms)
 void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgument *a)
 {
     std::string filename;
-    FILE *f = getTextFilePointer(name, &filename);
+    FILE *f = get_txt_file_pntr(name, &filename);
     fprintf_s(f, "\t");
     for (Platform *platform : platforms)
         fprintf_s(f, "%s\t", platform->name);

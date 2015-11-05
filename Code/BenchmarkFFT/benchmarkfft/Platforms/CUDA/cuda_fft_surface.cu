@@ -194,7 +194,7 @@ __host__ void cuda_surface_fft_helper(transform_direction dir, cudaSurfaceObject
     int steps_left = log2_32(n);
     const int steps_gpu = log2_32(MAX_BLOCK_SIZE);
     cpx scaleCpx = make_cuFloatComplex((dir == FFT_FORWARD ? 1.f : 1.f / n), 0.f);
-    set_block_and_threads2D(&blocks, &threads, MAX_BLOCK_SIZE, n);
+    set_block_and_threads_2d(&blocks, &threads, MAX_BLOCK_SIZE, n);
 
     const int n_per_block = n / blocks.y;
     const float global_angle = dir * (M_2_PI / n);

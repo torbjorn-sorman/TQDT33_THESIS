@@ -122,6 +122,8 @@ double diff_seq(cpx **seq, cpx **ref, const int n)
 
 double diff_forward_sinus(cpx *seq, const int n)
 {
+    if (seq == NULL)
+        return 1;
     if (n < 8) {
         return 0.0;
     }

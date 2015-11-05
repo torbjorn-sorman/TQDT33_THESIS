@@ -52,7 +52,7 @@ void write_image(char *name, char *type, cpx** seq, int n);
 void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTShift);
 void write_normalized_image(char *name, char *type, cpx** seq, int n, bool doFFTShift);
 void normalized_image(cpx* seq, int n);
-void fftShift(cpx *dst, cpx *src, int n);
+void fft_shift(cpx *dst, cpx *src, int n);
 void clear_image(cpx* seq, int n);
 
 #endif

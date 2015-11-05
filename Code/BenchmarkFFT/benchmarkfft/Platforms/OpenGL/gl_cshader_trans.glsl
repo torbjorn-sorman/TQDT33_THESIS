@@ -1,8 +1,9 @@
-// Auto update, do not alter
+#version 430
 #define WIDTH 8192
-#define DX_TILE_DIM 32
+#define TILE_DIM 64
+
 // Tweak here!
-#define DX_BLOCK_DIM 16
+#define BLOCK_DIM 32
 
 struct cpx
 {
@@ -10,27 +11,31 @@ struct cpx
     float y;
 };
 
-StructuredBuffer<cpx> input : register(t0);
-RWStructuredBuffer<cpx> rw_buf : register(u0);
+layout(local_size_x = BLOCK_DIM, local_size_y = BLOCK_DIM) in;
 
-// Likely to result in banking issues... DX does not allow for more then 32K (48K is available)
-// Alternative is to use less shared memory. (32 x 32 instead of 64 x 64)
-groupshared cpx tile[DX_TILE_DIM][DX_TILE_DIM + 1];
+layout(std430, binding = 0) buffer ssbo0{ cpx input_data[]; };
+layout(std430, binding = 1) buffer ssbo1{ cpx output_data[]; };
+
+shared cpx tile[TILE_DIM][TILE_DIM + 1];
 
 void main()
 {
-    int i, j;
-    int x = groupID.x * DX_TILE_DIM + threadIDInGroup.x;
-    int y = groupID.y * DX_TILE_DIM + threadIDInGroup.y;    
-    for (j = 0; j < DX_TILE_DIM; j += DX_BLOCK_DIM)
-        for (i = 0; i < DX_TILE_DIM; i += DX_BLOCK_DIM)
-            tile[threadIDInGroup.y + j][threadIDInGroup.x + i] = input[(y + j) * WIDTH + (x + i)];
+    uint i, j;
+    uint x = (gl_WorkGroupID.x * TILE_DIM) + gl_LocalInvocationID.x;
+    uint y = (gl_WorkGroupID.y * TILE_DIM) + gl_LocalInvocationID.y;
+    for (j = 0; j < TILE_DIM; j += BLOCK_DIM) {
+        for (i = 0; i < TILE_DIM; i += BLOCK_DIM) {
+            tile[gl_LocalInvocationID.y + j][gl_LocalInvocationID.x + i] = input_data[((y + j) * WIDTH) + (x + i)];
+        }
+    }
 
-    GroupMemoryBarrierWithGroupSync();
+    barrier();
 
-    x = groupID.y * DX_TILE_DIM + threadIDInGroup.x;
-    y = groupID.x * DX_TILE_DIM + threadIDInGroup.y;
-    for (j = 0; j < DX_TILE_DIM; j += DX_BLOCK_DIM)
-        for (i = 0; i < DX_TILE_DIM; i += DX_BLOCK_DIM)
-            rw_buf[(y + j) * WIDTH + (x + i)] = tile[threadIDInGroup.x + i][threadIDInGroup.y + j];
+    x = gl_WorkGroupID.y * TILE_DIM + gl_LocalInvocationID.x;
+    y = gl_WorkGroupID.x * TILE_DIM + gl_LocalInvocationID.y;
+    for (j = 0; j < TILE_DIM; j += BLOCK_DIM) {
+        for (i = 0; i < TILE_DIM; i += BLOCK_DIM) {
+            output_data[((y + j) * WIDTH) + (x + i)] = tile[gl_LocalInvocationID.x + i][gl_LocalInvocationID.y + j];
+        }
+    }
 }

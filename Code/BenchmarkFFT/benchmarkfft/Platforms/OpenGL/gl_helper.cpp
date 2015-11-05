@@ -18,69 +18,71 @@ double gl_query_time(GLuint q[NUM_TESTS][2])
     return average_best(measures, NUM_TESTS);
 }
 
-void gl_prepare_file(gl_args* args, LPCWSTR shader_file)
+char* gl_prepare_source(gl_args* args, LPCWSTR shader_file, int* length, bool transpose_shader)
 {
     std::string str = get_file_content(shader_file);
-    manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
-    manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
-    set_file_content(shader_file, str);
+    if (transpose_shader) {
+        manip_content(&str, L"WIDTH", (args->groups.y * args->threads.x) << 1);
+        manip_content(&str, L"TILE_DIM", args->tile_dim);
+    } else {
+        manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
+        manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
+    }
+    return get_kernel_src(str, length);
 }
 
-void gl_setup_program(gl_args *a, bool gen_buffers, LPCWSTR shader_file)
+void gl_log(GLuint shader, const char* type, const char* msg)
 {
-    gl_prepare_file(a, shader_file);
+    fprintf(stderr, msg);
+    GLchar log[10240];
+    GLsizei length;
+    glGetShaderInfoLog(shader, 10239, &length, log);
+    fprintf(stderr, "%s log:\n%s\n", type, log);
+    getchar();
+    exit(40);
+}
+
+void gl_setup_program(gl_args *arg, bool gen_buffers, LPCWSTR shader_file, bool transpose_shader)
+{
+    
     GLuint program = glCreateProgram();
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     GLint length;
-    a->shader_src = get_kernel_src(shader_file, &length);
-    glShaderSource(shader, 1, &a->shader_src, &length);
+    arg->shader_src = gl_prepare_source(arg, shader_file, &length, transpose_shader);
+    glShaderSource(shader, 1, &arg->shader_src, &length);
     glCompileShader(shader);
     int rvalue;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &rvalue);
     if (!rvalue) {
-        fprintf(stderr, "Error in compiling the compute shader\n");
-        GLchar log[10240];
-        GLsizei length;
-        glGetShaderInfoLog(shader, 10239, &length, log);
-        fprintf(stderr, "Compiler log:\n%s\n", log);
-        getchar();
-        exit(40);
+        gl_log(shader, "Compiler", "Error in compiling the compute shader\n");
     }
     glAttachShader(program, shader);
     glLinkProgram(program);
     glGetProgramiv(program, GL_LINK_STATUS, &rvalue);
     if (!rvalue) {
-        fprintf(stderr, "Error in linking compute shader program\n");
-        GLchar log[10240];
-        GLsizei length;
-        glGetProgramInfoLog(program, 10239, &length, log);
-        fprintf(stderr, "Linker log:\n%s\n", log);
-        getchar();
-        exit(41);
+        gl_log(shader, "Linker", "Error in linking compute shader program\n");
     }
     if (gen_buffers) {
         GLuint buffers[2];
         glGenBuffers(2, buffers);
-        a->buf_in = buffers[0];
-        a->buf_out = buffers[1];
+        arg->buf_in = buffers[0];
+        arg->buf_out = buffers[1];
     }
-    a->program = program;
-    a->shader = shader;
+    arg->program = program;
+    arg->shader = shader;
 }
 
-void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n)
+void gl_setup_program(gl_args *arg, bool gen_buffers, LPCWSTR shader_file)
 {
-    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), data ? &data[0] : NULL, GL_STREAM_DRAW);
-    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, buffer);
+    gl_setup_program(arg, gen_buffers, shader_file, false);
 }
 
-void gl_read_buffer(GLuint buffer, cpx** data, const int n)
+void gl_read_buffer(cpx* dst, GLuint buffer, const int size)
 {
-    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer);
-    *data = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    cpx* src = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    memcpy(dst, src, sizeof(cpx) * size);
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
 void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size, const int n)
@@ -93,13 +95,44 @@ void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size
     a_dev->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
     a_dev->number_of_blocks = a_dev->groups.x;
     gl_setup_program(a_dev, true, shader_file_local);
-    gl_load_buffer(a_dev->buf_in, in, 0, n);
-    gl_load_buffer(a_dev->buf_out, out, 1, n);
 
     // "Global" compute shader
     memcpy(a_host, a_dev, sizeof(gl_args));
     gl_setup_program(a_host, false, shader_file_global);
-    gl_load_buffer(a_host->buf_in, in, 2, n);
+
+    // Load buffers
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a_dev->buf_in);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), in, GL_STREAM_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a_dev->buf_out);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), out, GL_STREAM_DRAW);
+}
+
+void gl_setup_2d(gl_args* a_dev, gl_args* a_host, gl_args* a_trans, cpx* in, cpx* out, int group_size, int tile_dim, const int n)
+{
+    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.glsl";
+    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.glsl";
+    LPCWSTR shader_file_trans = L"Platforms/OpenGL/gl_cshader_trans.glsl";
+
+    // "Local" compute shader
+    a_dev->groups.x = n;
+    a_dev->groups.y = (n >> 1) > group_size ? (n >> 1) / group_size : 1;
+    a_dev->threads.x = (n >> 1) > group_size ? group_size : n >> 1;
+    a_dev->number_of_blocks = a_dev->groups.y;
+    gl_setup_program(a_dev, true, shader_file_local);
+
+    // "Global" compute shader
+    memcpy(a_host, a_dev, sizeof(gl_args));
+    gl_setup_program(a_host, false, shader_file_global);
+
+    // "Transpose" compute shader
+    memcpy(a_trans, a_dev, sizeof(gl_args));    
+    gl_setup_program(a_trans, false, shader_file_trans, true);
+
+    // Load buffers
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a_dev->buf_in);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * n * sizeof(cpx), in, GL_STREAM_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a_dev->buf_out);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, n * n * sizeof(cpx), out, GL_STREAM_DRAW);
 }
 
 void gl_shakedown(gl_args *a)

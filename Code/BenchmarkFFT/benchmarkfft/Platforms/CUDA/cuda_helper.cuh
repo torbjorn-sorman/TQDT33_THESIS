@@ -113,7 +113,7 @@ __host__ static __inline void set_block_and_threads(int *number_of_blocks, int *
     }
 }
 
-__host__ static __inline void set_block_and_threads2D(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
+__host__ static __inline void set_block_and_threads_2d(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
 {
     number_of_blocks->x = n;
     int n_half = n >> 1;

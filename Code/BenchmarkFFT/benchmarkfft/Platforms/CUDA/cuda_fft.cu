@@ -181,7 +181,7 @@ __host__ __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, 
     fft_args args;
     dim3 blocks;
     int threads;
-    set_block_and_threads2D(&blocks, &threads, CU_BLOCK_SIZE, n);
+    set_block_and_threads_2d(&blocks, &threads, CU_BLOCK_SIZE, n);
     set_fft_arguments(&args, dir, blocks.y, CU_BLOCK_SIZE, n);
     if (blocks.y > 1) {
         while (--args.steps_left > args.steps_gpu) {

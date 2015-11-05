@@ -169,8 +169,8 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 
     // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
     dx_check_error(a->device->CreateBuffer(&constant_buffer_desc, NULL, &a->buf_constant), "Create Constant Buffer");
-
-    // Compile the compute shader into a blob.
+        
+    // Compile the compute shader into a blob.    
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
     dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &a->blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 

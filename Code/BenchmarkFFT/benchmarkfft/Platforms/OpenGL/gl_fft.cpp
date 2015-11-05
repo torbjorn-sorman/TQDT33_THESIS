@@ -1,10 +1,10 @@
 #include "gl_fft.h"
 
 __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args *a_host, const int n);
-__inline void gl_fft_2d(transform_direction dir, gl_args *args, const int n);
+__inline void gl_fft_2d(transform_direction dir, gl_args *a_dev, gl_args* a_host, gl_args* a_trans, const int n);
 
 #define GL_GROUP_SIZE 1024
-#define GL_TILE_DIM 64
+#define GL_TILE_DIM 32
 
 //
 // Testing
@@ -13,66 +13,73 @@ __inline void gl_fft_2d(transform_direction dir, gl_args *args, const int n);
 int gl_validate(const int n)
 {
     cpx *in = get_seq(n, 1);
-    cpx *out = 0;
+    cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
-    gl_args a_dev, a_host;
-    gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);
-
-    gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
-    gl_read_buffer(a_dev.buf_out, &out, n);
-    double forward_diff = diff_forward_sinus(out, n);
-    
-#if defined(_SHOW_BLOCKING_DEBUG)
-    cpx_to_console(out, "GL FFT Out", 8);
-#endif
-
-    gl_swap_buffers(&a_dev, &a_host);
-    gl_fft(FFT_INVERSE, &a_dev, &a_host, n);
-    out = 0;
-    gl_read_buffer(a_dev.buf_out, &out, n);
-    double inverse_diff = diff_seq(out, ref, n);
-
-#if defined(_SHOW_BLOCKING_DEBUG)
-    cpx_to_console(ref, "GL Ref", 8);
-    cpx_to_console(out, "GL Out", 8);
-    printf("%f and %f\n", forward_diff, inverse_diff);
-    getchar();
-#endif
-
-    gl_shakedown(&a_dev);
-    gl_shakedown(&a_host);
+    double forward_diff, inverse_diff;
+    {
+        gl_args a_dev, a_host;
+        gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);
+        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
+        gl_read_buffer(out, a_dev.buf_out, n);
+        forward_diff = diff_forward_sinus(out, n);
+        gl_shakedown(&a_dev);
+        gl_shakedown(&a_host);
+    }
+    {
+        gl_args a_dev, a_host;
+        gl_setup(&a_dev, &a_host, out, NULL, GL_GROUP_SIZE, n);
+        gl_fft(FFT_INVERSE, &a_dev, &a_host, n);
+        gl_read_buffer(out, a_dev.buf_out, n);
+        inverse_diff = diff_seq(out, ref, n);
+        gl_shakedown(&a_dev);
+        gl_shakedown(&a_host);
+    }
     free(in);
+    free(out);
     free(ref);
     return forward_diff < RELATIVE_ERROR_MARGIN && inverse_diff < RELATIVE_ERROR_MARGIN;
 }
 
 int gl_2d_validate(const int n, bool write_img)
 {
-    /*
-    cpx *data, *ref;
-    setup_seq_2d(&data, NULL, &ref, n);
-    gl_args a_dev, a_host, a_trans;
-    gl_setup_2d(&args, data, n);
-
-    gl_fft_2d(FFT_FORWARD, &args, n);
-    if (write_img) {
-    gl_read_buffer(&args, args.buf_output, data, n * n);
-    write_normalized_image("DirectX", "freq", data, n, true);
+    cpx *data, *tmp, *ref;
+    setup_seq_2d(&data, &tmp, &ref, n);
+    {
+        gl_args a_dev, a_host, a_trans;
+        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
+        memset(data, 0, sizeof(cpx) * n * n);
+        gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
+        gl_read_buffer(data, a_dev.buf_out, n * n);
+        if (write_img) {
+            gl_read_buffer(tmp, a_dev.buf_in, n * n);            
+            write_normalized_image("OpenGL", "freq", data, n, true);
+            write_image("OpenGL", "inbuf", tmp, n);
+        }
+        gl_shakedown(&a_dev);
+        gl_shakedown(&a_host);
+        gl_shakedown(&a_trans);
     }
-    swap_io(&args);
-
-    gl_fft_2d(FFT_INVERSE, &args, n);
-    gl_read_buffer(&args, args.buf_output, data, n);
-    if (write_img)
-    write_image("DirectX", "spat", data, n);
-
-    gl_shakedown(&args);
-    double diff = diff_seq(data, ref, n);
+    //return 0;
+    {
+        gl_args a_dev, a_host, a_trans;
+        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
+        memset(data, 0, sizeof(cpx) * n * n);
+        gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
+        gl_read_buffer(data, a_dev.buf_out, n * n);
+        if (write_img) {
+            //gl_read_buffer(tmp, a_dev.buf_in, n * n);
+            //write_normalized_image("OpenGL", "freq", data, n, true);
+            write_image("OpenGL", "spat", data, n);
+        }
+        gl_shakedown(&a_dev);
+        gl_shakedown(&a_host);
+        gl_shakedown(&a_trans);
+    }
+    double diff = diff_seq(data, ref, n);  
     free(data);
+    free(tmp);
     free(ref);
     return diff < RELATIVE_ERROR_MARGIN;
-    */
-    return 0;
 }
 
 #ifndef MEASURE_BY_TIMESTAMP
@@ -108,7 +115,6 @@ double gl_performance(const int n)
     gl_args a_dev, a_host;
     GLuint queries[NUM_TESTS][2];
 
-    //profiler_data profiler[NUM_TESTS];
     gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
     for (int i = 0; i < NUM_TESTS; ++i) {
         glGenQueries(2, queries[i]);
@@ -124,23 +130,22 @@ double gl_performance(const int n)
 }
 double gl_2d_performance(const int n)
 {
-    /*
-    gl_args args;
-    gl_setup_2d(&args, NULL, n);
-    profiler_data profiler[NUM_TESTS];
+    gl_args a_dev, a_host, a_trans;
+    GLuint queries[NUM_TESTS][2];
+
+    gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
     for (int i = 0; i < NUM_TESTS; ++i) {
-    profiler_data p;
-    gl_start_profiling(&args, &p);
+        glGenQueries(2, queries[i]);
+        glQueryCounter(queries[i][0], GL_TIMESTAMP);
 
-    gl_fft_2d(FFT_FORWARD, &args, n);
+        gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
 
-    gl_end_profiling(&args, &p);
-    profiler[i] = p;
+        glQueryCounter(queries[i][1], GL_TIMESTAMP);
     }
-    gl_shakedown(&args);
-    return gl_avg(profiler, &args);
-    */
-    return -1;
+    gl_shakedown(&a_dev);
+    gl_shakedown(&a_host);
+    gl_shakedown(&a_trans);
+    return gl_query_time(queries);
 }
 #endif
 
@@ -171,45 +176,43 @@ __inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int di
     glUniform1ui(glGetUniformLocation(a->program, "steps"), steps);
 }
 
-__inline void gl_set_trans_args(gl_args *a, unsigned int n)
-{    
-    glUniform1ui(glGetUniformLocation(a->program, "n"), n);
-}
-
 __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, const int n)
 {
     fft_args args;
-    set_fft_arguments(&args, dir, a_dev->number_of_blocks, GL_GROUP_SIZE, n);    
+    set_fft_arguments(&args, dir, a_dev->number_of_blocks, GL_GROUP_SIZE, n);
     if (a_dev->number_of_blocks > 1) {
-        glUseProgram(a_host->program);        
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, a_host->buf_in);
-        while (--args.steps_left > args.steps_gpu) {
+        while (--args.steps_left > args.steps_gpu) {            
+            glUseProgram(a_host->program);
+            gl_bind_io_buffers(a_host);
             gl_set_global_args(a_host, args.global_angle, args.dist >>= 1, 0xFFFFFFFF << args.steps_left, args.steps++);
             glDispatchCompute(a_host->groups.x, a_host->groups.y, a_host->groups.z);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         }
         ++args.steps_left;
     }
     glUseProgram(a_dev->program);
-    gl_bind_io_buffers(a_dev);    
+    gl_bind_io_buffers(a_dev);
     gl_set_local_args(a_dev, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
     glDispatchCompute(a_dev->groups.x, a_dev->groups.y, a_dev->groups.z);
 }
 
 __inline void gl_fft_2d(transform_direction dir, gl_args *a_dev, gl_args* a_host, gl_args* a_trans, const int n)
 {
-    UINT width = n > GL_TILE_DIM ? (n / GL_TILE_DIM) : 1;
-
-    gl_fft(dir, a_dev, a_host, n);    
-    gl_swap_io(a_trans);
-    gl_bind_io_buffers(a_trans);
-    glUseProgram(a_trans->program);
-    gl_set_trans_args(a_trans, n);
-    glDispatchCompute(width, width, 1);
+    UINT group_dim = n > GL_TILE_DIM ? (n / GL_TILE_DIM) : 1;
 
     gl_fft(dir, a_dev, a_host, n);
-    gl_swap_io(a_trans);
-    gl_bind_io_buffers(a_trans);
+
+    gl_swap_buffers(a_dev, a_host, a_trans);
     glUseProgram(a_trans->program);
-    gl_set_trans_args(a_trans, n);
-    glDispatchCompute(width, width, 1);
+    gl_bind_io_buffers(a_trans);
+    glDispatchCompute(group_dim, group_dim, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    //gl_swap_buffers(a_dev, a_host, a_trans);
+    //gl_fft(dir, a_dev, a_host, n);
+
+    gl_swap_buffers(a_dev, a_host, a_trans);
+    glUseProgram(a_trans->program);
+    gl_bind_io_buffers(a_trans);
+    glDispatchCompute(group_dim, group_dim, 1);
 }

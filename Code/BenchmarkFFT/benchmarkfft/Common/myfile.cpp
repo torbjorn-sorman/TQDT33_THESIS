@@ -57,6 +57,17 @@ char *get_kernel_src(LPCWSTR file_name, int *length)
     return src;
 }
 
+char *get_kernel_src(std::string contents, int *length)
+{
+    size_t len = contents.size() + 1;
+    char *src = (char *)malloc(sizeof(char) * len);
+    strcpy_s(src, sizeof(char) * len, contents.c_str());
+    src[contents.size()] = '\0';
+    if (length)
+        *length = len;
+    return src;
+}
+
 std::string get_file_content(LPCWSTR shader_file)
 {
     std::ifstream in_file(shader_file);

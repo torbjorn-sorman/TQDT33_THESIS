@@ -151,6 +151,8 @@ cpx *get_flat(cpx **seq, int n)
 
 void write_image(char *name, char *type, cpx* seq, int n)
 {
+    if (seq == NULL)
+        return;
     image image;
     image = alloc_img(n, n);
     for (int y = 0; y < n; ++y) {
@@ -196,7 +198,7 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     cpx *tmp = 0;
     if (doFFTShift) {
         tmp = (cpx *)malloc(sizeof(cpx) * n * n);
-        fftShift(tmp, seq, n);
+        fft_shift(tmp, seq, n);
     }
     normalized_cpx_values(tmp, n, &minVal, &range, &average_best);
     double avg_pos = 0.1;
@@ -259,8 +261,10 @@ void cpPixel(int px, int px2, cpx *in, cpx *out)
     out[p + 2] = in[p2 + 2];
 }
 
-void fftShift(cpx *dst, cpx *src, int n)
+void fft_shift(cpx *dst, cpx *src, int n)
 {
+    if (dst == NULL || src == NULL)
+        return;
     int px1, px2;
     int n_half = n / 2;
     for (int y = 0; y < n_half; ++y) {

@@ -28,7 +28,7 @@ char* gl_prepare_source(gl_args* args, LPCWSTR shader_file, int* length, bool tr
         manip_content(&str, L"LOCAL_DIM_X", args->threads.x);
         manip_content(&str, L"SHARED_MEM_SIZE", (args->threads.x << 1));
     }
-    return get_kernel_src(str, length);
+    return get_kernel_src_from_string(str, length);
 }
 
 void gl_log(GLuint shader, const char* type, const char* msg)

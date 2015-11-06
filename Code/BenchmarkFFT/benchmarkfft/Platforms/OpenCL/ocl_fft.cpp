@@ -3,6 +3,10 @@
 __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev);
 __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 
+#define OCL_GROUP_SIZE 512
+#define OCL_TILE_DIM 32 // This is 8K local/shared mem
+#define OCL_BLOCK_DIM 16 // This is 256 Work Items / Group
+
 //
 // 1D
 //
@@ -13,7 +17,7 @@ bool ocl_validate(const int n)
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
 
     ocl_fft(&a_host, &a_dev);
     clFinish(a_dev.commands);
@@ -34,18 +38,14 @@ bool ocl_2d_validate(const int n, bool write_img)
     cpx *data, *data_ref;
     ocl_setup_buffers(&data, NULL, &data_ref, n);
     ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
 
     ocl_fft_2d(&a_host, &a_dev, &argTranspose);
     clFinish(a_dev.commands);
 
     if (write_img) {
         ocl_check_err(clEnqueueReadBuffer(a_dev.commands, a_dev.output, CL_TRUE, 0, a_dev.data_mem_size, data, 0, NULL, NULL), "Read Output Buffer!");
-#ifndef TRANSPOSE_ONLY
         write_normalized_image("OpenCL", "freq", data, n, true);
-#else
-        write_image("OpenCL", "trans", data, n);
-#endif
     }
 
     a_dev.dir = a_host.dir = FFT_INVERSE;
@@ -71,7 +71,6 @@ double ocl_performance(const int n)
     for (int i = 0; i < NUM_TESTS; ++i) {
         start_timer();
         ocl_fft(&a_host, &a_dev);
-
         clFinish(a_dev.commands);
         measurements[i] = stop_timer();
     }
@@ -98,25 +97,28 @@ double ocl_2d_performance(const int n)
     return average_best(measurements, NUM_TESTS);
 }
 #else
+double ocl_get_elapsed(cl_event s, cl_event e)
+{
+    cl_ulong start = 0, end = 0;
+    clWaitForEvents(1, &e);
+    clGetEventProfilingInfo(s, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
+    clGetEventProfilingInfo(e, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
+    return (double)(end - start)*(cl_double)(1e-03);
+}
 double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
     ocl_args a_dev, a_host, arg_timestamp;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, NULL, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, NULL, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
-    cl_ulong start = 0, end = 0;
-    for (int i = 0; i < NUM_TESTS; ++i) {
-        clFinish(a_dev.commands);
-        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &start_event);
+    clFinish(a_dev.commands);
+    for (int i = 0; i < NUM_TESTS; ++i) {        
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft(&a_host, &a_dev);
-        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &end_event);
-        clWaitForEvents(1, &end_event);
-        clGetEventProfilingInfo(start_event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
-        clGetEventProfilingInfo(end_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-        measurements[i] = (double)(end - start)*(cl_double)(1e-03);
-        clFinish(a_dev.commands);
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
+        measurements[i] = ocl_get_elapsed(start_event, end_event);        
     }
     ocl_check_err(ocl_shakedown(NULL, NULL, &a_host, &a_dev), "Release failed!");
     return average_best(measurements, NUM_TESTS);
@@ -128,20 +130,15 @@ double ocl_2d_performance(const int n)
     int minDim = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
     cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
     ocl_args a_dev, a_host, argTranspose, arg_timestamp;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
-    cl_ulong start = 0, end = 0;
     clFinish(a_dev.commands);
     for (int i = 0; i < NUM_TESTS; ++i) {
-        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &start_event);
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);
-        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.global_work_size, arg_timestamp.local_work_size, 0, NULL, &end_event);
-        clWaitForEvents(1, &end_event);
-        clFinish(a_dev.commands);
-        clGetEventProfilingInfo(start_event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
-        clGetEventProfilingInfo(end_event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-        measurements[i] = (double)(end - start)*(cl_double)(1e-03);
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);        
+        measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
     int res = ocl_free(&data_in, NULL, NULL, n);
@@ -162,12 +159,12 @@ __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev)
     if (a_dev->number_of_blocks > 1) {
         while (--args.steps_left > args.steps_gpu) {
             ocl_set_args(a_host, a_dev->input, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
-            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->global_work_size, a_host->local_work_size, 0, NULL, NULL);
+            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->work_size, a_host->group_work_size, 0, NULL, NULL);
         }
         ++args.steps_left;
     }
     ocl_set_args(a_dev, a_dev->input, a_dev->output, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
-    clEnqueueNDRangeKernel(a_dev->commands, a_dev->kernel, a_dev->workDim, NULL, a_dev->global_work_size, a_dev->local_work_size, 0, NULL, NULL);
+    clEnqueueNDRangeKernel(a_dev->commands, a_dev->kernel, a_dev->workDim, NULL, a_dev->work_size, a_dev->group_work_size, 0, NULL, NULL);
 }
 
 __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
@@ -177,11 +174,11 @@ __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
 
     ocl_fft(a_host, a_dev);    
     ocl_set_args(a_trans, _out, _in);
-    clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->global_work_size, a_trans->local_work_size, 0, NULL, NULL);
+    clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
     
     ocl_fft(a_host, a_dev);    
     ocl_set_args(a_trans, _out, _in);
-    clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->global_work_size, a_trans->local_work_size, 0, NULL, NULL);
+    clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
 
     a_host->input = a_dev->input = _out;
     a_host->output = a_dev->output = _in;

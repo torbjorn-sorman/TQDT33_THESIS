@@ -8,10 +8,6 @@
 #include "../../Common/mycomplex.h"
 #include "../../Common/imglib.h"
 
-#define OCL_GROUP_SIZE 512
-#define OCL_TILE_DIM 32 // This is 8K local/shared mem
-#define OCL_BLOCK_DIM 16 // This is 256 Work Items / Group
-
 struct ocl_args {
     int n;
     int n_per_block;
@@ -20,8 +16,8 @@ struct ocl_args {
     cl_uint workDim;
     size_t shared_mem_size;
     size_t data_mem_size;
-    size_t global_work_size[3];
-    size_t local_work_size[3];
+    size_t work_size[3];
+    size_t group_work_size[3];
     cl_device_id device_id;
     cl_context context;
     cl_command_queue commands;
@@ -29,7 +25,6 @@ struct ocl_args {
     cl_kernel kernel;
     cl_mem input, output;
     cl_platform_id platform;
-    char *kernel_strings[2];
 };
 
 static void __inline swap(cl_mem *a, cl_mem *b)
@@ -69,9 +64,9 @@ static void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)
 }
 
 cl_int ocl_check_err(cl_int error, char *msg);
-cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_direction dir, const int group_size, const int n);
 cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm);
-cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int n);
+cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int group_size, const int tile_dim, const int block_dim, const int n);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);

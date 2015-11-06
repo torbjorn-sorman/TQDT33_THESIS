@@ -33,7 +33,7 @@ struct benchmarkArgument
     int dimensions = 1;
     int start = 2;
     int end = 10;
-    int number_of_lengths = 8;
+    int test_runs = 8;
     bool test_platform = false;
     bool performance_metrics = false;
     bool platform_cufft = false;

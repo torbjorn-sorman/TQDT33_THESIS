@@ -12,9 +12,7 @@ int openmp_fast_index_validate(const int n)
     openmp_fast_index(FFT_FORWARD, &in, &out, n);
     openmp_fast_index(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
-    free(in);
-    free(out);
-    free(ref);
+    free_all(in, out, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 

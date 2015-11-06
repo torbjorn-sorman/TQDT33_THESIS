@@ -42,8 +42,7 @@ void cuda_surface_setup(cpx **in, cpx **ref, size_t *size, int n, cudaArray **cu
 
 __host__ void cuda_surface_shakedown(cpx **in, cpx **ref, cudaSurfaceObject_t *sObjIn, cudaSurfaceObject_t *sObjOut, cudaArray **cuAIn, cudaArray **cuAOut)
 {
-    free(*in);
-    free(*ref);
+    free_all(*in, *ref);
     cudaDestroySurfaceObject(*sObjIn);
     cudaFreeArray(*cuAIn);
     if (sObjOut != NULL) {

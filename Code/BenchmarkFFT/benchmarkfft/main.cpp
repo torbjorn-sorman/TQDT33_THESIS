@@ -1,5 +1,7 @@
 #include <iostream>
 #include <iomanip>
+#include <functional>
+#include <algorithm>
 #include <vector>
 
 #include "Definitions.h"
@@ -25,24 +27,25 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     // cuFFT only shipped for x64, FFTW x64 selected
 #ifdef _WIN64
     if (args->platform_cufft)
-        platforms.insert(platforms.begin(), new MyCuFFT(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
     if (args->platform_fftw)
-        platforms.insert(platforms.begin(), new MyFFTW(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif
+    
     if (args->platform_cuda)
-        platforms.insert(platforms.begin(), new MyCUDA(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyCUDA(args->dimensions, args->test_runs));
     if (args->platform_opencl)
-        platforms.insert(platforms.begin(), new MyOpenCL(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyOpenCL(args->dimensions, args->test_runs));
     if (args->platform_opengl)
-        platforms.insert(platforms.begin(), new MyOpenGL(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyOpenGL(args->dimensions, args->test_runs));
     if (args->platform_directx)
-        platforms.insert(platforms.begin(), new MyDirectX(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyDirectX(args->dimensions, args->test_runs));
     if (args->platform_id3dx11)
-        platforms.insert(platforms.begin(), new MyID3DX11FFT(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyID3DX11FFT(args->dimensions, args->test_runs));
     if (args->platform_openmp)
-        platforms.insert(platforms.begin(), new MyOpenMP(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyOpenMP(args->dimensions, args->test_runs));
     if (args->platform_c)
-        platforms.insert(platforms.begin(), new MyC(args->dimensions, args->number_of_lengths));
+        platforms.push_back(new MyC(args->dimensions, args->test_runs));
     return platforms;
 }
 
@@ -88,24 +91,26 @@ int main(int argc, char* argv[])
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::cout << "  Running Platform Performance Test (might take a while)";
             for (int i = args.start; i <= args.end; ++i) {
-                int n = power2(i);
-                for (Platform *platform : platforms)
+                int n = power2(i);                
+                for (auto platform : platforms) { 
                     platform->runPerformance(n);
+                }
                 std::cout << '.';
             }
             std::cout << std::endl;
         }
         if (args.display) {
-            int tabs = 1 + (int)log10(power2(args.start + args.number_of_lengths)) / 7;
+            int tabs = 1 + (int)log10(power2(args.start + args.test_runs)) / 7;
             std::cout << std::string(tabs, '\t');
-            for (Platform *platform : platforms)
+            for (auto platform : platforms) {
                 std::cout << platform->name << "\t";
+            }
             std::cout << std::endl;
             std::cout << std::fixed;
             std::cout << std::setprecision(0);
-            for (int i = 0; i < args.number_of_lengths; ++i) {
-                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');
-                for (Platform *platform : platforms) {
+            for (int i = 0; i < args.test_runs; ++i) {
+                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');                
+                for (auto platform : platforms) {                
                     if (args.performance_metrics)
                         std::cout << platform->results.at(i);
                     if (!args.performance_metrics) {
@@ -124,8 +129,9 @@ int main(int argc, char* argv[])
             }
         }
         if (args.write_file && args.performance_metrics) {
-            for (Platform *platform : platforms)
-                toFile(platform->name, platform->results, args.number_of_lengths);
+            for (auto platform : platforms) {
+                toFile(platform->name, platform->results, args.test_runs);
+            }
             toFile("all", platforms, &args);
         }
         std::cout << "  Test Platforms Complete" << std::endl;
@@ -179,13 +185,14 @@ void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgume
     std::string filename;
     FILE *f = get_txt_file_pntr(name, &filename);
     fprintf_s(f, "\t");
-    for (Platform *platform : platforms)
+    for (auto platform : platforms) {
         fprintf_s(f, "%s\t", platform->name);
+    }
     std::reverse(begin(platforms), end(platforms));
     fprintf_s(f, "\n");
-    for (int i = 0; i < a->number_of_lengths; ++i) {
+    for (int i = 0; i < a->test_runs; ++i) {
         fprintf_s(f, "%d\t", power2(i) * power2(a->start));
-        for (Platform *platform : platforms) {
+        for (auto platform : platforms) {
             int val = (int)floor(platform->results[i]);
             int dec = (int)floor((platform->results[i] - val) * 10);
             fprintf_s(f, "%d,%1d\t", val, dec);

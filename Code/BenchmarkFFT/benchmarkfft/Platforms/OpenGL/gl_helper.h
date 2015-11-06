@@ -50,4 +50,11 @@ void gl_setup_2d(gl_args* a_dev, gl_args* a_host, gl_args* a_trans, cpx* in, cpx
 void gl_read_buffer(cpx* dst, GLuint buffer, const int n);
 void gl_shakedown(gl_args *a);
 
+template<typename... Args>
+void gl_shakedown(gl_args *a, Args... args)
+{
+    gl_shakedown(a);
+    gl_shakedown(args...);
+}
+
 #endif

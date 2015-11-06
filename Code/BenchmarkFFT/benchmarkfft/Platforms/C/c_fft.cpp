@@ -17,9 +17,7 @@ int c_validate(const int n)
     c_const_geom(FFT_INVERSE, &out, &in, n);
 #endif
     double diff = diff_seq(in, ref, n);
-    free(in);
-    free(out);
-    free(ref);
+    free_all(in, out, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -36,9 +34,7 @@ int c_2d_validate(const int n, bool write_img)
         write_image("C_C++", "spat", in, n);
 
     double diff = diff_seq(in, ref, n);
-    free(in);
-    free(buf);
-    free(ref);
+    free_all(in, buf, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -69,8 +65,7 @@ double c_2d_performance(const int n)
         c_const_geom_2d(FFT_FORWARD, &in, &out, n);
         measures[i] = stop_timer();
     }
-    free(in);
-    free(out);
+    free_all(in, out);
     return average_best(measures, NUM_TESTS);
 }
 

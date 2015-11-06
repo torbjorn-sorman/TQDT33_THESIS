@@ -28,9 +28,7 @@ int dx_validate(const int n)
     double inverse_diff = diff_seq(out, ref, n);
 
     dx_shakedown(&args);
-    free(in);
-    free(out);
-    free(ref);
+    free_all(in, out, ref);
     return forward_diff < RELATIVE_ERROR_MARGIN && inverse_diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -56,8 +54,7 @@ int dx_2d_validate(const int n, bool write_img)
 
     dx_shakedown(&args);
     double diff = diff_seq(data, ref, n);
-    free(data);
-    free(ref);
+    free_all(data, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 

@@ -18,10 +18,10 @@ uniform uint steps;
 
 void main()
 {
-    uint tid = gl_GlobalInvocationID.x;
-    uint in_low = tid + (tid & lmask);
+    uint col = gl_WorkGroupID.y * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+    uint in_low = col + (col & lmask) + gl_WorkGroupID.x * gl_NumWorkGroups.x;
     uint in_high = in_low + dist;
-    float a = global_angle * ((tid << steps) & ((dist - 1U) << steps));
+    float a = global_angle * float((col << steps) & ((dist - 1) << steps));
     cpx w;
     w.x = cos(a);
     w.y = sin(a);

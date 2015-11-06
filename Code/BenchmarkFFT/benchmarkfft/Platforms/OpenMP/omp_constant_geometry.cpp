@@ -13,9 +13,7 @@ int openmp_validate(const int n)
     //double diffForward = (abs(in[1].y) - abs(in[n - 1].y)) / (n / 2);    
     openmp_const_geom(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
-    free(in);
-    free(out);
-    free(ref);
+    free_all(in, out, ref);
     return diff < RELATIVE_ERROR_MARGIN;// && diffForward < RELATIVE_ERROR_MARGIN;
 }
 
@@ -32,9 +30,7 @@ int openmp_2d_validate(const int n, bool write_img)
         write_image("OpenMP", "spat", in, n);
 
     double diff = diff_seq(in, ref, n);
-    free(in);
-    free(buf);
-    free(ref);
+    free_all(in, buf, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
@@ -61,8 +57,7 @@ double openmp_2d_performance(const int n)
         openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
         measures[i] = stop_timer();
     }
-    free(in);
-    free(buf);
+    free_all(in, buf);
     return average_best(measures, NUM_TESTS);
 }
 

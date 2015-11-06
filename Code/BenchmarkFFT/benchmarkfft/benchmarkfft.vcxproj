@@ -297,7 +297,9 @@ copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="Platforms\OpenGL\gl_cshader_global.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_global2d.glsl" />
     <None Include="Platforms\OpenGL\gl_cshader_local.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_local2d.glsl" />
     <None Include="Platforms\OpenGL\gl_cshader_trans.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

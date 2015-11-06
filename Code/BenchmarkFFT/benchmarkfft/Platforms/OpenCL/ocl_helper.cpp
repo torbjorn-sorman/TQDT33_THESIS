@@ -1,7 +1,9 @@
 #include "ocl_helper.h"
 
-cl_int oclSetupWorkGroupsAndMemory(ocl_args *args);
-cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args);
+cl_int ocl_setup_work_groups(ocl_args *args);
+cl_int ocl_setup_work_groups_2d(ocl_args *args);
+
+cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size);
 
 int ocl_check_err(cl_int error, char *msg)
 {
@@ -26,13 +28,22 @@ cl_int ocl_setup_kernels(ocl_args *args, bool dim2)
     if (err != CL_SUCCESS)                                                                      return err;
     commands = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
     if (err != CL_SUCCESS)                                                                      return err;
+    /*
+    ocl_check_err(clGetPlatformIDs(1, &platform, NULL), "clGetPlatformIDs");
+    ocl_check_err(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL), "clGetDeviceIDs");
+    clCreateContext(0, 1, &device_id, NULL, NULL, &err);
+    ocl_check_err(err, "clCreateContext");
+    clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
+    ocl_check_err(err, "clCreateCommandQueue");
+    */
     args->platform = platform;
     args->device_id = device_id;
     args->context = context;
     args->commands = commands;
     if (dim2)
-        return oclSetupWorkGroupsAndMemory2D(args);
-    return oclSetupWorkGroupsAndMemory(args);
+        return ocl_setup_work_groups_2d(args);
+    ocl_check_err(ocl_setup_work_groups(args), "ocl_setup_work_groups");
+    return ocl_setup_io_buffers(args, sizeof(cpx) * args->n);
 }
 
 std::wstring s2ws(const std::string& s)
@@ -98,19 +109,12 @@ cl_int oclSetupDeviceMemoryData(ocl_args *args, cpx *dev_in)
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory(ocl_args *args)
+cl_int ocl_setup_work_groups(ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     const int n_half = args->n / 2;
     int group_dim = n_half;
     int item_dim = n_half > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : n_half;
-    size_t data_mem_size = sizeof(cpx) * args->n;
-    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
-    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) return err;
-
-    // If successful, store in the argument struct!
     args->global_work_size[0] = group_dim;
     args->global_work_size[1] = 1;
     args->global_work_size[2] = 1;
@@ -118,21 +122,33 @@ cl_int oclSetupWorkGroupsAndMemory(ocl_args *args)
     args->local_work_size[1] = 1;
     args->local_work_size[2] = 1;
     args->shared_mem_size = sizeof(cpx) * item_dim * 2;
-    args->data_mem_size = data_mem_size;
     args->n_per_block = args->n / item_dim;
     args->number_of_blocks = group_dim / item_dim;
     return err;
 }
 
-cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args)
+cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
+{
+    cl_int err = CL_SUCCESS;
+    args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    if (err != CL_SUCCESS) 
+        return err;
+    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    if (err != CL_SUCCESS) 
+        return err;
+    args->data_mem_size = data_mem_size;
+    return err;
+}
+
+cl_int ocl_setup_work_groups_2d(ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     const int n = args->n;
-    int itmDim = (n / 2) > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : (n / 2);
-    int n_per_block = n / itmDim;
-    int minSize = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
-    size_t data_mem_size = sizeof(cpx) * minSize;
-    size_t shared_mem_size = sizeof(cpx) * itmDim * 2;
+    int item_dim = (n / 2) > OCL_GROUP_SIZE ? OCL_GROUP_SIZE : (n / 2);
+    int n_per_block = n / item_dim;
+    int min_size = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
+    size_t data_mem_size = sizeof(cpx) * min_size;
+    size_t shared_mem_size = sizeof(cpx) * item_dim * 2;
     cl_mem input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS)
         return err;
@@ -141,10 +157,10 @@ cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args)
         return err;
 
     // If successful, store in the argument struct!
-    args->global_work_size[0] = n * itmDim;
-    args->global_work_size[1] = n / (itmDim * 2);
+    args->global_work_size[0] = n * item_dim;
+    args->global_work_size[1] = n / (item_dim * 2);
     args->global_work_size[2] = 1;
-    args->local_work_size[0] = itmDim;
+    args->local_work_size[0] = item_dim;
     args->local_work_size[1] = 1;
     args->local_work_size[2] = 1;
     args->shared_mem_size = shared_mem_size;
@@ -152,7 +168,7 @@ cl_int oclSetupWorkGroupsAndMemory2D(ocl_args *args)
     args->n_per_block = n_per_block;
     args->input = input;
     args->output = output;
-    args->number_of_blocks = n / (itmDim * 2);
+    args->number_of_blocks = n / (item_dim * 2);
     return err;
 }
 

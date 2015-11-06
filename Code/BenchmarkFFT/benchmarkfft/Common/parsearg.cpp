@@ -32,7 +32,7 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
                 printf("Error parsing range of lengths, start exponent must be lower than end exponent.\n");
                 goto show_usage;
             }
-            arg->number_of_lengths = arg->end - arg->start + 1;
+            arg->test_runs = arg->end - arg->start + 1;
         }
         else if (MATCH("-platforms")) {
             ++i;
@@ -84,12 +84,12 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
     if (arg->dimensions == 2) {
         if (arg->start < log2_32(64)) {
             arg->start = log2_32(64);
-            arg->number_of_lengths = arg->end - arg->start + 1;
+            arg->test_runs = arg->end - arg->start + 1;
             printf("Notice: start exponent is set to %d\n", arg->start);
         }
         if (arg->end > HIGHEST_EXP_2D) {
             arg->end = HIGHEST_EXP_2D;
-            arg->number_of_lengths = arg->end - arg->start + 1;
+            arg->test_runs = arg->end - arg->start + 1;
             printf("Notice: end exponent is set to %d\n", arg->end);
         }
     }

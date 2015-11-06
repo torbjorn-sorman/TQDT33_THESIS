@@ -109,8 +109,8 @@ void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size
 
 void gl_setup_2d(gl_args* a_dev, gl_args* a_host, gl_args* a_trans, cpx* in, cpx* out, int group_size, int tile_dim, const int n)
 {
-    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.glsl";
-    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.glsl";
+    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local2d.glsl";
+    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global2d.glsl";
     LPCWSTR shader_file_trans = L"Platforms/OpenGL/gl_cshader_trans.glsl";
 
     // "Local" compute shader

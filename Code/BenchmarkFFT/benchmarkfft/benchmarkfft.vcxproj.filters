@@ -229,5 +229,11 @@
     <None Include="Platforms\OpenGL\gl_cshader_local.glsl">
       <Filter>Platforms\OpenGL</Filter>
     </None>
+    <None Include="Platforms\OpenGL\gl_cshader_global2d.glsl">
+      <Filter>Platforms\OpenGL</Filter>
+    </None>
+    <None Include="Platforms\OpenGL\gl_cshader_local2d.glsl">
+      <Filter>Platforms\OpenGL</Filter>
+    </None>
   </ItemGroup>
 </Project>

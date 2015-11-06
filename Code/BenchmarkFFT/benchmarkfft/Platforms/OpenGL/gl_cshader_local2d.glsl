@@ -9,8 +9,8 @@ struct cpx {
 
 layout(local_size_x = LOCAL_DIM_X) in;
 
-layout(std430, binding = 0) buffer ssbo0{ cpx input_data[]; };
-layout(std430, binding = 1) buffer ssbo1{ cpx output_data[]; };
+layout(std430, binding = 0) buffer ssbo0 { cpx input_data[]; };
+layout(std430, binding = 1) buffer ssbo1 { cpx output_data[]; };
 
 shared cpx shared_buf[SHARED_MEM_SIZE];
 
@@ -27,27 +27,26 @@ void main()
 {
     uint in_low = gl_LocalInvocationID.x;
     uint in_high = in_low + block_range;
-    uint offset = (gl_WorkGroupID.x * gl_WorkGroupSize.x) << 1;
-    shared_buf[in_low] = input_data[(in_low + offset)];
-    shared_buf[in_high] = input_data[(in_high + offset)];
+    uint row_start = gl_NumWorkGroups.x * gl_WorkGroupID.x;
+    uint row_offset = (gl_WorkGroupID.y * gl_WorkGroupSize.x) << 1;
+    shared_buf[in_low] = input_data[(in_low + row_start + row_offset)];
+    shared_buf[in_high] = input_data[(in_high + row_start + row_offset)];
 
     dx_algorithm_local(in_low, in_high);
 
-    output_data[(bitfieldReverse(in_low + offset) >> leading_bits)] = cpx((shared_buf[in_low].x * scalar), (shared_buf[in_low].y * scalar));
-    output_data[(bitfieldReverse(in_high + offset) >> leading_bits)] = cpx((shared_buf[in_high].x * scalar), (shared_buf[in_high].y * scalar));
+    output_data[(bitfieldReverse(in_low + row_offset) >> leading_bits) + row_start] = cpx((shared_buf[in_low].x * scalar), (shared_buf[in_low].y * scalar));
+    output_data[(bitfieldReverse(in_high + row_offset) >> leading_bits) + row_start] = cpx((shared_buf[in_high].x * scalar), (shared_buf[in_high].y * scalar));
 }
 
 void dx_algorithm_local(uint in_low, uint in_high)
 {
     float angle, x, y;
     cpx w, in_lower, in_upper;
-    uint p;
     uint out_i = (in_low << 1);
     uint out_ii = (out_i + 1);
     for (uint steps = 0; steps < steps_left; ++steps)
-    {
-        p = (in_low & (0xFFFFFFFF << steps));
-        angle = local_angle * float(p);
+    {        
+        angle = local_angle * float(in_low & (0xFFFFFFFF << steps));
         w.x = cos(angle);
         w.y = sin(angle);
         in_lower = shared_buf[in_low];

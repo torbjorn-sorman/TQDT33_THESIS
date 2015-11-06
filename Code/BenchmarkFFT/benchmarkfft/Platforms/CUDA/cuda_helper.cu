@@ -58,19 +58,12 @@ void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
     }
 }
 
-void _fftTestSeq(int n, cpx **in, cpx **ref, cpx **out)
-{
-    *in = get_seq(n, 1);
-    *ref = get_seq(n, *in);
-    *out = get_seq(n);
-}
-
 void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
     _cudaMalloc(n, dev_in, dev_out);
     if (in == NULL && ref == NULL && out == NULL)
         return;
-    _fftTestSeq(n, in, ref, out);
+    fft_alloc_sequences(n, in, ref, out);
 }
 
 void _cudaFree(cpx **dev_in, cpx **dev_out)
@@ -80,13 +73,6 @@ void _cudaFree(cpx **dev_in, cpx **dev_out)
         cudaFree(*dev_out);
 }
 
-void _fftFreeSeq(cpx **in, cpx **ref, cpx **out)
-{
-    free(*in);
-    free(*ref);
-    free(*out);
-}
-
 int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
     _cudaFree(dev_in, dev_out);
@@ -94,7 +80,7 @@ int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx 
     if (in == NULL && ref == NULL && out == NULL)
         return 0;
     double diff = diff_seq(*in, *ref, n);
-    _fftFreeSeq(in, out, ref);
+    free_all(*in, *out, *ref);
     cudaError_t cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");
@@ -120,8 +106,7 @@ void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t
 
 void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)
 {    
-    free(*in);
-    free(*ref);
+    free_all(*in, *ref);
     cudaFree(*dev_i);
     cudaFree(*dev_o);
     cudaError_t cudaStatus = cudaDeviceReset();

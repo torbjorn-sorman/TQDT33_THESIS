@@ -28,7 +28,6 @@ void debug_check_compare(const int n)
 {
     if (debug_cuda_out != NULL && debug_dx_out != NULL) {
         printf("Debug Diff: %f\n", diff_seq(debug_dx_out, debug_cuda_out, n));
-        free(debug_cuda_out);
-        free(debug_dx_out);
+        free_all(debug_cuda_out, debug_dx_out);
     }
 }

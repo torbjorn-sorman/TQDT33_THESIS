@@ -15,7 +15,7 @@ public:
         results = std::vector<double>();
     }
 
-    Platform(const int dim)
+    Platform(const int dim)    
     {
         dimensions = dim;
     }

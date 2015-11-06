@@ -1,8 +1,12 @@
 #include "cuda_fft.cuh"
 
+// Comment: Max values all over seems to give the biggest benefit when running large sets of data
+//          Smaller sets benefits a little from smaller groups/blocks.
+//          I my opinion, the large values seems to suit CUDA best.
+
 #define CU_BLOCK_SIZE 1024
-#define CU_TILE_DIM 64 // 32K local/shared mem
-#define CU_BLOCK_DIM 32 // 1024 Threads
+#define CU_TILE_DIM 64 // Sets local/shared mem when transposing
+#define CU_BLOCK_DIM 32 // Sets threads when transposing
 
 __global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
@@ -38,7 +42,6 @@ __host__ int cuda_2d_validate(int n, bool write_img)
     cpx *host_buffer, *ref, *dev_in, *dev_out;
     size_t size;
     cuda_setup_buffers_2d(&host_buffer, &ref, &dev_in, &dev_out, &size, n);
-
     cudaMemcpy(dev_in, host_buffer, size, cudaMemcpyHostToDevice);
     cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
     cudaDeviceSynchronize();
@@ -56,7 +59,6 @@ __host__ int cuda_2d_validate(int n, bool write_img)
         cudaMemcpy(host_buffer, dev_in, size, cudaMemcpyDeviceToHost);
         write_image("CUDA", "spat", host_buffer, n);
     }
-
     int res = cuda_compare_result(host_buffer, ref, dev_in, size, n * n);
     cuda_shakedown_2d(&host_buffer, &ref, &dev_in, &dev_out);
     return res;
@@ -112,7 +114,6 @@ __host__ double cuda_performance(int n)
         cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
-        cudaDeviceSynchronize();
         cudaEventElapsedTime(&milliseconds, start, stop);
         measures[i] = milliseconds * 1000;
     }
@@ -137,7 +138,6 @@ __host__ double cuda_2d_performance(int n)
         cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
-        cudaDeviceSynchronize();
         cudaEventElapsedTime(&milliseconds, start, stop);
         measures[i] = milliseconds * 1000;
     }
@@ -197,15 +197,11 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
     dim3 blocks;
     dim3 threads;
     set_block_and_threads_transpose(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);
-#ifndef TRANSPOSE_ONLY
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);        
     swap_buffer(dev_in, dev_out);
-#else
-    cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_in, *dev_out, n);
-#endif
 }
 
 __device__ static __inline__ void cuda_algorithm_local(cpx *shared, int in_high, float angle, int bit)
@@ -263,14 +259,14 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
     extern __shared__ cpx shared[];
     int in_high = block_range + threadIdx.x;
     int row_start = gridDim.x * blockIdx.x;
-    int row_offset = (blockIdx.y * blockDim.x) << 1;
-    in += row_start + row_offset;
+    int offset = (blockIdx.y * blockDim.x) << 1;
+    in += row_start + offset;
     out += row_start;
     shared[threadIdx.x] = in[threadIdx.x];
     shared[in_high] = in[in_high];
     cuda_algorithm_local(shared, in_high, local_angle, steps_left);
-    out[BIT_REVERSE(threadIdx.x + row_offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
-    out[BIT_REVERSE(in_high + row_offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
+    out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { shared[threadIdx.x].x * scalar, shared[threadIdx.x].y *scalar };
+    out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared[in_high].x * scalar, shared[in_high].y *scalar };
 }
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)

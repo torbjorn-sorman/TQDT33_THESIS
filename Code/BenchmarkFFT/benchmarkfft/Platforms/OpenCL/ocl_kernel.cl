@@ -54,6 +54,7 @@ void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
     __local cpx *out_ii = out_i + 1;
     __local cpx *in_l = shared + local_id;
     __local cpx *in_u = shared + in_high;
+#pragma unroll
     for (int steps = 0; steps < bit; ++steps) {
         w.y = sincos(angle * (local_id & (0xFFFFFFFF << steps)), &w.x);
         in_lower = *in_l;
@@ -88,7 +89,7 @@ __kernel void ocl_kernel_local(__global cpx *in, __global cpx *out, __local cpx 
     cpx src_low = { shared[in_low].x * scalar, shared[in_low].y * scalar };
     cpx src_high = { shared[in_high].x * scalar, shared[in_high].y * scalar };
     out[(reverse(in_low + offset) >> leading_bits)] = src_low;
-    out[(reverse(in_high + offset) >> leading_bits)] = src_high;
+    out[(reverse(in_high + offset) >> leading_bits)] = src_high;    
 }
 
 __kernel void ocl_kernel_global_row(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
@@ -128,29 +129,31 @@ __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local 
         by = get_group_id(1),
         ix = get_local_id(0),
         iy = get_local_id(1);
-
-#ifdef TICK
-    int x, y;
-    x = bx * TILE_DIM + ix;
-    y = by * TILE_DIM + iy;
-#else
     int x = bx * OCL_TILE_DIM + ix;
     int y = by * OCL_TILE_DIM + iy;
-#endif
-    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM)
-        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM)
+
+#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM) {
+#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM) {
             tile[iy + j][ix + i] = in[(y + j) * n + (x + i)];
+        }
+    }
 
     barrier(CLK_LOCAL_MEM_FENCE);
     x = by * OCL_TILE_DIM + ix;
     y = bx * OCL_TILE_DIM + iy;
-    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM)
-        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM)
+#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+    for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM) {
+#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+        for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM) {
             out[(y + j) * n + (x + i)] = tile[ix + i][iy + j];
+        }
+    }
 }
 
 __kernel void ocl_timestamp_kernel()
 {
     // There be none here!
-    // Kernel only used as event trigger to get timestamps!
+    // Kernel only used as event trigger to get timestamps! This kernel is enqueued first and last.
 }

@@ -61,24 +61,24 @@ static __inline unsigned int power2(const unsigned int exp)
     return power(2, exp);
 }
 
-static __inline void c_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
+static __inline void c_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *w)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     outL->x = inL->x + inU->x;
     outL->y = inL->y + inU->y;
-    outU->x = (W->x * x) - (W->y * y);
-    outU->y = (W->y * x) + (W->x * y);
+    outU->x = (w->x * x) - (w->y * y);
+    outU->y = (w->y * x) + (w->x * y);
 }
 
-static __inline void c_add_sub_mul_cg(cpx *inL, cpx *inU, cpx *out, const cpx *W)
+static __inline void c_add_sub_mul_cg(cpx *inL, cpx *inU, cpx *out, const cpx *w)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     out->x = inL->x + inU->x;
     out->y = inL->y + inU->y;
-    (++out)->x = (W->x * x) - (W->y * y);
-    out->y = (W->y * x) + (W->x * y);
+    (++out)->x = (w->x * x) - (w->y * y);
+    out->y = (w->y * x) + (w->x * y);
 }
 
 #endif

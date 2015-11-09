@@ -152,14 +152,48 @@ double ocl_2d_performance(const int n)
 //
 // ---------------------------------
 
+void __inline ocl_set_args(ocl_args *args, cl_mem in, const float global_angle)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(float), &global_angle);
+}
+
+void __inline ocl_set_args(ocl_args *args, unsigned int lmask, int steps, int dist)
+{
+    clSetKernelArg(args->kernel, 2, sizeof(unsigned int), &lmask);
+    clSetKernelArg(args->kernel, 3, sizeof(int), &steps);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &dist);
+}
+
+void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 3, sizeof(float), &local_angle);
+    clSetKernelArg(args->kernel, 4, sizeof(int), &steps_left);
+    clSetKernelArg(args->kernel, 5, sizeof(int), &leading_bits);
+    clSetKernelArg(args->kernel, 6, sizeof(float), &scalar);
+    clSetKernelArg(args->kernel, 7, sizeof(int), &block_range);
+}
+
+void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)
+{
+    clSetKernelArg(args->kernel, 0, sizeof(cl_mem), &in);
+    clSetKernelArg(args->kernel, 1, sizeof(cl_mem), &out);
+    clSetKernelArg(args->kernel, 2, args->shared_mem_size, NULL);
+    clSetKernelArg(args->kernel, 3, sizeof(int), &args->n);
+}
+
 __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev)
 {
     fft_args args;
     set_fft_arguments(&args, a_dev->dir, a_dev->number_of_blocks, OCL_GROUP_SIZE, a_dev->n);
     if (a_dev->number_of_blocks > 1) {
+        ocl_set_args(a_host, a_dev->input, args.global_angle);
         while (--args.steps_left > args.steps_gpu) {
-            ocl_set_args(a_host, a_dev->input, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
-            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->work_size, a_host->group_work_size, 0, NULL, NULL);
+            ocl_set_args(a_host, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
+            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->work_size, a_host->group_work_size, 0, NULL, NULL);            
         }
         ++args.steps_left;
     }
@@ -171,13 +205,11 @@ __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
 {
     cl_mem _in = a_dev->input;
     cl_mem _out = a_dev->output;
+    ocl_set_args(a_trans, _out, _in);
 
-    ocl_fft(a_host, a_dev);    
-    ocl_set_args(a_trans, _out, _in);
+    ocl_fft(a_host, a_dev);
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
-    
-    ocl_fft(a_host, a_dev);    
-    ocl_set_args(a_trans, _out, _in);
+    ocl_fft(a_host, a_dev);
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
 
     a_host->input = a_dev->input = _out;

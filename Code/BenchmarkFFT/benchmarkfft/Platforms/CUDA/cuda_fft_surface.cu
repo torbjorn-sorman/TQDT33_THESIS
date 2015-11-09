@@ -112,12 +112,12 @@ __host__ double cuda_surface_performance(int n)
 //
 // ---------------------------------------------
 
-__device__ __inline__ void add_sub_mul(cpx *inL, cpx *inU, cudaSurfaceObject_t out, int x_add, int y_add, int x_subm, int y_subm, cpx *W)
+__device__ __inline__ void add_sub_mul(cpx *inL, cpx *inU, cudaSurfaceObject_t out, int x_add, int y_add, int x_subm, int y_subm, cpx *w)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     cpx outL = { inL->x + inU->x, inL->y + inU->y };
-    cpx outU = { (W->x * x) - (W->y * y), (W->y * x) + (W->x * y) };
+    cpx outU = { (w->x * x) - (w->y * y), (w->y * x) + (w->x * y) };
     SURF2D_WRITE(outL, out, x_add, y_add);
     SURF2D_WRITE(outU, out, x_subm, y_subm);
 }

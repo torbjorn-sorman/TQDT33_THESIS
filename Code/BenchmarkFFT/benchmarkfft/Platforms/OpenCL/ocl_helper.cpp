@@ -22,7 +22,7 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
     ocl_check_err(clGetDeviceIDs(args->platform, CL_DEVICE_TYPE_GPU, 1, &args->device_id, NULL), "clGetDeviceIDs");
     args->context = clCreateContext(0, 1, &args->device_id, NULL, NULL, &err);
     ocl_check_err(err, "clCreateContext");
-    args->commands = clCreateCommandQueue(args->context, args->device_id, CL_QUEUE_PROFILING_ENABLE, &err);
+    args->commands = clCreateCommandQueue(args->context, args->device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
     ocl_check_err(err, "clCreateCommandQueue");    
 
     size_t data_size = sizeof(cpx) * args->n;
@@ -66,7 +66,6 @@ cl_int oclSetupProgram(std::string kernel_filename, char *kernel_name, ocl_args 
     args->program = program;
     args->kernel = kernel;
     free(src);
-    //args->kernel_strings[0] = src;
     return err;
 }
 

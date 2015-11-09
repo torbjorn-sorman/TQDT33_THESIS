@@ -19,9 +19,8 @@ struct fft_args
     int n_per_block;
 };
 
-
 static __inline void set_fft_arguments(fft_args *args, transform_direction dir, const int blocks, const int block_size, const int n)
-{    
+{
     args->n_per_block = n / blocks;
     args->local_angle = dir * (M_2_PI / args->n_per_block);
     args->steps_left = log2_32(n);
@@ -37,6 +36,15 @@ static __inline void set_fft_arguments(fft_args *args, transform_direction dir, 
     else {
         args->block_range = n >> 1;
     }
+}
+
+static __inline void set_fft_arguments(fft_args *args, const int blocks, const int n)
+{
+    args->steps_left = log2_32(n);
+    if (blocks > 1) {
+        args->steps = 0;
+        args->dist = n;
+    } 
 }
 
 #endif

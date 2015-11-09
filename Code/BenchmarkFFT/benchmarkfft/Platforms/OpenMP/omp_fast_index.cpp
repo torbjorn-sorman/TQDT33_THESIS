@@ -58,18 +58,18 @@ double openmp_fast_index_2d_performance(const int n)
 // Algorithm
 //
 
-static void __inline openmp_fi_body(cpx *in, cpx *out, cpx *W, const unsigned int lmask, int steps, int dist, const int n_half)
+static void __inline openmp_fi_body(cpx *in, cpx *out, cpx *w, const unsigned int lmask, int steps, int dist, const int n_half)
 {
     const unsigned int pmask = (dist - 1) << steps;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_half; ++i) {
         int l = i + (i & lmask);
         int u = l + dist;        
-        c_add_sub_mul(in + l, in + u, out + l, out + u, &W[(i << steps) & pmask]);
+        c_add_sub_mul(in + l, in + u, out + l, out + u, &w[(i << steps) & pmask]);
     }
 }
 
-__inline void ompFI(transform_direction dir, cpx *seq, cpx *W, const int n)
+__inline void ompFI(transform_direction dir, cpx *seq, cpx *w, const int n)
 {
     const int n_half = (n / 2);
     int bit = log2_32(n);
@@ -77,10 +77,10 @@ __inline void ompFI(transform_direction dir, cpx *seq, cpx *W, const int n)
     int steps = 0;
     int dist = n_half;
     --bit;
-    openmp_fi_body(seq, seq, W, 0xFFFFFFFF << bit, steps, dist, n_half);
+    openmp_fi_body(seq, seq, w, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        openmp_fi_body(seq, seq, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
+        openmp_fi_body(seq, seq, w, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
     openmp_bit_reverse(seq, dir, leading_bits, n);
 }
@@ -90,36 +90,36 @@ void openmp_fast_index(transform_direction dir, cpx **in, cpx **out, const int n
     const int n_half = (n / 2);
     int bit = log2_32(n);
     const int leading_bits = 32 - bit;
-    cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    openmp_twiddle_factors(W, dir, n);
+    cpx *w = (cpx *)malloc(sizeof(cpx) * n);
+    openmp_twiddle_factors(w, dir, n);
     int steps = 0;
     int dist = n_half;
     --bit;
-    openmp_fi_body(*in, *out, W, 0xFFFFFFFF << bit, steps, dist, n_half);
+    openmp_fi_body(*in, *out, w, 0xFFFFFFFF << bit, steps, dist, n_half);
     while (bit-- > 0) {
         dist >>= 1;
-        openmp_fi_body(*out, *out, W, 0xFFFFFFFF << bit, ++steps, dist, n_half);
+        openmp_fi_body(*out, *out, w, 0xFFFFFFFF << bit, ++steps, dist, n_half);
     }
     openmp_bit_reverse(*out, dir, leading_bits, n);
-    free(W);
+    free(w);
 }
 
-_inline void openmp_fi_rows(transform_direction dir, cpx** seq, cpx *W, const int n)
+_inline void openmp_fi_rows(transform_direction dir, cpx** seq, cpx *w, const int n)
 {
 #pragma omp parallel for schedule(static)
     for (int row = 0; row < n; ++row) {
-        ompFI(dir, seq[row], W, n);
+        ompFI(dir, seq[row], w, n);
     }
 }
 
 void openmp_fast_index_2d(transform_direction dir, cpx** seq, const int n)
 {
-    cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    openmp_twiddle_factors(W, dir, n);
-    openmp_fi_rows(dir, seq, W, n);
+    cpx *w = (cpx *)malloc(sizeof(cpx) * n);
+    openmp_twiddle_factors(w, dir, n);
+    openmp_fi_rows(dir, seq, w, n);
     openmp_transpose(seq, n);
-    openmp_fi_rows(dir, seq, W, n);
+    openmp_fi_rows(dir, seq, w, n);
     openmp_transpose(seq, n);
-    free(W);
+    free(w);
 }
 

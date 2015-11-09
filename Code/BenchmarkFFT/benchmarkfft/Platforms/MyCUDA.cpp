@@ -4,6 +4,9 @@ MyCUDA::MyCUDA(const int dim, const int runs)
     : Platform(dim)
 {
     name = "CUDA";
+    int runtime_v;
+    cudaRuntimeGetVersion(&runtime_v);
+    printf("CUDA version: %d\n", runtime_v);
 }
 
 MyCUDA::~MyCUDA()

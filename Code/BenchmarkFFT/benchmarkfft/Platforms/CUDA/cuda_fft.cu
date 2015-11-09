@@ -15,7 +15,7 @@ __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int step
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range);
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
-
+ 
 // -------------------------------
 //
 // Testing
@@ -164,7 +164,7 @@ __host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *thread
 __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
     fft_args args;
-    int threads, blocks;  
+    int threads, blocks;
     set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, (n >> 1));
     set_fft_arguments(&args, dir, blocks, CU_BLOCK_SIZE, n);
     if (blocks > 1) {
@@ -229,6 +229,7 @@ __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int
     in += tid + (tid & lmask);
     SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
     cpx_add_sub_mul(in, in + dist, &w);
+
 }
 
 __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)

@@ -73,60 +73,60 @@ double c_2d_performance(const int n)
 // Algorithm
 //
 
-_inline void c_inner_body(cpx *in, cpx *out, const cpx *W, const unsigned int mask, const int n_half)
+_inline void c_inner_body(cpx *in, cpx *out, const cpx *w, const unsigned int mask, const int n_half)
 {    
     for (int l = 0; l < n_half; ++l) {
-        c_add_sub_mul_cg(in + l, in + n_half + l, out, W + (l & mask));
+        c_add_sub_mul_cg(in + l, in + n_half + l, out, w + (l & mask));
         out += 2;
     }
 }
 
-_inline void c_const_geom_helper(transform_direction dir, cpx *in, cpx *out, const cpx *W, const int n)
+_inline void c_const_geom_helper(transform_direction dir, cpx *in, cpx *out, const cpx *w, const int n)
 {
     int steps_left = log2_32(n);
     int steps = 0;
-    c_inner_body(in, out, W, 0xffffffff << steps, n / 2);
+    c_inner_body(in, out, w, 0xffffffff << steps, n / 2);
     while (++steps < steps_left) {
         swap_buffer(&in, &out);
-        c_inner_body(in, out, W, 0xffffffff << steps, n / 2);
+        c_inner_body(in, out, w, 0xffffffff << steps, n / 2);
     }
     bit_reverse(out, dir, 32 - steps_left, n);
 }
 
 void c_const_geom(transform_direction dir, cpx **in, cpx **out, const int n)
 {
-    cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n);
+    cpx *w = (cpx *)malloc(sizeof(cpx) * n);
+    twiddle_factors(w, dir, n);
     
     int steps_left = log2_32(n);
     int steps = 0;        
-    c_inner_body(*in, *out, W, 0xffffffff << steps, n / 2);
+    c_inner_body(*in, *out, w, 0xffffffff << steps, n / 2);
     while (++steps < steps_left) {
         swap_buffer(in, out);
-        c_inner_body(*in, *out, W, 0xffffffff << steps, n / 2);
+        c_inner_body(*in, *out, w, 0xffffffff << steps, n / 2);
     }
     bit_reverse(*out, dir, 32 - steps_left, n);
     
-    free(W);
+    free(w);
 }
 
 // Result is found in the *in variable
 
 void c_const_geom_2d(transform_direction dir, cpx **in, cpx **out, const int n)
 {
-    cpx *W = (cpx *)malloc(sizeof(cpx) * n);
-    twiddle_factors(W, dir, n);
+    cpx *w = (cpx *)malloc(sizeof(cpx) * n);
+    twiddle_factors(w, dir, n);
     for (int row = 0; row < n * n; row += n)
-        c_const_geom_helper(dir, (*in) + row, (*out) + row, W, n);
+        c_const_geom_helper(dir, (*in) + row, (*out) + row, w, n);
     if (log2_32(n) % 2 == 0) 
         swap_buffer(in, out);
     transpose(*out, *in, n);
     for (int row = 0; row < n * n; row += n)
-        c_const_geom_helper(dir, (*in) + row, (*out) + row, W, n);
+        c_const_geom_helper(dir, (*in) + row, (*out) + row, w, n);
     if (log2_32(n) % 2 == 0) 
         swap_buffer(in, out);
     transpose(*out, *in, n);
-    free(W);
+    free(w);
 }
 
 _inline void c_inner_body(cpx *in, cpx *out, float global_angle, unsigned int mask, const int n)

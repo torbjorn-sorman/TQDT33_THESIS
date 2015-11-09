@@ -4,6 +4,17 @@ MyOpenCL::MyOpenCL(const int dim, const int runs)
     : Platform(dim)
 {
     name = "OpenCL";
+
+    cl_platform_id platform;
+    char info[255];
+    size_t actual;
+
+    clGetPlatformIDs(1, &platform, NULL);
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 255, info, &actual);
+    printf("OpenCL version: %s\n", info);
+    if (actual > 255) {
+        printf("Do stuff...");
+    }
 }
 
 MyOpenCL::~MyOpenCL()

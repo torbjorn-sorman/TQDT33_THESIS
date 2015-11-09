@@ -53,24 +53,24 @@ __device__ static inline int log2(int v)
     return FIND_FIRST_BIT(v) - 1;
 }
 
-__host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *W)
+__host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *w)
 {
     float x = inL->x - inU->x;
     float y = inL->y - inU->y;
     outL->x = inL->x + inU->x;
     outL->y = inL->y + inU->y;
-    outU->x = (W->x * x) - (W->y * y);
-    outU->y = (W->y * x) + (W->x * y);
+    outU->x = (w->x * x) - (w->y * y);
+    outU->y = (w->y * x) + (w->x * y);
 }
 
-__host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *low, cpx *high, const cpx *W)
+__device__ static __inline__ void cpx_add_sub_mul(cpx *low, cpx *high, const cpx *w)
 {
-    float x = low->x - high->x;
-    float y = low->y - high->y;
-    low->x = low->x + high->x;
-    low->y = low->y + high->y;
-    high->x = (W->x * x) - (W->y * y);
-    high->y = (W->y * x) + (W->x * y);
+    cpx l = *low;
+    cpx h = *high;
+    float x = l.x - h.x;
+    float y = l.y - h.y;
+    *low = { l.x + h.x, l.y + h.y };
+    *high = { (w->x * x) - (w->y * y), (w->y * x) + (w->x * y) };
 }
 
 __device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cudaSurfaceObject_t surf)
@@ -134,17 +134,18 @@ __host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3
     bTrans->x = bTrans->y = minDim;
     tTrans->x = tTrans->y = block_dim;
 }
+
 void checkCudaError();
 void checkCudaError(char *msg);
 
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
 
-void cuda_setup_buffers     (int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
-int cuda_shakedown          (int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
-void cuda_setup_buffers_2d  (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
-void cuda_shakedown_2d      (cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
-int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len);
-int cuda_compare_result     (cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
+void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
+int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out);
+void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n);
+void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
+int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
+int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
 
 #endif

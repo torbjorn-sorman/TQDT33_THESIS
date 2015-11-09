@@ -47,55 +47,55 @@ static unsigned int __inline bit_reverse(unsigned int x, const int leading_bits)
     return (((revTbl256[x & 0xff] << 24) | (revTbl256[(x >> 8) & 0xff] << 16) | (revTbl256[(x >> 16) & 0xff] << 8) | (revTbl256[(x >> 24) & 0xff])) >> leading_bits);
 }
 
-static void __inline twiddle_factors(cpx *W, transform_direction dir, const int n)
+static void __inline twiddle_factors(cpx *w, transform_direction dir, const int n)
 {
     float w_ang;
     w_ang = -M_2_PI / n;
     int len = n >> 1;
     for (int i = 0; i < len; ++i) {
-        W[i].x = cos(w_ang * i);
+        w[i].x = cos(w_ang * i);
     }
     len >>= 1;
     if (dir == FFT_FORWARD) {
         for (int i = 0; i < len; ++i) {
             int tmp = i + len;
-            W[i].y = W[tmp].x;
-            W[tmp].y = -W[i].x;
+            w[i].y = w[tmp].x;
+            w[tmp].y = -w[i].x;
         }
     }
     else {
         for (int i = 0; i < len; ++i) {
             int tmp = i + len;
-            W[i].y = -W[tmp].x;
-            W[tmp].y = W[i].x;
+            w[i].y = -w[tmp].x;
+            w[tmp].y = w[i].x;
         }
     }
 }
 
-static void __inline openmp_twiddle_factors(cpx *W, transform_direction dir, const int n)
+static void __inline openmp_twiddle_factors(cpx *w, transform_direction dir, const int n)
 {
     float w_ang;
     w_ang = -M_2_PI / n;
     int len = n >> 1;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < len; ++i) {
-        W[i].x = cos(w_ang * i);
+        w[i].x = cos(w_ang * i);
     }
     len >>= 1;
     if (dir == FFT_FORWARD) {
 #pragma omp parallel for schedule(static) 
         for (int i = 0; i < len; ++i) {
             int tmp = i + len;
-            W[i].y = W[tmp].x;
-            W[tmp].y = -W[i].x;
+            w[i].y = w[tmp].x;
+            w[tmp].y = -w[i].x;
         }
     }
     else {
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < len; ++i) {
             int tmp = i + len;
-            W[i].y = -W[tmp].x;
-            W[tmp].y = W[i].x;
+            w[i].y = -w[tmp].x;
+            w[tmp].y = w[i].x;
         }
     }
 }

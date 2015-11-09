@@ -34,12 +34,12 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     
     if (args->platform_cuda)
         platforms.push_back(new MyCUDA(args->dimensions, args->test_runs));
-    if (args->platform_opencl)
-        platforms.push_back(new MyOpenCL(args->dimensions, args->test_runs));
-    if (args->platform_opengl)
-        platforms.push_back(new MyOpenGL(args->dimensions, args->test_runs));
     if (args->platform_directx)
         platforms.push_back(new MyDirectX(args->dimensions, args->test_runs));
+    if (args->platform_opengl)
+        platforms.push_back(new MyOpenGL(args->dimensions, args->test_runs));
+    if (args->platform_opencl)
+        platforms.push_back(new MyOpenCL(args->dimensions, args->test_runs));
     if (args->platform_id3dx11)
         platforms.push_back(new MyID3DX11FFT(args->dimensions, args->test_runs));
     if (args->platform_openmp)

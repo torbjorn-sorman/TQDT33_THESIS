@@ -49,7 +49,7 @@ cl_int oclSetupProgram(std::string kernel_filename, char *kernel_name, ocl_args 
     if (err != CL_SUCCESS) return err;
 
     // Build the program executable
-    if (err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL) != CL_SUCCESS) {
+    if (err = clBuildProgram(program, 0, NULL, "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math", NULL, NULL) != CL_SUCCESS) {
         size_t len;
         clGetProgramBuildInfo(program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
         char *buffer = (char *)malloc(sizeof(char) * len);
@@ -105,7 +105,7 @@ cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) 
         return err;
-    args->output = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
+    args->output = clCreateBuffer(args->context, CL_MEM_WRITE_ONLY, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS) 
         return err;
     args->data_mem_size = data_mem_size;

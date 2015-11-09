@@ -38,16 +38,6 @@ void console_print_cpx_img(cpx *seq, int n)
     }
 }
 
-cpx *get_sin_img(int n)
-{
-    cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n * n);
-    for (int y = 0; y < n; ++y)
-        for (int x = 0; x < n; ++x)
-            seq[y * n + x] = make_cuFloatComplex((float)sin(M_2_PI * (((double)x) / n)), 0.f);
-    return seq;
-}
-
 void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
 {
     *dev_in = 0;    

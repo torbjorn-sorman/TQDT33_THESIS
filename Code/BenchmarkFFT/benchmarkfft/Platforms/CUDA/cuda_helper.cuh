@@ -137,9 +137,6 @@ __host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3
 void checkCudaError();
 void checkCudaError(char *msg);
 
-// OLD TEST
-
-cpx *get_sin_img(int n);
 void cudaCheckError(cudaError_t err);
 void cudaCheckError();
 

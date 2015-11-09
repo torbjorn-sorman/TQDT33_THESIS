@@ -67,7 +67,8 @@ double ocl_performance(const int n)
     double measurements[NUM_TESTS];
     cpx *data_in = get_seq(n, 1);
     ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
+
     for (int i = 0; i < NUM_TESTS; ++i) {
         start_timer();
         ocl_fft(&a_host, &a_dev);
@@ -82,10 +83,9 @@ double ocl_2d_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[NUM_TESTS];
-    int minDim = n < TILE_DIM ? TILE_DIM * TILE_DIM : n * n;
-    cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
+    cpx *data_in = (cpx *)malloc(sizeof(cpx) * n * n);
     ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
     for (int i = 0; i < NUM_TESTS; ++i) {
         start_timer();
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);

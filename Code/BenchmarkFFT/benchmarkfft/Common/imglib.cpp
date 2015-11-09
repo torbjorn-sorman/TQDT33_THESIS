@@ -200,6 +200,9 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
         tmp = (cpx *)malloc(sizeof(cpx) * n * n);
         fft_shift(tmp, seq, n);
     }
+    else {
+        tmp = seq;
+    }
     normalized_cpx_values(tmp, n, &minVal, &range, &average_best);
     double avg_pos = 0.1;
     double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
@@ -217,7 +220,7 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     output_ppm(fp, image);
     fclose(fp);
     free_img(image);
-    if (tmp) {
+    if (doFFTShift) {
         free(tmp);
     }
 }

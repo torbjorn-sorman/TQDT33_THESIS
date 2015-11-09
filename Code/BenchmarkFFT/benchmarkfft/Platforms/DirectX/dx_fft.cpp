@@ -53,7 +53,7 @@ int dx_2d_validate(const int n, bool write_img)
     }
 
     dx_shakedown(&args);
-    double diff = diff_seq(data, ref, n);
+    double diff = diff_seq(data, ref, n * n);
     free_all(data, ref);
     return diff < RELATIVE_ERROR_MARGIN;
 }

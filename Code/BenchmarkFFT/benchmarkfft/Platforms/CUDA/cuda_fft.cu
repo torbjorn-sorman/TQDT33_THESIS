@@ -161,6 +161,8 @@ __host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *thread
     number_of_blocks->y = dim2 ? multi_blocks ? n_half / block_size : 1 : number_of_blocks->x;
 }
 
+__global__ void cuda_kernel_global_sh(cpx *in, cpx *out, float angle, int steps, int dist);
+
 __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
     fft_args args;
@@ -229,8 +231,27 @@ __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int
     in += tid + (tid & lmask);
     SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
     cpx_add_sub_mul(in, in + dist, &w);
-
 }
+
+/*
+__global__ void cuda_kernel_global_sh(cpx *in, cpx *out, float angle, int steps, int dist)
+{
+    __shared__ cpx shared[CU_BLOCK_SIZE * 2];
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    shared[threadIdx.x] = in[tid];
+    shared[threadIdx.x + blockDim.x] = in[tid + dist];
+    SYNC_THREADS;    
+    cpx w, *out_i = shared + (threadIdx.x << 1);
+    SIN_COS_F(angle * (tid & (0xFFFFFFFF << steps)), &w.y, &w.x);
+    cpx in_l = shared[threadIdx.x];
+    cpx in_u = shared[threadIdx.x + blockDim.x];
+    cpx_add_sub_mul(&in_l, &in_u, out_i, out_i + 1, &w);
+    SYNC_THREADS;        
+    int offset = blockIdx.x * blockDim.x * 2;
+    out[threadIdx.x + offset] = shared[threadIdx.x];
+    out[threadIdx.x + offset + blockDim.x] = shared[threadIdx.x + blockDim.x];
+}
+*/
 
 __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {

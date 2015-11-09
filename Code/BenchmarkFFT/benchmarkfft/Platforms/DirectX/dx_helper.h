@@ -3,6 +3,7 @@
 #define DX_HELPER_H
 
 #include <d3d11.h>
+#include <D3dcsx.h>
 #include <D3Dcompiler.h>
 #include <comdef.h>
 
@@ -83,6 +84,28 @@ static __inline void dx_end_profiling(dx_args *args, profiler_data *p_data)
     args->context->End(p_data->disjoint_query);
 }
 
+static __inline void dx_start_profiling(ID3D11Device *device, ID3D11DeviceContext *context, profiler_data *p_data)
+{
+    if (p_data->disjoint_query == NULL)
+    {
+        D3D11_QUERY_DESC desc;
+        desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+        desc.MiscFlags = 0;
+        device->CreateQuery(&desc, &p_data->disjoint_query);
+        desc.Query = D3D11_QUERY_TIMESTAMP;
+        device->CreateQuery(&desc, &p_data->q_start);
+        device->CreateQuery(&desc, &p_data->q_end);
+    }
+    context->Begin(p_data->disjoint_query);
+    context->End(p_data->q_start);
+}
+
+static __inline void dx_end_profiling(ID3D11DeviceContext *context, profiler_data *p_data)
+{
+    context->End(p_data->q_end);
+    context->End(p_data->disjoint_query);
+}
+
 template<typename T> static __inline void dx_swap(T **a, T **b)
 {
     T *c = *a;
@@ -108,7 +131,9 @@ template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* conte
 }
 
 double dx_avg(profiler_data profiler[], dx_args *args);
+double dx_avg(profiler_data profiler[], ID3D11DeviceContext *context);
 double dx_time_elapsed(profiler_data *p, dx_args *args);
+double dx_time_elapsed(profiler_data *p, ID3D11DeviceContext *context);
 
 size_t padded_size(size_t sz, size_t width);
 size_t padded_size(size_t sz);

@@ -78,18 +78,16 @@ int main(int argc, char* argv[])
         return 0;
     }
     if (args.show_cuprop) {
-        std::cout << "Control Show CUDA Properties" << std::endl;
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
     }
     if (args.test_platform) {
-        std::cout << "Control Test Platforms" << std::endl;
         std::vector<Platform *> platforms = getPlatforms(&args);
         if (args.performance_metrics) {
             cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-            std::cout << "  Running Platform Performance Test (might take a while)";
+            std::cout << "  Running Platform Tests (might take a while)";
             for (int i = args.start; i <= args.end; ++i) {
                 int n = power2(i);                
                 for (auto platform : platforms) { 
@@ -164,6 +162,7 @@ void printDevProp(cudaDeviceProp devProp)
     printf("Concurrent copy and execution: %s\n", (devProp.deviceOverlap ? "Yes" : "No"));
     printf("Number of multiprocessors:     %d\n", devProp.multiProcessorCount);
     printf("Kernel execution timeout:      %s\n", (devProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
+    printf("\n");
     return;
 }
 

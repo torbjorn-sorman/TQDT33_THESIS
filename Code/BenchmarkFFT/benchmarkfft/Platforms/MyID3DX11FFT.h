@@ -2,9 +2,6 @@
 #ifndef MYID3DX11FFT_H
 #define MYID3DX11FFT_H
 
-#include <d3d11.h>
-#include <D3dcsx.h>
-
 #include "Platform.h"
 #include "DirectX\dx_helper.h"
 

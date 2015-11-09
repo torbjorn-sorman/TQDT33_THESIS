@@ -4,6 +4,7 @@ MyDirectX::MyDirectX(const int dim, const int runs)
     : Platform(dim)
 {
     name = "DirectX";
+    printf("DirectCompute version: Direct3D 11.0\n");
 }
 
 MyDirectX::~MyDirectX()

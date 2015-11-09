@@ -121,7 +121,9 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
+</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -187,7 +189,9 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"</Command>
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
+</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>

@@ -15,6 +15,21 @@ double dx_avg(profiler_data profiler[], dx_args *args)
     return average_best(m, NUM_TESTS);
 }
 
+double dx_avg(profiler_data profiler[], ID3D11DeviceContext *context)
+{
+    double m[NUM_TESTS];
+    for (int i = 0; i < NUM_TESTS; ++i) {
+        profiler_data p = profiler[i];
+        UINT64 ts_start, ts_end;
+        D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
+        while (S_OK != context->GetData(p.q_start, &ts_start, sizeof(UINT64), 0)){};
+        while (S_OK != context->GetData(p.q_end, &ts_end, sizeof(UINT64), 0)){};
+        while (S_OK != context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+        m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
+    }
+    return average_best(m, NUM_TESTS);
+}
+
 double dx_time_elapsed(profiler_data *p, dx_args *args)
 {
     UINT64 ts_start, ts_end;
@@ -22,6 +37,16 @@ double dx_time_elapsed(profiler_data *p, dx_args *args)
     while (S_OK != args->context->GetData(p->q_start, &ts_start, sizeof(UINT64), 0)){};
     while (S_OK != args->context->GetData(p->q_end, &ts_end, sizeof(UINT64), 0)){};
     while (S_OK != args->context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+    return (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
+}
+
+double dx_time_elapsed(profiler_data *p, ID3D11DeviceContext *context)
+{
+    UINT64 ts_start, ts_end;
+    D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
+    while (S_OK != context->GetData(p->q_start, &ts_start, sizeof(UINT64), 0)){};
+    while (S_OK != context->GetData(p->q_end, &ts_end, sizeof(UINT64), 0)){};
+    while (S_OK != context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
     return (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
 }
 
@@ -54,7 +79,10 @@ void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_blob)
 void dx_check_error(HRESULT hr, char *method)
 {
     if (FAILED(hr)) {
-        printf("%s failed with return code %x\n", method, hr);
+        printf("\n%s failed with return code %x\n", method, hr);
+        _com_error err(hr);
+        LPCTSTR errMsg = err.ErrorMessage();
+        printf("%s\n", errMsg);
         printf("Press the any key to continue...");
         getchar();
         exit(-1);

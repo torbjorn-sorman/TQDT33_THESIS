@@ -191,10 +191,21 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
-</Command>
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>

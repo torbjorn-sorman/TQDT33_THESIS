@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     // Special setup!
     if (args.platform_opengl) {        
         glutInit(&argc, argv);
-        glutCreateWindow("OpenGL retardness...");
+        glutCreateWindow("GL Context");
     }
     if (args.profiler) {
         if (args.test_platform) {
@@ -188,7 +188,6 @@ void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgume
     for (auto platform : platforms) {
         fprintf_s(f, "%s\t", platform->name.c_str());
     }
-    std::reverse(begin(platforms), end(platforms));
     fprintf_s(f, "\n");
     for (int i = 0; i < a->test_runs; ++i) {
         fprintf_s(f, "%d\t", power2(i) * power2(a->start));

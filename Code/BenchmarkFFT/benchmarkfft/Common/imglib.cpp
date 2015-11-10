@@ -2,7 +2,7 @@
 
 #define PPMREADBUFLEN 256
 
-struct image_t 
+struct image_t
 {
     unsigned int width;
     unsigned int height;
@@ -61,9 +61,11 @@ image alloc_img(unsigned int width, unsigned int height)
     image img;
     size = width * height * sizeof(pixel);
     img = (image)malloc(sizeof(image_t));
-    img->buf = (pixel *)malloc(size);
-    img->width = width;
-    img->height = height;
+    if (img) {
+        img->buf = (pixel *)malloc(size);
+        img->width = width;
+        img->height = height;
+    }
     return img;
 }
 
@@ -143,9 +145,11 @@ void read_image(cpx *dst, char *name, int *n)
 cpx *get_flat(cpx **seq, int n)
 {
     cpx *flat = (cpx *)malloc(sizeof(cpx) * n * n);
-    for (int y = 0; y < n; ++y)
-        for (int x = 0; x < n; ++x)
-            flat[y * n + x] = seq[y][x];
+    if (flat) {
+        for (int y = 0; y < n; ++y)
+            for (int x = 0; x < n; ++x)
+                flat[y * n + x] = seq[y][x];
+    }
     return flat;
 }
 
@@ -181,7 +185,7 @@ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, doub
     double sum_v = 0.0;
     double tmp = 0.0;
     for (int i = 0; i < n; ++i) {
-        tmp = cuCabsf(seq[i]);        
+        tmp = cuCabsf(seq[i]);
         min_v = min_v < tmp ? min_v : tmp;
         max_v = max_v > tmp ? max_v : tmp;
         sum_v += tmp;
@@ -198,7 +202,8 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     cpx *tmp = 0;
     if (doFFTShift) {
         tmp = (cpx *)malloc(sizeof(cpx) * n * n);
-        fft_shift(tmp, seq, n);
+        if (tmp)
+            fft_shift(tmp, seq, n);
     }
     else {
         tmp = seq;
@@ -207,27 +212,29 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     double avg_pos = 0.1;
     double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     image = alloc_img(n, n);
-    for (int y = 0; y < n; ++y) {
-        for (int x = 0; x < n; ++x) {
-            mag = cuCabsf(tmp[y * n + x]);
-            val = ((mag - minVal) / range);
-            val = (atan(val * scalar) / (M_PI / 2.0)) * 255.0;
-            color_component col = (unsigned char)(val > 255.0 ? 255 : val);
-            put_pixel_unsafe(image, x, y, col, col, col);
+    if (tmp) {
+        for (int y = 0; y < n; ++y) {
+            for (int x = 0; x < n; ++x) {
+                mag = cuCabsf(tmp[y * n + x]);
+                val = ((mag - minVal) / range);
+                val = (atan(val * scalar) / (M_PI / 2.0)) * 255.0;
+                color_component col = (unsigned char)(val > 255.0 ? 255 : val);
+                put_pixel_unsafe(image, x, y, col, col, col);
+            }
         }
-    }
-    FILE *fp = get_img_file_pntr(name, n, type);
-    output_ppm(fp, image);
-    fclose(fp);
-    free_img(image);
-    if (doFFTShift) {
-        free(tmp);
+        FILE *fp = get_img_file_pntr(name, n, type);
+        output_ppm(fp, image);
+        fclose(fp);
+        free_img(image);
+        if (doFFTShift) {
+            free(tmp);
+        }
     }
 }
 
 void write_normalized_image(char *name, char *type, cpx** seq, int n, bool doFFTShift)
 {
-    cpx *flat = get_flat(seq, n);    
+    cpx *flat = get_flat(seq, n);
     write_normalized_image(name, type, flat, n, doFFTShift);
     free(flat);
 }

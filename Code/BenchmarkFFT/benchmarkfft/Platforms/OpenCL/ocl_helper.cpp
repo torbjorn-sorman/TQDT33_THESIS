@@ -9,6 +9,7 @@ int ocl_check_err(cl_int error, char *msg)
 {
     if (error != CL_SUCCESS) {
         printf("Error Code: %d\nMessage: %s\n", error, msg);
+#pragma warning(suppress: 6031)
         getchar();
         exit(99);
     }
@@ -23,13 +24,14 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
     args->context = clCreateContext(0, 1, &args->device_id, NULL, NULL, &err);
     ocl_check_err(err, "clCreateContext");
     args->commands = clCreateCommandQueue(args->context, args->device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
-    ocl_check_err(err, "clCreateCommandQueue");    
+    ocl_check_err(err, "clCreateCommandQueue");
 
     size_t data_size = sizeof(cpx) * args->n;
     if (dim2) {
         data_size *= args->n;
         ocl_check_err(ocl_setup_work_groups_2d(args, group_size), "ocl_setup_work_groups_2d");
-    } else {
+    }
+    else {
         ocl_check_err(ocl_setup_work_groups(args, group_size), "ocl_setup_work_groups");
     }
     return ocl_setup_io_buffers(args, data_size);
@@ -102,10 +104,10 @@ cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
 {
     cl_int err = CL_SUCCESS;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) 
+    if (err != CL_SUCCESS)
         return err;
     args->output = clCreateBuffer(args->context, CL_MEM_WRITE_ONLY, data_mem_size, NULL, &err);
-    if (err != CL_SUCCESS) 
+    if (err != CL_SUCCESS)
         return err;
     args->data_mem_size = data_mem_size;
     return err;
@@ -139,7 +141,7 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
 
     ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local", a_dev), "Failed to setup GPU Program 1D!");
     ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global", a_host), "Failed to setup CPU Program!");
-        
+
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
         err = oclSetupDeviceMemoryData(a_dev, data_in);
@@ -182,7 +184,7 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data
     ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local_row", a_dev), "Failed to setup GPU Program!");
     ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global_row", a_host), "Failed to setup CPU Program!");
     ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_transpose_kernel", a_trans), "Failed to setup Transpose Program!");
-        
+
     cl_int err = oclSetupDeviceMemoryData(a_dev, data_in);
     memcpy(a_host->work_size, a_dev->work_size, sizeof(size_t) * 3);
     memcpy(a_host->group_work_size, a_dev->group_work_size, sizeof(size_t) * 3);
@@ -221,7 +223,7 @@ cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_de
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
 {
     cl_int err = CL_SUCCESS;
-    if (dev_in != NULL) {    
+    if (dev_in != NULL) {
         ocl_check_err(clEnqueueReadBuffer(a_dev->commands, a_dev->input, CL_TRUE, 0, a_dev->data_mem_size, dev_in, 0, NULL, NULL), "Read Input Buffer!");
     }
     if (dev_out != NULL) {
@@ -257,10 +259,13 @@ void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n)
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
     size_t minSize = n * n * sizeof(cpx);
-    *in = (cpx *)malloc(minSize);
-    if (out != NULL)
-        *out = (cpx *)malloc(minSize);
-    read_image(*in, input_file, &sz);
-    *ref = (cpx *)malloc(minSize);
-    memcpy(*ref, *in, minSize);
+    cpx *_in = (cpx *)malloc(minSize);
+    if (_in) {
+        if (out != NULL)
+            *out = (cpx *)malloc(minSize);
+        read_image(_in, input_file, &sz);
+        *ref = (cpx *)malloc(minSize);
+        memcpy(*ref, _in, minSize);
+        *in = _in;
+    }
 }

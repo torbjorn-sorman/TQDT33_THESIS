@@ -23,7 +23,7 @@ CComPtr<ID3D11UnorderedAccessView> get_uav(ID3D11Device* device, VOID *init_data
     desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
     desc.StructureByteStride = sizeof(float);
     if (init_data != NULL) {
-        D3D11_SUBRESOURCE_DATA data;        
+        D3D11_SUBRESOURCE_DATA data;
         data.pSysMem = init_data;
         dx_check_error(device->CreateBuffer(&desc, &data, &buffer), "create_buffer");
     }
@@ -46,7 +46,7 @@ CComPtr<ID3D11UnorderedAccessView> get_uav(ID3D11Device* device, VOID *init_data
 
 ID3D11Buffer* copy_to_buffer(ID3D11Buffer* pBuffer, ID3D11DeviceContext *pContextOut)  //release the returned buffer
 {
-    ID3D11Buffer* debugbuf = NULL;
+    ID3D11Buffer* debugbuf = { 0 };
 
     D3D11_BUFFER_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
@@ -59,10 +59,13 @@ ID3D11Buffer* copy_to_buffer(ID3D11Buffer* pBuffer, ID3D11DeviceContext *pContex
     CComPtr<ID3D11Device> pDeviceOut = NULL;
     pContextOut->GetDevice(&pDeviceOut);
 
-    pDeviceOut->CreateBuffer(&desc, NULL, &debugbuf);
-    pContextOut->CopyResource(debugbuf, pBuffer);
-
-    return debugbuf;
+    HRESULT hr = pDeviceOut->CreateBuffer(&desc, NULL, &debugbuf);
+    if (debugbuf) {
+        dx_check_error(hr, "CreateBuffer");
+        pContextOut->CopyResource(debugbuf, pBuffer);
+        return debugbuf;
+    }
+    return NULL;
 }
 
 cpx *get_result(CComPtr<ID3D11DeviceContext> context, CComPtr<ID3D11UnorderedAccessView> resp_uav, size_t data_size)
@@ -71,12 +74,16 @@ cpx *get_result(CComPtr<ID3D11DeviceContext> context, CComPtr<ID3D11UnorderedAcc
     resp_uav->GetResource((ID3D11Resource **)&result_output);
     CComPtr<ID3D11Buffer> result;
     result.Attach(copy_to_buffer(result_output, context));
-    D3D11_MAPPED_SUBRESOURCE MappedResource;
+    D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
     context->Map(result, 0, D3D11_MAP_READ, 0, &MappedResource);
-    cpx *out = (cpx *)MappedResource.pData;
-    cpx *data = (cpx *)malloc(data_size);
-    memcpy(data, out, data_size);
-    return data;
+    if (MappedResource.pData) {
+        cpx *out = (cpx *)MappedResource.pData;
+        cpx *data = (cpx *)malloc(data_size);
+        if (data)
+            memcpy(data, out, data_size);
+        return data;
+    }
+    return NULL;
 }
 
 bool MyID3DX11FFT::validate(const int n, bool write_img)
@@ -92,35 +99,38 @@ bool MyID3DX11FFT::validate(const int n, bool write_img)
         data = get_seq(n, 1);
         ref = get_seq(n, data);
         data_size = sizeof(cpx) * n;
-    }else {
-        setup_seq_2d(&data, NULL, &ref, n * 2);    
+    }
+    else {
+        setup_seq_2d(&data, NULL, &ref, n * 2);
         data_size = sizeof(cpx) * n * n;
     }
     CComPtr<ID3DX11FFT> fft = 0;
     CComPtr<ID3DX11FFT> fft_inv = 0;
-    CComPtr<ID3D11DeviceContext> context = NULL;
-    CComPtr<ID3D11Device> device = NULL;
-    D3DX11_FFT_BUFFER_INFO buffer_info;    
-    D3DX11_FFT_BUFFER_INFO buffer_info_inv;
-    CComPtr<ID3D11UnorderedAccessView> resp_uav;
-    CComPtr<ID3D11UnorderedAccessView> resp_inv_uav;
+    CComPtr<ID3D11DeviceContext> context = { 0 };
+    CComPtr<ID3D11Device> device = { 0 };
+    D3DX11_FFT_BUFFER_INFO buffer_info = { 0 };
+    D3DX11_FFT_BUFFER_INFO buffer_info_inv = { 0 };
+    CComPtr<ID3D11UnorderedAccessView> resp_uav = { 0 };
+    CComPtr<ID3D11UnorderedAccessView> resp_inv_uav = { 0 };
     const D3D_FEATURE_LEVEL feature_levels[1] = { D3D_FEATURE_LEVEL_11_0 };
     {
-        dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, feature_levels, 1, D3D11_SDK_VERSION, &device, NULL, &context), "D3D11CreateDevice");   
+        dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, feature_levels, 1, D3D11_SDK_VERSION, &device, NULL, &context), "D3D11CreateDevice");
         if (dimensions == 1) {
-            dx_check_error(D3DX11CreateFFT1DComplex(context, n, 0, &buffer_info, &fft), "D3DX11CreateFFT1DComplex");                    
+            dx_check_error(D3DX11CreateFFT1DComplex(context, n, 0, &buffer_info, &fft), "D3DX11CreateFFT1DComplex");
         }
         else {
             dx_check_error(D3DX11CreateFFT2DComplex(context, n, n, 0, &buffer_info, &fft), "D3DX11CreateFFT2DComplex");
         }
-        CComPtr<ID3D11UnorderedAccessView> buf_uav = get_uav(device, data, (UINT)buffer_info.TempBufferFloatSizes[0]);
-        CComPtr<ID3D11UnorderedAccessView> tmp1_uav = get_uav(device, NULL, (UINT)buffer_info.TempBufferFloatSizes[0]);
-        CComPtr<ID3D11UnorderedAccessView> tmp2_uav = get_uav(device, NULL, (UINT)buffer_info.TempBufferFloatSizes[1]);
-        fft->SetForwardScale(1.0f);
-        ID3D11UnorderedAccessView *vect[] = { tmp1_uav, tmp2_uav };
-        dx_check_error(fft->AttachBuffersAndPrecompute(2, vect, 0, 0), "AttachBuffersAndPrecompute");                        
-        fft->ForwardTransform(buf_uav, &resp_uav);
-    }    
+        if (buffer_info.TempBufferFloatSizes) {
+            CComPtr<ID3D11UnorderedAccessView> buf_uav = get_uav(device, data, (UINT)buffer_info.TempBufferFloatSizes[0]);
+            CComPtr<ID3D11UnorderedAccessView> tmp1_uav = get_uav(device, NULL, (UINT)buffer_info.TempBufferFloatSizes[0]);
+            CComPtr<ID3D11UnorderedAccessView> tmp2_uav = get_uav(device, NULL, (UINT)buffer_info.TempBufferFloatSizes[1]);
+            fft->SetForwardScale(1.0f);
+            ID3D11UnorderedAccessView *vect[] = { tmp1_uav, tmp2_uav };
+            dx_check_error(fft->AttachBuffersAndPrecompute(2, vect, 0, 0), "AttachBuffersAndPrecompute");
+            fft->ForwardTransform(buf_uav, &resp_uav);
+        }
+    }
     free(data);
     data = get_result(context, resp_uav, data_size);
     if (write_img) {
@@ -133,20 +143,22 @@ bool MyID3DX11FFT::validate(const int n, bool write_img)
         else {
             dx_check_error(D3DX11CreateFFT2DComplex(context, n, n, 0, &buffer_info_inv, &fft_inv), "D3DX11CreateFFT2DComplex");
         }
-        CComPtr<ID3D11UnorderedAccessView> buf_uav = get_uav(device, data, (UINT)buffer_info_inv.TempBufferFloatSizes[0]);
-        CComPtr<ID3D11UnorderedAccessView> tmp1_uav = get_uav(device, NULL, (UINT)buffer_info_inv.TempBufferFloatSizes[0]);
-        CComPtr<ID3D11UnorderedAccessView> tmp2_uav = get_uav(device, NULL, (UINT)buffer_info_inv.TempBufferFloatSizes[1]);
-        fft_inv->SetInverseScale(1.f / n);
-        ID3D11UnorderedAccessView *vect[] = { tmp1_uav, tmp2_uav };
-        dx_check_error(fft_inv->AttachBuffersAndPrecompute(2, vect, 0, 0), "AttachBuffersAndPrecompute");        
-        fft_inv->InverseTransform(buf_uav, &resp_inv_uav);
+        if (buffer_info_inv.TempBufferFloatSizes) {
+            CComPtr<ID3D11UnorderedAccessView> buf_uav = get_uav(device, data, (UINT)buffer_info_inv.TempBufferFloatSizes[0]);
+            CComPtr<ID3D11UnorderedAccessView> tmp1_uav = get_uav(device, NULL, (UINT)buffer_info_inv.TempBufferFloatSizes[0]);
+            CComPtr<ID3D11UnorderedAccessView> tmp2_uav = get_uav(device, NULL, (UINT)buffer_info_inv.TempBufferFloatSizes[1]);
+            fft_inv->SetInverseScale(1.f / n);
+            ID3D11UnorderedAccessView *vect[] = { tmp1_uav, tmp2_uav };
+            dx_check_error(fft_inv->AttachBuffersAndPrecompute(2, vect, 0, 0), "AttachBuffersAndPrecompute");
+            fft_inv->InverseTransform(buf_uav, &resp_inv_uav);
+        }
     }
     free(data);
     data = get_result(context, resp_inv_uav, data_size);
     if (write_img) {
         write_image("ID3DX11FFT", "spat", data, n);
     }
-    bool res = diff_seq(data, ref, data_size / sizeof(cpx));
+    double res = diff_seq(data, ref, (int)(data_size / sizeof(cpx)));
     free(data);
     free(ref);
     return res == 0;

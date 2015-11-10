@@ -50,10 +50,12 @@ char *get_kernel_src(LPCWSTR file_name, int *length)
     std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     size_t len = contents.size() + 1;
     char *src = (char *)malloc(sizeof(char) * len);
-    strcpy_s(src, sizeof(char) * len, contents.c_str());
-    src[contents.size()] = '\0';
-    if (length)
-        *length = int(len);
+    if (src) {
+        strcpy_s(src, sizeof(char) * len, contents.c_str());
+        src[contents.size()] = '\0';
+        if (length)
+            *length = int(len);
+    }
     return src;
 }
 
@@ -63,10 +65,12 @@ char *get_kernel_src(std::string file_name, int *length)
     std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     size_t len = contents.size() + 1;
     char *src = (char *)malloc(sizeof(char) * len);
-    strcpy_s(src, sizeof(char) * len, contents.c_str());
-    src[contents.size()] = '\0';
-    if (length)
-        *length = int(len);
+    if (src) {
+        strcpy_s(src, sizeof(char) * len, contents.c_str());
+        src[contents.size()] = '\0';
+        if (length)
+            *length = int(len);
+    }
     return src;
 }
 
@@ -74,10 +78,12 @@ char *get_kernel_src_from_string(std::string contents, int *length)
 {
     size_t len = contents.size() + 1;
     char *src = (char *)malloc(sizeof(char) * len);
-    strcpy_s(src, sizeof(char) * len, contents.c_str());
-    src[contents.size()] = '\0';
-    if (length)
-        *length = int(len);
+    if (src) {
+        strcpy_s(src, sizeof(char) * len, contents.c_str());
+        src[contents.size()] = '\0';
+        if (length)
+            *length = int(len);
+    }
     return src;
 }
 

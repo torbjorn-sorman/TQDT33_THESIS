@@ -38,6 +38,7 @@ void gl_log(GLuint shader, const char* type, const char* msg)
     GLsizei length;
     glGetShaderInfoLog(shader, 10239, &length, log);
     fprintf(stderr, "%s log:\n%s\n", type, log);
+#pragma warning(suppress: 6031)
     getchar();
     exit(40);
 }

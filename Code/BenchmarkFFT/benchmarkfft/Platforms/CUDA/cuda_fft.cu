@@ -47,11 +47,7 @@ __host__ int cuda_2d_validate(int n, bool write_img)
     cudaDeviceSynchronize();
     if (write_img) {
         cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
-#ifndef TRANSPOSE_ONLY
         write_normalized_image("CUDA", "freq", host_buffer, n, true);
-#else
-        write_image("CUDA", "trans", host_buffer, n);
-#endif
     }
     cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaDeviceSynchronize();
@@ -233,26 +229,6 @@ __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int
     cpx_add_sub_mul(in, in + dist, &w);
 }
 
-/*
-__global__ void cuda_kernel_global_sh(cpx *in, cpx *out, float angle, int steps, int dist)
-{
-    __shared__ cpx shared[CU_BLOCK_SIZE * 2];
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    shared[threadIdx.x] = in[tid];
-    shared[threadIdx.x + blockDim.x] = in[tid + dist];
-    SYNC_THREADS;    
-    cpx w, *out_i = shared + (threadIdx.x << 1);
-    SIN_COS_F(angle * (tid & (0xFFFFFFFF << steps)), &w.y, &w.x);
-    cpx in_l = shared[threadIdx.x];
-    cpx in_u = shared[threadIdx.x + blockDim.x];
-    cpx_add_sub_mul(&in_l, &in_u, out_i, out_i + 1, &w);
-    SYNC_THREADS;        
-    int offset = blockIdx.x * blockDim.x * 2;
-    out[threadIdx.x + offset] = shared[threadIdx.x];
-    out[threadIdx.x + offset + blockDim.x] = shared[threadIdx.x + blockDim.x];
-}
-*/
-
 __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     cpx w;
@@ -262,7 +238,6 @@ __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask,
     cpx_add_sub_mul(in, in + dist, &w);
 }
 
-// Full blown block syncronized algorithm! In theory this should scalar up but is limited by hardware (#cores)
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range)
 {
     extern __shared__ cpx shared[];

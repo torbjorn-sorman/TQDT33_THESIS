@@ -122,12 +122,14 @@ static __inline void swap_io(dx_args *a)
 
 template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, T *params)
 {
-    D3D11_MAPPED_SUBRESOURCE mapped_resource;
+    D3D11_MAPPED_SUBRESOURCE mapped_resource = { 0 };
     context->Map(arg_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
-    T* constants = reinterpret_cast<T *>(mapped_resource.pData);
-    constants[0] = *params;
-    constants = nullptr;
-    context->Unmap(arg_buffer, 0);
+    if (mapped_resource.pData) {
+        T* constants = reinterpret_cast<T *>(mapped_resource.pData);
+        constants[0] = *params;
+        constants = nullptr;
+        context->Unmap(arg_buffer, 0);
+    }
 }
 
 double dx_avg(profiler_data profiler[], dx_args *args);

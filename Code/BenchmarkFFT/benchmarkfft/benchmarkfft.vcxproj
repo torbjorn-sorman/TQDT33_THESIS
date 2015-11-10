@@ -172,6 +172,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

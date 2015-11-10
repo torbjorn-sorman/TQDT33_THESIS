@@ -5,9 +5,11 @@ cpx *get_seq(int n, int sinus)
     int i;
     cpx *seq;
     seq = (cpx *)malloc(sizeof(cpx) * n);
-    for (i = 0; i < n; ++i) {
-        seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
-        seq[i].y = 0.f;
+    if (seq) {
+        for (i = 0; i < n; ++i) {
+            seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
+            seq[i].y = 0.f;
+        }
     }
     return seq;
 }
@@ -22,9 +24,11 @@ cpx *get_seq(int n, cpx *src)
     int i;
     cpx *seq;
     seq = (cpx *)malloc(sizeof(cpx) * n);
-    for (i = 0; i < n; ++i) {
-        seq[i].x = src[i].x;
-        seq[i].y = src[i].y;
+    if (seq) {
+        for (i = 0; i < n; ++i) {
+            seq[i].x = src[i].x;
+            seq[i].y = src[i].y;
+        }
     }
     return seq;
 }
@@ -34,28 +38,36 @@ void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int n)
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
-    *in = (cpx *)malloc(sizeof(cpx) * n * n);
-    if (buf != NULL)
-        *buf = (cpx *)malloc(sizeof(cpx) * n * n);
-    *ref = (cpx *)malloc(sizeof(cpx) * n * n);
-    read_image(*in, input_file, &sz);
-    memcpy(*ref, *in, sizeof(cpx) * n * n);
+    cpx *_in = (cpx *)malloc(sizeof(cpx) * n * n);
+    if (_in) {
+        if (buf != NULL)
+            *buf = (cpx *)malloc(sizeof(cpx) * n * n);
+        *ref = (cpx *)malloc(sizeof(cpx) * n * n);
+        read_image(_in, input_file, &sz);
+
+        memcpy(*ref, _in, sizeof(cpx) * n * n);
+        *in = _in;
+    }
 }
 
 cpx **get_seq_2d(const int n, const int type)
 {
     cpx **seq;
     seq = (cpx **)malloc(sizeof(cpx *) * n);
-    if (type == 0 || type == 1) {
-        for (int i = 0; i < n; ++i) {
-            seq[i] = get_seq(n, type);
+    if (seq) {
+        if (type == 0 || type == 1) {
+            for (int i = 0; i < n; ++i) {
+                seq[i] = get_seq(n, type);
+            }
         }
-    }
-    else {
-        for (int y = 0; y < n; ++y) {
-            seq[y] = (cpx *)malloc(sizeof(cpx) * n);
-            for (int x = 0; x < n; ++x) {
-                seq[y][x] = { (float)x, (float)y };
+        else {
+            for (int y = 0; y < n; ++y) {
+                seq[y] = (cpx *)malloc(sizeof(cpx) * n);
+                if (seq[y]) {
+                    for (int x = 0; x < n; ++x) {
+                        seq[y][x] = { (float)x, (float)y };
+                    }
+                }
             }
         }
     }
@@ -65,8 +77,10 @@ cpx **get_seq_2d(const int n, const int type)
 cpx **get_seq_2d(const int n, cpx **src)
 {
     cpx **seq = (cpx **)malloc(sizeof(cpx *) * n);
-    for (int i = 0; i < n; ++i)
-        seq[i] = get_seq(n, src[i]);
+    if (seq) {
+        for (int i = 0; i < n; ++i)
+            seq[i] = get_seq(n, src[i]);
+    }
     return seq;
 }
 

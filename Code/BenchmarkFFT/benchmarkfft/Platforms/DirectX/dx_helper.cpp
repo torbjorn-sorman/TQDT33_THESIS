@@ -71,6 +71,7 @@ void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_blob)
         }
         printf("%s failed with return code %x\n", method, hr);
         printf("Press the any key to continue...");
+#pragma warning(suppress: 6031)
         getchar();
         exit(-1);
     }
@@ -84,6 +85,7 @@ void dx_check_error(HRESULT hr, char *method)
         LPCTSTR errMsg = err.ErrorMessage();
         printf("%s\n", errMsg);
         printf("Press the any key to continue...");
+#pragma warning(suppress: 6031)
         getchar();
         exit(-1);
     }
@@ -138,7 +140,7 @@ D3D11_BUFFER_DESC get_constant_buffer_description()
 void dx_write_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx* in, const int n)
 {
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
+    dx_check_error(context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource), "Map");
     cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
     memcpy(data, in, padded_size(sizeof(cpx) * n));
     data = nullptr;
@@ -150,10 +152,12 @@ void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
     args->context->CopyResource(args->buf_staging, src);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
     args->context->Map(args->buf_staging, 0, D3D11_MAP_READ, 0, &mapped_resource);
-    cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
-    memcpy(dst, data, sizeof(cpx) * n);
-    data = nullptr;
-    args->context->Unmap(args->buf_staging, 0);
+    if (mapped_resource.pData) {
+        cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
+        memcpy(dst, data, sizeof(cpx) * n);
+        data = nullptr;
+        args->context->Unmap(args->buf_staging, 0);
+    }
 }
 
 void dx_setup_file(dx_args *a, LPCWSTR cs_file, const int group_size, const int n)
@@ -168,49 +172,60 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
     a->number_of_blocks = a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
-    
+
     dx_setup_file(a, cs_file, group_size, n);
-        
+
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n);
     D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n);
-    ID3DBlob* errorBlob = nullptr;
+    ID3DBlob* errorBlob = 0;
 
     const D3D_FEATURE_LEVEL feature_levels[1] = { D3D_FEATURE_LEVEL_11_0 };
 
     dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, feature_levels, 1, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
 
+    a->buf_input = { 0 };
+    a->buf_output = { 0 };
+
     // GPU read/write accessible buffers.
     dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_input), "Create GPU In Buffer ");
     dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_output), "Create GPU Out Buffer ");
 
-    // Create shader resource view for IO buffers.  
-    dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
-    dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
+    if (a->buf_input && a->buf_output) {
+        // Create shader resource view for IO buffers.  
+        dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
+        dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
 
-    // Create unordered access view for IO buffers.  
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
-
+        // Create unordered access view for IO buffers.  
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
+    }
     // Create a staging buffer, which will be used to copy back from the GPU out buffer.
     dx_check_error(a->device->CreateBuffer(&staging_buffer_desc, NULL, &a->buf_staging), "Create Staging Buffer");
 
+    a->buf_constant = { 0 };
     // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
     dx_check_error(a->device->CreateBuffer(&constant_buffer_desc, NULL, &a->buf_constant), "Create Constant Buffer");
-        
-    // Compile the compute shader into a blob.    
-    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
-    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION, 0, &a->blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
 
+    // Compile the compute shader into a blob.    
+    HRESULT hr = D3DCompileFromFile(cs_file, NULL, NULL, "dx_local", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION, 0, &a->blob_local, &errorBlob);
+    if (errorBlob) {
+        dx_check_error(hr, "D3DCompileFromFile", errorBlob);
+    }
+    hr = D3DCompileFromFile(cs_file, NULL, NULL, "dx_global", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION, 0, &a->blob_global, &errorBlob);
+    if (errorBlob) {
+        dx_check_error(hr, "D3DCompileFromFile", errorBlob);
+    }
     // Create a shader object from the compiled blob.
     dx_check_error(a->device->CreateComputeShader(a->blob_local->GetBufferPointer(), a->blob_local->GetBufferSize(), NULL, &a->cs_local), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
-    
-    // Attach the constant buffer
-    a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
-    
+
+    if (a->buf_constant) {
+        // Attach the constant buffer
+        a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
+    }
     if (in != NULL) {
         a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
     }
@@ -242,46 +257,60 @@ void dx_setup_2d(dx_args* a, cpx* in, int group_size, int tile_dim, const int n)
 
     D3D_FEATURE_LEVEL featureLevel;
     D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n * n);
-    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n * n);    
+    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n * n);
     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n * n);
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
     ID3DBlob* errorBlob = nullptr;
 
     dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, 0, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
 
+    a->buf_input = { 0 };
+    a->buf_output = { 0 };
+
     // GPU read/write accessible buffers.
     dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_input), "Create GPU In Buffer ");
     dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_output), "Create GPU Out Buffer ");
 
-    // Create shader resource view for IO buffers.  
-    dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
-    dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
+    if (a->buf_input && a->buf_output) {
+        // Create shader resource view for IO buffers.  
+        dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
+        dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
 
-    // Create unordered access view for IO buffers.  
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
-    dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
-
+        // Create unordered access view for IO buffers.  
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
+        dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
+    }
     // Create a staging buffer, which will be used to copy back from the GPU out buffer.
     dx_check_error(a->device->CreateBuffer(&staging_buffer_desc, NULL, &a->buf_staging), "Create Staging Buffer");
 
+    a->buf_constant = { 0 };
+
     // Create a constant buffer (this buffer is used to pass the constant value 'a' to the kernel as cbuffer Constants).
     dx_check_error(a->device->CreateBuffer(&constant_buffer_desc, NULL, &a->buf_constant), "Create Constant Buffer");
-
-    // Attach the constant buffer
-    a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
-
+    if (a->buf_constant) {
+        // Attach the constant buffer
+        a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
+    }
     // Compile the compute shader into a blob.
     UINT flags = D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION;
-    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_row", "cs_5_0", flags, 0, &a->blob_local, &errorBlob), "D3DCompileFromFile", errorBlob);
-    dx_check_error(D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_global", "cs_5_0", flags, 0, &a->blob_global, &errorBlob), "D3DCompileFromFile", errorBlob);
-    dx_check_error(D3DCompileFromFile(cs_file_transpose, NULL, NULL, "dx_transpose", "cs_5_0", flags, 0, &a->blob_transpose, &errorBlob), "D3DCompileFromFile", errorBlob);
-
+    HRESULT hr = D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_local_row", "cs_5_0", flags, 0, &a->blob_local, &errorBlob);
+    if (errorBlob) {
+        dx_check_error(hr, "D3DCompileFromFile", errorBlob);
+    }
+    hr = D3DCompileFromFile(cs_file, NULL, NULL, "dx_2d_global", "cs_5_0", flags, 0, &a->blob_global, &errorBlob);
+    if (errorBlob) {
+        dx_check_error(hr, "D3DCompileFromFile", errorBlob);
+    }
+    hr = D3DCompileFromFile(cs_file_transpose, NULL, NULL, "dx_transpose", "cs_5_0", flags, 0, &a->blob_transpose, &errorBlob);
+    if (errorBlob) {
+        dx_check_error(hr, "D3DCompileFromFile", errorBlob);
+    }
     // Create a shader object from the compiled blob.
     dx_check_error(a->device->CreateComputeShader(a->blob_local->GetBufferPointer(), a->blob_local->GetBufferSize(), NULL, &a->cs_local), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
     dx_check_error(a->device->CreateComputeShader(a->blob_transpose->GetBufferPointer(), a->blob_transpose->GetBufferSize(), NULL, &a->cs_transpose), "CreateComputeShader");
-        
-    if (in != NULL) {
+
+    if (in) {
         a->context->UpdateSubresource(a->buf_input, 0, nullptr, &in[0], 0, 0);
     }
 }

@@ -55,22 +55,17 @@ __device__ static inline int log2(int v)
 
 __host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *w)
 {
-    float x = inL->x - inU->x;
-    float y = inL->y - inU->y;
-    outL->x = inL->x + inU->x;
-    outL->y = inL->y + inU->y;
-    outU->x = (w->x * x) - (w->y * y);
-    outU->y = (w->y * x) + (w->x * y);
+    cpx l = *inL;
+    cpx h = *inU;
+    float x = l.x - h.x;
+    float y = l.y - h.y;
+    *outL = { l.x + h.x, l.y + h.y };
+    *outU = { (w->x * x) - (w->y * y), (w->y * x) + (w->x * y) };
 }
 
 __device__ static __inline__ void cpx_add_sub_mul(cpx *low, cpx *high, const cpx *w)
 {
-    cpx l = *low;
-    cpx h = *high;
-    float x = l.x - h.x;
-    float y = l.y - h.y;
-    *low = { l.x + h.x, l.y + h.y };
-    *high = { (w->x * x) - (w->y * y), (w->y * x) + (w->x * y) };
+    cpx_add_sub_mul(low, high, low, high, w);
 }
 
 __device__ static __inline__ void mem_gtos_row(int low, int high, int offset, cpx *shared, cudaSurfaceObject_t surf)

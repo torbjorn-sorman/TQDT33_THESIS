@@ -1,7 +1,7 @@
 ﻿<Model DefinitionId="3a3ca3f4-7ba7-4c09-a182-6ba59bf12599" DisplayName="Analysis Activity" xmlns="clr-namespace:Ark.PropertyModel;assembly=Ark">
     <Property Name="ActivityType" Value="Profile" />
     <Property Name="Application" Value="G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\x64\Release\benchmarkfft.exe" />
-    <Property Name="Arguments" Value="-dim 1 -r 20 20 -platforms cu -t -v -d -p -profiler" />
+    <Property Name="Arguments" Value="-dim 2 -r 13 -platforms cu -t -v -d -p -profiler" />
     <Property Name="EnableCudaApiContextAttachDetach" Value="True" />
     <Property Name="EnableCudaApiContextManagement" Value="True" />
     <Property Name="EnableCudaApiD3D10Interop" Value="True" />
@@ -121,7 +121,7 @@
     <Property Name="EnableToolsExtPushPopRangeTrace" Value="True" />
     <Property Name="EnableToolsExtResourceNaming" Value="True" />
     <Property Name="EnableToolsExtStartEndRangeTrace" Value="True" />
-    <Property Name="ExperimentsPresetConfiguration" Value="Memory" />
     <Property Name="ExtensionsToSynchronize" Value="*;" />
+    <Property Name="ProfileOptionCollectModuleInformation" Value="True" />
     <Property Name="WorkingDirectory" Value="G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\" />
 </Model>

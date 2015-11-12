@@ -2,8 +2,8 @@
 
 double dx_avg(profiler_data profiler[], dx_args *args)
 {
-    double m[NUM_TESTS];
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    double m[64];
+    for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p = profiler[i];
         UINT64 ts_start, ts_end;
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
@@ -12,13 +12,13 @@ double dx_avg(profiler_data profiler[], dx_args *args)
         while (S_OK != args->context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
         m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
     }
-    return average_best(m, NUM_TESTS);
+    return average_best(m, number_of_tests);
 }
 
 double dx_avg(profiler_data profiler[], ID3D11DeviceContext *context)
 {
-    double m[NUM_TESTS];
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    double m[64];
+    for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p = profiler[i];
         UINT64 ts_start, ts_end;
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
@@ -27,7 +27,7 @@ double dx_avg(profiler_data profiler[], ID3D11DeviceContext *context)
         while (S_OK != context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
         m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
     }
-    return average_best(m, NUM_TESTS);
+    return average_best(m, number_of_tests);
 }
 
 double dx_time_elapsed(profiler_data *p, dx_args *args)

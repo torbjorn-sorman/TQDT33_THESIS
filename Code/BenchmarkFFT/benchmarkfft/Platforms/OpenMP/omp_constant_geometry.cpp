@@ -10,11 +10,11 @@ int openmp_validate(const int n)
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
     openmp_const_geom(FFT_FORWARD, &in, &out, n);
-    //double diffForward = (abs(in[1].y) - abs(in[n - 1].y)) / (n / 2);    
+    double diffForward = diff_forward_sinus(out, n);
     openmp_const_geom(FFT_INVERSE, &out, &in, n);
     double diff = diff_seq(in, ref, n);
     free_all(in, out, ref);
-    return diff < RELATIVE_ERROR_MARGIN;// && diffForward < RELATIVE_ERROR_MARGIN;
+    return diff < RELATIVE_ERROR_MARGIN && diffForward < RELATIVE_ERROR_MARGIN;
 }
 
 int openmp_2d_validate(const int n, bool write_img)
@@ -36,29 +36,29 @@ int openmp_2d_validate(const int n, bool write_img)
 
 double openmp_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     cpx *in = get_seq(n, 1);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
         openmp_const_geom(FFT_FORWARD, &in, &in, n);
         measures[i] = stop_timer();
     }
     free(in);
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 double openmp_2d_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     cpx *in = get_seq(n * n);
     cpx *buf = get_seq(n * n);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
         openmp_const_geom_2d(FFT_FORWARD, &in, &buf, n);
         measures[i] = stop_timer();
     }
     free_all(in, buf);
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 //

@@ -44,7 +44,7 @@ static __inline void gl_swap_buffers(gl_args *a_l, gl_args *a_g)
 
 void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n);
 void gl_swap_io(gl_args* a);
-double gl_query_time(unsigned int q[NUM_TESTS][2]);
+double gl_query_time(unsigned int q[64][2]);
 void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, const int groups_size, const int n);
 void gl_setup_2d(gl_args* a_dev, gl_args* a_host, gl_args* a_trans, cpx* in, cpx* out, int group_size, int tile_dim, const int n);
 void gl_read_buffer(cpx* dst, GLuint buffer, const int n);

@@ -87,21 +87,21 @@ __host__ int cuda_surface_validate(int n)
 
 __host__ double cuda_surface_performance(int n)
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     cpx *in, *ref;
     size_t size;
     cudaArray *array_in, *array_out;
     cudaSurfaceObject_t surface_in, surface_out;
     cuda_surface_setup(&in, &ref, &size, n, &array_in, &array_out, &surface_in, &surface_out);
 
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
         cuda_surface_fft(FFT_FORWARD, &surface_in, &surface_out, n);
         cudaCheckError();
         measures[i] = stop_timer();
     }
     cuda_surface_shakedown(&in, &ref, &surface_in, &surface_out, &array_in, &array_out);
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 // ---------------------------------------------

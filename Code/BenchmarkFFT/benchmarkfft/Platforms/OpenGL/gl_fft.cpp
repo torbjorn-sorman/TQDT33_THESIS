@@ -72,9 +72,9 @@ int gl_2d_validate(const int n, bool write_img)
 #ifndef MEASURE_BY_TIMESTAMP
 double gl_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[number_of_tests];
     gl_args a_dev, a_host;    
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
         start_timer();
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
@@ -82,13 +82,13 @@ double gl_performance(const int n)
         measures[i] = stop_timer();
         gl_shakedown(&a_dev, &a_host);       
     }
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 double gl_2d_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[number_of_tests];
     gl_args a_dev, a_host, a_trans;
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
         start_timer();
         gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
@@ -96,15 +96,15 @@ double gl_2d_performance(const int n)
         measures[i] = stop_timer();
         gl_shakedown(&a_dev, &a_host);
     }
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 #else
 double gl_performance(const int n)
 {
     gl_args a_dev, a_host;
-    GLuint queries[NUM_TESTS][2];
+    GLuint queries[64][2];
     gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
@@ -116,9 +116,9 @@ double gl_performance(const int n)
 double gl_2d_performance(const int n)
 {
     gl_args a_dev, a_host, a_trans;
-    GLuint queries[NUM_TESTS][2];
+    GLuint queries[64][2];
     gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);

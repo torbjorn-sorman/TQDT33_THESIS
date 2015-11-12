@@ -61,37 +61,37 @@ int dx_2d_validate(const int n, bool write_img)
 #ifndef MEASURE_BY_TIMESTAMP
 double dx_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[number_of_tests];
     dx_args args;
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         dx_setup(&args, NULL, n);
         start_timer();
         dx_fft(FFT_FORWARD, &args, n);
         measures[i] = stop_timer();
         dx_shakedown(&args);
     }
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 double dx_2d_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[number_of_tests];
     dx_args args;
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         dx_setup_2d(&args, NULL, n);
         start_timer();
         dx_fft_2d(FFT_FORWARD, &args, n);
         measures[i] = stop_timer();
         dx_shakedown(&args);
     }
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 #else
 double dx_performance(const int n)
 {
     dx_args args;
-    profiler_data profiler[NUM_TESTS];
+    profiler_data profiler[64];
     dx_setup(&args, NULL, DX_BLOCK_SIZE, n);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;
         dx_start_profiling(&args, &p);
 
@@ -107,8 +107,8 @@ double dx_2d_performance(const int n)
 {
     dx_args args;
     dx_setup_2d(&args, NULL, DX_BLOCK_SIZE, DX_TILE_DIM, n);
-    profiler_data profiler[NUM_TESTS];
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    profiler_data profiler[64];
+    for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;
         dx_start_profiling(&args, &p);
 

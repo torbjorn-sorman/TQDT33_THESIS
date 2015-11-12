@@ -3,6 +3,17 @@
 #define MATCH(s) (str.compare((s)) == 0)
 #define MATCHP(s) (tmp.compare((s)) == 0)
 
+int count_sub_arguments(char *argv[], int index, int argc)
+{
+    int i;
+    for (i = 0; i < argc + index; ++i) {
+        if (argv[index + i][0] == '-')
+            return i;
+
+    }
+    return i;
+}
+
 int parse_args(benchmarkArgument *arg, int argc, char* argv[])
 {
     if (argc == 1) {
@@ -18,8 +29,17 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
             }
         }
         else if (MATCH("-r")) {
-            arg->start = atoi(argv[++i]);
-            arg->end = atoi(argv[++i]);
+            int range_args = count_sub_arguments(argv, i + 1, argc);
+            if (range_args == 1) {
+                arg->start = arg->end = atoi(argv[++i]);
+            }
+            else if (range_args == 2) {
+                arg->start = atoi(argv[++i]);
+                arg->end = atoi(argv[++i]);
+            }
+            else {
+                goto show_usage;
+            }
             if (arg->end > HIGHEST_EXP) {
                 arg->end = HIGHEST_EXP;
                 printf("Notice: end exponent is set to %d\n", arg->start);
@@ -47,7 +67,11 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
                 else if (MATCHP("omp"))     arg->platform_openmp = true;
                 else if (MATCHP("fftw"))    arg->platform_fftw = true;      // Open Src lib
                 else if (MATCHP("cufft"))   arg->platform_cufft = true;     // NVidia lib
-                else if (MATCHP("dx11")) arg->platform_id3dx11 = true;   // DirectX lib
+                else if (MATCHP("dx11"))    arg->platform_id3dx11 = true;   // DirectX lib
+                else {
+                    printf("Unknown platform: %s\n", tmp.c_str());
+                    goto show_usage;
+                }
                 ++i;
             }
             --i;
@@ -65,7 +89,7 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
             arg->write_img = true;
         }
         else if (MATCH("-profiler")) {
-            arg->profiler = true;
+            arg->profiler = true;            
         }
         else if (MATCH("-p")) {
             arg->write_file = true;
@@ -75,6 +99,13 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
         }
         else if (MATCH("-testground")) {
             arg->run_testground = true;
+        }
+        else if (MATCH("-n_tests")) {
+            int n_tests = atoi(argv[++i]);
+            if (n_tests > 0 && n_tests <= 64)
+                number_of_tests = n_tests;
+            else
+                printf("Number of runs is limited to [1 : 64], default is %d", number_of_tests);
         }
         else {
             printf("Unknown argument: %s\n", argv[i]);

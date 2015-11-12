@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
         glutCreateWindow("GL Context");
     }
     if (args.profiler) {
+        number_of_tests = 1;
         if (args.test_platform) {
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::vector<Platform *> platforms = getPlatforms(&args);

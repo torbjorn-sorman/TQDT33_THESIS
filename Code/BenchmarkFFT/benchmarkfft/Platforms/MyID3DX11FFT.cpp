@@ -197,8 +197,8 @@ void MyID3DX11FFT::runPerformance(const int n)
     ID3D11UnorderedAccessView *vect[] = { tmp1_uav, tmp2_uav };
     dx_check_error(fft->AttachBuffersAndPrecompute(2, vect, 0, 0), "AttachBuffersAndPrecompute");
 
-    profiler_data profiler[NUM_TESTS];
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    profiler_data profiler[64];
+    for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;
         CComPtr<ID3D11UnorderedAccessView> resp_uav;
         dx_start_profiling(device, context, &p);

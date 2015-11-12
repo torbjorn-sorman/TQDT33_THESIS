@@ -40,9 +40,9 @@ int c_2d_validate(const int n, bool write_img)
 
 double c_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     cpx *in = get_seq(n, 1);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
 #ifdef NO_TWIDDLE_TABLE
         c_const_geom_alt(FFT_FORWARD, &in, &in, n);
@@ -52,21 +52,21 @@ double c_performance(const int n)
         measures[i] = stop_timer();
     }
     free(in);
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 double c_2d_performance(const int n)
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     cpx *in = get_seq(n * n);
     cpx *out = get_seq(n * n);
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
         c_const_geom_2d(FFT_FORWARD, &in, &out, n);
         measures[i] = stop_timer();
     }
     free_all(in, out);
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 //

@@ -1,21 +1,21 @@
 #include "gl_helper.h"
 #include "../../Common/mathutil.h"
 
-double gl_query_time(GLuint q[NUM_TESTS][2])
+double gl_query_time(GLuint q[][2])
 {
-    double measures[NUM_TESTS];
+    double measures[64];
     GLint stopTimerAvailable = 0;
     while (!stopTimerAvailable)
-        glGetQueryObjectiv(q[NUM_TESTS - 1][1], GL_QUERY_RESULT_AVAILABLE, &stopTimerAvailable);
+        glGetQueryObjectiv(q[number_of_tests - 1][1], GL_QUERY_RESULT_AVAILABLE, &stopTimerAvailable);
     double best_time = 99999999999.9;
-    for (int i = 0; i < NUM_TESTS; ++i) {
+    for (int i = 0; i < number_of_tests; ++i) {
         GLuint64 start, stop;
         glGetQueryObjectui64v(q[i][0], GL_QUERY_RESULT, &start);
         glGetQueryObjectui64v(q[i][1], GL_QUERY_RESULT, &stop);
         measures[i] = (stop - start) / 1000.0;
         glDeleteQueries(2, q[i]);
     }
-    return average_best(measures, NUM_TESTS);
+    return average_best(measures, number_of_tests);
 }
 
 char* gl_prepare_source(gl_args* args, LPCWSTR shader_file, int* length, bool transpose_shader)

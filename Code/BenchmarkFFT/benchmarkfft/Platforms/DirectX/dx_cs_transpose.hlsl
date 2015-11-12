@@ -1,5 +1,5 @@
 // Auto update, do not alter
-#define WIDTH 8192
+#define WIDTH 2048
 #define DX_TILE_DIM 32
 
 // Tweak here!

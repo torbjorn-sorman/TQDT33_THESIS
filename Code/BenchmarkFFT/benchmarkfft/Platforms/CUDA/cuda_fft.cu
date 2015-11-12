@@ -148,17 +148,6 @@ __host__ double cuda_2d_performance(int n)
 //
 // -------------------------------
 
-#define IO_MEM_DIST 128
-__device__ __host__ __inline unsigned int mem_opt(unsigned int x)
-{
-    return (x & 0x000000FF) + ((x >> 7) << 8);
-}
-
-__device__ __host__ __inline unsigned int banking_resolve(unsigned int x)
-{
-    return x + (x >> 5);
-}
-
 __host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *threads_per_block, const int block_size, const bool dim2, const int n)
 {
     const int n_half = n >> 1;
@@ -247,7 +236,7 @@ __device__ __inline void cuda_to_global(cpx *out, unsigned int dst, unsigned int
     out[BIT_REVERSE(dst, leading)] = cpx{ sh->x * c, sh->y * c };
 }
 
-//#define MEM_IO
+#define MEM_IO
 
 __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
@@ -255,6 +244,7 @@ __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned i
         *shared_u = shared + banking_resolve(in_high),
         *out_i = shared + banking_resolve(threadIdx.x << 1),
         *out_ii = shared + banking_resolve((threadIdx.x << 1) + 1);
+        
 #ifdef MEM_IO
     int in_l = mem_opt(threadIdx.x);
     int in_u = in_l + IO_MEM_DIST;
@@ -270,7 +260,7 @@ __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned i
         h = *shared_u;
         float x = l.x - h.x;
         float y = l.y - h.y;
-        SIN_COS_F(local_angle * (threadIdx.x & (0xFFFFFFFF << steps)), &w.y, &w.x);
+        SIN_COS_F(local_angle * (threadIdx.x & (0xFFFFFFFF << steps)), &w.y, &w.x);        
         SYNC_THREADS;
         *out_i = cpx{ l.x + h.x, l.y + h.y };
         *out_ii = cpx{ (w.x * x) - (w.y * y), (w.y * x) + (w.x * y) };

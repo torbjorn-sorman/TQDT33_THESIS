@@ -211,6 +211,7 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
       <FastMath>true</FastMath>
+      <AdditionalOptions>-Xptxas -dlcm=cg %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

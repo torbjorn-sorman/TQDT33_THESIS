@@ -25,7 +25,7 @@ cbuffer Constants : register(b0)
 StructuredBuffer<cpx> input : register(t0);
 RWStructuredBuffer<cpx> rw_buf : register(u0);
 
-groupshared cpx shared_buf[GROUP_SIZE_X << 1];
+groupshared cpx shared_buf[GROUP_SIZE_X << 1 + 128];
 
 void add_sub_mul(in cpx low, in cpx high, out cpx o_low, out cpx o_high, in cpx w)
 {
@@ -65,6 +65,11 @@ void dx_2d_global(uint3 threadIDInGroup : SV_GroupThreadID,
     add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
 }
 
+unsigned int dx_banking_resolve(in unsigned int x)
+{
+    return x + (x >> 5);
+}
+
 void dx_algorithm_local(in int in_low, in int in_high)
 {
     float x, y;
@@ -82,6 +87,19 @@ void dx_algorithm_local(in int in_low, in int in_high)
     }
 }
 
+void dx_partial(in int in_low, in int in_high, in int offset, in int start)
+{
+    shared_buf[in_low] = input[in_low + offset + start];
+    shared_buf[in_high] = input[in_high + offset + start];
+
+    dx_algorithm_local(in_low, in_high);
+
+    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
+    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
+    rw_buf[(reversebits((uint)(in_low + offset)) >> leading_bits) + start] = a;
+    rw_buf[(reversebits((uint)(in_high + offset)) >> leading_bits) + start] = b;
+}
+
 [numthreads(GROUP_SIZE_X, 1, 1)]
 void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 groupID : SV_GroupID,
@@ -89,18 +107,7 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
-    int in_high = in_low + block_range;
-    int offset = (groupID.x * GROUP_SIZE_X) << 1;
-
-    shared_buf[in_low] = input[in_low + offset];
-    shared_buf[in_high] = input[in_high + offset];
-
-    dx_algorithm_local(in_low, in_high);
-
-    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
-    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
-    rw_buf[(reversebits((uint)(in_low + offset)) >> leading_bits)] = a;
-    rw_buf[(reversebits((uint)(in_high + offset)) >> leading_bits)] = b;
+    dx_partial(in_low, in_low + block_range, (groupID.x * GROUP_SIZE_X) << 1, 0);
 }
 
 [numthreads(GROUP_SIZE_X, 1, 1)]
@@ -110,17 +117,5 @@ void dx_2d_local_row(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
-    int in_high = block_range + in_low;
-    int row_start = GRID_DIM_X * groupID.x;
-    int row_offset = (groupID.y * GROUP_SIZE_X) << 1;
-
-    shared_buf[in_low] = input[in_low + row_start + row_offset];
-    shared_buf[in_high] = input[in_high + row_start + row_offset];
-
-    dx_algorithm_local(in_low, in_high);
-
-    cpx a = { shared_buf[in_low].x * scalar, shared_buf[in_low].y * scalar };
-    cpx b = { shared_buf[in_high].x * scalar, shared_buf[in_high].y * scalar };
-    rw_buf[(reversebits(in_low + row_offset) >> leading_bits) + row_start] = a;
-    rw_buf[(reversebits(in_high + row_offset) >> leading_bits) + row_start] = b;
+    dx_partial(in_low, block_range + in_low, (groupID.y * GROUP_SIZE_X) << 1, GRID_DIM_X * groupID.x);
 }

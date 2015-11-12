@@ -148,14 +148,15 @@ __host__ double cuda_2d_performance(int n)
 //
 // -------------------------------
 
-#define BANK_RES(a) ((a) + ((a) >> 5))
-//#define BANK_RES(a) (a)
-
 __device__ __host__ __inline unsigned int banking_resolve(unsigned int x)
 {
     return x + (x >> 5);
 }
-
+/* #define IO_MEM_DIST 64
+__device__ __host__ __inline unsigned int mem_opt(unsigned int x) // Not any faster :-(
+{
+    return (x % IO_MEM_DIST) + ((x >> 6) << 7);
+} */
 __host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *threads_per_block, const int block_size, const bool dim2, const int n)
 {
     const int n_half = n >> 1;
@@ -171,14 +172,13 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     int threads, blocks;
     set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, (n >> 1));
     set_fft_arguments(&args, dir, blocks, CU_BLOCK_SIZE, n);
-    if (blocks > 1) {
-        cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+    cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+    if (blocks > 1) {        
         while (--args.steps_left > args.steps_gpu) {
             cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
         }
         ++args.steps_left;
-    }
-    cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+    }    
     cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * banking_resolve(args.n_per_block)) (in, out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
 }
 
@@ -209,6 +209,12 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);        
     swap_buffer(dev_in, dev_out);
 }
+
+// -------------------------------
+//
+// Device
+//
+// -------------------------------
 
 __device__ static __inline__ void cuda_algorithm_local(cpx *shared, cpx *in_l, cpx *in_u,  int in_high, float angle, int bit)
 {
@@ -243,23 +249,23 @@ __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask,
     cpx_add_sub_mul(in, in + dist, &w);
 }
 
-#define MEM_OPT(a) ((a) + (((a) >> 5) * 64))
+__device__ __inline void cuda_to_global(cpx *out, unsigned int dst, unsigned int leading_bits, cpx *sh, float scalar)
+{
+    out[BIT_REVERSE(dst, leading_bits)] = { sh->x * scalar, sh->y * scalar };
+}
 
 __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
     cpx *shared_l = shared + banking_resolve(threadIdx.x),
         *shared_u = shared + banking_resolve(in_high);
 
-    unsigned int in_l = MEM_OPT(threadIdx.x);
-    unsigned int in_u = in_l + 32;
-
     *shared_l = in[threadIdx.x];
     *shared_u = in[in_high];
 
     cuda_algorithm_local(shared, shared_l, shared_u, in_high, local_angle, steps_left);
 
-    out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { shared_l->x * scalar, shared_l->y * scalar };
-    out[BIT_REVERSE(in_high + offset, leading_bits)] = { shared_u->x * scalar, shared_u->y * scalar };
+    cuda_to_global(out, threadIdx.x + offset, leading_bits, shared_l, scalar);
+    cuda_to_global(out, in_high + offset, leading_bits, shared_u, scalar);
 }
 
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar, int block_range)

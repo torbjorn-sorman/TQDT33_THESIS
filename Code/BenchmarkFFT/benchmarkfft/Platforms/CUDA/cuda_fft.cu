@@ -186,7 +186,7 @@ __host__ __inline void cuda_fft_2d_helper(transform_direction dir, cpx *dev_in, 
         }
         ++args.steps_left;
     }
-    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * banking_resolve(args.n_per_block)) (dev_in, dev_out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
+    cuda_kernel_local_row KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (dev_in, dev_out, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
 }
 
 __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, int n)
@@ -236,46 +236,7 @@ __device__ __inline void cuda_to_global(cpx *out, unsigned int dst, unsigned int
     out[BIT_REVERSE(dst, leading)] = cpx{ sh->x * c, sh->y * c };
 }
 
-#define MEM_IO
-
 __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
-{
-    cpx *shared_l = shared + banking_resolve(threadIdx.x),
-        *shared_u = shared + banking_resolve(in_high),
-        *out_i = shared + banking_resolve(threadIdx.x << 1),
-        *out_ii = shared + banking_resolve((threadIdx.x << 1) + 1);
-        
-#ifdef MEM_IO
-    int in_l = mem_opt(threadIdx.x);
-    int in_u = in_l + IO_MEM_DIST;
-    shared[banking_resolve(in_l)] = in[in_l];
-    shared[banking_resolve(in_u)] = in[in_u];
-#else
-    *shared_l = in[threadIdx.x];
-    *shared_u = in[in_high];
-#endif
-    cpx w, l, h;
-    for (int steps = 0; steps < steps_left; ++steps) {
-        l = *shared_l;
-        h = *shared_u;
-        float x = l.x - h.x;
-        float y = l.y - h.y;
-        SIN_COS_F(local_angle * (threadIdx.x & (0xFFFFFFFF << steps)), &w.y, &w.x);        
-        SYNC_THREADS;
-        *out_i = cpx{ l.x + h.x, l.y + h.y };
-        *out_ii = cpx{ (w.x * x) - (w.y * y), (w.y * x) + (w.x * y) };
-        SYNC_THREADS;
-    }
-#ifdef MEM_IO
-    cuda_to_global(out, in_l + offset, leading_bits, shared + banking_resolve(in_l), scalar);
-    cuda_to_global(out, in_u + offset, leading_bits, shared + banking_resolve(in_u), scalar);
-#else
-    cuda_to_global(out, threadIdx.x + offset, leading_bits, shared_l, scalar);
-    cuda_to_global(out, in_high + offset, leading_bits, shared_u, scalar);
-#endif
-}
-
-__device__ __inline void _cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
     cpx *shared_l = shared + threadIdx.x,
         *shared_u = shared + in_high;

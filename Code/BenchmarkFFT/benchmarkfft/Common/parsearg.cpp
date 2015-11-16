@@ -67,6 +67,7 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
                 else if (MATCHP("omp"))     arg->platform_openmp = true;
                 else if (MATCHP("fftw"))    arg->platform_fftw = true;      // Open Src lib
                 else if (MATCHP("cufft"))   arg->platform_cufft = true;     // NVidia lib
+                else if (MATCHP("clfft"))   arg->platform_clfft = true;     // AMD OpenCL lib
                 else if (MATCHP("dx11"))    arg->platform_id3dx11 = true;   // DirectX lib
                 else {
                     printf("Unknown platform: %s\n", tmp.c_str());

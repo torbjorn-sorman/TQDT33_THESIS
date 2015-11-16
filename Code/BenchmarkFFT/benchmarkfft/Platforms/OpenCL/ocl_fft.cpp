@@ -97,14 +97,6 @@ double ocl_2d_performance(const int n)
     return average_best(measurements, number_of_tests);
 }
 #else
-double ocl_get_elapsed(cl_event s, cl_event e)
-{
-    cl_ulong start = 0, end = 0;
-    clWaitForEvents(1, &e);
-    clGetEventProfilingInfo(s, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
-    clGetEventProfilingInfo(e, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-    return (double)(end - start)*(cl_double)(1e-03);
-}
 double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;

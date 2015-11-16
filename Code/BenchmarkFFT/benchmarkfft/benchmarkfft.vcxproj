@@ -105,13 +105,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -120,10 +120,22 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
-</Command>
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -171,7 +183,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -181,8 +193,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -194,6 +206,7 @@ copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
 mkdir "$(OutDir)Platforms\OpenCL\"
 mkdir "$(OutDir)Platforms\OpenGL\"
 mkdir "$(OutDir)Platforms\DirectX\"
@@ -241,6 +254,7 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClInclude Include="Platforms\DirectX\dx_fft.h" />
     <ClInclude Include="Platforms\DirectX\dx_helper.h" />
     <ClInclude Include="Platforms\MyC.h" />
+    <ClInclude Include="Platforms\MyClFFT.h" />
     <ClInclude Include="Platforms\MyCUDA.h" />
     <ClInclude Include="Platforms\MyCuFFT.h" />
     <ClInclude Include="Platforms\MyDirectX.h" />
@@ -266,6 +280,7 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClCompile Include="Platforms\DirectX\dx_fft.cpp" />
     <ClCompile Include="Platforms\DirectX\dx_helper.cpp" />
     <ClCompile Include="Platforms\MyC.cpp" />
+    <ClCompile Include="Platforms\MyClFFT.cpp" />
     <ClCompile Include="Platforms\MyCUDA.cpp" />
     <ClCompile Include="Platforms\MyCuFFT.cpp" />
     <ClCompile Include="Platforms\MyDirectX.cpp" />

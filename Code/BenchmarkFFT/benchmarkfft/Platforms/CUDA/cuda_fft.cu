@@ -63,7 +63,7 @@ __host__ int cuda_2d_validate(int n, bool write_img)
 #ifndef MEASURE_BY_TIMESTAMP
 __host__ double cuda_performance(int n)
 {
-    double measures[number_of_tests];
+    double measures[64];
     cpx *in, *ref, *out, *dev_in, *dev_out;
     cuda_setup_buffers(n, &dev_in, &dev_out, &in, &ref, &out);
     cudaMemcpy(dev_in, in, n * sizeof(cpx), cudaMemcpyHostToDevice);
@@ -79,13 +79,13 @@ __host__ double cuda_performance(int n)
 }
 __host__ double cuda_2d_performance(int n)
 {
-    double measures[number_of_tests];
+    double measures[64];
     cpx *in, *ref, *dev_in, *dev_out;
     size_t size;
     cuda_setup_buffers_2d(&in, &ref, &dev_in, &dev_out, &size, n);
     for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
-        cuda_fft_2d(FFT_FORWARD, dev_in, dev_out, n);
+        cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
         cudaDeviceSynchronize();
         measures[i] = stop_timer();
     }

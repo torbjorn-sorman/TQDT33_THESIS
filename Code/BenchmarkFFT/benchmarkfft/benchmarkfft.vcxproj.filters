@@ -106,6 +106,9 @@
     <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh">
       <Filter>Platforms\CUDA</Filter>
     </ClInclude>
+    <ClInclude Include="Platforms\MyClFFT.h">
+      <Filter>Platforms</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -209,6 +212,9 @@
     </ClCompile>
     <ClCompile Include="Platforms\OpenGL\gl_helper.cpp">
       <Filter>Platforms\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Platforms\MyClFFT.cpp">
+      <Filter>Platforms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -37,7 +37,7 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
     return ocl_setup_io_buffers(args, data_size);
 }
 
-cl_int oclSetupProgram(std::string kernel_filename, char *kernel_name, ocl_args *args)
+cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args)
 {
     cl_int err = CL_SUCCESS;
     cl_program program;
@@ -139,8 +139,8 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
     ocl_setup_kernels(a_dev, group_size, false);
     memcpy(a_host, a_dev, sizeof(ocl_args));
 
-    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local", a_dev), "Failed to setup GPU Program 1D!");
-    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global", a_host), "Failed to setup CPU Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_local", a_dev), "Failed to setup GPU Program 1D!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_global", a_host), "Failed to setup CPU Program!");
 
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
@@ -152,7 +152,7 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
 cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm)
 {
     memcpy(arg_tm, arg_target, sizeof(ocl_args));
-    cl_int err = ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
+    cl_int err = ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
     arg_tm->work_size[0] = 1;
     arg_tm->work_size[1] = 1;
     arg_tm->group_work_size[0] = 1;
@@ -181,9 +181,9 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data
     memcpy(a_host, a_dev, sizeof(ocl_args));
     memcpy(a_trans, a_dev, sizeof(ocl_args));
 
-    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_local_row", a_dev), "Failed to setup GPU Program!");
-    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_kernel_global_row", a_host), "Failed to setup CPU Program!");
-    ocl_check_err(oclSetupProgram("ocl_kernel", "ocl_transpose_kernel", a_trans), "Failed to setup Transpose Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_local_row", a_dev), "Failed to setup GPU Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_global_row", a_host), "Failed to setup CPU Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_transpose_kernel", a_trans), "Failed to setup Transpose Program!");
 
     cl_int err = oclSetupDeviceMemoryData(a_dev, data_in);
     memcpy(a_host->work_size, a_dev->work_size, sizeof(size_t) * 3);
@@ -268,4 +268,13 @@ void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n)
         memcpy(*ref, _in, minSize);
         *in = _in;
     }
+}
+
+double ocl_get_elapsed(cl_event s, cl_event e)
+{
+    cl_ulong start = 0, end = 0;
+    clWaitForEvents(1, &e);
+    clGetEventProfilingInfo(s, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
+    clGetEventProfilingInfo(e, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
+    return (double)(end - start)*(cl_double)(1e-03);
 }

@@ -40,6 +40,7 @@ struct benchmarkArgument
     bool platform_cufft = false;
     bool platform_cuda = false;
     bool platform_opencl = false;
+    bool platform_clfft = false;
     bool platform_opengl = false;
     bool platform_directx = false;
     bool platform_id3dx11 = false;

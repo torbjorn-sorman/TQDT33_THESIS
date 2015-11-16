@@ -11,6 +11,7 @@
 #include "Platforms\MyOpenCL.h"
 #include "Platforms\MyOpenGL.h"
 #include "Platforms\MyCuFFT.h"
+#include "Platforms\MyClFFT.h"
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"
 #include "Platforms\MyFFTW.h"
@@ -28,6 +29,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 #ifdef _WIN64
     if (args->platform_cufft)
         platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
+    if (args->platform_clfft)
+        platforms.push_back(new MyClFFT(args->dimensions, args->test_runs));
     if (args->platform_fftw)
         platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif

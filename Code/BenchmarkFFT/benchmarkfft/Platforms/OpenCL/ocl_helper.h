@@ -38,9 +38,12 @@ cl_int ocl_check_err(cl_int error, char *msg);
 cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_direction dir, const int group_size, const int n);
 cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm);
 cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int group_size, const int tile_dim, const int block_dim, const int n);
+cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2);
+cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);
 void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n);
+double ocl_get_elapsed(cl_event s, cl_event e);
 
 #endif

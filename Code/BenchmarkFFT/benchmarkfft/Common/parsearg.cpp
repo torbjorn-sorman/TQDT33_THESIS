@@ -6,12 +6,17 @@
 int count_sub_arguments(char *argv[], int index, int argc)
 {
     int i;
-    for (i = 0; i < argc + index; ++i) {
+    for (i = 0; i < argc - index; ++i) {
         if (argv[index + i][0] == '-')
             return i;
 
     }
     return i;
+}
+
+bool valid_content(int i, int argc, char* argv[])
+{
+    return i < argc && std::string(argv[i])[0] != '-';
 }
 
 int parse_args(benchmarkArgument *arg, int argc, char* argv[])
@@ -56,7 +61,8 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
         }
         else if (MATCH("-platforms")) {
             ++i;
-            while (i < argc && std::string(argv[i])[0] != '-') {
+            //while (i < argc && std::string(argv[i])[0] != '-') {
+            while (valid_content(i, argc, argv)) {
                 arg->test_platform = true;
                 std::string tmp = argv[i];
                 if      (MATCHP("c"))       arg->platform_c = true;
@@ -100,6 +106,21 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
         }
         else if (MATCH("-testground")) {
             arg->run_testground = true;
+        }
+        else if (MATCH("-vendor")) {
+            ++i;
+            if (valid_content(i, argc, argv) && count_sub_arguments(argv, i, argc) == 1) {
+                std::string tmp = argv[i];
+                if      (MATCHP("nvidia"))  arg->vendor = VENDOR_NVIDIA;
+                else if (MATCHP("amd"))     arg->vendor = VENDOR_AMD;
+                else {
+                    printf("Unknown vendor: %s, must be one of {nvidia, amd}\n", tmp.c_str());
+                    goto show_usage;
+                }
+            }
+            else {
+                goto show_usage;
+            }
         }
         else if (MATCH("-n_tests")) {
             int n_tests = atoi(argv[++i]);

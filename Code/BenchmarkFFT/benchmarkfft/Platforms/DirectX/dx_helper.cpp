@@ -91,52 +91,6 @@ void dx_check_error(HRESULT hr, char *method)
     }
 }
 
-D3D11_BUFFER_DESC get_output_buffer_description(const int dimension)
-{
-    D3D11_BUFFER_DESC desc;
-    desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.CPUAccessFlags = 0;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    desc.StructureByteStride = sizeof(cpx);
-    desc.ByteWidth = sizeof(cpx) * dimension;
-    return desc;
-}
-
-D3D11_UNORDERED_ACCESS_VIEW_DESC get_unordered_access_view_description(const int dimension)
-{
-    D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
-    desc.Buffer.FirstElement = 0;
-    desc.Buffer.Flags = 0;
-    desc.Buffer.NumElements = dimension;
-    desc.Format = DXGI_FORMAT_UNKNOWN;
-    desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    return desc;
-}
-
-D3D11_BUFFER_DESC get_staging_buffer_description(const int dimension)
-{
-    D3D11_BUFFER_DESC desc;
-    desc.BindFlags = 0;
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    desc.StructureByteStride = sizeof(cpx);
-    desc.ByteWidth = sizeof(cpx) * dimension;
-    return desc;
-}
-
-D3D11_BUFFER_DESC get_constant_buffer_description()
-{
-    D3D11_BUFFER_DESC desc;
-    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    desc.MiscFlags = 0;
-    desc.ByteWidth = (UINT)padded_size(sizeof(cpx));
-    return desc;
-}
-
 void dx_write_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buffer, cpx* in, const int n)
 {
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
@@ -168,6 +122,35 @@ void dx_setup_file(dx_args *a, LPCWSTR cs_file, const int group_size, const int 
     set_file_content(cs_file, str);
 }
 
+std::vector <IDXGIAdapter1*> EnumerateAdapters(void)
+{
+    IDXGIAdapter1 * pAdapter;
+    std::vector <IDXGIAdapter1*> vAdapters;
+    IDXGIFactory1* pFactory = NULL;
+    if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory))) {
+        return vAdapters;
+    }
+    for (UINT i = 0; pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+        vAdapters.push_back(pAdapter);
+    }    
+    if (pFactory) {
+        pFactory->Release();
+    }
+    return vAdapters;
+
+}
+
+IDXGIAdapter1 *dx_get_adapter()
+{
+    DXGI_ADAPTER_DESC adapterDesc;
+    for (IDXGIAdapter1 *a : EnumerateAdapters()) {        
+        a->GetDesc(&adapterDesc);
+        if (adapterDesc.VendorId == SELECTED_VENDOR)
+            return a;
+    }
+    return NULL;
+}
+
 void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
     a->number_of_blocks = a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
@@ -182,10 +165,11 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n);
     ID3DBlob* errorBlob = 0;
 
-    const D3D_FEATURE_LEVEL feature_levels[1] = { D3D_FEATURE_LEVEL_11_0 };
+    const D3D_FEATURE_LEVEL feature_levels[2] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
 
-    dx_check_error(D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, feature_levels, 1, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
-
+    IDXGIAdapter1 *adapter = dx_get_adapter();
+    dx_check_error(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
+    adapter->Release();
     a->buf_input = { 0 };
     a->buf_output = { 0 };
 
@@ -348,4 +332,50 @@ void dx_shakedown(dx_args *a)
     }
     a->context->Release();
     a->device->Release();
+}
+
+D3D11_BUFFER_DESC get_output_buffer_description(const int dimension)
+{
+    D3D11_BUFFER_DESC desc;
+    desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.CPUAccessFlags = 0;
+    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    desc.StructureByteStride = sizeof(cpx);
+    desc.ByteWidth = sizeof(cpx) * dimension;
+    return desc;
+}
+
+D3D11_UNORDERED_ACCESS_VIEW_DESC get_unordered_access_view_description(const int dimension)
+{
+    D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+    desc.Buffer.FirstElement = 0;
+    desc.Buffer.Flags = 0;
+    desc.Buffer.NumElements = dimension;
+    desc.Format = DXGI_FORMAT_UNKNOWN;
+    desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    return desc;
+}
+
+D3D11_BUFFER_DESC get_staging_buffer_description(const int dimension)
+{
+    D3D11_BUFFER_DESC desc;
+    desc.BindFlags = 0;
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    desc.StructureByteStride = sizeof(cpx);
+    desc.ByteWidth = sizeof(cpx) * dimension;
+    return desc;
+}
+
+D3D11_BUFFER_DESC get_constant_buffer_description()
+{
+    D3D11_BUFFER_DESC desc;
+    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    desc.MiscFlags = 0;
+    desc.ByteWidth = (UINT)padded_size(sizeof(cpx));
+    return desc;
 }

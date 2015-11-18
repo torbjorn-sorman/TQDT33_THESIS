@@ -27,16 +27,20 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     std::vector<Platform *> platforms;
     // cuFFT only shipped for x64, FFTW x64 selected
 #ifdef _WIN64
+#if SELECTED_VENDOR == VENDOR_NVIDIA
     if (args->platform_cufft)
         platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
+#elif SELECTED_VENDOR == VENDOR_AMD
     if (args->platform_clfft)
         platforms.push_back(new MyClFFT(args->dimensions, args->test_runs));
+#endif
     if (args->platform_fftw)
         platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif
-    
+#if SELECTED_VENDOR == VENDOR_NVIDIA
     if (args->platform_cuda)
         platforms.push_back(new MyCUDA(args->dimensions, args->test_runs));
+#endif
     if (args->platform_directx)
         platforms.push_back(new MyDirectX(args->dimensions, args->test_runs));
     if (args->platform_opengl)
@@ -63,7 +67,7 @@ int main(int argc, char* argv[])
     if (!parse_args(&args, argc, argv))
         return 0;
     // Special setup!
-    if (args.platform_opengl) {        
+    if (args.platform_opengl) {
         glutInit(&argc, argv);
         glutCreateWindow("GL Context");
     }
@@ -81,20 +85,23 @@ int main(int argc, char* argv[])
         }
         return 0;
     }
+#if SELECTED_VENDOR == VENDOR_NVIDIA
     if (args.show_cuprop) {
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
     }
-    if (args.test_platform) {
+#endif
+    if (args.test_platform) {        
         std::vector<Platform *> platforms = getPlatforms(&args);
+        std::cout << "\n" << std::endl;
         if (args.performance_metrics) {
             cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
             std::cout << "  Running Platform Tests (might take a while)";
             for (int i = args.start; i <= args.end; ++i) {
-                int n = power2(i);                
-                for (auto platform : platforms) { 
+                int n = power2(i);
+                for (auto platform : platforms) {
                     platform->runPerformance(n);
                 }
                 std::cout << '.';
@@ -111,8 +118,8 @@ int main(int argc, char* argv[])
             std::cout << std::fixed;
             std::cout << std::setprecision(0);
             for (int i = 0; i < args.test_runs; ++i) {
-                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');                
-                for (auto platform : platforms) {                
+                std::cout << power2(i + args.start) << std::string(tabs - (int)log10(power2(args.start + i)) / 7, '\t');
+                for (auto platform : platforms) {
                     if (args.performance_metrics)
                         std::cout << platform->results.at(i);
                     if (!args.performance_metrics) {

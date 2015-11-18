@@ -132,9 +132,9 @@ __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local 
     int x = bx * OCL_TILE_DIM + ix;
     int y = by * OCL_TILE_DIM + iy;
 
-#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+#pragma unroll 2
     for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM) {
-#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+#pragma unroll 2
         for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM) {
             tile[iy + j][ix + i] = in[(y + j) * n + (x + i)];
         }
@@ -143,9 +143,9 @@ __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local 
     barrier(CLK_LOCAL_MEM_FENCE);
     x = by * OCL_TILE_DIM + ix;
     y = bx * OCL_TILE_DIM + iy;
-#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+#pragma unroll 2
     for (j = 0; j < OCL_TILE_DIM; j += OCL_BLOCK_DIM) {
-#pragma unroll (OCL_TILE_DIM / OCL_BLOCK_DIM)
+#pragma unroll 2
         for (i = 0; i < OCL_TILE_DIM; i += OCL_BLOCK_DIM) {
             out[(y + j) * n + (x + i)] = tile[ix + i][iy + j];
         }

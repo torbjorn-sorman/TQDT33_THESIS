@@ -27,7 +27,15 @@ typedef float transform_direction;
 #define HIGHEST_EXP 26
 #define HIGHEST_EXP_2D 13 // 8192 -> the limit of a 2GB primary mem device. Two buffers cover 8192 * 8192 * 8 * 2 = 1 073 741 824 bytes of memory.
 
-static int number_of_tests = 16;
+//
+// Vendor specific
+//
+#define VENDOR_NVIDIA   4318
+#define VENDOR_AMD      4098
+
+#define SELECTED_VENDOR VENDOR_AMD
+
+extern int number_of_tests;
 
 struct benchmarkArgument
 {
@@ -35,6 +43,7 @@ struct benchmarkArgument
     int start = 2;
     int end = 10;
     int test_runs = 8;
+    unsigned int vendor = VENDOR_NVIDIA;
     bool test_platform = false;
     bool performance_metrics = false;
     bool platform_cufft = false;

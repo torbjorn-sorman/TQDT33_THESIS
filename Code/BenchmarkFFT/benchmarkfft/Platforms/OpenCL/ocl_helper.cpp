@@ -1,5 +1,7 @@
 #include "ocl_helper.h"
 
+#include <iostream>
+
 cl_int ocl_setup_work_groups(ocl_args *args, const int group_size);
 cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size);
 
@@ -19,7 +21,7 @@ int ocl_check_err(cl_int error, char *msg)
 cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
 {
     cl_int err = CL_SUCCESS;
-    ocl_check_err(clGetPlatformIDs(1, &args->platform, NULL), "clGetPlatformIDs");
+    ocl_check_err(ocl_get_platform(&args->platform), "ocl_get_platform");
     ocl_check_err(clGetDeviceIDs(args->platform, CL_DEVICE_TYPE_GPU, 1, &args->device_id, NULL), "clGetDeviceIDs");
     args->context = clCreateContext(0, 1, &args->device_id, NULL, NULL, &err);
     ocl_check_err(err, "clCreateContext");
@@ -277,4 +279,29 @@ double ocl_get_elapsed(cl_event s, cl_event e)
     clGetEventProfilingInfo(s, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
     clGetEventProfilingInfo(e, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
     return (double)(end - start)*(cl_double)(1e-03);
+}
+
+int ocl_platformname_to_id(std::string s1)
+{
+    if (s1.find("NVIDIA") != std::string::npos)
+        return VENDOR_NVIDIA;
+    else if (s1.find("AMD") != std::string::npos)
+        return VENDOR_AMD;
+    return -1;
+}
+
+cl_int ocl_get_platform(cl_platform_id *platform_id)
+{
+    cl_uint number_of_platforms;
+    cl_platform_id platforms[3];
+    ocl_check_err(clGetPlatformIDs(3, platforms, &number_of_platforms), "clGetPlatformIDs");
+    for (cl_platform_id pid : platforms) {
+        char name[256];
+        clGetPlatformInfo(pid, CL_PLATFORM_NAME, 256, name, NULL);
+        if (SELECTED_VENDOR == ocl_platformname_to_id(name)) {
+            *platform_id = pid;
+            return CL_SUCCESS;
+        }
+    }
+    return CL_INVALID_PLATFORM;
 }

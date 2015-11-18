@@ -1,27 +1,23 @@
 #include "MyOpenCL.h"
 
+#include <iostream>
+
 MyOpenCL::MyOpenCL(const int dim, const int runs)
     : Platform(dim)
 {
     name = "OpenCL";
 
-    cl_platform_id platform;
+    cl_platform_id platform_id;
+    ocl_check_err(ocl_get_platform(&platform_id), "ocl_get_platform");
     cl_device_id device;
     char info_platform[255];
     char info_device[255];
     size_t actual;
 
-    clGetPlatformIDs(1, &platform, NULL);
-    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 255, info_platform, &actual);
-    if (actual > 255) {
-        printf("Do stuff...");
-    }
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    clGetDeviceInfo(device, CL_DEVICE_VERSION, 255, info_device, &actual);    
-    if (actual > 255) {
-        printf("Do stuff...");
-    }
-    printf("OpenCL Platform: %s\nOpenCL Device: %s\n", info_platform, info_device);
+    clGetPlatformInfo(platform_id, CL_PLATFORM_VERSION, 255, info_platform, &actual);
+    clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    clGetDeviceInfo(device, CL_DEVICE_VERSION, 255, info_device, &actual);   
+    printf("OpenCL\tPlatform:\t%s\n\tDevice:\t%s\n", info_platform, info_device);
 }
 
 MyOpenCL::~MyOpenCL()

@@ -5,6 +5,7 @@
 #include "Platform.h"
 #include "OpenGL/gl_fft.h"
 
+
 class MyOpenGL : public Platform
 {
 public:

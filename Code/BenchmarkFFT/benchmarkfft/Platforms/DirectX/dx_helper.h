@@ -5,7 +5,11 @@
 #include <d3d11.h>
 #include <D3dcsx.h>
 #include <D3Dcompiler.h>
+#include <DXGI.h>
+
 #include <comdef.h>
+#include <vector>
+#include <iostream>
 
 #include "../../Definitions.h"
 #include "../../Common/mathutil.h"
@@ -142,6 +146,8 @@ size_t padded_size(size_t sz);
 
 void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_blob);
 void dx_check_error(HRESULT hr, char *method);
+
+IDXGIAdapter1 *dx_get_adapter();
 
 D3D11_BUFFER_DESC get_output_buffer_description(const int dimension);
 D3D11_UNORDERED_ACCESS_VIEW_DESC get_unordered_access_view_description(const int dimension);

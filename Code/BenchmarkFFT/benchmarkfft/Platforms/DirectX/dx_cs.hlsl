@@ -1,4 +1,4 @@
-#define GROUP_SIZE_X 1024
+#define GROUP_SIZE_X 32
 #define GRID_DIM_X 2048
 
 struct cpx
@@ -25,7 +25,7 @@ cbuffer Constants : register(b0)
 StructuredBuffer<cpx> input : register(t0);
 RWStructuredBuffer<cpx> rw_buf : register(u0);
 
-groupshared cpx shared_buf[GROUP_SIZE_X << 1 + 128];
+groupshared cpx shared_buf[GROUP_SIZE_X << 1];
 
 void add_sub_mul(in cpx low, in cpx high, out cpx o_low, out cpx o_high, in cpx w)
 {

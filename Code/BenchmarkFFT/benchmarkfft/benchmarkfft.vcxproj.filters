@@ -107,7 +107,7 @@
       <Filter>Platforms\CUDA</Filter>
     </ClInclude>
     <ClInclude Include="Platforms\MyClFFT.h">
-      <Filter>Platforms</Filter>
+      <Filter>Platforms\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +216,7 @@
     <ClCompile Include="Platforms\MyClFFT.cpp">
       <Filter>Platforms</Filter>
     </ClCompile>
+    <ClCompile Include="Definitions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">

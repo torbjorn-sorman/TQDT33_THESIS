@@ -45,5 +45,6 @@ cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_de
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);
 void ocl_setup_buffers(cpx **in, cpx **out, cpx **ref, const int n);
 double ocl_get_elapsed(cl_event s, cl_event e);
+cl_int ocl_get_platform(cl_platform_id *platform_id);
 
 #endif

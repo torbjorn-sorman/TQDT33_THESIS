@@ -19,8 +19,8 @@ struct gl_args {
     GLuint shader;
     GLuint buf_in;
     GLuint buf_out;
-    dim3 groups = { 1, 1, 1 };
-    dim3 threads = { 1, 1, 1 };
+    dim3 groups = dim3{ 1, 1, 1 };
+    dim3 threads = dim3{ 1, 1, 1 };
     int number_of_blocks = 1;
     int tile_dim = 32;
     char *shader_src;
@@ -42,6 +42,7 @@ static __inline void gl_swap_buffers(gl_args *a_l, gl_args *a_g)
     a_g->buf_out = a_l->buf_out = buf_i;
 }
 
+void gl_check_errors();
 void gl_load_buffer(GLuint buffer, cpx* data, const int binding, const int n);
 void gl_swap_io(gl_args* a);
 double gl_query_time(unsigned int q[64][2]);

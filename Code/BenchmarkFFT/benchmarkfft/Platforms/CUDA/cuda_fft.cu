@@ -1,5 +1,5 @@
 #include "cuda_fft.cuh"
-
+#if defined(_NVIDIA)
 // Comment: Max values all over seems to give the biggest benefit when running large sets of data
 //          Smaller sets benefits a little from smaller groups/blocks.
 //          I my opinion, the large values seems to suit CUDA best.
@@ -356,3 +356,4 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
         for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
 }
+#endif

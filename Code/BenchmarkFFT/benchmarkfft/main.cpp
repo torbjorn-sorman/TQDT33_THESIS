@@ -7,18 +7,21 @@
 #include "Definitions.h"
 #include "Common\parsearg.h"
 #include "Platforms\Platform.h"
+#if defined(_NVIDIA)
 #include "Platforms\MyCUDA.h"
+#include "Platforms\MyCuFFT.h"
+#endif
+#include "Platforms\MyClFFT.h"
 #include "Platforms\MyOpenCL.h"
 #include "Platforms\MyOpenGL.h"
-#include "Platforms\MyCuFFT.h"
-#include "Platforms\MyClFFT.h"
 #include "Platforms\MyOpenMP.h"
 #include "Platforms\MyC.h"
 #include "Platforms\MyFFTW.h"
 #include "Platforms\MyDirectX.h"
 //#include "Platforms\MyID3DX11FFT.h"
-
+#if defined(_NVIDIA)
 void printDevProp(cudaDeviceProp devProp);
+#endif
 void toFile(std::string name, std::vector<double> results, int ms);
 void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgument *a);
 
@@ -26,19 +29,24 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
 {
     std::vector<Platform *> platforms;
     // cuFFT only shipped for x64, FFTW x64 selected
-#ifdef _WIN64
-    if (vendor_gpu == VENDOR_NVIDIA && args->platform_cufft) {
+#if defined(_WIN64)
+#if defined(_NVIDIA)
+    if (args->platform_cufft) {
         platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
     }
-    else if (vendor_gpu == VENDOR_AMD && args->platform_clfft) {
+#elif defined(_AMD)
+    if (args->platform_clfft) {
         platforms.push_back(new MyClFFT(args->dimensions, args->test_runs));
     }
+#endif
     if (args->platform_fftw)
         platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif
-    if (vendor_gpu == VENDOR_NVIDIA && args->platform_cuda) {
+#if defined(_NVIDIA)
+    if (args->platform_cuda) {
         platforms.push_back(new MyCUDA(args->dimensions, args->test_runs));
     }
+#endif
     if (args->platform_directx)
         platforms.push_back(new MyDirectX(args->dimensions, args->test_runs));
     if (args->platform_opengl)
@@ -47,8 +55,8 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
         platforms.push_back(new MyOpenCL(args->dimensions, args->test_runs));
     /*
     if (args->platform_id3dx11)
-        platforms.push_back(new MyID3DX11FFT(args->dimensions, args->test_runs));
-        */
+    platforms.push_back(new MyID3DX11FFT(args->dimensions, args->test_runs));
+    */
     if (args->platform_openmp)
         platforms.push_back(new MyOpenMP(args->dimensions, args->test_runs));
     if (args->platform_c)
@@ -79,7 +87,9 @@ int main(int argc, char* argv[])
     if (args.profiler) {
         number_of_tests = 1;
         if (args.test_platform) {
+#if defined(_NVIDIA)
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+#endif
             std::vector<Platform *> platforms = getPlatforms(&args);
             for (int i = args.start; i <= args.end; ++i) {
                 int n = power2(i);
@@ -90,17 +100,21 @@ int main(int argc, char* argv[])
         }
         return 0;
     }
-    if (vendor_gpu == VENDOR_NVIDIA && args.show_cuprop) {
+#if defined(_NVIDIA)
+    if (args.show_cuprop) {
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
     }
+#endif
     if (args.test_platform) {
         std::vector<Platform *> platforms = getPlatforms(&args);
         std::cout << "\n" << std::endl;
         if (args.performance_metrics) {
+#if defined(_NVIDIA)
             cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+#endif
             std::cout << "  Running Platform Tests (might take a while)";
             for (int i = args.start; i <= args.end; ++i) {
                 int n = power2(i);
@@ -156,6 +170,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+#if defined(_NVIDIA)
 void printDevProp(cudaDeviceProp devProp)
 {
     printf("Major revision number:         %d\n", devProp.major);
@@ -180,6 +195,7 @@ void printDevProp(cudaDeviceProp devProp)
     printf("\n");
     return;
 }
+#endif
 
 void toFile(std::string name, std::vector<double> results, int ms)
 {

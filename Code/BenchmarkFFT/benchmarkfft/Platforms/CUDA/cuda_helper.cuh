@@ -1,7 +1,7 @@
 #pragma once
 #ifndef MYHELPERCUDA_CUH
 #define MYHELPERCUDA_CUH
-
+#if defined(_NVIDIA)
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -142,5 +142,5 @@ void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t
 void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
 int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
-
+#endif
 #endif

@@ -1,7 +1,7 @@
 #pragma once
 #ifndef MYCUDA_H
 #define MYCUDA_H
-
+#if defined(_NVIDIA)
 #include "cuda_profiler_api.h"
 #include "Platform.h"
 #include "CUDA/cuda_fft.cuh"
@@ -16,4 +16,5 @@ public:
     virtual void MyCUDA::runPerformance(const int n);
 };
 
+#endif
 #endif

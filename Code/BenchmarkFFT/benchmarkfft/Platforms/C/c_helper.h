@@ -8,7 +8,7 @@
 #endif
 
 
-__host__ __device__ static __inline__ void swap_buffer(cpx **in, cpx **out)
+static __inline void swap_buffer(cpx **in, cpx **out)
 {
     cpx *tmp = *in;
     *in = *out;
@@ -125,10 +125,10 @@ static void __inline openmp_bit_reverse(cpx *x, transform_direction dir, const i
             swap(&(x[i]), &(x[p]));
     }
     if (dir == FFT_INVERSE) {
-        cpx scalar = make_cuFloatComplex(1.f / n, 0.f);
+        cpx scalar{ 1.f / n, 0.f };
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < n; ++i) {
-            x[i] = cuCmulf(x[i], scalar);
+            x[i] = cpx_mul(x + i, &scalar);
         }
     }
 }

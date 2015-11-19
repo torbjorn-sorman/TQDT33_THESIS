@@ -2,8 +2,6 @@
 #ifndef MYFFTOPENCL_H
 #define MYFFTOPENCL_H
 
-#include "CL\cl.h"
-
 #include "../../Definitions.h"
 #include "../../Common/mytimer.h"
 #include "../../Common/mathutil.h"

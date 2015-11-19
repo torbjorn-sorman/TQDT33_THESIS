@@ -2,11 +2,11 @@
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
-//#if VENDOR_SELECTED == VENDOR_AMD
-//#include <AMD/CL/cl.h>
-//#elif VENDOR_SELECTED == VENDORE_NVIDIA
+#if defined(_AMD)
+#include "CLUtil.hpp"
+#else
 #include <CL/cl.h>
-//#endif
+#endif
 
 #include "../../Definitions.h"
 #include "../../Common/mycomplex.h"

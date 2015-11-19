@@ -135,7 +135,7 @@ _inline void openmp_inner_body(cpx *in, cpx *outG, float global_angle, unsigned 
         int p = l & mask;
         if (old != p) {
             float ang = p * global_angle;
-            w = make_cuFloatComplex(cos(ang), sin(ang));
+            w = {cos(ang), sin(ang)};
             old = p;
         }
         c_add_sub_mul_cg(in + l, in + (n / 2) + l, out, &w);

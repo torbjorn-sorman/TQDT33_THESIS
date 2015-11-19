@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "../Definitions.h"
 #include "myfile.h"
+#include "mycomplex.h"
 
 typedef unsigned char color_component;
 typedef color_component pixel[3];

@@ -3,8 +3,9 @@
 #define MYCOMPLEX_H
 
 #include <cmath>
+#if defined(_NVIDIA)
 #include "cuComplex.h"
-
+#endif
 #include "../Definitions.h"
 #include "imglib.h"
 
@@ -31,6 +32,41 @@ double diff_seq(cpx *seq, cpx *ref, float scalar, const int n);
 double diff_seq(cpx *seq, cpx *ref, const int n);
 double diff_seq(cpx **seq, cpx **ref, const int n);
 double diff_forward_sinus(cpx *seq, const int n);
+
+static __inline cpx cpx_mul(cpx *a, cpx *b)
+{
+    return{ a->x * b->x - a->y * b->y, a->y * b->x + a->x * b->y };
+}
+
+static __inline float cpx_abs(cpx x)
+{
+    float a = x.x;
+    float b = x.y;
+    float v, w, t;
+    a = fabsf(a);
+    b = fabsf(b);
+    if (a > b) {
+        v = a;
+        w = b;
+    }
+    else {
+        v = b;
+        w = a;
+    }
+    t = w / v;
+    t = 1.0f + t * t;
+    t = v * sqrtf(t);
+    if ((v == 0.0f) || (v > 3.402823466e38f) || (w > 3.402823466e38f)) {
+        t = v + w;
+    }
+    return t;
+}
+#if defined(_AMD)
+static __inline cpx cpx_sub(cpx *a, cpx *b)
+{
+    return {a->x - b->x, a->y - b->y};
+}
+#endif
 
 static __inline void fft_alloc_sequences(int n, cpx **in, cpx **ref, cpx **out)
 {

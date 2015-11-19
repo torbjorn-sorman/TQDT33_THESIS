@@ -1,5 +1,5 @@
 #include "MyCUDA.h"
-
+#if defined(_NVIDIA)
 MyCUDA::MyCUDA(const int dim, const int runs)
     : Platform(dim)
 {
@@ -27,3 +27,4 @@ void MyCUDA::runPerformance(const int n)
     results.push_back(time);
     cudaProfilerStop();
 }
+#endif

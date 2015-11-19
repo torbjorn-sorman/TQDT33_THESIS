@@ -1,5 +1,17 @@
 #include "gl_helper.h"
 #include "../../Common/mathutil.h"
+#include <iostream>
+
+void gl_check_errors()
+{
+    GLenum err = GL_NO_ERROR;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        //Process/log the error.
+        std::cout << "ERROR!" << std::endl;
+        getchar();
+    }
+}
 
 double gl_query_time(GLuint q[][2])
 {
@@ -69,6 +81,9 @@ void gl_setup_program(gl_args *arg, bool gen_buffers, LPCWSTR shader_file, bool 
         arg->buf_in = buffers[0];
         arg->buf_out = buffers[1];
     }
+
+    glValidateProgram(program);
+
     arg->program = program;
     arg->shader = shader;
 }
@@ -88,8 +103,8 @@ void gl_read_buffer(cpx* dst, GLuint buffer, const int size)
 
 void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size, const int n)
 {
-    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.glsl";
-    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.glsl";
+    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local.comp";
+    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global.comp";
 
     // "Local" compute shader
     a_dev->groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
@@ -106,13 +121,14 @@ void gl_setup(gl_args* a_dev, gl_args* a_host, cpx* in, cpx* out, int group_size
     glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), in, GL_STREAM_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a_dev->buf_out);
     glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(cpx), out, GL_STREAM_DRAW);
+    gl_check_errors();
 }
 
 void gl_setup_2d(gl_args* a_dev, gl_args* a_host, gl_args* a_trans, cpx* in, cpx* out, int group_size, int tile_dim, const int n)
 {
-    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local2d.glsl";
-    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global2d.glsl";
-    LPCWSTR shader_file_trans = L"Platforms/OpenGL/gl_cshader_trans.glsl";
+    LPCWSTR shader_file_local = L"Platforms/OpenGL/gl_cshader_local2d.comp";
+    LPCWSTR shader_file_global = L"Platforms/OpenGL/gl_cshader_global2d.comp";
+    LPCWSTR shader_file_trans = L"Platforms/OpenGL/gl_cshader_trans.comp";
 
     // "Local" compute shader
     a_dev->groups.x = n;

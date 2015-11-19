@@ -4,25 +4,16 @@
 __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args *a_host, const int n);
 __inline void gl_fft_2d(transform_direction dir, gl_args *a_dev, gl_args* a_host, gl_args* a_trans, const int n);
 
-int gl_group_size()
-{
-    switch (vendor_gpu)
-    {
-    case VENDOR_NVIDIA: return 1024;
-    case VENDOR_AMD:    return 256;
-    default:            return 256;
-    }
-}
-
-int gl_tile_dim()
-{
-    switch (vendor_gpu)
-    {
-    case VENDOR_NVIDIA: return 32;
-    case VENDOR_AMD:    return 64;
-    default:            return 32;
-    }
-}
+#if defined(_NVIDIA)
+#define GL_GROUP_SIZE 1024
+#define GL_TILE_DIM 32
+#elif defined(_AMD)
+#define GL_GROUP_SIZE 256
+#define GL_TILE_DIM 32
+#else
+#define GL_GROUP_SIZE 256
+#define GL_TILE_DIM 32
+#endif
 
 //
 // Testing
@@ -36,18 +27,20 @@ int gl_validate(const int n)
     double forward_diff, inverse_diff;
     {
         gl_args a_dev, a_host;
-        gl_setup(&a_dev, &a_host, in, NULL, gl_group_size(), n);
-        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
+        gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);        
+        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);        
         gl_read_buffer(out, a_dev.buf_out, n);
         forward_diff = diff_forward_sinus(out, n);
+        gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
     }
     {
         gl_args a_dev, a_host;
-        gl_setup(&a_dev, &a_host, out, NULL, gl_group_size(), n);
+        gl_setup(&a_dev, &a_host, out, NULL, GL_GROUP_SIZE, n);
         gl_fft(FFT_INVERSE, &a_dev, &a_host, n);
         gl_read_buffer(out, a_dev.buf_out, n);
         inverse_diff = diff_seq(out, ref, n);
+        gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
     }
     free_all(in, out, ref);    
@@ -60,7 +53,7 @@ int gl_2d_validate(const int n, bool write_img)
     setup_seq_2d(&data, &tmp, &ref, n);
     {
         gl_args a_dev, a_host, a_trans;
-        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, gl_group_size(), gl_tile_dim(), n);
+        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
         gl_read_buffer(data, a_dev.buf_out, n * n);
@@ -72,7 +65,7 @@ int gl_2d_validate(const int n, bool write_img)
     }
     {
         gl_args a_dev, a_host, a_trans;
-        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, gl_group_size(), gl_tile_dim(), n);
+        gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
         gl_read_buffer(data, a_dev.buf_out, n * n);
@@ -92,7 +85,7 @@ double gl_performance(const int n)
     double measures[number_of_tests];
     gl_args a_dev, a_host;    
     for (int i = 0; i < number_of_tests; ++i) {
-        gl_setup(&a_dev, &a_host, NULL, NULL, gl_group_size(), n);
+        gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
         start_timer();
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
         glFinish();
@@ -106,7 +99,7 @@ double gl_2d_performance(const int n)
     double measures[number_of_tests];
     gl_args a_dev, a_host, a_trans;
     for (int i = 0; i < number_of_tests; ++i) {
-        gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, gl_group_size(), gl_tile_dim(), n);
+        gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
         start_timer();
         gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
         glFinish();
@@ -120,7 +113,7 @@ double gl_performance(const int n)
 {
     gl_args a_dev, a_host;
     GLuint queries[64][2];
-    gl_setup(&a_dev, &a_host, NULL, NULL, gl_group_size(), n);
+    gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
     for (int i = 0; i < number_of_tests; ++i) {
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
@@ -134,7 +127,7 @@ double gl_2d_performance(const int n)
 {
     gl_args a_dev, a_host, a_trans;
     GLuint queries[64][2];
-    gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, gl_group_size(), gl_tile_dim(), n);
+    gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
     for (int i = 0; i < number_of_tests; ++i) {
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
@@ -176,7 +169,7 @@ __inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int di
 __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, const int n)
 {
     fft_args args;
-    set_fft_arguments(&args, dir, a_dev->number_of_blocks, gl_group_size(), n);
+    set_fft_arguments(&args, dir, a_dev->number_of_blocks, GL_GROUP_SIZE, n);
     if (a_dev->number_of_blocks > 1) {
         glUseProgram(a_host->program);
         gl_bind_io_buffers(a_host);
@@ -195,7 +188,7 @@ __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, c
 
 __inline void gl_fft_2d(transform_direction dir, gl_args *a_dev, gl_args* a_host, gl_args* a_trans, const int n)
 {
-    UINT group_dim = n > gl_tile_dim() ? (n / gl_tile_dim()) : 1;
+    UINT group_dim = n > GL_TILE_DIM ? (n / GL_TILE_DIM) : 1;
 
     gl_fft(dir, a_dev, a_host, n);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

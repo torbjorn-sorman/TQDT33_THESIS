@@ -483,7 +483,7 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms;$(AMDAPPSDKROOT)\include;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Vendors\AMD\include\SDKUtil</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -493,8 +493,8 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(AMDAPPSDKROOT)\lib\x86_64\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -691,9 +691,15 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClCompile Include="main.cpp">
       <FileType>Document</FileType>
     </ClCompile>
-    <CudaCompile Include="Platforms\CUDA\cuda_fft.cu" />
-    <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu" />
-    <CudaCompile Include="Platforms\CUDA\cuda_helper.cu" />
+    <CudaCompile Include="Platforms\CUDA\cuda_fft.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="Platforms\CUDA\cuda_fft_surface.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="Platforms\CUDA\cuda_helper.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\cpx_debug.h" />
@@ -705,9 +711,15 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClInclude Include="Common\mytimer.h" />
     <ClInclude Include="Common\parsearg.h" />
     <ClInclude Include="Definitions.h" />
-    <ClInclude Include="Platforms\CUDA\cuda_fft.cuh" />
-    <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh" />
-    <ClInclude Include="Platforms\CUDA\cuda_helper.cuh" />
+    <ClInclude Include="Platforms\CUDA\cuda_fft.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\cuda_fft_surface.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Platforms\CUDA\cuda_helper.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Platforms\C\c_fft.h" />
     <ClInclude Include="Platforms\C\c_helper.h" />
     <ClInclude Include="Platforms\DirectX\dx_fft.h" />
@@ -831,11 +843,11 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Platforms\OpenGL\gl_cshader_global.glsl" />
-    <None Include="Platforms\OpenGL\gl_cshader_global2d.glsl" />
-    <None Include="Platforms\OpenGL\gl_cshader_local.glsl" />
-    <None Include="Platforms\OpenGL\gl_cshader_local2d.glsl" />
-    <None Include="Platforms\OpenGL\gl_cshader_trans.glsl" />
+    <None Include="Platforms\OpenGL\gl_cshader_global.comp" />
+    <None Include="Platforms\OpenGL\gl_cshader_global2d.comp" />
+    <None Include="Platforms\OpenGL\gl_cshader_local.comp" />
+    <None Include="Platforms\OpenGL\gl_cshader_local2d.comp" />
+    <None Include="Platforms\OpenGL\gl_cshader_trans.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

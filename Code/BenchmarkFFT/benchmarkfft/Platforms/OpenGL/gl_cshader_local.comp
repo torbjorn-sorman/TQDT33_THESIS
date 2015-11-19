@@ -46,7 +46,7 @@ void dx_algorithm_local(uint in_low, uint in_high)
     uint out_ii = (out_i + 1);
     for (uint steps = 0; steps < steps_left; ++steps)
     {
-        p = (in_low & (0xFFFFFFFF << steps));
+        p = (in_low & uint(0xFFFFFFFF << steps));
         angle = local_angle * float(p);
         w.x = cos(angle);
         w.y = sin(angle);

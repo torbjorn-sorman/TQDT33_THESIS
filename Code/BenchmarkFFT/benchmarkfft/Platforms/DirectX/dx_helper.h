@@ -18,7 +18,7 @@ _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
 
 struct dx_args
 {
-    dim3                        n_groups = { 1, 1, 1 };
+    dim3                        n_groups = dim3{ 1, 1, 1 };
     int                         number_of_blocks = 1;
     UINT                        init_cnts = 0xFFFFFFFF;
     ID3D11DeviceContext*        context = nullptr;

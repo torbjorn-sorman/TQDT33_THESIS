@@ -1,5 +1,6 @@
 #include "cuda_fft_surface.cuh"
 
+#if defined(_NVIDIA)
 #define MAX_BLOCK_SIZE 1024
 #define TILE_DIM 64
 #define THREAD_TILE_DIM 32
@@ -247,3 +248,4 @@ __global__ void cuda_transpose_kernel(cudaSurfaceObject_t in, cudaSurfaceObject_
         for (int i = 0; i < TILE_DIM; i += THREAD_TILE_DIM)
             SURF2D_WRITE(tile[threadIdx.x + i][threadIdx.y + j], out, x + i, y + j);
 }
+#endif

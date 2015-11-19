@@ -1,6 +1,7 @@
 #pragma once
 #ifndef MYFFTCUDA_CUH
 #define MYFFTCUDA_CUH
+#if defined(_NVIDIA)
 
 #include "../../Definitions.h"
 #include "../../Common/mathutil.h"
@@ -18,5 +19,5 @@ __host__ int cuda_2d_validate(int n, bool write_img);
 
 __host__ double cuda_performance(int n);
 __host__ double cuda_2d_performance(int n);
-
+#endif
 #endif

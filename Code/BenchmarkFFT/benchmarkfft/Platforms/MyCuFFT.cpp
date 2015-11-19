@@ -1,5 +1,5 @@
 #include "MyCuFFT.h"
-
+#if defined(_NVIDIA)
 MyCuFFT::MyCuFFT(const int dim, const int runs)
     : Platform(dim)
 {
@@ -17,7 +17,7 @@ bool MyCuFFT::validate(const int n, bool write_img)
 
 void MyCuFFT::runPerformance(const int n)
 {
-#ifdef _WIN64
+#if defined(_WIN64)
 #ifndef MEASURE_BY_TIMESTAMP
     double measures[number_of_tests];
     cpx *dev_in, *dev_out;
@@ -81,3 +81,4 @@ void MyCuFFT::runPerformance(const int n)
 #endif
 #endif
 }
+#endif

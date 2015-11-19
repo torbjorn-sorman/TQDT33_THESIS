@@ -1,5 +1,5 @@
 #include "cuda_helper.cuh"
-
+#if defined(_NVIDIA)
 void checkCudaError(char *msg)
 {
     cudaError_t e;
@@ -145,3 +145,4 @@ void cudaCheckError()
 {
     cudaCheckError(cudaGetLastError());
 }
+#endif

@@ -109,13 +109,18 @@ double diff_seq(cpx *seq, cpx *ref, float scalar, const int n)
         return 1;
     double mDiff = 0.0;
     double mVal = -1;
-    cpx rScale = make_cuFloatComplex(scalar, 0);
+    cpx rScale{scalar, 0};
     for (int i = 0; i < n; ++i) {
-        cpx norm = cuCmulf(seq[i], rScale);
+        cpx norm = cpx_mul(seq + i, &rScale);
         if (invalidCpx(norm))
             return 1.0;
+#if defined(_NVIDIA)
         mVal = maxf(mVal, maxf(cuCabsf(norm), cuCabsf(ref[i])));
         double tmp = cuCabsf(cuCsubf(norm, ref[i]));
+#else
+        mVal = maxf(mVal, maxf(cpx_abs(norm), cpx_abs(ref[i])));
+        double tmp = cpx_abs(cpx_sub(&norm, ref + i));
+#endif
         mDiff = tmp > mDiff ? tmp : mDiff;
     }
     return (mDiff / mVal);
@@ -144,11 +149,11 @@ double diff_forward_sinus(cpx *seq, const int n)
     const int n2 = (n >> 1);
     cpx *neg = seq + 1;
     cpx *pos = seq + n - 1;
-    double diff = cuCabsf(seq[0]);
+    double diff = cpx_abs(seq[0]);
     diff = maxf(diff, neg->x);
     diff = maxf(diff, pos->x);
     for (int i = 2; i < n - 3; ++i) {
-        diff = maxf(diff, cuCabsf(seq[i]));
+        diff = maxf(diff, cpx_abs(seq[i]));
     }
     diff = maxf(diff, abs(abs(neg->y) - n2));
     diff = maxf(diff, abs(abs(pos->y) - n2));

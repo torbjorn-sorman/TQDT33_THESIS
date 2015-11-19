@@ -136,7 +136,7 @@ void read_image(cpx *dst, char *name, int *n)
     for (int y = 0; y < (int)image->height; ++y) {
         for (int x = 0; x < (int)image->width; ++x) {
             cp = GET_PIXEL(image, x, y);
-            dst[y * size + x] = make_cuComplex((cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f);
+            dst[y * size + x] = {(cp[0] + cp[1] + cp[2]) / (3.f * 255.f), 0.f};
         }
     }
     free_img(image);
@@ -185,7 +185,7 @@ void normalized_cpx_values(cpx* seq, int n, double *min_val, double *range, doub
     double sum_v = 0.0;
     double tmp = 0.0;
     for (int i = 0; i < n; ++i) {
-        tmp = cuCabsf(seq[i]);
+        tmp = cpx_abs(seq[i]);
         min_v = min_v < tmp ? min_v : tmp;
         max_v = max_v > tmp ? max_v : tmp;
         sum_v += tmp;
@@ -215,7 +215,7 @@ void write_normalized_image(char *name, char *type, cpx* seq, int n, bool doFFTS
     if (tmp) {
         for (int y = 0; y < n; ++y) {
             for (int x = 0; x < n; ++x) {
-                mag = cuCabsf(tmp[y * n + x]);
+                mag = cpx_abs(tmp[y * n + x]);
                 val = ((mag - minVal) / range);
                 val = (atan(val * scalar) / (M_PI / 2.0)) * 255.0;
                 color_component col = (unsigned char)(val > 255.0 ? 255 : val);
@@ -247,10 +247,10 @@ void normalized_image(cpx* seq, int n)
     double scalar = tan(avg_pos * (M_PI / 2.0)) / ((average_best - minVal) / range);
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n; ++x) {
-            mag = cuCabsf(seq[y * n + x]);
+            mag = cpx_abs(seq[y * n + x]);
             val = ((mag - minVal) / range);
             val = (atan(val * scalar) / (M_PI / 2.0));
-            seq[y * n + x] = make_cuFloatComplex((float)(val > 1.0 ? 1 : val), 0.f);
+            seq[y * n + x] = {(float)(val > 1.0 ? 1 : val), 0.f};
         }
     }
 }
@@ -258,7 +258,7 @@ void normalized_image(cpx* seq, int n)
 void clear_image(cpx* seq, int n)
 {
     for (int i = 0; i < n; ++i)
-        seq[i] = make_cuFloatComplex(1.f, 1.f);
+        seq[i] = {1.f, 1.f};
 }
 
 void cpPixel(int px, int px2, cpx *in, cpx *out)

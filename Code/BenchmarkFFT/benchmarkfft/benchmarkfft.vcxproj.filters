@@ -221,19 +221,19 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Platforms\OpenGL\gl_cshader_trans.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_local.comp">
       <Filter>Platforms\OpenGL</Filter>
     </None>
-    <None Include="Platforms\OpenGL\gl_cshader_global.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_global2d.comp">
       <Filter>Platforms\OpenGL</Filter>
     </None>
-    <None Include="Platforms\OpenGL\gl_cshader_local.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_global.comp">
       <Filter>Platforms\OpenGL</Filter>
     </None>
-    <None Include="Platforms\OpenGL\gl_cshader_global2d.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_local2d.comp">
       <Filter>Platforms\OpenGL</Filter>
     </None>
-    <None Include="Platforms\OpenGL\gl_cshader_local2d.glsl">
+    <None Include="Platforms\OpenGL\gl_cshader_trans.comp">
       <Filter>Platforms\OpenGL</Filter>
     </None>
   </ItemGroup>

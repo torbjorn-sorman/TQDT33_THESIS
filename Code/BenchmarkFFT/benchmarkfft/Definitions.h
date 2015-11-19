@@ -2,13 +2,25 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#if defined(_NVIDIA)
 #include "cuComplex.h"
-
+#endif
 //
 // Typedefs to improve code readability and better semantics
 //
 
+#if defined(_AMD)
+struct cpx
+{
+    float x, y;
+};
+struct dim3
+{
+    unsigned int x, y, z;
+};
+#else
 typedef cuFloatComplex cpx;
+#endif
 typedef float transform_direction;
 
 //

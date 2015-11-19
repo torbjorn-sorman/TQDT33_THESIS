@@ -165,9 +165,8 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     ID3DBlob* errorBlob = 0;
 
     const D3D_FEATURE_LEVEL feature_levels[2] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-
     dx_check_error(D3D11CreateDevice(dx_get_adapter(vendor_gpu), D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
-    
+        
     a->buf_input = { 0 };
     a->buf_output = { 0 };
 
@@ -202,7 +201,6 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     dx_check_error(a->device->CreateComputeShader(a->blob_global->GetBufferPointer(), a->blob_global->GetBufferSize(), NULL, &a->cs_global), "CreateComputeShader");
 
     if (a->buf_constant) {
-        // Attach the constant buffer
         a->context->CSSetConstantBuffers(0, 1, &a->buf_constant);
     }
     if (in != NULL) {

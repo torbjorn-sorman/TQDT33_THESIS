@@ -1,4 +1,5 @@
 #include "dx_fft.h"
+#include "../../Common/cpx_debug.h"
 
 __inline void dx_fft(transform_direction dir, dx_args *args, const int n);
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n);
@@ -36,8 +37,6 @@ int dx_block_dim()
 //
 // Testing
 //
-
-#include "../../Common/cpx_debug.h"
 
 int dx_validate(const int n)
 {

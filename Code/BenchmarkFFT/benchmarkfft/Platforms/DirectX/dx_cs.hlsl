@@ -1,4 +1,4 @@
-#define GROUP_SIZE_X 16
+#define GROUP_SIZE_X 256
 #define GRID_DIM_X 2048
 
 struct cpx

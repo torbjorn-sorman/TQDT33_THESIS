@@ -2,14 +2,8 @@
 #ifndef GL_HELPER_H
 #define GL_HELPER_H
 
-#include <windows.h>
 #include "glew/glew.h"
-#include "glew/wglew.h"
-
 #include "freeglut/freeglut.h"
-#include "freeglut/freeglut_ext.h"
-#include "freeglut/freeglut_std.h"
-
 #include "../../Definitions.h"
 #include "../../Common/myfile.h"
 #include "../../Common/mycomplex.h"

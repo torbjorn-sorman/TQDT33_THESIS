@@ -413,6 +413,7 @@ static int generateBinaryImage(const bifData &binaryData)
                 break;
             }
         }
+        platformName[99] = 0;
         std::cout << "Platform found : " << platformName << "\n";
         delete[] platforms;
     }

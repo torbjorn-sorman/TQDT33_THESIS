@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <regex>
+#include "atlstr.h"
 
 bool dirExists(const std::string& dirName_in)
 {
@@ -97,7 +98,15 @@ std::string get_file_content(LPCWSTR shader_file)
     return content;
 }
 
-#include "atlstr.h"
+std::string get_file_content(std::string shader_file)
+{
+    std::ifstream in_file(shader_file);
+    std::stringstream buffer;
+    buffer << in_file.rdbuf();
+    std::string content = buffer.str();
+    in_file.close();
+    return content;
+}
 
 void manip_content(std::string* content, LPCWSTR var_name, int value)
 {

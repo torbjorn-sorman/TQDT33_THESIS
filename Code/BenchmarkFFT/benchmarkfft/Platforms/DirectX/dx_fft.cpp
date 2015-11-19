@@ -1,14 +1,43 @@
 #include "dx_fft.h"
 
-#define DX_BLOCK_SIZE 1024
-#define DX_TILE_DIM 32
-
 __inline void dx_fft(transform_direction dir, dx_args *args, const int n);
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n);
+
+int dx_block_size()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_AMD:    return 256;
+    case VENDOR_NVIDIA: return 1024;
+    default:            return 1;  
+    }
+}
+
+int dx_tile_dim()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_AMD:    return 64;
+    case VENDOR_NVIDIA: return 32;
+    default:            return 1;
+    }
+}
+
+int dx_block_dim()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_AMD:
+    case VENDOR_NVIDIA:
+    default:            return 16;
+    }
+}
 
 //
 // Testing
 //
+
+#include "../../Common/cpx_debug.h"
 
 int dx_validate(const int n)
 {
@@ -16,11 +45,15 @@ int dx_validate(const int n)
     cpx *out = get_seq(n);
     cpx *ref = get_seq(n, in);
     dx_args args;
-    dx_setup(&args, in, DX_BLOCK_SIZE, n);
+    dx_setup(&args, in, dx_block_size(), n);
 
     dx_fft(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buf_output, out, n);
     double forward_diff = diff_forward_sinus(out, n);
+
+    //cpx_to_console(out, "DX out", n > 16 ? 16:n);
+    //getchar();
+
 
     swap_io(&args);
     dx_fft(FFT_INVERSE, &args, n);
@@ -37,7 +70,7 @@ int dx_2d_validate(const int n, bool write_img)
     cpx *data, *ref;
     setup_seq_2d(&data, NULL, &ref, n);
     dx_args args;
-    dx_setup_2d(&args, data, DX_BLOCK_SIZE, DX_TILE_DIM, n);   
+    dx_setup_2d(&args, data, dx_block_size(), dx_tile_dim(), n);
     dx_fft_2d(FFT_FORWARD, &args, n);
     if (write_img) {
         dx_read_buffer(&args, args.buf_output, data, n * n);
@@ -90,7 +123,7 @@ double dx_performance(const int n)
 {
     dx_args args;
     profiler_data profiler[64];
-    dx_setup(&args, NULL, DX_BLOCK_SIZE, n);
+    dx_setup(&args, NULL, dx_block_size(), n);
     for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;
         dx_start_profiling(&args, &p);
@@ -106,7 +139,7 @@ double dx_performance(const int n)
 double dx_2d_performance(const int n)
 {
     dx_args args;
-    dx_setup_2d(&args, NULL, DX_BLOCK_SIZE, DX_TILE_DIM, n);
+    dx_setup_2d(&args, NULL, dx_block_size(), dx_tile_dim(), n);
     profiler_data profiler[64];
     for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;
@@ -142,7 +175,7 @@ __inline void dx_set_args(dx_args *a, float global_angle, float local_angle, flo
 __inline void dx_fft(transform_direction dir, dx_args *a, const int n)
 {
     fft_args args;
-    set_fft_arguments(&args, dir, a->number_of_blocks, DX_BLOCK_SIZE, n);
+    set_fft_arguments(&args, dir, a->number_of_blocks, dx_block_size(), n);
     dx_set_buffers(a);
     if (a->number_of_blocks > 1) {
         a->context->CSSetShader(a->cs_global, nullptr, 0);
@@ -161,7 +194,7 @@ __inline void dx_fft(transform_direction dir, dx_args *a, const int n)
 
 __inline void dx_fft_2d(transform_direction dir, dx_args *args, const int n)
 {
-    UINT width = n > DX_TILE_DIM ? (n / DX_TILE_DIM) : 1;
+    UINT width = n > dx_tile_dim() ? (n / dx_tile_dim()) : 1;
 
     dx_fft(dir, args, n);
 

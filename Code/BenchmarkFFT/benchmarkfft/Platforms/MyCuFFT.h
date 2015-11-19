@@ -4,7 +4,7 @@
 
 
 #include "Platform.h"
-#ifdef _WIN64
+#if defined(_WIN64) && !defined(_AMD)
 #include <cufft.h>
 #endif
 #include "CUDA/cuda_helper.cuh"

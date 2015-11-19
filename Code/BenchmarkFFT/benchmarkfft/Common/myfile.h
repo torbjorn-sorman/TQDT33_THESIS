@@ -13,6 +13,8 @@ char *get_kernel_src(std::string file_name, int *length);
 char *get_kernel_src_from_string(std::string contents, int *length);
 
 std::string get_file_content(LPCWSTR shader_file);
+std::string get_file_content(std::string shader_file);
+
 void manip_content(std::string* content, LPCWSTR var_name, int value);
 void set_file_content(LPCWSTR shader_file, std::string content);
 

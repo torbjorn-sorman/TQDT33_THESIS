@@ -1,12 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="AMD Radeon R7 260X|Win32">
+      <Configuration>AMD Radeon R7 260X</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="AMD Radeon R7 260X|x64">
+      <Configuration>AMD Radeon R7 260X</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="AMD|Win32">
+      <Configuration>AMD</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="AMD|x64">
+      <Configuration>AMD</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="NVIDIA|Win32">
+      <Configuration>NVIDIA</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="NVIDIA|x64">
+      <Configuration>NVIDIA</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="R7 260X|Win32">
+      <Configuration>R7 260X</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="R7 260X|x64">
+      <Configuration>R7 260X</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
@@ -42,7 +74,63 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -62,7 +150,31 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AMD|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -73,6 +185,18 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -105,13 +229,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>DXGI.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;OpenCL.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -120,7 +244,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
@@ -173,6 +296,130 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -183,7 +430,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -193,8 +440,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>DXGI.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3dcsx.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;opencl.lib;OpenCL.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\Win32;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -203,7 +450,218 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
-copy "$(ProjDir)Platforms\DirectX\d3dcsx_47.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <FastMath>true</FastMath>
+      <AdditionalOptions>-Xptxas -dlcm=cg %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_AMD</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <FastMath>true</FastMath>
+      <AdditionalOptions>-Xptxas -dlcm=cg %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_NVIDIA</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Vendors\NV\include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <FastMath>true</FastMath>
+      <AdditionalOptions>-Xptxas -dlcm=cg %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaToolkitLibDir);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
+mkdir "$(OutDir)Platforms\OpenCL\"
+mkdir "$(OutDir)Platforms\OpenGL\"
+mkdir "$(OutDir)Platforms\DirectX\"
+copy "$(ProjDir)Platforms\OpenCL\ocl_kernel.cl" "$(OutDir)Platforms\OpenCL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_global2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_local2d.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\OpenGL\gl_cshader_trans.glsl" "$(OutDir)Platforms\OpenGL"
+copy "$(ProjDir)Platforms\DirectX\dx_cs.hlsl" "$(OutDir)Platforms\DirectX"
+copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\DirectX"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <FastMath>true</FastMath>
+      <AdditionalOptions>-Xptxas -dlcm=cg %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>DXGI.lib;OpenCL.lib;clFFT.lib;OpenGL32.lib;freeglut.lib;glew32.lib;glew32s.lib;D3DCompiler.lib;D3D11.lib;libfftw3f-3.lib;libfftw3-3.lib;libfftw3l-3.lib;cufft.lib;cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\FFTW;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\glew\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\OpenGL\freeglut\;G:\GitHub\TQDT33_THESIS\Code\BenchmarkFFT\benchmarkfft\Platforms\clFFT</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3f-3.dll" "$(OutDir)"
+copy "$(ProjDir)Platforms\FFTW\libfftw3l-3.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\glew\glew32.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\OpenGL\freeglut\freeglut.dll" "$(OutDir)"
 copy "$(ProjDir)Platforms\clFFT\clFFT.dll" "$(OutDir)"
@@ -260,7 +718,6 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClInclude Include="Platforms\MyCuFFT.h" />
     <ClInclude Include="Platforms\MyDirectX.h" />
     <ClInclude Include="Platforms\MyFFTW.h" />
-    <ClInclude Include="Platforms\MyID3DX11FFT.h" />
     <ClInclude Include="Platforms\MyOpenCL.h" />
     <ClInclude Include="Platforms\MyOpenGL.h" />
     <ClInclude Include="Platforms\MyOpenMP.h" />
@@ -286,7 +743,6 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClCompile Include="Platforms\MyCuFFT.cpp" />
     <ClCompile Include="Platforms\MyDirectX.cpp" />
     <ClCompile Include="Platforms\MyFFTW.cpp" />
-    <ClCompile Include="Platforms\MyID3DX11FFT.cpp" />
     <ClCompile Include="Platforms\MyOpenCL.cpp" />
     <ClCompile Include="Platforms\MyOpenGL.cpp" />
     <ClCompile Include="Platforms\MyOpenMP.cpp" />
@@ -301,8 +757,16 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
     <ClCompile Include="Platforms\OpenCL\ocl_kernel.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
     </ClCompile>
   </ItemGroup>
@@ -312,22 +776,58 @@ copy "$(ProjDir)Platforms\DirectX\dx_cs_transpose.hlsl" "$(OutDir)Platforms\Dire
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">dx_local</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">dx_local</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">dx_local</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">dx_local</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">dx_local</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='NVIDIA|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='R7 260X|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|Win32'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dx_2d_local_row</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">dx_2d_local_row</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">dx_2d_local_row</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">dx_2d_local_row</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">dx_2d_local_row</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">dx_2d_local_row</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Platforms\DirectX\dx_cs_transpose.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dx_transpose</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">dx_transpose</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">dx_transpose</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">dx_transpose</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">dx_transpose</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">dx_transpose</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='NVIDIA|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='R7 260X|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='AMD Radeon R7 260X|x64'">5.0</ShaderModel>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

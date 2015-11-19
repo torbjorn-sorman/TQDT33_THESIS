@@ -82,9 +82,6 @@
     <ClInclude Include="Common\cpx_debug.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="Platforms\MyID3DX11FFT.h">
-      <Filter>Platforms\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Platforms\MyDirectX.h">
       <Filter>Platforms\Header Files</Filter>
     </ClInclude>
@@ -190,9 +187,6 @@
     </ClCompile>
     <ClCompile Include="Platforms\DirectX\dx_fft.cpp">
       <Filter>Platforms\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Platforms\MyID3DX11FFT.cpp">
-      <Filter>Platforms</Filter>
     </ClCompile>
     <ClCompile Include="Common\cpx_debug.cpp">
       <Filter>Common</Filter>

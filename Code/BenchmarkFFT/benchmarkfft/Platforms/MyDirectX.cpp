@@ -8,13 +8,13 @@ MyDirectX::MyDirectX(const int dim, const int runs)
     ID3D11Device *device;
     ID3D11DeviceContext *context;
     D3D_FEATURE_LEVEL feature_level;
-    IDXGIAdapter1 *adapter = dx_get_adapter();
+    IDXGIAdapter1 *adapter = dx_get_adapter(vendor_gpu);
     HRESULT hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &device, &feature_level, &context);
     if (hr == S_OK) {
         if (feature_level == D3D_FEATURE_LEVEL_11_0)
-            printf("DirectCompute D3D_FEATURE_LEVEL_11_0\n");
+            printf("DirectCompute\tD3D_FEATURE_LEVEL_11_0 (GTX670)\n");
         else if (feature_level == D3D_FEATURE_LEVEL_11_1)
-            printf("DirectCompute D3D_FEATURE_LEVEL_11_1\n");
+            printf("DirectCompute\tD3D_FEATURE_LEVEL_11_1 (R7 260X)\n");
     }
     else {
         printf("DirectCompute Failed...");

@@ -4,12 +4,12 @@
 MyOpenGL::MyOpenGL(const int dim, const int runs)
     : Platform(dim)
 {
-    name = "OpenGL";    
+    name = "OpenGL";
     GLenum err = glewInit();
     if (GLEW_OK != err) {
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
     }
-    fprintf(stdout, "OpenGL version: %s\n", glGetString(GL_VERSION));// glewGetString(GLEW_VERSION));    
+    fprintf(stdout, "OpenGL:\t\t%s\n", glGetString(GL_VERSION));
 }
 
 MyOpenGL::~MyOpenGL()
@@ -17,7 +17,7 @@ MyOpenGL::~MyOpenGL()
 }
 
 bool MyOpenGL::validate(const int n, bool write_img)
-{   
+{
     if (dimensions == 1)
         return gl_validate(n) == 1;
     return gl_2d_validate(n, write_img) == 1;

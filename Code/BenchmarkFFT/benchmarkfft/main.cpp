@@ -16,7 +16,7 @@
 #include "Platforms\MyC.h"
 #include "Platforms\MyFFTW.h"
 #include "Platforms\MyDirectX.h"
-#include "Platforms\MyID3DX11FFT.h"
+//#include "Platforms\MyID3DX11FFT.h"
 
 void printDevProp(cudaDeviceProp devProp);
 void toFile(std::string name, std::vector<double> results, int ms);
@@ -27,28 +27,28 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     std::vector<Platform *> platforms;
     // cuFFT only shipped for x64, FFTW x64 selected
 #ifdef _WIN64
-#if SELECTED_VENDOR == VENDOR_NVIDIA
-    if (args->platform_cufft)
+    if (vendor_gpu == VENDOR_NVIDIA && args->platform_cufft) {
         platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
-#elif SELECTED_VENDOR == VENDOR_AMD
-    if (args->platform_clfft)
+    }
+    else if (vendor_gpu == VENDOR_AMD && args->platform_clfft) {
         platforms.push_back(new MyClFFT(args->dimensions, args->test_runs));
-#endif
+    }
     if (args->platform_fftw)
         platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif
-#if SELECTED_VENDOR == VENDOR_NVIDIA
-    if (args->platform_cuda)
+    if (vendor_gpu == VENDOR_NVIDIA && args->platform_cuda) {
         platforms.push_back(new MyCUDA(args->dimensions, args->test_runs));
-#endif
+    }
     if (args->platform_directx)
         platforms.push_back(new MyDirectX(args->dimensions, args->test_runs));
     if (args->platform_opengl)
         platforms.push_back(new MyOpenGL(args->dimensions, args->test_runs));
     if (args->platform_opencl)
         platforms.push_back(new MyOpenCL(args->dimensions, args->test_runs));
+    /*
     if (args->platform_id3dx11)
         platforms.push_back(new MyID3DX11FFT(args->dimensions, args->test_runs));
+        */
     if (args->platform_openmp)
         platforms.push_back(new MyOpenMP(args->dimensions, args->test_runs));
     if (args->platform_c)
@@ -66,7 +66,12 @@ int main(int argc, char* argv[])
     benchmarkArgument args;
     if (!parse_args(&args, argc, argv))
         return 0;
-    // Special setup!
+#if defined(_NVIDIA)
+    vendor_gpu = VENDOR_NVIDIA;
+#elif defined(_AMD)
+    vendor_gpu = VENDOR_AMD;
+#endif
+    // Special setup, OpenGL need a window context!
     if (args.platform_opengl) {
         glutInit(&argc, argv);
         glutCreateWindow("GL Context");
@@ -85,14 +90,12 @@ int main(int argc, char* argv[])
         }
         return 0;
     }
-#if SELECTED_VENDOR == VENDOR_NVIDIA
-    if (args.show_cuprop) {
+    if (vendor_gpu == VENDOR_NVIDIA && args.show_cuprop) {
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
     }
-#endif
-    if (args.test_platform) {        
+    if (args.test_platform) {
         std::vector<Platform *> platforms = getPlatforms(&args);
         std::cout << "\n" << std::endl;
         if (args.performance_metrics) {

@@ -6,7 +6,7 @@ MyCUDA::MyCUDA(const int dim, const int runs)
     name = "CUDA";
     int v;
     cudaDriverGetVersion(&v);
-    printf("CUDA driver version %d\n", v);
+    printf("CUDA:\t\t%d.%d\n", (v/1000), (v - ((v/1000)*1000)));
 }
 
 MyCUDA::~MyCUDA()

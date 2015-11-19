@@ -138,8 +138,8 @@ double diff_forward_sinus(cpx *seq, const int n)
 {
     if (seq == NULL)
         return 1;
-    if (n < 8) {
-        return 0.0;
+    if (n < 4) {
+        return 1.0;
     }
     const int n2 = (n >> 1);
     cpx *neg = seq + 1;

@@ -2,7 +2,7 @@
 #ifndef GL_HELPER_H
 #define GL_HELPER_H
 
-
+#include <windows.h>
 #include "glew/glew.h"
 #include "glew/wglew.h"
 
@@ -56,5 +56,7 @@ void gl_shakedown(gl_args *a, Args... args)
     gl_shakedown(a);
     gl_shakedown(args...);
 }
+
+void gl_get_adapter(int gpuIndex);
 
 #endif

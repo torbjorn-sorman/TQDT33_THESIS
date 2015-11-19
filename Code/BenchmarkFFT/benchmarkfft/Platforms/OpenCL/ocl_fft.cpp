@@ -3,9 +3,35 @@
 __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev);
 __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 
-#define OCL_GROUP_SIZE 512
-#define OCL_TILE_DIM 32 // This is 8K local/shared mem
-#define OCL_BLOCK_DIM 16 // This is 256 Work Items / Group
+int ocl_group_size()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_NVIDIA: return 512;
+    case VENDOR_AMD:
+    default:            return 256;
+    }
+}
+
+int ocl_tile_dim()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_AMD:    return 64;
+    case VENDOR_NVIDIA:
+    default:            return 32;
+    }
+}
+
+int ocl_block_dim()
+{
+    switch (vendor_gpu)
+    {
+    case VENDOR_AMD:
+    case VENDOR_NVIDIA:
+    default:            return 16;
+    }
+}
 
 //
 // 1D
@@ -17,7 +43,7 @@ bool ocl_validate(const int n)
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
 
     ocl_fft(&a_host, &a_dev);
     clFinish(a_dev.commands);
@@ -38,7 +64,7 @@ bool ocl_2d_validate(const int n, bool write_img)
     cpx *data, *data_ref;
     ocl_setup_buffers(&data, NULL, &data_ref, n);
     ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
 
     ocl_fft_2d(&a_host, &a_dev, &argTranspose);
     clFinish(a_dev.commands);
@@ -67,7 +93,7 @@ double ocl_performance(const int n)
     double measurements[number_of_tests];
     cpx *data_in = get_seq(n, 1);
     ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
 
     for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
@@ -85,7 +111,7 @@ double ocl_2d_performance(const int n)
     double measurements[number_of_tests];
     cpx *data_in = (cpx *)malloc(sizeof(cpx) * n * n);
     ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
     for (int i = 0; i < number_of_tests; ++i) {
         start_timer();
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);
@@ -102,15 +128,15 @@ double ocl_performance(const int n)
     cl_int err = CL_SUCCESS;
     double measurements[64];
     ocl_args a_dev, a_host, arg_timestamp;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, NULL, FFT_FORWARD, OCL_GROUP_SIZE, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, NULL, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
     clFinish(a_dev.commands);
-    for (int i = 0; i < number_of_tests; ++i) {        
+    for (int i = 0; i < number_of_tests; ++i) {
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft(&a_host, &a_dev);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
-        measurements[i] = ocl_get_elapsed(start_event, end_event);        
+        measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
     ocl_check_err(ocl_shakedown(NULL, NULL, &a_host, &a_dev), "Release failed!");
     return average_best(measurements, number_of_tests);
@@ -119,17 +145,18 @@ double ocl_2d_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
     double measurements[64];
-    int minDim = n < OCL_TILE_DIM ? OCL_TILE_DIM * OCL_TILE_DIM : n * n;
-    cpx *data_in = (cpx *)malloc(sizeof(cpx) * minDim);
+    int min_dim = ocl_tile_dim();
+    min_dim = n < min_dim ? min_dim * min_dim : n * n;
+    cpx *data_in = (cpx *)malloc(sizeof(cpx) * min_dim);
     ocl_args a_dev, a_host, argTranspose, arg_timestamp;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, OCL_GROUP_SIZE, OCL_TILE_DIM, OCL_BLOCK_DIM, n), "Create failed!");
+    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
     clFinish(a_dev.commands);
     for (int i = 0; i < number_of_tests; ++i) {
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);
-        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);        
+        clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
         measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
@@ -180,12 +207,12 @@ void __inline ocl_set_args(ocl_args *args, cl_mem in, cl_mem out)
 __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev)
 {
     fft_args args;
-    set_fft_arguments(&args, a_dev->dir, a_dev->number_of_blocks, OCL_GROUP_SIZE, a_dev->n);
+    set_fft_arguments(&args, a_dev->dir, a_dev->number_of_blocks, ocl_group_size(), a_dev->n);
     if (a_dev->number_of_blocks > 1) {
         ocl_set_args(a_host, a_dev->input, args.global_angle);
         while (--args.steps_left > args.steps_gpu) {
             ocl_set_args(a_host, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
-            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->work_size, a_host->group_work_size, 0, NULL, NULL);            
+            clEnqueueNDRangeKernel(a_host->commands, a_host->kernel, a_host->workDim, NULL, a_host->work_size, a_host->group_work_size, 0, NULL, NULL);
         }
         ++args.steps_left;
     }

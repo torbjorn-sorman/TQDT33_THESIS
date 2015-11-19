@@ -32,9 +32,9 @@ typedef float transform_direction;
 //
 #define VENDOR_NVIDIA   4318
 #define VENDOR_AMD      4098
+#define VENDOR_BASIC    5140
 
-#define SELECTED_VENDOR VENDOR_AMD
-
+extern int vendor_gpu;
 extern int number_of_tests;
 
 struct benchmarkArgument

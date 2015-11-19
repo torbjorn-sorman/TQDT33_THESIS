@@ -1,4 +1,4 @@
-#define GROUP_SIZE_X 32
+#define GROUP_SIZE_X 4
 #define GRID_DIM_X 2048
 
 struct cpx
@@ -65,11 +65,6 @@ void dx_2d_global(uint3 threadIDInGroup : SV_GroupThreadID,
     add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
 }
 
-unsigned int dx_banking_resolve(in unsigned int x)
-{
-    return x + (x >> 5);
-}
-
 void dx_algorithm_local(in int in_low, in int in_high)
 {
     float x, y;
@@ -107,6 +102,8 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
+    //if (in_low == 0)
+        //printf("I'm alive!\n");
     dx_partial(in_low, in_low + block_range, (groupID.x * GROUP_SIZE_X) << 1, 0);
 }
 

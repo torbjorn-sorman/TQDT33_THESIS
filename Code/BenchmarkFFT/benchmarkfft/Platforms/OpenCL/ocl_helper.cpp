@@ -39,15 +39,19 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
     return ocl_setup_io_buffers(args, data_size);
 }
 
-cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args)
+cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args, int tile_dim, int block_dim)
 {
     cl_int err = CL_SUCCESS;
     cl_program program;
     cl_kernel kernel;
 
     // Read kernel file as a char *
-    char *src = get_kernel_src(std::string("Platforms/OpenCL/" + kernel_filename + ".cl"), NULL);
-
+    //char *src = get_kernel_src(std::string("Platforms/OpenCL/" + kernel_filename + ".cl"), NULL);
+    std::string str = get_file_content(std::string("Platforms/OpenCL/" + kernel_filename + ".cl"));
+    //free(src);
+    manip_content(&str, L"OCL_TILE_DIM", tile_dim);
+    manip_content(&str, L"OCL_BLOCK_DIM", block_dim);
+    char *src = get_kernel_src_from_string(str, NULL);
     // Create the compute program from the source buffer
     program = clCreateProgramWithSource(args->context, 1, (const char **)&src, NULL, &err);
     if (err != CL_SUCCESS) return err;
@@ -72,6 +76,12 @@ cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_arg
     free(src);
     return err;
 }
+
+cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args)
+{
+    return ocl_setup_program(kernel_filename, kernel_name, args, 0, 0);
+}
+
 
 cl_int oclSetupDeviceMemoryData(ocl_args *args, cpx *dev_in)
 {
@@ -141,8 +151,8 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
     ocl_setup_kernels(a_dev, group_size, false);
     memcpy(a_host, a_dev, sizeof(ocl_args));
 
-    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_local", a_dev), "Failed to setup GPU Program 1D!");
-    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_global", a_host), "Failed to setup CPU Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_local", a_dev, 0, 0), "Failed to setup GPU Program 1D!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_global", a_host, 0, 0), "Failed to setup CPU Program!");
 
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
@@ -171,7 +181,7 @@ void setWorkDimForTranspose(ocl_args *args, const int tile_dim, const int block_
     args->group_work_size[2] = 1;
     args->group_work_size[1] = block_dim;
     args->group_work_size[0] = block_dim;
-    args->shared_mem_size = tile_dim * (tile_dim + 1) * sizeof(cpx);
+    args->shared_mem_size = tile_dim * (tile_dim)* sizeof(cpx);
     args->workDim = 2;
 }
 
@@ -185,7 +195,7 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data
 
     ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_local_row", a_dev), "Failed to setup GPU Program!");
     ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_kernel_global_row", a_host), "Failed to setup CPU Program!");
-    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_transpose_kernel", a_trans), "Failed to setup Transpose Program!");
+    ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_transpose_kernel", a_trans, tile_dim, block_dim), "Failed to setup Transpose Program!");
 
     cl_int err = oclSetupDeviceMemoryData(a_dev, data_in);
     memcpy(a_host->work_size, a_dev->work_size, sizeof(size_t) * 3);
@@ -298,7 +308,7 @@ cl_int ocl_get_platform(cl_platform_id *platform_id)
     for (cl_platform_id pid : platforms) {
         char name[256];
         clGetPlatformInfo(pid, CL_PLATFORM_NAME, 256, name, NULL);
-        if (SELECTED_VENDOR == ocl_platformname_to_id(name)) {
+        if (vendor_gpu == ocl_platformname_to_id(name)) {
             *platform_id = pid;
             return CL_SUCCESS;
         }

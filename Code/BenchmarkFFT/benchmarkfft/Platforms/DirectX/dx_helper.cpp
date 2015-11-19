@@ -105,7 +105,7 @@ void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
 {
     args->context->CopyResource(args->buf_staging, src);
     D3D11_MAPPED_SUBRESOURCE mapped_resource;
-    args->context->Map(args->buf_staging, 0, D3D11_MAP_READ, 0, &mapped_resource);
+    dx_check_error(args->context->Map(args->buf_staging, 0, D3D11_MAP_READ, 0, &mapped_resource), "context->Map");
     if (mapped_resource.pData) {
         cpx* data = reinterpret_cast<cpx*>(mapped_resource.pData);
         memcpy(dst, data, sizeof(cpx) * n);
@@ -137,15 +137,14 @@ std::vector <IDXGIAdapter1*> EnumerateAdapters(void)
         pFactory->Release();
     }
     return vAdapters;
-
 }
 
-IDXGIAdapter1 *dx_get_adapter()
+IDXGIAdapter1 *dx_get_adapter(int vendor)
 {
-    DXGI_ADAPTER_DESC adapterDesc;
-    for (IDXGIAdapter1 *a : EnumerateAdapters()) {        
-        a->GetDesc(&adapterDesc);
-        if (adapterDesc.VendorId == SELECTED_VENDOR)
+    DXGI_ADAPTER_DESC1 adapterDesc;
+    for (IDXGIAdapter1 *a : EnumerateAdapters()) {
+        a->GetDesc1(&adapterDesc);
+        if (adapterDesc.VendorId == vendor)
             return a;
     }
     return NULL;
@@ -167,9 +166,8 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 
     const D3D_FEATURE_LEVEL feature_levels[2] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
 
-    IDXGIAdapter1 *adapter = dx_get_adapter();
-    dx_check_error(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
-    adapter->Release();
+    dx_check_error(D3D11CreateDevice(dx_get_adapter(vendor_gpu), D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
+    
     a->buf_input = { 0 };
     a->buf_output = { 0 };
 
@@ -178,11 +176,8 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     dx_check_error(a->device->CreateBuffer(&rw_buffer_desc, NULL, &a->buf_output), "Create GPU Out Buffer ");
 
     if (a->buf_input && a->buf_output) {
-        // Create shader resource view for IO buffers.  
         dx_check_error(a->device->CreateShaderResourceView(a->buf_input, NULL, &a->buf_input_srv), "Create CPU Buffer ShaderResourceView");
         dx_check_error(a->device->CreateShaderResourceView(a->buf_output, NULL, &a->buf_output_srv), "Create CPU Buffer ShaderResourceView");
-
-        // Create unordered access view for IO buffers.  
         dx_check_error(a->device->CreateUnorderedAccessView(a->buf_input, &uav_desc, &a->buf_input_uav), "Create GPU In UnorderedAccessView");
         dx_check_error(a->device->CreateUnorderedAccessView(a->buf_output, &uav_desc, &a->buf_output_uav), "Create GPU Out UnorderedAccessView");
     }

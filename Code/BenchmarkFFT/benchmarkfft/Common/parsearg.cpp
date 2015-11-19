@@ -107,12 +107,13 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
         else if (MATCH("-testground")) {
             arg->run_testground = true;
         }
-        else if (MATCH("-vendor")) {
+        else if (0 && MATCH("-vendor")) {
             ++i;
             if (valid_content(i, argc, argv) && count_sub_arguments(argv, i, argc) == 1) {
                 std::string tmp = argv[i];
-                if      (MATCHP("nvidia"))  arg->vendor = VENDOR_NVIDIA;
+                if (MATCHP("nvidia"))       arg->vendor = VENDOR_NVIDIA;
                 else if (MATCHP("amd"))     arg->vendor = VENDOR_AMD;
+                else if (MATCHP("basic"))   arg->vendor = VENDOR_BASIC;
                 else {
                     printf("Unknown vendor: %s, must be one of {nvidia, amd}\n", tmp.c_str());
                     goto show_usage;

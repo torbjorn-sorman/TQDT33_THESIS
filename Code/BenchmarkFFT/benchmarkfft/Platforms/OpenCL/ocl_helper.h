@@ -2,11 +2,11 @@
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
-#if VENDOR_SELECTED == VENDOR_AMD
-#include <AMD/CL/cl.h>
-#elif VENDOR_SELECTED == VENDORE_NVIDIA
+//#if VENDOR_SELECTED == VENDOR_AMD
+//#include <AMD/CL/cl.h>
+//#elif VENDOR_SELECTED == VENDORE_NVIDIA
 #include <CL/cl.h>
-#endif
+//#endif
 
 #include "../../Definitions.h"
 #include "../../Common/mycomplex.h"
@@ -44,6 +44,7 @@ cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm);
 cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int group_size, const int tile_dim, const int block_dim, const int n);
 cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2);
 cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args);
+cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_args *args, int, int);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev);
 cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n);

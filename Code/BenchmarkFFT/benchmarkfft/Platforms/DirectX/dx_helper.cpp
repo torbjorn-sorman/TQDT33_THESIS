@@ -4,11 +4,14 @@ double dx_avg(profiler_data profiler[], dx_args *args)
 {
     double m[64];
     for (int i = 0; i < number_of_tests; ++i) {
+        
         profiler_data p = profiler[i];
         UINT64 ts_start, ts_end;
         D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
-        while (S_OK != args->context->GetData(p.q_start, &ts_start, sizeof(UINT64), 0)){};
-        while (S_OK != args->context->GetData(p.q_end, &ts_end, sizeof(UINT64), 0)){};
+        
+        int cnt = 0;
+        while (S_OK != args->context->GetData(p.q_start, &ts_start, sizeof(UINT64), 0)){ };
+        while (S_OK != args->context->GetData(p.q_end, &ts_end, sizeof(UINT64), 0)){ };
         while (S_OK != args->context->GetData(p.disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
         m[i] = (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
     }
@@ -37,6 +40,9 @@ double dx_time_elapsed(profiler_data *p, dx_args *args)
     while (S_OK != args->context->GetData(p->q_start, &ts_start, sizeof(UINT64), 0)){};
     while (S_OK != args->context->GetData(p->q_end, &ts_end, sizeof(UINT64), 0)){};
     while (S_OK != args->context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+    p->q_start->Release();
+    p->q_end->Release();
+    p->disjoint_query->Release();
     return (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
 }
 
@@ -46,7 +52,7 @@ double dx_time_elapsed(profiler_data *p, ID3D11DeviceContext *context)
     D3D11_QUERY_DATA_TIMESTAMP_DISJOINT q_freq;
     while (S_OK != context->GetData(p->q_start, &ts_start, sizeof(UINT64), 0)){};
     while (S_OK != context->GetData(p->q_end, &ts_end, sizeof(UINT64), 0)){};
-    while (S_OK != context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};
+    while (S_OK != context->GetData(p->disjoint_query, &q_freq, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0)){};    
     return (((double)(ts_end - ts_start)) / ((double)q_freq.Frequency)) * 1000000.0;
 }
 
@@ -164,8 +170,8 @@ void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n);
     ID3DBlob* errorBlob = 0;
 
-    const D3D_FEATURE_LEVEL feature_levels[2] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-    dx_check_error(D3D11CreateDevice(dx_get_adapter(vendor_gpu), D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 2, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
+    const D3D_FEATURE_LEVEL feature_levels[1] = { D3D_FEATURE_LEVEL_11_0 };
+    dx_check_error(D3D11CreateDevice(dx_get_adapter(vendor_gpu), D3D_DRIVER_TYPE_UNKNOWN, NULL, NULL, feature_levels, 1, D3D11_SDK_VERSION, &a->device, &featureLevel, &a->context), "D3D11CreateDevice");
         
     a->buf_input = { 0 };
     a->buf_output = { 0 };
@@ -301,30 +307,36 @@ void dx_shakedown(dx_args *a)
     ID3D11Buffer* nullBuffer = nullptr;
     a->context->CSSetConstantBuffers(0, 1, &nullBuffer);
 
-    if (a->cs_local)
+    if (a->cs_local) {
         a->cs_local->Release();
-    if (a->cs_global)
-        a->cs_global->Release();
-    if (a->blob_local)
         a->blob_local->Release();
-    if (a->blob_global)
+    }
+    if (a->cs_global) {
+        a->cs_global->Release();
         a->blob_global->Release();
+    }
     if (a->buf_constant)
         a->buf_constant->Release();
     if (a->buf_staging)
         a->buf_staging->Release();
-    a->buf_output_uav->Release();
-    a->buf_output_srv->Release();
-    a->buf_output->Release();
-    a->buf_input_uav->Release();
-    a->buf_input_srv->Release();
-    a->buf_input->Release();
+    if (a->buf_output) {
+        a->buf_output_uav->Release();    
+        a->buf_output_srv->Release();
+        a->buf_output->Release();
+    }
+    if (a->buf_input) {
+        a->buf_input_uav->Release();
+        a->buf_input_srv->Release();
+        a->buf_input->Release();
+    }
     if (a->blob_transpose) {
         a->cs_transpose->Release();
         a->blob_transpose->Release();
     }
-    a->context->Release();
-    a->device->Release();
+    if (a->context)
+        a->context->Release();
+    if (a->device)
+        a->device->Release();    
 }
 
 D3D11_BUFFER_DESC get_output_buffer_description(const int dimension)
@@ -369,6 +381,6 @@ D3D11_BUFFER_DESC get_constant_buffer_description()
     desc.Usage = D3D11_USAGE_DYNAMIC;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     desc.MiscFlags = 0;
-    desc.ByteWidth = (UINT)padded_size(sizeof(cpx));
+    desc.ByteWidth = (UINT)padded_size(sizeof(dx_cs_args));
     return desc;
 }

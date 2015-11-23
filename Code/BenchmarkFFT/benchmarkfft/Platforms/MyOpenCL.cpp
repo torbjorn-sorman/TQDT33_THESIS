@@ -12,15 +12,12 @@ MyOpenCL::MyOpenCL(const int dim, const int runs)
     cl_device_id device;
     char info_platform[511];
     char info_device[511];
-    cl_ulong mem_size;
     size_t actual;
 
     clGetPlatformInfo(platform_id, CL_PLATFORM_VERSION, 511, info_platform, &actual);
     clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
     clGetDeviceInfo(device, CL_DEVICE_VERSION, 511, info_device, &actual);   
     printf("OpenCL:\t\t%s (platform)\n\t\t%s (device)\n", info_platform, info_device);
-    clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, 511, &mem_size, &actual);
-    printf("\t\tLocal memory size: %ul\n", mem_size);
 }
 
 MyOpenCL::~MyOpenCL()

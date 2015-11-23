@@ -2,11 +2,7 @@
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
-#if defined(_AMD)
-#include "CLUtil.hpp"
-#else
 #include <CL/cl.h>
-#endif
 
 #include "../../Definitions.h"
 #include "../../Common/mycomplex.h"

@@ -10,7 +10,7 @@ int dx_block_size()
     {
     case VENDOR_AMD:    return 256;
     case VENDOR_NVIDIA: return 1024;
-    default:            return 1;  
+    default:            return 1;
     }
 }
 
@@ -49,10 +49,6 @@ int dx_validate(const int n)
     dx_fft(FFT_FORWARD, &args, n);
     dx_read_buffer(&args, args.buf_output, out, n);
     double forward_diff = diff_forward_sinus(out, n);
-
-    //cpx_to_console(out, "DX out", n > 16 ? 16:n);
-    //getchar();
-
 
     swap_io(&args);
     dx_fft(FFT_INVERSE, &args, n);
@@ -118,39 +114,46 @@ double dx_2d_performance(const int n)
     return average_best(measures, number_of_tests);
 }
 #else
+double dx_perf(void(*fft_fn)(transform_direction, dx_args*, const int), dx_args* args, const int n)
+{
+#if defined(_AMD)
+    double measurements[64];
+    for (int i = 0; i < number_of_tests; ++i) {
+        profiler_data p;
+        dx_start_profiling(args, &p);
+        fft_fn(FFT_FORWARD, args, n);
+        dx_end_profiling(args, &p);
+        measurements[i] = dx_time_elapsed(&p, args->context);
+    }
+    return average_best(measurements, number_of_tests);
+#elif defined(_NVIDIA)
+    double measurements[64];
+    profiler_data p_data[64];
+    for (int i = 0; i < number_of_tests; ++i) {
+        profiler_data p;
+        dx_start_profiling(args, &p);
+        fft_fn(FFT_FORWARD, args, n);
+        dx_end_profiling(args, &p);
+        p_data[i] = p;        
+    }
+    return dx_avg(p_data, args);
+#endif
+}
 double dx_performance(const int n)
 {
     dx_args args;
-    profiler_data profiler[64];
     dx_setup(&args, NULL, dx_block_size(), n);
-    for (int i = 0; i < number_of_tests; ++i) {
-        profiler_data p;
-        dx_start_profiling(&args, &p);
-
-        dx_fft(FFT_FORWARD, &args, n);
-
-        dx_end_profiling(&args, &p);
-        profiler[i] = p;
-    }
+    double m = dx_perf(dx_fft, &args, n);
     dx_shakedown(&args);
-    return dx_avg(profiler, &args);
+    return m;
 }
 double dx_2d_performance(const int n)
 {
     dx_args args;
     dx_setup_2d(&args, NULL, dx_block_size(), dx_tile_dim(), n);
-    profiler_data profiler[64];
-    for (int i = 0; i < number_of_tests; ++i) {
-        profiler_data p;
-        dx_start_profiling(&args, &p);
-
-        dx_fft_2d(FFT_FORWARD, &args, n);
-
-        dx_end_profiling(&args, &p);
-        profiler[i] = p;
-    }
+    double m = dx_perf(dx_fft_2d, &args, n);
     dx_shakedown(&args);
-    return dx_avg(profiler, &args);
+    return m;
 }
 #endif
 

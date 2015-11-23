@@ -34,11 +34,10 @@ std::vector<Platform *> getPlatforms(benchmarkArgument *args)
     if (args->platform_cufft) {
         platforms.push_back(new MyCuFFT(args->dimensions, args->test_runs));
     }
-#elif defined(_AMD)
+#endif
     if (args->platform_clfft) {
         platforms.push_back(new MyClFFT(args->dimensions, args->test_runs));
     }
-#endif
     if (args->platform_fftw)
         platforms.push_back(new MyFFTW(args->dimensions, args->test_runs));
 #endif

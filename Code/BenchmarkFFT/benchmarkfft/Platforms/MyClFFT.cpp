@@ -12,23 +12,17 @@ MyClFFT::MyClFFT(const int dim, const int runs)
 {
     name = "clFFT";
 
-    cl_platform_id platform;
+    cl_platform_id platform_id;
+    ocl_check_err(ocl_get_platform(&platform_id), "ocl_get_platform");
     cl_device_id device;
-    char info_platform[255];
-    char info_device[255];
+    char info_platform[511];
+    char info_device[511];
     size_t actual;
 
-    clGetPlatformIDs(1, &platform, NULL);
-    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 255, info_platform, &actual);
-    if (actual > 255) {
-        printf("Do stuff...");
-    }
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    clGetDeviceInfo(device, CL_DEVICE_VERSION, 255, info_device, &actual);    
-    if (actual > 255) {
-        printf("Do stuff...");
-    }
-    printf("ClFFT Platform: %s\nClFFT Device: %s\n", info_platform, info_device);
+    clGetPlatformInfo(platform_id, CL_PLATFORM_VERSION, 511, info_platform, &actual);
+    clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    clGetDeviceInfo(device, CL_DEVICE_VERSION, 511, info_device, &actual);
+    printf("OpenCL:\t\t%s (platform)\n\t\t%s (device)\n", info_platform, info_device);
 }
 
 MyClFFT::~MyClFFT()
@@ -36,7 +30,7 @@ MyClFFT::~MyClFFT()
 }
 
 bool MyClFFT::validate(const int n, bool write_img)
-{   
+{
     return true;
 }
 
@@ -83,17 +77,17 @@ void MyClFFT::runPerformance(const int n)
     cl_device_id device = 0;
     cl_context ctx = 0;
     cl_command_queue queue = 0;
-    cl_mem bufX;
     cl_event event = NULL;
     clfftPlanHandle planHandle;
 
     /* Setup OpenCL environment. */
-    err = clGetPlatformIDs(1, &platform, NULL);
+    ocl_check_err(ocl_get_platform(&platform), "ocl_get_platform");
     size_t ret_param_size = 0;
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    //err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    ocl_check_err(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL), "clGetDeviceIDs");
     ctx = clCreateContext(0, 1, &device, NULL, NULL, &err);
     queue = clCreateCommandQueue(ctx, device, 0, &err);
-    
+
     size_t clLengths1D[1] = { n };
     size_t clLengths2D[2] = { n, n };
 
@@ -104,26 +98,33 @@ void MyClFFT::runPerformance(const int n)
 
     /* Create a default plan for a complex FFT. */
     err = clfftCreateDefaultPlan(&planHandle, ctx, dim1 ? CLFFT_1D : CLFFT_2D, dim1 ? clLengths1D : clLengths2D);
-
+    
     /* Set plan parameters. */
     err = clfftSetPlanPrecision(planHandle, CLFFT_SINGLE);
     err = clfftSetLayout(planHandle, CLFFT_COMPLEX_INTERLEAVED, CLFFT_COMPLEX_INTERLEAVED);
-    err = clfftSetResultLocation(planHandle, CLFFT_INPLACE);
+    err = clfftSetResultLocation(planHandle, CLFFT_OUTOFPLACE);
     /* Bake the plan. */
     err = clfftBakePlan(planHandle, 1, &queue, NULL, NULL);
     /* Prepare OpenCL memory objects and place data inside them. */
-    bufX = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (dim1 ? n : n * n) * sizeof(cpx), NULL, &err);
+    cl_mem buf_in = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (dim1 ? n : n * n) * sizeof(cpx), NULL, &err);
+    cl_mem buf_out = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (dim1 ? n : n * n) * sizeof(cpx), NULL, &err);
+    cl_event e;
+    clFinish(queue);
+    for (int i = 0; i < number_of_tests; ++i) {
+        start_timer();
+        clfftEnqueueTransform(planHandle, CLFFT_FORWARD, 1, &queue, 0, NULL, &e, &buf_in, &buf_out, NULL);
+        clWaitForEvents(1, &e);
+        //clFinish(queue);
+        measurements[i] = stop_timer();        
+    }
+    time = average_best(measurements, number_of_tests);
+    //double tm = ocl_get_elapsed(e, e);
 
-        for (int i = 0; i < number_of_tests; ++i) {                    
-            start_timer();
-            clfftEnqueueTransform(planHandle, CLFFT_FORWARD, 1, &queue, 0, NULL, NULL, &bufX, NULL, NULL);
-            clFinish(queue);
-            measurements[i] = stop_timer();
-        }
-        time = average_best(measurements, number_of_tests);
+    //printf("tm: %f\n", tm);
 
     /* Release OpenCL memory objects. */
-    clReleaseMemObject(bufX);
+    clReleaseMemObject(buf_in);
+    clReleaseMemObject(buf_out);
     /* Release the plan. */
     err = clfftDestroyPlan(&planHandle);
     /* Release clFFT library. */

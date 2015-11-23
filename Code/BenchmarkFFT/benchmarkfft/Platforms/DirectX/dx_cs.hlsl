@@ -1,5 +1,5 @@
-#define GROUP_SIZE_X 256
-#define GRID_DIM_X 2048
+#define GROUP_SIZE_X 1024
+#define GRID_DIM_X 8192
 
 struct cpx
 {
@@ -83,7 +83,7 @@ void dx_algorithm_local(in int in_low, in int in_high)
 }
 
 void dx_partial(in int in_low, in int in_high, in int offset, in int start)
-{
+{        
     shared_buf[in_low] = input[in_low + offset + start];
     shared_buf[in_high] = input[in_high + offset + start];
 
@@ -102,9 +102,7 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
-    //if (in_low == 0)
-        //printf("I'm alive!\n");
-    dx_partial(in_low, in_low + block_range, (groupID.x * GROUP_SIZE_X) << 1, 0);
+    dx_partial(in_low, in_low + block_range, ((groupID.x * GROUP_SIZE_X) << 1), 0);    
 }
 
 [numthreads(GROUP_SIZE_X, 1, 1)]

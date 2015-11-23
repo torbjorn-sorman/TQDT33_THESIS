@@ -213,10 +213,10 @@
     <ClCompile Include="Definitions.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">
+    <FxCompile Include="Platforms\DirectX\dx_cs_transpose.hlsl">
       <Filter>Platforms\DirectX</Filter>
     </FxCompile>
-    <FxCompile Include="Platforms\DirectX\dx_cs_transpose.hlsl">
+    <FxCompile Include="Platforms\DirectX\dx_cs.hlsl">
       <Filter>Platforms\DirectX</Filter>
     </FxCompile>
   </ItemGroup>

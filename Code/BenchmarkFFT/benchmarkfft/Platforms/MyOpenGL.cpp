@@ -18,13 +18,42 @@ MyOpenGL::~MyOpenGL()
 
 bool MyOpenGL::validate(const int n, bool write_img)
 {
-    if (dimensions == 1)
+    if (dimensions == 1) {
+#if defined(_AMD)
+        if (n > power2(23))
+            return false;
+#endif
         return gl_validate(n) == 1;
-    return gl_2d_validate(n, write_img) == 1;
+    }
+    else {
+#if defined(_AMD)
+        if (n > power2(11))
+            return false;
+#endif
+        return gl_2d_validate(n, write_img) == 1;
+    }
 }
 
 void MyOpenGL::runPerformance(const int n)
 {
-    double time = ((dimensions == 1) ? gl_performance(n) : gl_2d_performance(n));
+    double time;
+    if (dimensions == 1) {
+#if defined(_AMD)
+        if (n > power2(23)){
+            results.push_back(-1);
+            return;
+        }
+#endif
+        time = gl_performance(n);
+    }
+    else {
+#if defined(_AMD)
+        if (n > power2(12)){
+            results.push_back(-1);
+            return;
+        }
+#endif
+        time = gl_2d_performance(n);
+    }
     results.push_back(time);
 }

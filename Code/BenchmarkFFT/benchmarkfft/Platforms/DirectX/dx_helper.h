@@ -64,6 +64,9 @@ struct profiler_data
     ID3D11QueryPtr q_end;
 };
 
+void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_blob);
+void dx_check_error(HRESULT hr, char *method);
+
 static __inline void dx_start_profiling(dx_args *args, profiler_data *p_data)
 {
     if (p_data->disjoint_query == NULL)
@@ -71,10 +74,10 @@ static __inline void dx_start_profiling(dx_args *args, profiler_data *p_data)
         D3D11_QUERY_DESC desc;
         desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
         desc.MiscFlags = 0;
-        args->device->CreateQuery(&desc, &p_data->disjoint_query);
+        dx_check_error(args->device->CreateQuery(&desc, &p_data->disjoint_query), "device->CreateQuery");
         desc.Query = D3D11_QUERY_TIMESTAMP;
-        args->device->CreateQuery(&desc, &p_data->q_start);
-        args->device->CreateQuery(&desc, &p_data->q_end);
+        dx_check_error(args->device->CreateQuery(&desc, &p_data->q_start), "device->CreateQuery");
+        dx_check_error(args->device->CreateQuery(&desc, &p_data->q_end), "device->CreateQuery");
     }
     args->context->Begin(p_data->disjoint_query);
     args->context->End(p_data->q_start);
@@ -93,10 +96,10 @@ static __inline void dx_start_profiling(ID3D11Device *device, ID3D11DeviceContex
         D3D11_QUERY_DESC desc;
         desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
         desc.MiscFlags = 0;
-        device->CreateQuery(&desc, &p_data->disjoint_query);
+        dx_check_error(device->CreateQuery(&desc, &p_data->disjoint_query), "device->CreateQuery");
         desc.Query = D3D11_QUERY_TIMESTAMP;
-        device->CreateQuery(&desc, &p_data->q_start);
-        device->CreateQuery(&desc, &p_data->q_end);
+        dx_check_error(device->CreateQuery(&desc, &p_data->q_start), "device->CreateQuery");
+        dx_check_error(device->CreateQuery(&desc, &p_data->q_end), "device->CreateQuery");
     }
     context->Begin(p_data->disjoint_query);
     context->End(p_data->q_start);
@@ -124,11 +127,11 @@ static __inline void swap_io(dx_args *a)
 
 template<typename T> static __inline void dx_map_args(ID3D11DeviceContext* context, ID3D11Buffer* arg_buffer, T *params)
 {
-    D3D11_MAPPED_SUBRESOURCE mapped_resource = { 0 };
+    D3D11_MAPPED_SUBRESOURCE mapped_resource;
     context->Map(arg_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_resource);
     if (mapped_resource.pData) {
         T* constants = reinterpret_cast<T *>(mapped_resource.pData);
-        constants[0] = *params;
+        *constants = *params;
         constants = nullptr;
         context->Unmap(arg_buffer, 0);
     }
@@ -141,9 +144,6 @@ double dx_time_elapsed(profiler_data *p, ID3D11DeviceContext *context);
 
 size_t padded_size(size_t sz, size_t width);
 size_t padded_size(size_t sz);
-
-void dx_check_error(HRESULT hr, char *method, ID3DBlob* error_blob);
-void dx_check_error(HRESULT hr, char *method);
 
 IDXGIAdapter1 *dx_get_adapter(int vendor);
 

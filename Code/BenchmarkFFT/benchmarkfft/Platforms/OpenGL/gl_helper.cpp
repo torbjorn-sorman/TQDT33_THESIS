@@ -7,7 +7,6 @@ void gl_check_errors()
     GLenum err = GL_NO_ERROR;
     while ((err = glGetError()) != GL_NO_ERROR)
     {
-        //Process/log the error.
         std::cout << "ERROR!" << std::endl;
         getchar();
     }
@@ -93,9 +92,9 @@ void gl_setup_program(gl_args *arg, bool gen_buffers, LPCWSTR shader_file)
     gl_setup_program(arg, gen_buffers, shader_file, false);
 }
 
-void gl_read_buffer(cpx* dst, GLuint buffer, const int size)
+void gl_read_buffer(cpx* dst, GLuint buffer, const int index, const int size)
 {
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, buffer);
     cpx* src = (cpx *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
     memcpy(dst, src, sizeof(cpx) * size);
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

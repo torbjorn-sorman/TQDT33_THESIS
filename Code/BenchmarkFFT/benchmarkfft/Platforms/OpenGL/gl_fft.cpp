@@ -28,8 +28,8 @@ int gl_validate(const int n)
     {
         gl_args a_dev, a_host;
         gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);        
-        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);        
-        gl_read_buffer(out, a_dev.buf_out, n);
+        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
+        gl_read_buffer(out, a_dev.buf_out, 1, n);
         forward_diff = diff_forward_sinus(out, n);
         gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
@@ -38,7 +38,7 @@ int gl_validate(const int n)
         gl_args a_dev, a_host;
         gl_setup(&a_dev, &a_host, out, NULL, GL_GROUP_SIZE, n);
         gl_fft(FFT_INVERSE, &a_dev, &a_host, n);
-        gl_read_buffer(out, a_dev.buf_out, n);
+        gl_read_buffer(out, a_dev.buf_out, 1, n);
         inverse_diff = diff_seq(out, ref, n);
         gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
@@ -56,9 +56,8 @@ int gl_2d_validate(const int n, bool write_img)
         gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
-        gl_read_buffer(data, a_dev.buf_out, n * n);
-        if (write_img) {
-            gl_read_buffer(tmp, a_dev.buf_in, n * n);            
+        gl_read_buffer(data, a_dev.buf_out, 1, n * n);
+        if (write_img) {            
             write_normalized_image("OpenGL", "freq", data, n, true);                 
         }
         gl_shakedown(&a_dev, &a_host, &a_trans);
@@ -68,7 +67,7 @@ int gl_2d_validate(const int n, bool write_img)
         gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
-        gl_read_buffer(data, a_dev.buf_out, n * n);
+        gl_read_buffer(data, a_dev.buf_out, 1, n * n);
         if (write_img) {
             write_image("OpenGL", "spat", data, n);
         }

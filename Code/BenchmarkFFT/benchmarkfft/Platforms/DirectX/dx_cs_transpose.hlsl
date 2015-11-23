@@ -1,5 +1,5 @@
 // Auto update, do not alter
-#define WIDTH 2048
+#define WIDTH 8192
 #define DX_TILE_DIM 32
 
 // Tweak here!
@@ -16,7 +16,7 @@ RWStructuredBuffer<cpx> rw_buf : register(u0);
 
 // Likely to result in banking issues... DX does not allow for more then 32K (48K is available)
 // Alternative is to use less shared memory. (32 x 32 instead of 64 x 64)
-groupshared cpx tile[DX_TILE_DIM][DX_TILE_DIM + 1];
+groupshared cpx tile[DX_TILE_DIM][DX_TILE_DIM];
 
 [numthreads(DX_BLOCK_DIM, DX_BLOCK_DIM, 1)]
 void dx_transpose(uint3 threadIDInGroup : SV_GroupThreadID,

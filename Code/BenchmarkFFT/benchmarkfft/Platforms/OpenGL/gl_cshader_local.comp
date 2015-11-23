@@ -20,7 +20,6 @@ uniform uint leading_bits;
 uniform uint steps_left;
 uniform uint block_range;
 
-void add_sub_mul(cpx low, cpx high, out cpx o_low, out cpx o_high, cpx w);
 void dx_algorithm_local(uint in_low, uint in_high);
 
 void main()
@@ -53,17 +52,12 @@ void dx_algorithm_local(uint in_low, uint in_high)
         in_lower = shared_buf[in_low];
         in_upper = shared_buf[in_high];
         barrier();
-        add_sub_mul(in_lower, in_upper, shared_buf[out_i], shared_buf[out_ii], w);
+        
+        float x = in_lower.x - in_upper.x;
+        float y = in_lower.y - in_upper.y;
+        shared_buf[out_i] =  cpx(in_lower.x + in_upper.x, in_lower.y + in_upper.y);
+        shared_buf[out_ii] = cpx((w.x * x) - (w.y * y), (w.y * x) + (w.x * y));
+
         barrier();
     }
-}
-
-void add_sub_mul(cpx low, cpx high, out cpx o_low, out cpx o_high, cpx w)
-{
-    float x = low.x - high.x;
-    float y = low.y - high.y;
-    o_low.x = low.x + high.x;
-    o_low.y = low.y + high.y;
-    o_high.x = (w.x * x) - (w.y * y);
-    o_high.y = (w.y * x) + (w.x * y);
 }

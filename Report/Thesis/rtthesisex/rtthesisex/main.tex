@@ -7,39 +7,41 @@
   % Font options: 'kp' (default), 'times', 'lm'.  The KpFonts (loaded using 'kp'), is the most complete font among the provided options.  Among other, it supports slanted small caps.  See rtthesis.cls for more details regarding the font options.
   largesmallcaps,intlimits,widermath,% Good options to KpFonts.
   sharecounter,nobreak,definition=marks,%  See comments in the results chapter of this document for more information on these options!
-  %numbers, % If you want to cite references by numbers, use this option.
+  numbers, % If you want to cite references by numbers, use this option.
   noparts% Use option 'noparts' if you do not make use of part divisions.
 ]{rtthesis}
 
 \usepackage{mythesis}
+\usepackage{amsthm}
+\usepackage{amsmath}
 
 \begin{document}
 \selectlanguage{english}
 \makeFrontPage
 \frontmatter
 \maketitle
-\makeLibraryPage{\input{engelsk-sammanfattning}}
+\makeLibraryPage{\input{chapter/abstract}}
 
 \begin{abstract}[english]
-  \input{engelsk-sammanfattning}
+  \input{chapter/abstract}
 \end{abstract}
-\include{tack}
+\include{chapter/thanks}
 \tableofcontents
-\include{notation}
+\include{chapter/notation}
 
 \mainmatter
-\include{introduktion}
-\include{resultat}
-\include{avrundning}
+\include{chapter/introduction}
+\include{chapter/result}
+\include{chapter/summary}
 
-\part*{Appendix}
-\appendix
-\include{detaljer}
-\include{rtthesis-doc}
+%\part*{Appendix}
+%\appendix
+%\include{chapter/details}
+%\include{chapter/rtthesis-doc}
 
 \backmatter
 
-\bibliography{IEEEfull,myrefs}
+\bibliography{IEEEfull,chapter/library}
 
 \printindex
 

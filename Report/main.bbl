@@ -1,0 +1,78 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Brigham and Morrow(1967)]{Brigham1967}
+E.~O. Brigham and R.~E. Morrow.
+\newblock {The fast Fourier transform}.
+\newblock \emph{Spectrum, IEEE}, 4\penalty0 (12):\penalty0 63 --70, 1967.
+\newblock ISSN 0018-9235.
+\newblock \doi{10.1109/MSPEC.1967.5217220}.
+\newblock URL
+  \url{http://ieeexplore.ieee.org/ielx5/6/5217195/05217220.pdf?tp={\&}arnumber=5217220{\&}isnumber=5217195$\backslash$nhttp://ieeexplore.ieee.org/stamp/stamp.jsp?tp={\&}arnumber=5217220}.
+
+\bibitem[Christopoulos et~al.(2000)Christopoulos, Skodras, Ebrahimi, and
+  Unit]{Christopoulos2000}
+Charilaos Christopoulos, Athanassios Skodras, Touradj Ebrahimi, and Corporate
+  Unit.
+\newblock {The {\{}JPEG2000{\}} Still Image Coding Systems: An Overview}.
+\newblock \emph{IEEE Trans. Consumer Electronics}, 46\penalty0 (4):\penalty0
+  1103--1127, 2000.
+
+\bibitem[Cooley et~al.(1969)Cooley, Lewis, and Welch]{Cooley1969}
+James~W. Cooley, Peter a.~W. Lewis, and Peter~D. Welch.
+\newblock {The Fast Fourier Transform and Its Applications}.
+\newblock \emph{IEEE Transactions on Education}, 12\penalty0 (1), 1969.
+\newblock ISSN 0018-9359.
+\newblock \doi{10.1109/TE.1969.4320436}.
+
+\bibitem[Gentleman and Sande(1966)]{Gentleman1966}
+W~M Gentleman and G~Sande.
+\newblock {Fast Fourier Transforms: for fun and profit}.
+\newblock \emph{Proceedings of the November 7-10, 1966, fall joint computer
+  conference}, pages 563--578, 1966.
+\newblock URL
+  \url{papers2://publication/uuid/7065C1C0-089B-4DA8-8524-D5B62CB2B37A}.
+
+\bibitem[Heideman et~al.(1985)Heideman, Johnson, and Burrus]{Heideman1985}
+Michael~T. Heideman, Don~H. Johnson, and C.~Sidney Burrus.
+\newblock {Gauss and the history of the fast Fourier transform}.
+\newblock \emph{Archive for History of Exact Sciences}, 34\penalty0
+  (3):\penalty0 265--277, 1985.
+\newblock ISSN 00039519.
+\newblock \doi{10.1007/BF00348431}.
+
+\bibitem[Kr{\"{u}}ger and Westermann(2003)]{Kruger2003}
+Jens Kr{\"{u}}ger and R{\"{u}}diger Westermann.
+\newblock {Linear algebra operators for GPU implementation of numerical
+  algorithms}.
+\newblock \emph{ACM Transactions on Graphics}, 22\penalty0 (3):\penalty0 908,
+  2003.
+\newblock ISSN 07300301.
+\newblock \doi{10.1145/882262.882363}.
+
+\bibitem[Park et~al.(2011)Park, Singhal, Lee, Cho, and Kim]{Park2011}
+Ik~Park, Nitin Singhal, Mh~Lee, Sangdae Cho, and Cw~Kim.
+\newblock {Design and performance evaluation of image processing algorithms on
+  GPUs}.
+\newblock \emph{IEEE Transactions on Parallel and Distributed Systems},
+  22\penalty0 (1):\penalty0 91--104, 2011.
+
+\bibitem[Tomov et~al.(2010)Tomov, Nath, Ltaief, and Dongarra]{Tomov2010}
+Stanimire Tomov, Rajib Nath, Hatem Ltaief, and Jack Dongarra.
+\newblock {Dense linear algebra solvers for multicore with GPU accelerators}.
+\newblock \emph{Proceedings of the 2010 IEEE International Symposium on
+  Parallel and Distributed Processing, Workshops and Phd Forum, IPDPSW 2010},
+  2010.
+\newblock ISSN 1878-3449.
+\newblock \doi{10.1109/IPDPSW.2010.5470941}.
+
+\bibitem[Volkov et~al.(2008)Volkov, Demmel, and Berkeley]{Volkov2008}
+Vasily Volkov, James Demmel, and U~C Berkeley.
+\newblock {Benchmarking g GPUs to Tune Dense Linear Algebra}.
+\newblock \penalty0 (November), 2008.
+
+\end{thebibliography}

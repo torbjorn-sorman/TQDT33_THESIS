@@ -1,0 +1,28 @@
+\chapter{Implementation}
+%
+The FFT algorithm has been implemented in C/C++, CUDA, OpenCL, DirectCompute and OpenGL on a GeForce GTX 670 and Radeon R7 260X graphics card and a Core i7 3770K 3.5GHz CPU.
+
+\section{Algorithm}
+My implementation can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The algorithm setup is platform-dependant but a few steps are in common:
+\begin{enumerate}
+	\item Get platform and device information
+	\item Allocate device buffers
+	\item Upload data to device
+\end{enumerate}	
+The next step is to calculate the specific FFT arguments used when launching the kernels. This part is but in one concern consistent over all platforms. The difference is how much local memory that can be allocated and platform-specific number of blocks and threads (with performance in mind).
+\begin{table}
+	\centering	
+	\includestandalone[width=\textwidth]{tables/threadsperblock}
+	\caption{Threads per block per device.}
+	\label{tab:threads-per-block}
+\end{table}
+\begin{figure}[h]
+	\centering
+	\includestandalone[width=\textwidth]{figures/overview}
+	\caption{Overview of the events in the algorithm.}
+	\label{fig:algorithm-overview}
+\end{figure}
+\begin{figure}
+	\input{figures/butterfly}
+	\caption{Example flow graph of a 16-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+\end{figure}

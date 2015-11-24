@@ -1,0 +1,40 @@
+% FFT Overview
+
+\pgfmathsetmacro{\myinnersep}{2}% inner sep in mm
+
+\tikzset{
+box/.style={draw,%
+		inner sep=\myinnersep,%
+		outer sep=0,%
+		minimum width=10mm,%
+		minimum height=10mm,%
+		align=center}
+}
+
+\begin{tikzpicture}
+
+\def \blockdist {0.4cm}
+
+\node[box] (b0) { Setup };
+\node[box, above right = 0cm of b0] (b1) { Upload Data };
+\node[box, below right = 0cm of b1] (b2) { Calc. FFT\\ Arguments };
+\node[left = (\blockdist / 2) of b0] (cpu) { CPU: };
+\node[above = 0.5cm of cpu] (gpu) { GPU: };
+
+\node[box, right = \blockdist of b2] (b3) { Launch\\ Kernel };
+\node[box, above right = 0cm of b3] (b4) { Global Kernel };
+\node[left = 8.5mm of b4, anchor=south east] (repeat) { \faRepeat };
+
+\node[box, below right = 0cm and \blockdist of b4] (b5) { Launch\\ Kernel };
+\node[box, above right = 0cm of b5] (b6) { Local Kernel };
+
+\node[box, below right = 0cm and \blockdist of b6] (b7) { Fetch\\ Data };
+\node[box, right = 0cm of b7] (b8) { Free\\ Resources };
+\node[box, opacity=0, above = 0cm of b7] (inv) {};
+
+\node [draw, dashed, fit=(b0) (b1) (b2)] {};
+\node [draw, dashed, fit=(b3) (b4)] {};
+\node [draw, dashed, fit=(b5) (b6)] {};
+\node [draw, dashed, fit=(b7) (b8) (inv)] {};
+			
+\end{tikzpicture}

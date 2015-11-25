@@ -1,28 +1,58 @@
 \chapter{Implementation}
-%
+
 The FFT algorithm has been implemented in C/C++, CUDA, OpenCL, DirectCompute and OpenGL on a GeForce GTX 670 and Radeon R7 260X graphics card and a Core i7 3770K 3.5GHz CPU.
 
 \section{Algorithm}
-My implementation can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The algorithm setup is platform-dependant but a few steps are in common:
-\begin{enumerate}
-	\item Get platform and device information
-	\item Allocate device buffers
-	\item Upload data to device
-\end{enumerate}	
-The next step is to calculate the specific FFT arguments used when launching the kernels. This part is but in one concern consistent over all platforms. The difference is how much local memory that can be allocated and platform-specific number of blocks and threads (with performance in mind).
-\begin{table}
-	\centering	
-	\includestandalone[width=\textwidth]{tables/threadsperblock}
-	\caption{Threads per block per device.}
-	\label{tab:threads-per-block}
-\end{table}
-\begin{figure}[h]
+
+The implementation can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The algorithm setup is platform-dependant but some steps are common; get platform and device information, allocate device buffers and upload data to device.
+
+\begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/overview}
 	\caption{Overview of the events in the algorithm.}
 	\label{fig:algorithm-overview}
 \end{figure}
-\begin{figure}
+
+The next step is to calculate the specific FFT arguments for each kernel. The most important differences between devices and platforms are local memory capacity and thread and block configuration. Threads per block was tweaked for the best performance. See table \ref{tab:threads-per-block} for details.
+
+\begin{table}
+	\centering
+	\includestandalone[width=\textwidth]{tables/threadsperblock}
+	\caption{Shared memory size, threads and block configuration per device.}
+	\label{tab:threads-per-block}
+\end{table}
+
+The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, showed in figure \ref{fig:butterfly}.
+
+\begin{figure}[h]
+	\centering
 	\input{figures/butterfly}
-	\caption{Example flow graph of a 16-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+	\caption{Butterfly operations}
+	\label{fig:butterfly}
 \end{figure}
+
+The algorithm thread and block scheme was one butterfly per thread, so that a sequence of sixteen elements require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences twice as long as the threads per block configuration needed the algorithm to be split over several blocks. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen element sequence.
+
+\begin{figure}
+	\input{figures/exampleflow}
+	\caption{Example flow graph of a 16-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+	\label{fig:flowgraph-16}
+\end{figure}
+
+Thread synchronization is only available within a block. When the sequence or partial sequence fitted within a block all data was transfered to local memory before completing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the Cooley-Tukey FFT algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory to the bit reversed index of the complete sequence. See figure \ref{fig:flowgraph-16} where the sequence length is sixteen and the thread per block is set to two.
+
+\begin{figure}
+	\centering
+	\subfloat[Original image\label{image-1:lena}]{
+		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena.jpg}{}
+    }
+    \hfill
+    \subfloat[Magnitude representation\label{image-2:lena}]{
+		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena_transformed.jpg}{}
+    }
+	\caption{Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. }
+    \label{fig:twodimentransform}
+\end{figure}
+
+The FFT algorithm for two dimensional sequences, such as images, is first a transform of each row (each row as a seperate sequence) and then a transform of each column. This GPU implementation does the first rowwise transformation and then transposes the whole image and repeat these to operations. An example is shown in figure \ref{fig:twodimentransform}.
+

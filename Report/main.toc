@@ -22,12 +22,12 @@
 \contentsline {chapter}{\numberline {2}Theory}{7}{chapter.2}
 \contentsline {chapter}{\numberline {3}Implementation}{9}{chapter.3}
 \contentsline {section}{\numberline {3.1}Algorithm}{9}{section.3.1}
-\contentsline {chapter}{\numberline {4}Resultat}{11}{chapter.4}
-\contentsline {section}{\numberline {4.1}Ditten}{11}{section.4.1}
-\contentsline {section}{\numberline {4.2}Framtiden}{11}{section.4.2}
-\contentsline {section}{\numberline {4.A}Ett par l\IeC {\r a}nga bevis}{14}{section.1.4.A}
-\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{15}{chapter.5}
-\contentsline {chapter}{Bibliography}{17}{chapter*.13}
+\contentsline {chapter}{\numberline {4}Resultat}{13}{chapter.4}
+\contentsline {section}{\numberline {4.1}Ditten}{13}{section.4.1}
+\contentsline {section}{\numberline {4.2}Framtiden}{13}{section.4.2}
+\contentsline {section}{\numberline {4.A}Ett par l\IeC {\r a}nga bevis}{16}{section.1.4.A}
+\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{17}{chapter.5}
+\contentsline {chapter}{Bibliography}{21}{appendix*.15}
 \select@language {swedish}
 \select@language {english}
 \select@language {english}

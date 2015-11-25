@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
             toFile("all", platforms, &args);
         }
         std::cout << "  Test Platforms Complete" << std::endl;
-#if 1
+#if 0
         std::cout << "Press the any key to continue...";
 #pragma warning(suppress: 6031)
         getchar();

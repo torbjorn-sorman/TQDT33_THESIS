@@ -1,5 +1,5 @@
-#define GROUP_SIZE_X 1024
-#define GRID_DIM_X 8192
+#define GROUP_SIZE_X 256
+#define GRID_DIM_X 512
 
 struct cpx
 {

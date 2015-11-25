@@ -119,6 +119,7 @@ double gl_performance(const int n)
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
         glQueryCounter(queries[i][1], GL_TIMESTAMP);
     }
+    glFinish();
     gl_shakedown(&a_dev, &a_host);
     return gl_query_time(queries);
 }
@@ -133,6 +134,7 @@ double gl_2d_performance(const int n)
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
         glQueryCounter(queries[i][1], GL_TIMESTAMP);
     }
+    glFinish();
     gl_shakedown(&a_dev, &a_host, &a_trans);
     return gl_query_time(queries);
 }

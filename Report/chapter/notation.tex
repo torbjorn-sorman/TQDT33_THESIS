@@ -1,14 +1,26 @@
 \begin{notation}% Passing the option "old" to the notation environment will redefine the notationtabular environment so that it produces an old style LaTeX tabular instead of a ctable.sty style tabular.
-  \centering
+	\centering
+	
+	\begin{notationtabular}{Glossary}{Term}{Meaning}
+		Kernel & A GPU program \\
+		Thread & A way for a program to split itself to many simultaneously running tasks \\
+		Block & A way to organize threads, a block is executed by a multiprocessing unit \\
+	\end{notationtabular}
 
-  \begin{notationtabular}{Några mängder}{Notation}{Betydelse}
-    $\naturals$ & Mängden av naturliga tal \\
-    $\reals$ & Mängden av reella tal \\
-    $\complexes$ & Mängden av komplexa tal \\
-  \end{notationtabular}
-
-  \begin{notationtabular}{Förkortningar}{Förkortning}{Betydelse}
-    \abbrARMA\index{ARMA@\abbrARMA!abbreviation} & Auto-regressive moving average \\
-    \abbrPID\index{PID@\abbrPID!abbreviation} & Proportional, integral, differential (regulator) \\
-  \end{notationtabular}
+	\begin{notationtabular}{Abbreviations}{Abbreviation}{Meaning}
+		API & Application Programming Interface \\
+		CPU & Central Processing Unit \\
+		CUDA & Compute Unified Device Architecture, a technology developed by NVIDIA used to program their GPUs \\
+		DFT & Discrete Fourier Transform \\
+		DIT & Decimation In Time \\
+		DWT & Discrete Wavelet Transform \\
+		FFT & Fast Fourier Transform \\
+		GPGPU & General-Purpose computing on Graphics Processing Units \\
+		GPU & Graphics Processing Unit \\
+		OpenCL & Open Computing Language, initially developed by Apple, today the Khronos Group \\
+		SIMD & Single Instruction, Multiple Data \\
+		SIMT & Single Instruction, Multiple Threads \\
+		SM & Streaming multiprocessor, NVIDIA’s GPUs contains many streaming multiprocessors and each consists of eight scalar processors \\    
+	\end{notationtabular}
+	
 \end{notation}

@@ -7,6 +7,7 @@
 	% Font options: 'kp' (default), 'times', 'lm'.  The KpFonts (loaded using 'kp'), is the most complete font among the provided options.  Among other, it supports slanted small caps.  See rtthesis.cls for more details regarding the font options.
 	largesmallcaps,intlimits,widermath,% Good options to KpFonts.
 	sharecounter,nobreak,definition=marks,%  See comments in the results chapter of this document for more information on these options!
+	article,
 	numbers, % If you want to cite references by numbers, use this option.
 	noparts % Use option 'noparts' if you do not make use of part divisions.
 %  tikz % Plotting.
@@ -20,8 +21,11 @@
 \usepackage{fontawesome}
 \usepackage{multirow}
 \usepackage{tikz}
-%\usepackage{ctable}
+\usepackage{ctable}
 \usepackage{transparent}
+\usepackage{listings}
+\usepackage{framed}
+
 \usetikzlibrary{fit,calc,positioning,circuits.ee.IEC,arrows}
 
 % Patch for ctable Error

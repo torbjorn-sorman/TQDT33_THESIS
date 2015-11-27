@@ -14,9 +14,9 @@
 // CUDA compiler nvcc intrisics related defines.
 //
 #ifdef __CUDACC__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
+#define KERNEL_ARGS2(grid, block) <<< (grid), (block) >>>
+#define KERNEL_ARGS3(grid, block, sh_mem) <<< (grid), (block), (sh_mem) >>>
+#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< (grid), (block), (sh_mem), (stream) >>>
 #define SYNC_THREADS __syncthreads()
 #define BIT_REVERSE(x, l) ((__brev((x))) >> (l))
 #define SIN_COS_F(a, x, y) __sincosf(a, x, y)

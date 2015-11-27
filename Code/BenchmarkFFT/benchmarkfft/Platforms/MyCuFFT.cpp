@@ -18,32 +18,6 @@ bool MyCuFFT::validate(const int n, bool write_img)
 void MyCuFFT::runPerformance(const int n)
 {
 #if defined(_WIN64)
-#ifndef MEASURE_BY_TIMESTAMP
-    double measures[number_of_tests];
-    cpx *dev_in, *dev_out;
-    cufftHandle plan;
-    cuda_setup_buffers(n, &dev_in, &dev_out, NULL, NULL, NULL);   
-    if (dimensions == 1) {
-        cufftPlan1d(&plan, n, CUFFT_C2C, 1);
-        for (int i = 0; i < number_of_tests; ++i) {
-            start_timer();
-            cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
-            cudaDeviceSynchronize();            
-            measures[i] = stop_timer();
-        }
-    }
-    else {
-        cufftPlan2d(&plan, n, n, CUFFT_C2C);
-        for (int i = 0; i < number_of_tests; ++i) {
-            start_timer();
-            cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
-            measures[i] = stop_timer();
-        }       
-    }
-    cufftDestroy(plan);
-    cuda_shakedown(n, &dev_in, &dev_out, NULL, NULL, NULL);
-    results.push_back(average_best(measures, number_of_tests));
-    #else
     double measures[64];
     cpx *dev_in, *dev_out;
     cufftHandle plan;
@@ -54,8 +28,10 @@ void MyCuFFT::runPerformance(const int n)
     cudaEventCreate(&stop);
     float milliseconds = 0;
     if (dimensions == 1) {
-        cufftPlan1d(&plan, n, CUFFT_C2C, 1);
+        int rank[1] = { n };
+        cufftPlanMany(&plan, 1, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, cu_batch_count(n));
         for (int i = 0; i < number_of_tests; ++i) {
+            cudaDeviceSynchronize();
             cudaEventRecord(start);
             cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
             cudaEventRecord(stop);
@@ -65,8 +41,11 @@ void MyCuFFT::runPerformance(const int n)
         }
     }
     else {
-        cufftPlan2d(&plan, n, n, CUFFT_C2C);
+        int rank[2] = { n, n };
+        cufftPlanMany(&plan, 2, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, cu_batch_count(n * n));
+
         for (int i = 0; i < number_of_tests; ++i) {
+            cudaDeviceSynchronize();
             cudaEventRecord(start);
             cufftExecC2C(plan, dev_in, dev_out, CUFFT_FORWARD);
             cudaEventRecord(stop);
@@ -78,7 +57,6 @@ void MyCuFFT::runPerformance(const int n)
     cufftDestroy(plan);
     cuda_shakedown(n, &dev_in, &dev_out, NULL, NULL, NULL);
     results.push_back(average_best(measures, number_of_tests));
-#endif
 #endif
 }
 #endif

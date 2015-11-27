@@ -1,17 +1,24 @@
 #include "mycomplex.h"
 
-cpx *get_seq(int n, int sinus)
+cpx *get_seq(int n, int batches, int sinus)
 {
     int i;
     cpx *seq;
-    seq = (cpx *)malloc(sizeof(cpx) * n);
+    seq = (cpx *)malloc(sizeof(cpx) * n * batches);
     if (seq) {
-        for (i = 0; i < n; ++i) {
-            seq[i].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
-            seq[i].y = 0.f;
+        for (int b = 0; b < batches; ++b) {
+            for (i = 0; i < n; ++i) {
+                seq[i + b * n].x = sinus == 0 ? 0.f : (float)sin(M_2_PI * (((double)i) / n));
+                seq[i + b * n].y = 0.f;
+            }
         }
     }
     return seq;
+}
+
+cpx *get_seq(int n, int sinus)
+{
+    return get_seq(n, 1, sinus);
 }
 
 cpx *get_seq(int n)
@@ -159,3 +166,13 @@ double diff_forward_sinus(cpx *seq, const int n)
     diff = maxf(diff, abs(abs(pos->y) - n2));
     return diff / n2;
 }
+
+double diff_forward_sinus(cpx *seq, int batches, const int n)
+{
+    double d = 0.0;
+    cpx *end = seq + batches * n;
+    for (; seq < end; seq += n)
+        d = maxf(diff_forward_sinus(seq, n), d);
+    return d;
+}
+    

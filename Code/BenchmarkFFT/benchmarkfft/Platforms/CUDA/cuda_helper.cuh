@@ -2,6 +2,7 @@
 #ifndef MYHELPERCUDA_CUH
 #define MYHELPERCUDA_CUH
 #if defined(_NVIDIA)
+
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -9,7 +10,7 @@
 #include "../../Definitions.h"
 #include "../../Common/imglib.h"
 #include "../../Common/mycomplex.h"
-
+#include "../../Common/mathutil.h"
 //
 // CUDA compiler nvcc intrisics related defines.
 //
@@ -96,21 +97,33 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
     SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, col_high);
 }
 
-__host__ static __inline void set_block_and_threads(int *number_of_blocks, int *threads_per_block, int block_size, int size)
+__host__ static __inline int cu_batch_count(const int n)
+{
+    return 67108864 >> log2_32(n);    
+}
+
+__host__ static __inline int cu_batch_size(const int n)
+{
+    return cu_batch_count(n) * n;
+}
+
+__host__ static __inline void set_block_and_threads(dim3 *number_of_blocks, int *threads_per_block, int block_size, int size)
 {
     if (size > block_size) {
-        *number_of_blocks = size / block_size;
+        number_of_blocks->y = size / block_size;
         *threads_per_block = block_size;
     }
     else {
-        *number_of_blocks = 1;
+        number_of_blocks->y = 1;
         *threads_per_block = size;
     }
+    number_of_blocks->x = cu_batch_count(size << 1);
 }
 
 __host__ static __inline void set_block_and_threads_2d(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
 {
     number_of_blocks->x = n;
+    number_of_blocks->z = cu_batch_count(n * n);
     int n_half = n >> 1;
     if (n_half > block_size) {
         number_of_blocks->y = n_half / block_size;
@@ -119,13 +132,14 @@ __host__ static __inline void set_block_and_threads_2d(dim3 *number_of_blocks, i
     else {
         number_of_blocks->y = 1;
         *threads_per_block = n_half;
-    }
+    }    
 }
 
 __host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3 *tTrans, int tile_dim, int block_dim, int n)
 {
     int minDim = n > tile_dim ? (n / tile_dim) : 1;
-    bTrans->z = tTrans->z = 1;
+    tTrans->z = 1;
+    bTrans->z = cu_batch_count(n * n);
     bTrans->x = bTrans->y = minDim;
     tTrans->x = tTrans->y = block_dim;
 }
@@ -142,5 +156,6 @@ void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t
 void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o);
 int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len);
 int cuda_compare_result(cpx *in, cpx *ref, cpx *dev, size_t size, int len, double *diff);
+
 #endif
 #endif

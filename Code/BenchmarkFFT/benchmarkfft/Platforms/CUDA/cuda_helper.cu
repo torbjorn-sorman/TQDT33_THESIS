@@ -38,22 +38,15 @@ void console_print_cpx_img(cpx *seq, int n)
     }
 }
 
-void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
-{
-    *dev_in = 0;    
-    cudaMalloc((void**)dev_in, n * sizeof(cpx));
-    if (dev_out != NULL) {
-        *dev_out = 0;
-        cudaMalloc((void**)dev_out, n * sizeof(cpx));
-    }
-}
-
 void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
-    _cudaMalloc(n, dev_in, dev_out);
-    if (in == NULL && ref == NULL && out == NULL)
-        return;
-    fft_alloc_sequences(n, in, ref, out);
+    size_t total_size = cu_batch_size(n);
+    int batches = cu_batch_count(n);
+    if (dev_in)  { *dev_in = 0;  cudaMalloc((void**)dev_in,  total_size * sizeof(cpx)); }
+    if (dev_out) { *dev_out = 0; cudaMalloc((void**)dev_out, total_size * sizeof(cpx)); }    
+    if (in) *in =   get_seq(n, batches, 1);
+    if (ref) *ref = get_seq(n * batches, *in);
+    if (out) *out = get_seq(n * batches);
 }
 
 void _cudaFree(cpx **dev_in, cpx **dev_out)
@@ -67,10 +60,14 @@ int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx 
 {
     _cudaFree(dev_in, dev_out);
     cudaDeviceSynchronize();
-    if (in == NULL && ref == NULL && out == NULL)
-        return 0;
-    double diff = diff_seq(*in, *ref, n);
-    free_all(*in, *out, *ref);
+    double diff;
+    if (in && ref) {
+        diff = diff_seq(*in, *ref, cu_batch_size(n));
+        free_all(*in, *ref);
+    }
+    if (out) {
+        free(*out);
+    }
     cudaError_t cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");
@@ -84,14 +81,19 @@ void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
-    *in = (cpx *)malloc(sizeof(cpx) * n * n); 
+    size_t total_size = cu_batch_size(n * n) * sizeof(cpx);
+
+    *in = (cpx *)malloc(total_size); 
     read_image(*in, input_file, &sz);
-    *ref = (cpx *)malloc(sizeof(cpx) * n * n);
-    memcpy(*ref, *in, sizeof(cpx) * n * n);
-    *size = n * n * sizeof(cpx);
-    cudaMalloc((void**)dev_i, *size);
-    cudaMalloc((void**)dev_o, *size);
-    cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
+    for (int i = 1; i < cu_batch_count(n * n); ++i) {
+        memcpy(*in + i * n * n, *in, n * n);
+    }
+    *ref = (cpx *)malloc(total_size);
+    memcpy(*ref, *in, total_size);
+    *size = total_size;
+    cudaMalloc((void**)dev_i, total_size);
+    cudaMalloc((void**)dev_o, total_size);
+    cudaMemcpy(*dev_i, *in, total_size, cudaMemcpyHostToDevice);
 }
 
 void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)

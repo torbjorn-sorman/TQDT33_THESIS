@@ -67,7 +67,7 @@ void MyDirectX::runPerformance(const int n)
 {
     double time;
     if (dimensions == 1) {
-#if defined(_AMD)
+#if defined(_AMD) && 0
         if (n > power2(24)){
             results.push_back(-1);
             return;
@@ -76,7 +76,7 @@ void MyDirectX::runPerformance(const int n)
         time = dx_performance(n);
     }
     else {
-#if defined(_AMD)
+#if defined(_AMD) && 0
         if (n > power2(13)){
             results.push_back(-1);
             return;

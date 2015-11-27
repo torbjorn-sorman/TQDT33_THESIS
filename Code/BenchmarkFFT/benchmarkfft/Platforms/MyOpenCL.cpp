@@ -33,6 +33,6 @@ bool MyOpenCL::validate(const int n, bool write_img)
 
 void MyOpenCL::runPerformance(const int n)
 {
-    double time = ((dimensions == 1) ? ocl_performance(n) : ocl_2d_performance(n));
+    double time = ((dimensions == 1) ? ocl_performance(n) : ocl_2d_performance(n));    
     results.push_back(time);
 }

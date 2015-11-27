@@ -101,8 +101,8 @@ int parse_args(benchmarkArgument *arg, int argc, char* argv[])
         else if (MATCH("-p")) {
             arg->write_file = true;
         }
-        else if (MATCH("-cuprop")) {
-            arg->show_cuprop = true;
+        else if (MATCH("-show_properties")) {
+            arg->show_device_properties = true;
         }
         else if (MATCH("-testground")) {
             arg->run_testground = true;

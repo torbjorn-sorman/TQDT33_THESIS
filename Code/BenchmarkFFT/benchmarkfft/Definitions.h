@@ -69,7 +69,7 @@ struct benchmarkArgument
     bool platform_openmp = false;
     bool platform_fftw = false;
     bool profiler = false;
-    bool show_cuprop = false;
+    bool show_device_properties = false;
     bool write_file = false;
     bool write_img = false;
     bool validate = false;

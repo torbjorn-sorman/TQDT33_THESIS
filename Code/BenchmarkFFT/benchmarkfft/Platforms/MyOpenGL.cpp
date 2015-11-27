@@ -38,7 +38,7 @@ void MyOpenGL::runPerformance(const int n)
 {
     double time;
     if (dimensions == 1) {
-#if defined(_AMD)
+#if defined(_AMD) && 0
         if (n > power2(23)){
             results.push_back(-1);
             return;
@@ -47,7 +47,7 @@ void MyOpenGL::runPerformance(const int n)
         time = gl_performance(n);
     }
     else {
-#if defined(_AMD)
+#if defined(_AMD) && 0
         if (n > power2(12)){
             results.push_back(-1);
             return;

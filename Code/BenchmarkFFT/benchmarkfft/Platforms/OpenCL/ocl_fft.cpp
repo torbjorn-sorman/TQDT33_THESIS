@@ -138,6 +138,7 @@ double ocl_performance(const int n)
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
         measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
+    clFinish(a_dev.commands);
     ocl_check_err(ocl_shakedown(NULL, NULL, &a_host, &a_dev), "Release failed!");
     return average_best(measurements, number_of_tests);
 }
@@ -159,6 +160,7 @@ double ocl_2d_performance(const int n)
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
         measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
+    clFinish(a_dev.commands);
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
     int res = ocl_free(&data_in, NULL, NULL, n);
     return average_best(measurements, number_of_tests);

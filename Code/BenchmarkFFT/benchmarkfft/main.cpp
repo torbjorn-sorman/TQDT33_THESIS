@@ -21,6 +21,8 @@
 //#include "Platforms\MyID3DX11FFT.h"
 #if defined(_NVIDIA)
 void printDevProp(cudaDeviceProp devProp);
+#elif defined(_AMD)
+void amd_device_properties();
 #endif
 void toFile(std::string name, std::vector<double> results, int ms);
 void toFile(std::string name, std::vector<Platform *> platforms, benchmarkArgument *a);
@@ -90,22 +92,25 @@ int main(int argc, char* argv[])
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 #endif
             std::vector<Platform *> platforms = getPlatforms(&args);
-            for (int i = args.start; i <= args.end; ++i) {
-                int n = power2(i);
-                for (Platform *platform : platforms)
+            for (Platform *platform : platforms) {
+                for (int i = args.start; i <= args.end; ++i) {
+                    int n = power2(i);
                     platform->runPerformance(n);
+                }
             }
             platforms.clear();
         }
         return 0;
     }
-#if defined(_NVIDIA)
-    if (args.show_cuprop) {
+    if (args.show_device_properties) {
+#if defined(_NVIDIA)    
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, 0);
         printDevProp(prop);
-    }
+#elif defined(_AMD)
+        amd_device_properties();
 #endif
+    }
     if (args.test_platform) {
         std::vector<Platform *> platforms = getPlatforms(&args);
         std::cout << "\n" << std::endl;
@@ -115,12 +120,14 @@ int main(int argc, char* argv[])
             cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 #endif
             std::cout << "  Running Platform Tests (might take a while)";
-            for (int i = args.start; i <= args.end; ++i) {
-                int n = power2(i);
-                for (auto platform : platforms) {
+
+            for (auto platform : platforms) {
+                for (int i = args.start; i <= args.end; ++i) {
+                    int n = power2(i);
                     platform->runPerformance(n);
+                    std::cout << '.';
+                    Sleep(1);
                 }
-                std::cout << '.';
             }
             std::cout << std::endl;
         }
@@ -160,9 +167,11 @@ int main(int argc, char* argv[])
             toFile("all", platforms, &args);
         }
         std::cout << "  Test Platforms Complete" << std::endl;
+#if 0
         std::cout << "Press the any key to continue...";
 #pragma warning(suppress: 6031)
         getchar();
+#endif
         platforms.clear();
     }
     std::cout << "Benchmark FFT finished" << std::endl;
@@ -172,6 +181,7 @@ int main(int argc, char* argv[])
 #if defined(_NVIDIA)
 void printDevProp(cudaDeviceProp devProp)
 {
+    printf("  CUDA Properties:\n");
     printf("Major revision number:         %d\n", devProp.major);
     printf("Minor revision number:         %d\n", devProp.minor);
     printf("Name:                          %s\n", devProp.name);
@@ -193,6 +203,43 @@ void printDevProp(cudaDeviceProp devProp)
     printf("Kernel execution timeout:      %s\n", (devProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
     printf("\n");
     return;
+}
+#elif defined(_AMD)
+void amd_device_properties()
+{
+    cl_platform_id platform_id;
+    cl_device_id device;
+    char info_device[511];
+    cl_ulong info_ulong;
+    cl_uint info_uint;
+    size_t info_size_t;
+    size_t info_size_tp[3];
+    ocl_check_err(ocl_get_platform(&platform_id), "ocl_get_platform");
+    clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+
+    std::cout << "  OpenCL Device Info:" << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_VENDOR, 511, info_device, NULL);
+    std::cout << "CL_DEVICE_VENDOR\t\t\t" << std::string(info_device) << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(info_ulong), &info_ulong, NULL);
+    std::cout << "CL_DEVICE_GLOBAL_MEM_SIZE\t\t" << info_ulong << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(info_ulong), &info_ulong, NULL);
+    std::cout << "CL_DEVICE_LOCAL_MEM_SIZE\t\t" << info_ulong << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(info_uint), &info_uint, NULL);
+    std::cout << "CL_DEVICE_MAX_COMPUTE_UNITS\t\t" << info_uint << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_CONSTANT_ARGS, sizeof(info_uint), &info_uint, NULL);
+    std::cout << "CL_DEVICE_MAX_CONSTANT_ARGS\t\t" << info_uint << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(info_ulong), &info_ulong, NULL);
+    std::cout << "CL_DEVICE_MAX_MEM_ALLOC_SIZE\t\t" << info_ulong << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(info_size_t), &info_size_t, NULL);
+    std::cout << "CL_DEVICE_MAX_PARAMETER_SIZE\t\t" << info_size_t << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(info_size_t), &info_size_t, NULL);
+    std::cout << "CL_DEVICE_MAX_WORK_GROUP_SIZE\t\t" << info_size_t << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(info_uint), &info_uint, NULL);
+    std::cout << "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS\t" << info_uint << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * 3, info_size_tp, NULL);
+    for (auto sz : info_size_tp)
+        std::cout << "CL_DEVICE_MAX_WORK_ITEM_SIZES\t\t" << sz << std::endl;
+    getchar();
 }
 #endif
 

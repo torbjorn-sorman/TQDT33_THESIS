@@ -8,6 +8,8 @@
 #define CU_TILE_DIM 64 // Sets local/shared mem when transposing
 #define CU_BLOCK_DIM 32 // Sets threads when transposing
 
+__host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n, bool experimental);
+
 __global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 
@@ -34,11 +36,24 @@ __host__ int cuda_validate(int n)
     cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
     cudaDeviceSynchronize();
     cudaMemcpy(out, dev_out, buffer_size, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
     double diff = diff_forward_sinus(out, cu_batch_count(n), n);
+
+    //cudaMemcpy(out, dev_in, buffer_size, cudaMemcpyDeviceToHost);
+    //cudaDeviceSynchronize();
+    //cpx_to_console(out, "Test exp forward", 16);
+    //getchar();
 
     cuda_fft(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(in, dev_in, buffer_size, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    cudaMemcpy(out, dev_out, buffer_size, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    //cpx_to_console(out, "Test exp inverse", 16);
+    //cpx_to_console(in, "Test exp inverse", 16);
+    //getchar();
+
     return (cuda_shakedown(n, &dev_in, &dev_out, &in, &ref, &out) != 1) && (diff <= RELATIVE_ERROR_MARGIN);
 }
 
@@ -132,6 +147,8 @@ __host__ __inline void set_block_and_threads(dim3 *number_of_blocks, int *thread
     number_of_blocks->y = dim2 ? multi_blocks ? n_half / block_size : 1 : number_of_blocks->x;
 }
 
+__global__ void cu_kernel_global(cpx *in, float local_angle, float global_angle, int step_limit);
+
 __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
 {
     fft_args args;
@@ -141,10 +158,15 @@ __host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
     set_fft_arguments(&args, dir, blocks.y, CU_BLOCK_SIZE, n);
     cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
     if (blocks.y > 1) {
-        while (--args.steps_left > args.steps_gpu) {
-            cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
-        }
-        ++args.steps_left;
+#if 0
+            cu_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.local_angle, args.global_angle, args.steps_left - args.steps_gpu - 1);
+            args.steps_left = args.steps_gpu + 1;
+#else
+            while (--args.steps_left > args.steps_gpu) {
+                cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
+            }
+            ++args.steps_left;
+#endif
     }
     cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (in, out, args.local_angle, args.steps_left, args.leading_bits, args.scalar);
 }
@@ -202,10 +224,10 @@ __device__ __inline void cu_contant_geometry(cpx *shared, cpx *in_l, cpx *in_h, 
     }
 }
 
-__device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int dist)
+__device__ __inline void cu_global(cpx *in, int tid, float angle, float a_offset, int steps, int dist)
 {
     cpx w;
-    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
+    SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)) + a_offset, &w.y, &w.x);
     cpx l = *in;
     cpx h = in[dist];
     float x = l.x - h.x;
@@ -215,6 +237,7 @@ __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int
 }
 
 #define CU_BATCH_ID (blockIdx.x)
+#define CU_N_HALF (gridDim.y * blockDim.x)
 #define CU_N_POINTS ((gridDim.y * blockDim.x) << 1)
 #define CU_THREAD_ID (blockIdx.y * blockDim.x + threadIdx.x)
 #define CU_BLOCK_OFFSET (blockIdx.y * (blockDim.x << 1))
@@ -224,14 +247,36 @@ __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int
 #define CU_OFFSET_2D ((blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x)
 #define CU_COL_ID (blockIdx.y * blockDim.x + threadIdx.x)
 
+__global__ void cu_kernel_global(cpx *in, float local_angle, float global_angle, int step_limit)
+{
+    __shared__ cpx shared_mem[CU_BLOCK_SIZE << 1];
+    int io1 = threadIdx.x * gridDim.y + blockIdx.y,
+        io2 = io1 + CU_N_HALF;
+    cpx *shared = shared_mem + threadIdx.x;
+    in += CU_BATCH_ID * CU_N_POINTS;
+
+    *shared = in[io1];
+    shared[blockDim.x] = in[io2];
+    SYNC_THREADS;
+    unsigned int p = log2(CU_BLOCK_SIZE);
+    int dist = blockDim.x;
+    for (int steps = 0; steps < step_limit; ++steps) {
+        cu_global(shared + (threadIdx.x & (0xFFFFFFFF << (p--))), threadIdx.x, local_angle, global_angle * blockIdx.y, steps, dist);
+        SYNC_THREADS;
+        dist >>= 1;
+    }
+    in[io1] = *shared;
+    in[io2] = shared[blockDim.x];
+}
+
 __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    cu_global(in + CU_THREAD_ID + (CU_THREAD_ID & lmask) + CU_BATCH_ID * CU_N_POINTS, CU_THREAD_ID, angle, steps, dist);
+    cu_global(in + CU_THREAD_ID + (CU_THREAD_ID & lmask) + CU_BATCH_ID * CU_N_POINTS, CU_THREAD_ID, angle, 0, steps, dist);
 }
 
 __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    cu_global(in + (CU_COL_ID + (CU_COL_ID & lmask)) + CU_OFFSET_2D, CU_COL_ID, angle, steps, dist);
+    cu_global(in + (CU_COL_ID + (CU_COL_ID & lmask)) + CU_OFFSET_2D, CU_COL_ID, angle, 0, steps, dist);
 }
 
 __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)

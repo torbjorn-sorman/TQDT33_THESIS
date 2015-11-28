@@ -54,6 +54,11 @@ __device__ static inline int log2(int v)
     return FIND_FIRST_BIT(v) - 1;
 }
 
+__device__ static inline int log2(unsigned int v)
+{
+    return FIND_FIRST_BIT(v) - 1;
+}
+
 __host__ __device__ static __inline__ void cpx_add_sub_mul(cpx *inL, cpx *inU, cpx *outL, cpx *outU, const cpx *w)
 {
     cpx l = *inL;
@@ -99,7 +104,8 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
 
 __host__ static __inline int cu_batch_count(const int n)
 {
-    return 67108864 >> log2_32(n);    
+    //return 67108864 >> log2_32(n); 
+    return 1;   
 }
 
 __host__ static __inline int cu_batch_size(const int n)

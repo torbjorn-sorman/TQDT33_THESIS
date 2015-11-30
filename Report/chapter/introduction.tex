@@ -14,24 +14,25 @@ The first wall states that its hard to further exploit simultanious CPU instruct
 Improvements can be found in exploiting parallelism. Either reconstruct the problem or the problem itself is already inherently parallelizable. This trend manifests in development towards use and construction of multi-core microprocessors. The graphical processing unit (GPU) is one such device, originally exploited the inherent parallelism within visual rendering but now is available as a tool for massively parallelizable problems.
 
 \subsection{Problem statement}
-Programmers might experience a threshold and slow learning curve to move from sequential programming to thread-parallel programming that is GPU programming. Obstacles involve learning about the hardware architecture and restructure the algorithm or solution. Knowing the limitations and benefits might even provide evidence of not utilizing the GPU and instead choose to work with a multi-core CPU.
+Programmers might experience a threshold and slow learning curve to move from sequential to thread-parallel programming that is GPU programming. Obstacles involve learning about the hardware architecture and restructure the application. Knowing limitations and benefits might even provide reason to not utilize the GPU and instead choose to work with a multi-core CPU.
 
-Depending on one's preferences, needs and future goals; selecting one platform over the other might be derived from portability needs, hardware requirements, programmability, how well it integrates with other platforms or how well it's supported by the provider or the developer community. Within the range of this thesis, the covered platforms or frameworks are CUDA (Compute Unified Device Architecture), OpenCL (Open Computing Language), DirectCompute and OpenGL Compute Shaders.
+Depending on one's preferences, needs and future goals; selecting one technology over the other might be derived from portability or hardware requirements, programmability, how well it integrates with other frameworks or APIs or how well it's supported by the provider or developer community. Within the range of this thesis, the covered technologies are CUDA (Compute Unified Device Architecture), OpenCL (Open Computing Language), DirectCompute (API within DirectX) and OpenGL Compute Shaders.
 
 \subsection{Purpose and goal of the thesis work}
-One goal is to evaluate, select and implement an algorithm suitable for GPGPU (General-purpose computing on graphics processing units).
-Implement the same algorithm in important frameworks for GPGPU:
+One goal is to evaluate, select and implement an application suitable for GPGPU (General-purpose computing on graphics processing units).
+
+Implement the same application in important technologies for GPGPU:
 \begin{itemize}
 	\item CUDA
 	\item OpenCL
-	\item DirectCompute (DirectX Compute Shaders)
+	\item DirectCompute
 	\item OpenGL Compute Shaders
 \end{itemize}
 
-The purpose is to compare the different APIs/frameworks by means of benchmarking performance and make qualitative assessments.
+The purpose is to compare the different technologies by means of benchmarking performance and make qualitative assessments.
 
 \section{Algorithm}
-This part cover some choices of algorithm for a GPGPU study. The basic theory and motivation why they are suitable for benchmarking GPGPU platforms is presented. For this thesis, the Fast Fourier Transform is selected and will be more detailed in another part of the report.
+This part cover some choices of application for a GPGPU study. The basic theory and motivation why they are suitable for benchmarking GPGPU technologies is presented. For this thesis, the Fast Fourier Transform is selected as the benchmarking application and will be more detailed in another part of the report.
 
 \newtheorem{thm}{Theorem}[chapter] % reset theorem numbering for each chapter
 \theoremstyle{definition}
@@ -90,6 +91,6 @@ A popular algorithm for GPUs have been variants of radix sort which is a non-com
 \subsection{Criteria for Algorithm Selection}
 For this thesis, a benchmarking application is sought after that have the necessary complexity and relevance to both practical uses and the scientific community. The algorithm with enough complexity and challenges is the FFT, compared to the other presented algorithms the FFT are more complex than the matrix operations and the regular sorting algorithms. The FFT does not demand as much domain knowledge as the image compression algorithms but its still a very potent algorithm for many specific applications.
 
-The major difficulties working with multi core systems are applied to GPUs. What GPUs are missing compared to multi-core CPUs are the power of working in sequential, instead GPUs are excellent at fast context switching and hiding memory latencies. Most effort of working with GPUs must be to put into supply with enough parallelism, avoiding branching and refine memory access patterns. One important issue is also the host to device memory transfer-time. If the algorithm is much faster on the GPU, the CPU could still be the winner if the host to device and back transfer is a large part of the total time.
-By selecting an algorithm that have much scientific interest and history; a lot of comparisons can be made and it is sufficient to say that one can demand a reasonable performance by utilizing information sources concerning other implementations on GPUs. 
+The major difficulties working with multi-core systems are applied to GPUs. What GPUs are missing compared to multi-core CPUs are the power of working in sequential, instead GPUs are excellent at fast context switching and hiding memory latencies. Most effort of working with GPUs must be to put into supply with enough parallelism, avoiding branching and refine memory access patterns. One important issue is also the host to device memory transfer-time. If the algorithm is much faster on the GPU, a CPU could still be faster if the host to device and back transfer is a large part of the total time.
+By selecting an algorithm that have much scientific interest and history; relevant comparisons can be made and it is sufficient to say that one can demand a reasonable performance by utilizing information sources concerning other implementations on GPUs. 
 

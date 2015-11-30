@@ -11,7 +11,7 @@
 \contentsline {subsection}{\numberline {1.1.1}Problem statement}{2}{subsection.1.1.1}
 \contentsline {subsection}{\numberline {1.1.2}Purpose and goal of the thesis work}{2}{subsection.1.1.2}
 \contentsline {section}{\numberline {1.2}Algorithm}{2}{section.1.2}
-\contentsline {subsection}{\numberline {1.2.1}Discrete Fourier Transform}{3}{subsection.1.2.1}
+\contentsline {subsection}{\numberline {1.2.1}Discrete Fourier Transform}{2}{subsection.1.2.1}
 \contentsline {subsection}{\numberline {1.2.2}Fast Fourier Transform}{3}{subsection.1.2.2}
 \contentsline {subsection}{\numberline {1.2.3}Image processing}{3}{subsection.1.2.3}
 \contentsline {subsection}{\numberline {1.2.4}Image compression}{4}{subsection.1.2.4}
@@ -19,15 +19,16 @@
 \contentsline {subsection}{\numberline {1.2.6}Sorting}{5}{subsection.1.2.6}
 \contentsline {subsubsection}{Efficient sorting algorithms}{5}{section*.7}
 \contentsline {subsection}{\numberline {1.2.7}Criteria for Algorithm Selection}{5}{subsection.1.2.7}
-\contentsline {chapter}{\numberline {2}Theory}{7}{chapter.2}
-\contentsline {chapter}{\numberline {3}Implementation}{9}{chapter.3}
-\contentsline {section}{\numberline {3.1}Algorithm}{9}{section.3.1}
-\contentsline {chapter}{\numberline {4}Resultat}{15}{chapter.4}
-\contentsline {section}{\numberline {4.1}Ditten}{15}{section.4.1}
-\contentsline {section}{\numberline {4.2}Framtiden}{15}{section.4.2}
-\contentsline {section}{\numberline {4.A}Ett par l\IeC {\r a}nga bevis}{18}{section.1.4.A}
-\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{19}{chapter.5}
-\contentsline {chapter}{Bibliography}{23}{appendix*.18}
+\contentsline {chapter}{\numberline {2}Technologies}{7}{chapter.2}
+\contentsline {section}{\numberline {2.1}CUDA}{7}{section.2.1}
+\contentsline {section}{\numberline {2.2}OpenCL}{7}{section.2.2}
+\contentsline {section}{\numberline {2.3}DirectCompute}{7}{section.2.3}
+\contentsline {section}{\numberline {2.4}OpenGL Compute Shader}{7}{section.2.4}
+\contentsline {chapter}{\numberline {3}Theory}{9}{chapter.3}
+\contentsline {chapter}{\numberline {4}Implementation}{11}{chapter.4}
+\contentsline {section}{\numberline {4.1}Algorithm}{11}{section.4.1}
+\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{17}{chapter.5}
+\contentsline {chapter}{Bibliography}{21}{appendix*.16}
 \select@language {swedish}
 \select@language {english}
 \select@language {english}

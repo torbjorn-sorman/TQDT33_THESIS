@@ -1,37 +1,37 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand{\transparent@use}[1]{}
-\gincltex@bb{figures/overview.tex}{0}{0}{507.05135}{63.73225}
-\gincltex@bb{tables/threadsperblock.tex}{0}{0}{379.94382}{97.2351}
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Implementation}{9}{chapter.3}}
+\gincltex@bb{figures/overview.tex}{0}{0}{506.9575}{63.73225}
+\gincltex@bb{tables/threadsperblock.tex}{0}{0}{382.07635}{97.2351}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Implementation}{11}{chapter.4}}
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}Algorithm}{9}{section.3.1}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Overview of the events in the algorithm.\relax }}{9}{figure.caption.8}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Algorithm}{11}{section.4.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Overview of the events in the algorithm.\relax }}{11}{figure.caption.8}}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:algorithm-overview}{{3.1}{9}{Overview of the events in the algorithm.\relax }{figure.caption.8}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Shared memory size, threads and block configuration per device.\relax }}{10}{table.caption.9}}
-\newlabel{tab:threads-per-block}{{3.1}{10}{Shared memory size, threads and block configuration per device.\relax }{table.caption.9}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Butterfly operations\relax }}{10}{figure.caption.10}}
-\newlabel{fig:butterfly}{{3.2}{10}{Butterfly operations\relax }{figure.caption.10}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.\relax }}{11}{figure.caption.11}}
-\newlabel{fig:flowgraph-16}{{3.3}{11}{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.\relax }{figure.caption.11}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces  CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \relax }}{11}{figure.caption.12}}
-\newlabel{fig:code-global-index}{{3.4}{11}{CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \relax }{figure.caption.12}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.5}{\ignorespaces  CUDA example code showing index calculation for points in shared memory for the CUDA local kernel. \relax }}{12}{figure.caption.13}}
-\newlabel{fig:code-local-index}{{3.5}{12}{CUDA example code showing index calculation for points in shared memory for the CUDA local kernel. \relax }{figure.caption.13}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.6}{\ignorespaces  Kernel code producing a bit reversed unsigned integer where x is the input. \relax }}{12}{figure.caption.14}}
-\newlabel{fig:code-bit-reverse}{{3.6}{12}{Kernel code producing a bit reversed unsigned integer where x is the input. \relax }{figure.caption.14}{}}
-\newlabel{image-1:lena}{{3.7a}{13}{Subfigure 3 3.7a}{subfigure.3.7.1}{}}
-\newlabel{sub@image-1:lena}{{(a)}{a}{Subfigure 3 3.7a\relax }{subfigure.3.7.1}{}}
-\newlabel{image-2:lena}{{3.7b}{13}{Subfigure 3 3.7b}{subfigure.3.7.2}{}}
-\newlabel{sub@image-2:lena}{{(b)}{b}{Subfigure 3 3.7b\relax }{subfigure.3.7.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.7}{\ignorespaces Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. \relax }}{13}{figure.caption.15}}
-\newlabel{fig:twodimentransform}{{3.7}{13}{Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. \relax }{figure.caption.15}{}}
-\@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Original image}}}{13}{subfigure.7.1}}
-\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Magnitude representation}}}{13}{subfigure.7.2}}
+\newlabel{fig:algorithm-overview}{{4.1}{11}{Overview of the events in the algorithm.\relax }{figure.caption.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Shared memory size, threads and block configuration per device.\relax }}{12}{table.caption.9}}
+\newlabel{tab:threads-per-block}{{4.1}{12}{Shared memory size, threads and block configuration per device.\relax }{table.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Butterfly operations\relax }}{12}{figure.caption.10}}
+\newlabel{fig:butterfly}{{4.2}{12}{Butterfly operations\relax }{figure.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.\relax }}{13}{figure.caption.11}}
+\newlabel{fig:flowgraph-16}{{4.3}{13}{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.\relax }{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces  CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \relax }}{13}{figure.caption.12}}
+\newlabel{fig:code-global-index}{{4.4}{13}{CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \relax }{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.5}{\ignorespaces  CUDA example code showing index calculation for points in shared memory for the CUDA local kernel. \relax }}{14}{figure.caption.13}}
+\newlabel{fig:code-local-index}{{4.5}{14}{CUDA example code showing index calculation for points in shared memory for the CUDA local kernel. \relax }{figure.caption.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.6}{\ignorespaces  Kernel code producing a bit reversed unsigned integer where x is the input. \relax }}{14}{figure.caption.14}}
+\newlabel{fig:code-bit-reverse}{{4.6}{14}{Kernel code producing a bit reversed unsigned integer where x is the input. \relax }{figure.caption.14}{}}
+\newlabel{image-1:lena}{{4.7a}{15}{Subfigure 4 4.7a}{subfigure.4.7.1}{}}
+\newlabel{sub@image-1:lena}{{(a)}{a}{Subfigure 4 4.7a\relax }{subfigure.4.7.1}{}}
+\newlabel{image-2:lena}{{4.7b}{15}{Subfigure 4 4.7b}{subfigure.4.7.2}{}}
+\newlabel{sub@image-2:lena}{{(b)}{b}{Subfigure 4 4.7b\relax }{subfigure.4.7.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.7}{\ignorespaces Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. \relax }}{15}{figure.caption.15}}
+\newlabel{fig:twodimentransform}{{4.7}{15}{Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. \relax }{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Original image}}}{15}{subfigure.7.1}}
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {Magnitude representation}}}{15}{subfigure.7.2}}
 \@setckpt{chapter/implementation}{
-\setcounter{page}{14}
+\setcounter{page}{16}
 \setcounter{equation}{0}
 \setcounter{enumi}{5}
 \setcounter{enumii}{0}
@@ -41,7 +41,7 @@
 \setcounter{mpfootnote}{0}
 \setcounter{rt@toplevel}{0}
 \setcounter{part}{0}
-\setcounter{chapter}{3}
+\setcounter{chapter}{4}
 \setcounter{section}{1}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
@@ -63,7 +63,7 @@
 \setcounter{NAT@ctr}{9}
 \setcounter{ContinuedFloat}{0}
 \setcounter{Item}{8}
-\setcounter{bookmark@seq@number}{22}
+\setcounter{bookmark@seq@number}{27}
 \setcounter{lofdepth}{1}
 \setcounter{lotdepth}{1}
 \setcounter{KVtest}{1}

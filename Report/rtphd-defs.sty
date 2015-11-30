@@ -1,46 +1,29 @@
 \providecommand*\@issn{0345-7524} % ISSN for PhD thesis
 \providecommand*\publication@series{Linköping studies in science and
-  technology. Dissertations.\\ No.\@}
+  technology. Dissertations.\\No.\@}
 
 \renewcommand*\maketitle{%
   \frontmatter
-  \cleardoublepage
-  \thispagestyle{empty}
-  \begin{center}
-    \begin{large}
-      \publication@series~\thesisn@
-      \par
-    \end{large}
-    \bigskip\bigskip
-    \begin{huge}
-      \textbf{\textsf{\@title}}
-      \par
-    \end{huge}
-    \ifrt@subtitle%
-    \medskip%
-    \begin{LARGE}
-      \textbf{\textsf{\@subtitle}}%
-      \par
-    \end{LARGE}
-    \fi%
-    \bigskip\bigskip\bigskip
-    \begin{Large}
-      \textbf{\textsf{\@author}}
-      \par
-    \end{Large}
-    \vspace{\stretch{2}}
-    \includegraphics[height=30mm]{LinkUniv_sigill_blk}
-    \par
-    \vspace{\stretch{4}}
-    \begin{large}
-      Department of Electrical Engineering \\
-      Linköping University, SE--581 83 Linköping, Sweden
-      \par
-      \medskip
-      Linköping~\thesis@year
-    \end{large}
-  \end{center}
-
+  \cleardoublepage%
+  \thispagestyle{empty}%
+  \vspace*{-22mm}%
+  \hspace*{-10mm}%
+  \noindent\parbox[l][0pt][t]{0pt}{%
+    \begin{minipage}[t][\paperheight-15mm][t]{\paperwidth-35mm}%
+      \raggedright%
+      \sffamily%
+      \begin{large}\publication@series~\thesisn@\par\end{large}%
+      \vspace*{17mm}%
+      {\fontsize{11mm}{13mm}\selectfont\@title\par}%
+      \ifrt@subtitle%
+      \bigskip%
+      \begin{huge}\@subtitle\par\end{huge}%
+      \fi%
+      \vspace*{10mm}%
+      \begin{LARGE}\textbf{\@author}\par\end{LARGE}%
+      \vspace*{\stretch{6}}%
+      \hspace*{-5mm}\includegraphics[width=85mm]{LiU_primary_black}%
+    \end{minipage}}
   \clearpage
   \thispagestyle{empty}
 
@@ -110,57 +93,69 @@
 \newcommand*\makecover{%
   \pagestyle{empty}
   \begin{document}
-  \begin{center}
-    \begin{large}
-      \publication@series~\thesisn@
-      \par
-    \end{large}
-    \bigskip\bigskip
-    \begin{huge}
-      \textbf{\textsf{\@title}}
-      \par
-    \end{huge}
-    \ifrt@subtitle%
-    \medskip%
-    \begin{LARGE}
-      \textbf{\textsf{\@subtitle}}%
-      \par
-    \end{LARGE}
-    \fi%
-    \bigskip\bigskip\bigskip
-    \begin{Large}
-      \textbf{\textsf{\@author}}
-      \par
-    \end{Large}
-    \vspace{\stretch{2}}
-    \includegraphics[height=30mm]{LinkUniv_sigill_blk}
-    \par
-    \vspace{\stretch{4}}
-    \begin{large}
-      Department of Electrical Engineering \\
-      Linköping University, SE--581 83 Linköping, Sweden
-      \par
-      \medskip
-      \thesis@city~\thesis@year
-    \end{large}
-  \end{center}
+  \thispagestyle{empty}%
+  \thispagestyle{empty}%
+  \vspace*{-22mm}%
+  \hspace*{-5mm}\hspace*{-10mm}%
+  \noindent\parbox[l][0pt][t]{0pt}{%
+    \begin{minipage}[t][\paperheight-15mm][t]{\paperwidth-35mm}%
+      \raggedright%
+      \sffamily%
+      \begin{large}\publication@series~\thesisn@\par\end{large}%
+      \vspace*{17mm}%
+      {\fontsize{11mm}{13mm}\selectfont\@title\par}%
+      \ifrt@subtitle%
+      \bigskip%
+      \begin{huge}\@subtitle\par\end{huge}%
+      \fi%
+      \vspace*{10mm}%
+      \begin{LARGE}\textbf{\@author}\par\end{LARGE}%
+      \vspace*{\stretch{6}}%
+      \hspace*{-5mm}\includegraphics[width=85mm]{LiU_primary_black}%
+    \end{minipage}}
   \newpage
 
-  \centering
-  \vspace*{\fill}
-  \includegraphics[height=35mm]{LiTH_en_vert_blk}
-  \bigskip
+  \vspace*{-22mm}%
+  \hspace*{-15mm}\hspace*{36mm}
+  \noindent\parbox[l][0pt][t]{0pt}{%
+    \begin{minipage}[t][\paperheight-10mm][t]{\paperwidth-41mm}
+      \vspace*{30mm}
+      \sffamily
+      \raggedright%
+      \begin{Large}%
+        \bfseries
+        Department of Electrical Engineering
+        \par
+      \end{Large}
+      \bigskip
+      \publication@series\thesisn@
+      \par
+      \bigskip
+      Linköping University\\
+      SE-581 83 Linköping
+      \par
+      \bigskip
+      \begin{Large}
+        www.liu.se
+      \end{Large}
+      \par
+      \vspace*{\stretch{3}}
+      \hspace*{-6mm}\hspace*{-36mm}\includegraphics[width=85mm]{LiU_primary_black}
+    \end{minipage}}
   \newpage
 
   \raggedright
   \rotatebox[origin=lb]{270}{%
-    \makebox[\textheight][l]{%
-      \def\\{ }
-      \def\linebreak{ }
-      \@author\hspace*{12mm}%
+    \sffamily%
+    \hspace*{-4em}%
+    \makebox[.90\paperheight][l]{%
+      \def\\{ }%
+      \def\linebreak{ }%
+      \@author\hspace*{3em}%
+      \hfill%
       \textbf{\@title\@subtitlesep\@subtitle}%
-      \hfill
-      \thesis@city~\thesis@year%
+      \hspace*{3em}\hfill%
+      \thesis@year%
     }
   }
   \let\phdlist\relax

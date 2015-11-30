@@ -17,13 +17,14 @@
 \BOOKMARK [2][-]{subsection.1.2.5}{1.2.5 Linear algebra}{section.1.2}% 17
 \BOOKMARK [2][-]{subsection.1.2.6}{1.2.6 Sorting}{section.1.2}% 18
 \BOOKMARK [2][-]{subsection.1.2.7}{1.2.7 Criteria for Algorithm Selection}{section.1.2}% 19
-\BOOKMARK [0][]{chapter.2}{2 Theory}{}% 20
-\BOOKMARK [0][]{chapter.3}{3 Implementation}{}% 21
-\BOOKMARK [1][-]{section.3.1}{3.1 Algorithm}{chapter.3}% 22
-\BOOKMARK [0][]{chapter.4}{4 Resultat}{}% 23
-\BOOKMARK [1][-]{section.4.1}{4.1 Ditten}{chapter.4}% 24
-\BOOKMARK [1][-]{section.4.2}{4.2 Framtiden}{chapter.4}% 25
-\BOOKMARK [1][-]{section.1.4.A}{4.A Ett par l\345nga bevis}{chapter.4}% 26
-\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 27
-\BOOKMARK [0][]{appendix*.18}{Bibliography}{}% 28
-\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 29
+\BOOKMARK [0][]{chapter.2}{2 Technologies}{}% 20
+\BOOKMARK [1][-]{section.2.1}{2.1 CUDA}{chapter.2}% 21
+\BOOKMARK [1][-]{section.2.2}{2.2 OpenCL}{chapter.2}% 22
+\BOOKMARK [1][-]{section.2.3}{2.3 DirectCompute}{chapter.2}% 23
+\BOOKMARK [1][-]{section.2.4}{2.4 OpenGL Compute Shader}{chapter.2}% 24
+\BOOKMARK [0][]{chapter.3}{3 Theory}{}% 25
+\BOOKMARK [0][]{chapter.4}{4 Implementation}{}% 26
+\BOOKMARK [1][-]{section.4.1}{4.1 Algorithm}{chapter.4}% 27
+\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 28
+\BOOKMARK [0][]{appendix*.16}{Bibliography}{}% 29
+\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 30

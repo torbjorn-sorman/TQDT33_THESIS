@@ -2,7 +2,7 @@
 
 The FFT algorithm has been implemented in C/C++, CUDA, OpenCL, DirectCompute and OpenGL on a GeForce GTX 670 and Radeon R7 260X graphics card and a Core i7 3770K 3.5GHz CPU.
 
-\section{Algorithm}
+\section{Application}
 
 The implementation can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The algorithm setup is platform-dependant but some steps are common; get platform and device information, allocate device buffers and upload data to device.
 \begin{figure}
@@ -91,12 +91,12 @@ The FFT algorithm for two dimensional sequences, such as images, is first a tran
 \begin{figure}
 	\centering
 	\subfloat[Original image\label{image-1:lena}]{
-		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena.jpg}{}
+		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena.jpg}{}		
     }
     \hfill
     \subfloat[Magnitude representation\label{image-2:lena}]{
 		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena_transformed.jpg}{}
     }
-	\caption{Original image to the left. The image to the right is a quadrant shifted magnitude visualization of the original image. }
+	\caption{Original image \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization \ref{image-2:lena}. }
     \label{fig:twodimentransform}
 \end{figure}

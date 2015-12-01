@@ -4,7 +4,7 @@
 \BOOKMARK [0][]{theabsanchor-english.0}{Abstract}{}% 4
 \BOOKMARK [0][]{theackanchor.0}{Acknowledgments}{}% 5
 \BOOKMARK [0][]{thetocanchor.0}{Contents}{}% 6
-\BOOKMARK [0][]{section*.5}{Notation}{}% 7
+\BOOKMARK [0][]{section*.3}{Notation}{}% 7
 \BOOKMARK [0][]{chapter.1}{1 Introduction}{}% 8
 \BOOKMARK [1][-]{section.1.1}{1.1 Background}{chapter.1}% 9
 \BOOKMARK [2][-]{subsection.1.1.1}{1.1.1 Problem statement}{section.1.1}% 10
@@ -22,9 +22,10 @@
 \BOOKMARK [1][-]{section.2.2}{2.2 OpenCL}{chapter.2}% 22
 \BOOKMARK [1][-]{section.2.3}{2.3 DirectCompute}{chapter.2}% 23
 \BOOKMARK [1][-]{section.2.4}{2.4 OpenGL Compute Shader}{chapter.2}% 24
-\BOOKMARK [0][]{chapter.3}{3 Theory}{}% 25
-\BOOKMARK [0][]{chapter.4}{4 Implementation}{}% 26
-\BOOKMARK [1][-]{section.4.1}{4.1 Algorithm}{chapter.4}% 27
-\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 28
-\BOOKMARK [0][]{appendix*.16}{Bibliography}{}% 29
-\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 30
+\BOOKMARK [1][-]{section.2.5}{2.5 OpenMP}{chapter.2}% 25
+\BOOKMARK [0][]{chapter.3}{3 Theory}{}% 26
+\BOOKMARK [0][]{chapter.4}{4 Implementation}{}% 27
+\BOOKMARK [1][-]{section.4.1}{4.1 Application}{chapter.4}% 28
+\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 29
+\BOOKMARK [0][]{appendix*.15}{Bibliography}{}% 30
+\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 31

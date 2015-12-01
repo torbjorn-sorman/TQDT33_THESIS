@@ -27,9 +27,20 @@
 \contentsline {section}{\numberline {2.5}OpenMP}{8}{section.2.5}
 \contentsline {chapter}{\numberline {3}Theory}{9}{chapter.3}
 \contentsline {chapter}{\numberline {4}Implementation}{11}{chapter.4}
-\contentsline {section}{\numberline {4.1}Application}{11}{section.4.1}
-\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{17}{chapter.5}
-\contentsline {chapter}{Bibliography}{21}{appendix*.15}
+\contentsline {section}{\numberline {4.1}Benchmark application GPU}{11}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}FFT implementation}{11}{subsection.4.1.1}
+\contentsline {subsubsection}{Setup}{11}{subsection.4.1.1}
+\contentsline {subsubsection}{Butterfly}{12}{table.caption.8}
+\contentsline {subsubsection}{Thread and block scheme}{12}{figure.caption.9}
+\contentsline {subsubsection}{Synchronization}{12}{figure.caption.10}
+\contentsline {subsubsection}{Calculation}{14}{figure.caption.10}
+\contentsline {subsection}{\numberline {4.1.2}FFT 2D implementation}{15}{subsection.4.1.2}
+\contentsline {subsubsection}{Indexing}{15}{figure.caption.15}
+\contentsline {subsubsection}{Transpose}{15}{figure.caption.15}
+\contentsline {section}{\numberline {4.2}Benchmark application CPU}{16}{section.4.2}
+\contentsline {subsection}{\numberline {4.2.1}FFT algorithm in OpenMP}{16}{subsection.4.2.1}
+\contentsline {chapter}{\numberline {5}Avslutande kommentarer}{19}{chapter.5}
+\contentsline {chapter}{Bibliography}{23}{appendix*.18}
 \select@language {swedish}
 \select@language {english}
 \select@language {english}

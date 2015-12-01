@@ -1,10 +1,14 @@
 \chapter{Implementation}
 
-The FFT algorithm has been implemented in C/C++, CUDA, OpenCL, DirectCompute and OpenGL on a GeForce GTX 670 and Radeon R7 260X graphics card and a Core i7 3770K 3.5GHz CPU.
+The FFT application has been implemented in C/C++, CUDA, OpenCL, DirectCompute and OpenGL on a GeForce GTX 670 and Radeon R7 260X graphics card and a Core i7 3770K 3.5GHz CPU.
 
-\section{Application}
+\section{Benchmark application GPU}
 
-The implementation can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The algorithm setup is platform-dependant but some steps are common; get platform and device information, allocate device buffers and upload data to device.
+\subsection{FFT implementation}
+
+\subsubsection{Setup}
+
+The implementation of the FFT algorithm on a GPU can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The application setup differs among the tested technologies, however some steps can be generalized; get platform and device information, allocate device buffers and upload data to device.
 \begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/overview}
@@ -20,6 +24,8 @@ The next step is to calculate the specific FFT arguments for a $N$-point sequenc
 	\label{tab:threads-per-block}
 \end{table}
 
+\subsubsection{Butterfly}
+
 The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, showed in figure \ref{fig:butterfly}.
 \begin{figure}[h]
 	\centering
@@ -28,16 +34,22 @@ The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages w
 	\label{fig:butterfly}
 \end{figure}
 
-The thread and block scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences twice as long as the threads per block configuration needed the algorithm to be split over several blocks. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
+\subsubsection{Thread and block scheme}
+
+The thread and block scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences twice as long as the threads per block configuration needed the algorithm to be split over several blocks. If the sequence exceed one block then the sequence is mapped over multiple blocks using the \texttt{blockIdx.y} dimension. The block dimension \texttt{blockIdx.x} is used to calculate sequence id in when running a large batch, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \texttt{x}, \texttt{y}, \texttt{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
 \begin{figure}
 	\input{figures/exampleflow}
-	\caption{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are seperate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+	\caption{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
 	\label{fig:flowgraph-16}
 \end{figure}
 
-Thread synchronization is only available within a block. When the sequence or partial sequence fitted within a block all data was transfered to local memory before completing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the Cooley-Tukey FFT algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory to the bit reversed index of the complete sequence. See figure \ref{fig:flowgraph-16} where the sequence length is sixteen and the thread per block is set to two.
+\subsubsection{Synchronization}
 
-The indexing for the global kernel was calculated from the thread id and block id (threadIdx.x and blockIdx.x in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
+Thread synchronization is only available within a block. When the sequence or partial sequence fitted within a block all data was transferred to local memory before completing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the Cooley-Tukey FFT algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory to the bit reversed index of the complete sequence. See figure \ref{fig:flowgraph-16} where the sequence length is sixteen and the thread per block is set to two.
+
+\subsubsection{Calculation}
+
+The indexing for the global kernel was calculated from the thread id and block id (\texttt{threadIdx.x} and \texttt{blockIdx.x} in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
 \begin{figure}
 	\centering
 	\lstset{language=C++}
@@ -52,7 +64,7 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
 	\label{fig:code-global-index}
 \end{figure}
 
-Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are seperate from the indexing in the global memory. The global memory offset depends on threads per block (blockDim.x in CUDA) and block id.
+Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are separate from the indexing in the global memory. The global memory offset depends on threads per block (\texttt{blockDim.x} in CUDA) and block id.
 \begin{figure}
 	\centering
 	\lstset{language=C++}
@@ -69,7 +81,14 @@ int n_per_block = N / gridDim.x.
 	\label{fig:code-local-index}
 \end{figure}
 
-The last operation after the last stage is to perform the bit-reverse indexing operation, this is done when writing from shared to global memory. The implementation of bit reversing is available as a single instruction on some platforms, if not available figure \ref{fig:code-bit-reverse} shows the code used. The bit reversed value had to be right shifted the number of zeroes leading the number in a 32-bit int. Example of the bit-reverse index operation: index 8 of a 16 point sequence is bit-reversed to 1, in bit-representation (binary) its 1000 to 0001. Index 8 of a 32 point sequence is bit-reversed to 2, correspons to 01000 to 00010. Figure \ref{fig:flowgraph-16} show the complete bit-reverse operation of all point in the last step after the last stage.
+The last operation after the last stage is to perform the bit-reverse indexing operation, this is done when writing from shared to global memory. The implementation of bit reversing is available as a intrinsic integer instruction, see table \ref{tab:bit-reverse-intrinsics}. If instruction is not available figure \ref{fig:code-bit-reverse} shows the code used. The bit reversed value had to be right shifted the number of zeroes leading the number in a 32-bit int. Example of the bit-reverse index operation: index 8 of a 16 point sequence is bit-reversed to 1, in binary its 1000 reversed to 0001. Index 8 of a 32 point sequence is bit-reversed to 2, corresponds to 01000 to 00010. Figure \ref{fig:flowgraph-16} show the complete bit-reverse operations of a 16-point sequence in the output step after the last stage.
+
+\begin{table}
+	\centering
+	\includestandalone[width=\textwidth]{tables/bit-reverse-intrinsics}
+	\caption{Integer intrinsic bit-reverse function for different technologies.}
+	\label{tab:bit-reverse-intrinsics}
+\end{table}
 
 \begin{figure}[h]
 	\centering
@@ -87,7 +106,36 @@ return((x >> 16) | (x << 16));
 	\label{fig:code-bit-reverse}
 \end{figure}
 
-The FFT algorithm for two dimensional sequences, such as images, is first a transform of each row (each row as a seperate sequence) and then a transform of each column. This GPU implementation does the first rowwise transformation and then transposes the whole image and repeat these to operations. An example is shown in figure \ref{fig:twodimentransform}.
+\subsection{FFT 2D implementation}
+
+The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image with a transpose kernel and then repeat these two operations, see figure \ref{lst:cuda:host-2d-example}. 
+
+\begin{figure}
+	\centering
+	\begin{framed}
+		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
+	\end{framed}
+	\caption{CUDA host code example for the 2D FFT algorithm.}
+	\label{lst:cuda:host-2d-example}	
+\end{figure}
+
+\subsubsection{Indexing}
+
+The difference between the kernel implementations for 1D and 2D are the indexing scheme. 2D are indexed as rows at \texttt{blockIdx.x} and column at \texttt{threadIdx.x} + \texttt{blockIdx.y} * \texttt{blockDim.x}. For 2D \texttt{blockIdx.z} is used for the sequence id in large batches.
+
+\subsubsection{Transpose}
+
+The transpose kernel uses the shared memory and thread/block configuration to avoid large strides through global memory. Figure \ref{fig:transpose-memory} shows how the transpose is performed in memory.
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\textwidth]{figures/transpose-tile}
+	\caption{}
+	\label{fig:transpose-memory}
+\end{figure}
+
+A transformed image example is shown in figure \ref{fig:twodimentransform}.
+
 \begin{figure}
 	\centering
 	\subfloat[Original image\label{image-1:lena}]{
@@ -100,3 +148,10 @@ The FFT algorithm for two dimensional sequences, such as images, is first a tran
 	\caption{Original image \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization \ref{image-2:lena}. }
     \label{fig:twodimentransform}
 \end{figure}
+
+\section{Benchmark application CPU}
+
+\subsection{FFT algorithm in OpenMP}
+
+
+

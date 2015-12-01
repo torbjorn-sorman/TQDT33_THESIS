@@ -18,24 +18,11 @@ A program running on the GPU is called a kernel. The GPU is referred to as the \
 
 \begin{figure}
 	\centering
-	\lstset{language=C++}
 	\begin{framed}
-	\begin{lstlisting}
-// Device program (GPU)
-__global__ void myKernel(float val)
-{
-  int tid = threadIdx.x + blockDim.x * blockIdx.x;
-}
-
-// Host program (CPU)
-__host__ void myFunction(float value)
-{
-  dim3 threads = {1024, 1, 1};
-  dim3 blocks  = {1, 1, 1};
-  myKernel<<<blocks, threads>>>(value);
-}
-	\end{lstlisting}
+		\includestandalone[width=\textwidth]{code/cuda-host-example}	
 	\end{framed}
+	\caption{CUDA host code.}
+	\label{lst:cuda:host-example}	
 \end{figure}
 
 \section{OpenCL}

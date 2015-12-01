@@ -25,7 +25,11 @@
 \BOOKMARK [1][-]{section.2.5}{2.5 OpenMP}{chapter.2}% 25
 \BOOKMARK [0][]{chapter.3}{3 Theory}{}% 26
 \BOOKMARK [0][]{chapter.4}{4 Implementation}{}% 27
-\BOOKMARK [1][-]{section.4.1}{4.1 Application}{chapter.4}% 28
-\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 29
-\BOOKMARK [0][]{appendix*.15}{Bibliography}{}% 30
-\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 31
+\BOOKMARK [1][-]{section.4.1}{4.1 Benchmark application GPU}{chapter.4}% 28
+\BOOKMARK [2][-]{subsection.4.1.1}{4.1.1 FFT implementation}{section.4.1}% 29
+\BOOKMARK [2][-]{subsection.4.1.2}{4.1.2 FFT 2D implementation}{section.4.1}% 30
+\BOOKMARK [1][-]{section.4.2}{4.2 Benchmark application CPU}{chapter.4}% 31
+\BOOKMARK [2][-]{subsection.4.2.1}{4.2.1 FFT algorithm in OpenMP}{section.4.2}% 32
+\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 33
+\BOOKMARK [0][]{appendix*.18}{Bibliography}{}% 34
+\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 35

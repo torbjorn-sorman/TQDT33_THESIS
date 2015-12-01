@@ -1,0 +1,11 @@
+\lstset{language=C++}
+\begin{lstlisting}
+    dim3 blocks;
+    dim3 threads;
+    set_transpose_dimensions(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);    
+    cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
+    cuda_transpose_kernel <<<blocks, threads>>> (*dev_out, *dev_in, n);
+    cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
+    cuda_transpose_kernel <<<blocks, threads>>> (*dev_out, *dev_in, n);
+    swap_buffer(dev_in, dev_out);
+\end{lstlisting}

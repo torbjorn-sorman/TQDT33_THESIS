@@ -1,0 +1,26 @@
+\lstset{language=C++}
+\begin{lstlisting}
+// Device program (GPU)
+__global__ void myKernel(float val)
+{
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+}
+
+// Host program (CPU)
+__host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
+{
+    fft_args args;
+    dim3 blocks;
+    int threads;
+    set_block_and_threads(&blocks, &threads, CU_BLOCK_SIZE, (n >> 1));
+    set_fft_arguments(&args, dir, blocks.y, CU_BLOCK_SIZE, n);
+    cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+    if (blocks.y > 1) {
+            while (--args.steps_left > args.steps_gpu) {
+                cuda_kernel_global KERNEL_ARGS2(blocks, threads)(in, args.global_angle, 0xFFFFFFFF << args.steps_left, args.steps++, args.dist >>= 1);
+            }
+            ++args.steps_left;
+    }
+    cuda_kernel_local KERNEL_ARGS3(blocks, threads, sizeof(cpx) * args.n_per_block) (in, out, args.local_angle, args.steps_left, args.leading_bits, args.scalar);
+}
+\end{lstlisting}

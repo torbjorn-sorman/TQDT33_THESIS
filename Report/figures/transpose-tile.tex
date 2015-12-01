@@ -1,0 +1,22 @@
+\begin{tikzpicture}[>=triangle 45,font=\sffamily]
+
+\def \mytilesize {8}
+\def \myrowsize {1}
+
+\node (idata) at (0,0) [draw,minimum width=\mytilesize * 3 cm,minimum height=\mytilesize * 3 cm] {};
+\node (tile) at (\mytilesize * 3, 0) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
+\node (odata) at (\mytilesize * 6, 0) [draw,minimum width=\mytilesize * 3 cm,minimum height=\mytilesize * 3 cm] {};
+
+\node (idata-tile) at (\mytilesize, \mytilesize) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
+\node (odata-tile) at (\mytilesize * 5, -\mytilesize) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
+
+\node (istride) at (\mytilesize, \mytilesize + \myrowsize * 2.5) [draw,minimum width=\mytilesize cm,minimum height=1cm] {};
+\node (ostride) at (\mytilesize * 5,- \mytilesize + \myrowsize * 2.5) [draw,minimum width=\mytilesize cm,minimum height=\myrowsize cm] {};
+
+\node (hstride) at (\mytilesize * 3, 2.5 * \myrowsize) [draw,minimum width=\mytilesize cm,minimum height=\myrowsize cm] {};
+\node (vstride) at (\mytilesize * 3 - 2.5 * \myrowsize, 0) [draw,minimum width=\myrowsize cm,minimum height=\mytilesize cm] {};
+
+\path [->, thick] (istride.east) edge[out=0, in=180] (hstride.west);
+\path [->, thick] (vstride.south) edge[out=270, in=180] (ostride.west);
+			
+\end{tikzpicture}

@@ -1,6 +1,6 @@
 \documentclass[	
 	utf8,%     More capable input encoding than latin-1.
-	% parskip,%  For vertical whitespace between paragraphs.  This comes down to more than just using parskip.sty, so it's better to use this class option.
+	parskip,%  For vertical whitespace between paragraphs.  This comes down to more than just using parskip.sty, so it's better to use this class option.
 	% S5MP % If you intend to really use margin paragraphs (not recommended!).
 	%  crop,%     Produce output with crop marks and paper size A4.  Liu-Tryck should like this.  Automatically adds information, including the physical page number, at the top of each page.
 	%     Add option 'noInfo' to suppress the info at the top of each page when using option 'crop'.
@@ -12,13 +12,13 @@
 	noparts % Use option 'noparts' if you do not make use of part divisions.
 %  tikz % Plotting.
 ]{rtthesis}
+\usepackage{etex}
 
 \usepackage{graphicx}
 \usepackage{standalone}
 \usepackage{mythesis}
 \usepackage{amsthm}
 \usepackage{amsmath}
-\usepackage{fontawesome}
 \usepackage{multirow}
 \usepackage{tikz}
 \usepackage{ctable}
@@ -60,9 +60,10 @@
 
 \mainmatter
 \include{chapter/introduction}
+\include{chapter/technologies}
 \include{chapter/theory}
 \include{chapter/implementation}
-\include{chapter/result}
+%\include{chapter/result}
 \include{chapter/summary}
 
 \part*{Appendix}

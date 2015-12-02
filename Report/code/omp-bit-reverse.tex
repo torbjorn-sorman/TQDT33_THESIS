@@ -1,0 +1,12 @@
+\lstset{language=C++}
+\begin{lstlisting}
+static void __inline omp_bit_reverse(cpx *x, int leading_bits, int N)
+{
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i <= N; ++i) {
+        int p = bit_reverse(i, leading_bits);
+        if (i < p)
+            swap(&(x[i]), &(x[p]));
+    }
+}
+\end{lstlisting}

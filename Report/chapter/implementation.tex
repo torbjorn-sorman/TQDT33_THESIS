@@ -158,7 +158,7 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \section{Benchmark application CPU}
 
-\subsection{FFT implementation in OpenMP}
+\subsection{FFT in C/C++ with OpenMP}
 
 The OpenMP implementation benefits in performance from calculating the twiddle factors in advance. The calculated values are stored in a buffer accessible from all threads. The next step is to calculate each stage of the FFT algorithm. Last is the output index calculation where elements are reordered. See figure \ref{fig:omp:overview} for an overview.
 
@@ -169,23 +169,52 @@ The OpenMP implementation benefits in performance from calculating the twiddle f
 	\label{fig:omp:overview}
 \end{figure}
 
-\subsubsection{Twiddle Factors}
+\subsubsection{Twiddle factors}
 
 The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps, first calculate the real values, secondly copy from real to imaginary.
 
 \begin{table}[h!]
 	\centering
-	%\includestandalone[width=\textwidth]{figures/omp-twiddle-overview}
 	\input{tables/omp-twiddle}
-	\caption{Twiddle factor table $W$ for a 16-point sequence where $\alpha = (2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
+	\caption{Twiddle factors for a 16-point sequence where $\alpha = (2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
 	\label{tab:omp:twiddle-overview}
 \end{table}
 
 \subsubsection{Butterfly}
 
-The same butterfly operation as the local kernel from previous section is used. The constant geometry on the CPU does not make the index calculations go away but it makes  The benefit from continues output indexes 
+The same butterfly operation uses the constant geometry index scheme. The indexes are not stored from one stage to the next but it makes the output come in continues order. The butterfly operations are split among the threads by static scheduling.
 
 \subsubsection{Bit Reversed Order}
 
-\subsection{FFT implementation in OpenMP}
+See figure \ref{fig:omp:bit-reverse-order} for code showing the bit reverse ordering operation in C/C++ code.
+
+\begin{figure}[h!]
+	\centering
+	\begin{framed}
+		\includestandalone[width=\textwidth]{code/omp-bit-reverse}	
+	\end{framed}
+	\caption{ C/C++ code performing the bit reverse ordering of a N-point sequence. }
+	\label{fig:omp:bit-reverse-order}
+\end{figure}
+
+\subsection{2D FFT in C/C++ with OpenMP}
+
+The implementation of 2D FFT with OpenMP run the transformations row wise and transposes the image and repeat. The twiddle factors are calculated once and stays the same.
+
+\section{Benchmark configurations}
+
+\subsection{Limitations}
+
+All implementations are limited to handle sequences of $2^n$ length or $2^m \times 2^m$ where $n$ and $m$ are integers. The GPUs have a maximum of 2GB global memory available and the upper limit of 2D transformations are $m = 8192$ since the implementation uses two buffers and require $8192 \cdot 8192 \cdot \texttt{sizeof(float2)} \cdot 2 = 1073741824$ bytes, however the Radeon R7 260X card does not handle that size well and is limited to $m = 4096$ (and OpenGL is even limited to $m = 2048$).
+
+\subsection{Testing}
+
+All tests executed on the GPU utilize some form of event timestamps supplied by the technology used. See table \ref{tab:code:timestamps} for specific method per technology.
+
+\begin{table}[h!]
+	\centering
+	\input{tables/code-timestamps}
+	\caption{Method to extract timestamps for kernel events for the different technologies.}
+	\label{tab:code:timestamps}
+\end{table}
 

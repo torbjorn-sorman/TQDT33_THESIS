@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+
+\tikzstyle{openmp-box} = [
+	draw,
+	align=center,
+	text width = 1.5 cm,
+	minimum width = 1.5 cm,
+	minimum height = 1.5 cm];
+	
+\tikzstyle{openmp-arrow} = [
+	-{latex[
+		scale=4, 
+		length=4,
+		width=4]},
+	line width=1.5 pt]
+
+\node [openmp-box] (omp-setup) at (0,0) {Setup};
+\node [openmp-box] (omp-twiddle) at (2.5,0) {Twiddle Factors};
+\node [openmp-box] (omp-stage) at (5,0) {Calculate Stage};
+\node [openmp-box] (omp-reverse) at (7.5,0) {Bit Reverse Order};
+\node (omp-output) at (9.25,0) {};
+
+\path [openmp-arrow] (omp-setup.east) edge[out=0, in=180] (omp-twiddle.west);
+\path [openmp-arrow] (omp-twiddle.east) edge[out=0, in=180] (omp-stage.west);
+\path [openmp-arrow] (omp-stage.east) edge[out=0, in=180] (omp-reverse.west);
+\path [openmp-arrow] (omp-reverse.east) edge[out=0, in=180] (omp-output.west);
+
+\path [openmp-arrow] (omp-stage) edge[loop above, out=20, in=160, min distance=2.5cm, looseness=1] node {$log_2(N)$ times} (omp-stage); 
+			
+\end{tikzpicture}

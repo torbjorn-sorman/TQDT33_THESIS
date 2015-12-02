@@ -1,22 +1,56 @@
 \begin{tikzpicture}[>=triangle 45,font=\sffamily]
 
-\def \mytilesize {8}
-\def \myrowsize {1}
+\def \mtsz {8}
+\def \mrsz {1}
 
-\node (idata) at (0,0) [draw,minimum width=\mytilesize * 3 cm,minimum height=\mytilesize * 3 cm] {};
-\node (tile) at (\mytilesize * 3, 0) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
-\node (odata) at (\mytilesize * 6, 0) [draw,minimum width=\mytilesize * 3 cm,minimum height=\mytilesize * 3 cm] {};
+\definecolor{mydcolor}{rgb}{0.95, 0.95, 0.95}
+\definecolor{mytcolor}{rgb}{0.8, 0.8, 0.8}
+\definecolor{myhcolor}{rgb}{1.0, 0.5, 0.5}
+\definecolor{myvcolor}{rgb}{0.0, 1.0, 0.0}
 
-\node (idata-tile) at (\mytilesize, \mytilesize) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
-\node (odata-tile) at (\mytilesize * 5, -\mytilesize) [draw,minimum width=\mytilesize cm,minimum height=\mytilesize cm] {};
+\tikzstyle{global-memory-box} = [
+	draw,
+	fill={mydcolor},
+	minimum width=\mtsz * 3 cm,
+	minimum height=\mtsz * 3 cm];
+\tikzstyle{shared-memory-box} = [
+	draw,
+	fill={mytcolor},
+	minimum width=\mtsz cm,
+	minimum height=\mtsz cm];
+\tikzstyle{idata-horizontal} = [
+	draw,
+	pattern = crosshatch dots,
+	preaction={fill={myhcolor}},
+	minimum width=\mtsz cm,
+	minimum height=\mrsz cm];
+\tikzstyle{odata-horizontal} = [
+	draw,
+	pattern=north west lines,
+	preaction={fill={myvcolor}},
+	minimum width=\mtsz cm,
+	minimum height=\mrsz cm];
+\tikzstyle{sdata-vertical} = [
+	draw,
+	pattern=north west lines,
+	preaction={fill={myvcolor}},
+	minimum width=\mrsz cm,
+	minimum height=\mtsz cm];
 
-\node (istride) at (\mytilesize, \mytilesize + \myrowsize * 2.5) [draw,minimum width=\mytilesize cm,minimum height=1cm] {};
-\node (ostride) at (\mytilesize * 5,- \mytilesize + \myrowsize * 2.5) [draw,minimum width=\mytilesize cm,minimum height=\myrowsize cm] {};
+\node (idata) at (0,0) [global-memory-box, label={above, scale=\mtsz}:{input}] {};
+\node (tile) at (\mtsz * 3, 0) [shared-memory-box, label={above, scale=\mtsz}:{tile}] {};
+\node (odata) at (\mtsz * 6, 0) [global-memory-box, label={above, scale=\mtsz}:{output}] {};
 
-\node (hstride) at (\mytilesize * 3, 2.5 * \myrowsize) [draw,minimum width=\mytilesize cm,minimum height=\myrowsize cm] {};
-\node (vstride) at (\mytilesize * 3 - 2.5 * \myrowsize, 0) [draw,minimum width=\myrowsize cm,minimum height=\mytilesize cm] {};
+\node (idata-tile) at (\mtsz, \mtsz) [shared-memory-box] {};
+\node (odata-tile) at (\mtsz * 5, -\mtsz) [shared-memory-box] {};
 
-\path [->, thick] (istride.east) edge[out=0, in=180] (hstride.west);
-\path [->, thick] (vstride.south) edge[out=270, in=180] (ostride.west);
+\node (istride) at (\mtsz, \mtsz + \mrsz * 2.5) [idata-horizontal] {};
+\node (ostride) at (\mtsz * 5,- \mtsz + \mrsz * 2.5) [odata-horizontal] {};
+
+\node (hstride) at (\mtsz * 3, 2.5 * \mrsz) [idata-horizontal] {};
+\node (vstride) at (\mtsz * 3 - 2.5 * \mrsz, 0) [sdata-vertical] {};
+
+\path [-{>[scale=\mtsz * 4, length=10, width=10]}, line width=\mtsz pt, myhcolor, shorten <= \mtsz, shorten >= \mtsz] (istride.east) edge[out=0, in=160] (hstride.west);
+\path [-{>[scale=\mtsz * 4, length=10, width=10]}, line width=\mtsz pt, myvcolor, shorten <= \mtsz, shorten >= \mtsz] (vstride.south) edge[out=270, in=190] (ostride.west);
 			
 \end{tikzpicture}

@@ -1,0 +1,22 @@
+\lstset{language=C++}
+\begin{lstlisting}
+__global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
+{
+    __shared__ cpx tile[CU_TILE_DIM][CU_TILE_DIM + 1];
+
+    // Write to shared (tile) from global memory (in)
+    int x = blockIdx.x * CU_TILE_DIM + threadIdx.x;
+    int y = blockIdx.y * CU_TILE_DIM + threadIdx.y;
+    for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
+        for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
+            tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
+
+    __syncthreads();
+    // Write to global (out) from shared memory (tile)
+    x = blockIdx.y * CU_TILE_DIM + threadIdx.x;
+    y = blockIdx.x * CU_TILE_DIM + threadIdx.y;
+    for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
+        for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
+            out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];
+}
+\end{lstlisting}

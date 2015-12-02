@@ -60,7 +60,7 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
     io_high = index1 + (N >> 1);
 	\end{lstlisting}
 	\end{framed}
-	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. }
+	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \texttt{io\_low} is the index of the first input in the butterfly operation and \texttt{io\_high} the index of the second.}
 	\label{fig:code-global-index}
 \end{figure}
 
@@ -83,7 +83,7 @@ int n_per_block = N / gridDim.x.
 
 The last operation after the last stage is to perform the bit-reverse indexing operation, this is done when writing from shared to global memory. The implementation of bit reversing is available as a intrinsic integer instruction, see table \ref{tab:bit-reverse-intrinsics}. If instruction is not available figure \ref{fig:code-bit-reverse} shows the code used. The bit reversed value had to be right shifted the number of zeroes leading the number in a 32-bit int. Example of the bit-reverse index operation: index 8 of a 16 point sequence is bit-reversed to 1, in binary its 1000 reversed to 0001. Index 8 of a 32 point sequence is bit-reversed to 2, corresponds to 01000 to 00010. Figure \ref{fig:flowgraph-16} show the complete bit-reverse operations of a 16-point sequence in the output step after the last stage.
 
-\begin{table}
+\begin{table}[h!]
 	\centering
 	\includestandalone[width=\textwidth]{tables/bit-reverse-intrinsics}
 	\caption{Integer intrinsic bit-reverse function for different technologies.}
@@ -102,39 +102,22 @@ x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
 return((x >> 16) | (x << 16));
 	\end{lstlisting}
 	\end{framed}
-	\caption{ Kernel code producing a bit reversed unsigned integer where x is the input. }
+	\caption{ Code returning a bit reversed unsigned integer where x is the input. Only 32-bit integer input and output. }
 	\label{fig:code-bit-reverse}
 \end{figure}
 
 \subsection{FFT 2D implementation}
 
-The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image with a transpose kernel and then repeat these two operations, see figure \ref{lst:cuda:host-2d-example}. 
+The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
 
-\begin{figure}
+\begin{figure}[h!]
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
 	\end{framed}
-	\caption{CUDA host code example for the 2D FFT algorithm.}
+	\caption{CUDA host code for the 2D FFT algorithm.}
 	\label{lst:cuda:host-2d-example}	
 \end{figure}
-
-\subsubsection{Indexing}
-
-The difference between the kernel implementations for 1D and 2D are the indexing scheme. 2D are indexed as rows at \texttt{blockIdx.x} and column at \texttt{threadIdx.x} + \texttt{blockIdx.y} * \texttt{blockDim.x}. For 2D \texttt{blockIdx.z} is used for the sequence id in large batches.
-
-\subsubsection{Transpose}
-
-The transpose kernel uses the shared memory and thread/block configuration to avoid large strides through global memory. Figure \ref{fig:transpose-memory} shows how the transpose is performed in memory.
-
-\begin{figure}
-	\centering
-	\includestandalone[width=\textwidth]{figures/transpose-tile}
-	\caption{}
-	\label{fig:transpose-memory}
-\end{figure}
-
-A transformed image example is shown in figure \ref{fig:twodimentransform}.
 
 \begin{figure}
 	\centering
@@ -149,9 +132,60 @@ A transformed image example is shown in figure \ref{fig:twodimentransform}.
     \label{fig:twodimentransform}
 \end{figure}
 
+The difference between the FFT kernel for 1D and 2D are the indexing scheme. 2D are indexed as rows at \texttt{blockIdx.x} and columns at $\texttt{threadIdx.x} + \texttt{blockIdx.y} \cdot \texttt{blockDim.x}$. For 2D \texttt{blockIdx.z} is used as the sequence id in a batch.
+
+\subsubsection{Transpose}
+
+The transpose kernel uses a different index mapping of the 2D-data and blocks/threads then the FFT kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \texttt{blockIdx.x} and \texttt{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tiles rows and columns are diveded over the \texttt{threadIdx.x} and \texttt{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example. Example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\texttt{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
+
+\begin{figure}[h!]
+	\centering
+	\begin{framed}
+		\includestandalone[width=\textwidth]{code/cuda-device-transpose}	
+	\end{framed}
+	\caption{CUDA device code for the transpose kernel.}
+	\label{lst:cuda:device-transpose}	
+\end{figure}
+
+The transpose kernel uses the shared memory and tiling of the image to avoid large strides through global memory. Each block represents a tile in the image. The first step is to write the complete tile to shared memory and synchronize the threads before writing to the output buffer. Both reading from the input memory and writing to the output memory is performed in close stride. Figure \ref{fig:transpose-memory} shows how the transpose is performed in memory.
+
+\begin{figure}[h!]
+	\centering
+	\includestandalone[width=\textwidth]{figures/transpose-tile}
+	\caption{Illustration of how shared memory is used in transposing an image. Input data is tiled and each tile is written to shared memory and transposed before written to the output memory. }
+	\label{fig:transpose-memory}
+\end{figure}
+
 \section{Benchmark application CPU}
 
-\subsection{FFT algorithm in OpenMP}
+\subsection{FFT implementation in OpenMP}
 
+The OpenMP implementation benefits in performance from calculating the twiddle factors in advance. The calculated values are stored in a buffer accessible from all threads. The next step is to calculate each stage of the FFT algorithm. Last is the output index calculation where elements are reordered. See figure \ref{fig:omp:overview} for an overview.
 
+\begin{figure}
+	\centering
+	\includestandalone[width=\textwidth]{figures/omp-overview}
+	\caption{OpenMP implementation overview transforming sequence of size $N$.}
+	\label{fig:omp:overview}
+\end{figure}
+
+\subsubsection{Twiddle Factors}
+
+The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps, first calculate the real values, secondly copy from real to imaginary.
+
+\begin{table}[h!]
+	\centering
+	%\includestandalone[width=\textwidth]{figures/omp-twiddle-overview}
+	\input{tables/omp-twiddle}
+	\caption{Twiddle factor table $W$ for a 16-point sequence where $\alpha = (2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
+	\label{tab:omp:twiddle-overview}
+\end{table}
+
+\subsubsection{Butterfly}
+
+The same butterfly operation as the local kernel from previous section is used. Constant geometry with 
+
+\subsubsection{Bit Reversed Order}
+
+\subsection{FFT implementation in OpenMP}
 

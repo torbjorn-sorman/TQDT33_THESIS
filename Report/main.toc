@@ -35,12 +35,15 @@
 \contentsline {subsubsection}{Synchronization}{12}{figure.caption.10}
 \contentsline {subsubsection}{Calculation}{14}{figure.caption.10}
 \contentsline {subsection}{\numberline {4.1.2}FFT 2D implementation}{15}{subsection.4.1.2}
-\contentsline {subsubsection}{Indexing}{15}{figure.caption.15}
-\contentsline {subsubsection}{Transpose}{15}{figure.caption.15}
-\contentsline {section}{\numberline {4.2}Benchmark application CPU}{16}{section.4.2}
-\contentsline {subsection}{\numberline {4.2.1}FFT algorithm in OpenMP}{16}{subsection.4.2.1}
+\contentsline {subsubsection}{Transpose}{15}{figure.caption.16}
+\contentsline {section}{\numberline {4.2}Benchmark application CPU}{17}{section.4.2}
+\contentsline {subsection}{\numberline {4.2.1}FFT implementation in OpenMP}{17}{subsection.4.2.1}
+\contentsline {subsubsection}{Twiddle Factors}{18}{figure.caption.19}
+\contentsline {subsubsection}{Butterfly}{18}{table.caption.20}
+\contentsline {subsubsection}{Bit Reversed Order}{18}{table.caption.20}
+\contentsline {subsection}{\numberline {4.2.2}FFT implementation in OpenMP}{18}{subsection.4.2.2}
 \contentsline {chapter}{\numberline {5}Avslutande kommentarer}{19}{chapter.5}
-\contentsline {chapter}{Bibliography}{23}{appendix*.18}
+\contentsline {chapter}{Bibliography}{23}{appendix*.21}
 \select@language {swedish}
 \select@language {english}
 \select@language {english}

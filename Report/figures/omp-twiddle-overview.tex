@@ -1,0 +1,23 @@
+\begin{tikzpicture}
+
+\def \ompw {2}
+\def \omph {4}
+
+\tikzstyle{omp-memquad} = [
+	draw,
+	align = center,
+	anchor = north,
+	minimum width = \ompw cm,
+	minimum height = \omph cm];
+	
+\node [omp-memquad] (omp-cos1) at (0,0) { $\cos(\alpha \cdot 0)$\\$\cos(\alpha \cdot 1)$\\$\cos(\alpha \cdot 2)$\\...\\$\cos(\alpha \cdot 15)$};
+\node [omp-memquad] (omp-sin1) at (\ompw,0) {};
+\node [omp-memquad] (omp-cos2) at (0,-\omph) {};
+\node [omp-memquad] (omp-sin2) at (\ompw,-\omph) {};
+
+\node[draw, opacity=0, fit = (omp-cos1) (omp-cos2), label = {[name=reLbl]above:{$\Re(W)$}}] (w-real) {};
+\node[draw, opacity=0, fit = (omp-sin1) (omp-sin2), label = {[name=reLbl]above:{$\Im(W)$}}] (w-imag) {};
+
+\node[draw,fit=(w-real) (w-imag) (reLbl), label=above:{Table of W ($\mathbb{C}$)}] {};
+			
+\end{tikzpicture}

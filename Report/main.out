@@ -29,7 +29,8 @@
 \BOOKMARK [2][-]{subsection.4.1.1}{4.1.1 FFT implementation}{section.4.1}% 29
 \BOOKMARK [2][-]{subsection.4.1.2}{4.1.2 FFT 2D implementation}{section.4.1}% 30
 \BOOKMARK [1][-]{section.4.2}{4.2 Benchmark application CPU}{chapter.4}% 31
-\BOOKMARK [2][-]{subsection.4.2.1}{4.2.1 FFT algorithm in OpenMP}{section.4.2}% 32
-\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 33
-\BOOKMARK [0][]{appendix*.18}{Bibliography}{}% 34
-\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 35
+\BOOKMARK [2][-]{subsection.4.2.1}{4.2.1 FFT implementation in OpenMP}{section.4.2}% 32
+\BOOKMARK [2][-]{subsection.4.2.2}{4.2.2 FFT implementation in OpenMP}{section.4.2}% 33
+\BOOKMARK [0][]{chapter.5}{5 Avslutande kommentarer}{}% 34
+\BOOKMARK [0][]{appendix*.21}{Bibliography}{}% 35
+\BOOKMARK [0][]{Copyright.0}{Copyright}{}% 36

@@ -3,3 +3,9 @@ main.brf
 main.blg
 main.synctex.gz
 main.pdf
+main.out
+main.toc
+main.idx
+main.bbl
+main.blg
+*.log

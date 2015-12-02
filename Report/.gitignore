@@ -1,2 +1,5 @@
 *.aux
 main.brf
+main.blg
+main.synctex.gz
+main.pdf

@@ -4,7 +4,7 @@ The FFT application has been implemented in C/C++, CUDA, OpenCL, DirectCompute a
 
 \section{Benchmark application GPU}
 
-\subsection{FFT implementation}
+\subsection{FFT}
 
 \subsubsection{Setup}
 
@@ -106,7 +106,7 @@ return((x >> 16) | (x << 16));
 	\label{fig:code-bit-reverse}
 \end{figure}
 
-\subsection{FFT 2D implementation}
+\subsection{FFT 2D}
 
 The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
 
@@ -158,7 +158,7 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \section{Benchmark application CPU}
 
-\subsection{FFT in C/C++ with OpenMP}
+\subsection{FFT with OpenMP}
 
 The OpenMP implementation benefits in performance from calculating the twiddle factors in advance. The calculated values are stored in a buffer accessible from all threads. The next step is to calculate each stage of the FFT algorithm. Last is the output index calculation where elements are reordered. See figure \ref{fig:omp:overview} for an overview.
 
@@ -197,7 +197,7 @@ See figure \ref{fig:omp:bit-reverse-order} for code showing the bit reverse orde
 	\label{fig:omp:bit-reverse-order}
 \end{figure}
 
-\subsection{2D FFT in C/C++ with OpenMP}
+\subsection{FFT 2D with OpenMP}
 
 The implementation of 2D FFT with OpenMP run the transformations row wise and transposes the image and repeat. The twiddle factors are calculated once and stays the same.
 
@@ -209,12 +209,33 @@ All implementations are limited to handle sequences of $2^n$ length or $2^m \tim
 
 \subsection{Testing}
 
-All tests executed on the GPU utilize some form of event timestamps supplied by the technology used. See table \ref{tab:code:timestamps} for specific method per technology.
+All tests executed on the GPU utilize some form of event timestamps supplied by the technology used. See figure \ref{fig:code:timestamps} for specific method per technology.
 
-\begin{table}[h!]
+\begin{figure}[h!]
 	\centering
-	\input{tables/code-timestamps}
-	\caption{Method to extract timestamps for kernel events for the different technologies.}
-	\label{tab:code:timestamps}
-\end{table}
+		\begin{framed}
+			\subfloat[CUDA event]{
+				\label{fig:code:timestamp:cu}
+				\includestandalone[width=\textwidth]{code/timestamps/cu}
+	    	}
+			\subfloat[CUDA event]{
+				\label{fig:code:timestamp:ocl}
+				\includestandalone[width=\textwidth]{code/timestamps/cu}
+    		}
+			\subfloat[CUDA event]{
+				\label{fig:code:timestamp:dx}
+				\includestandalone[width=\textwidth]{code/timestamps/cu}
+	    	}
+			\subfloat[CUDA event]{
+				\label{fig:code:timestamp:gl}
+				\includestandalone[width=\textwidth]{code/timestamps/cu}
+	    	}
+			\subfloat[CUDA event]{
+				\label{fig:code:timestamp:omp}
+				\includestandalone[width=\textwidth]{code/timestamps/cu}
+	    	}
+		\end{framed}
+	\caption{ Method to extract timestamps for kernel events for the different technologies. }
+	\label{fig:code:timestamps}
+\end{figure}
 

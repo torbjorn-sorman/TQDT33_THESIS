@@ -17,39 +17,18 @@
 \usepackage{graphicx}
 \usepackage{standalone}
 \usepackage{mythesis}
-\usepackage{amsthm}
-\usepackage{amsmath}
 \usepackage{multirow}
 \usepackage{tikz}
-\usepackage{ctable}
-\usepackage{transparent}
 \usepackage{listings}
 \usepackage{framed}
 
 \usetikzlibrary{
 	fit,
-	calc,
 	positioning,
-	circuits.ee.IEC,
 	arrows,
 	arrows.meta,
-	patterns}
-
-% Patch for ctable Error
-\makeatletter
-\begingroup\expandafter\expandafter\expandafter\endgroup
-\expandafter\ifx\csname pgfutil@addpdfresource@extgs\endcsname\relax
-\else
-  \AtBeginDocument{%
-    %\pgf@sys@addpdfresource@extgs@plain{%
-    \pgfutil@addpdfresource@extgs{%
-      \TRP@list
-    }%
-  }%  
-  \let\TRP@addresource\relax
-\fi
-\makeatother
-% End of patch
+	patterns
+}
 
 \begin{document}
 \selectlanguage{english}

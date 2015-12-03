@@ -1,7 +1,14 @@
-\begin{tabular}{|l|l|l|}
-	\hline
-	Technology & Signature & Precision \\ \hline
-	CUDA & \texttt{\_\_device\_\_} & Device & Device \\ \hline
-	\texttt{\_\_global\_\_} & Device & Host \\ \hline
-	\texttt{\_\_host\_\_} & Host & Host \\ \hline
-\end{tabular}
+\lstset{language=C++}
+\begin{lstlisting}
+cl_ulong start = 0, end = 0;
+cl_event start_event, end_event;
+clEnqueueNDRangeKernel(cmd_queue, dummy_kernel,..., &start_event);
+
+ocl_fft(...);
+
+clEnqueueNDRangeKernel(cmd_queue, dummy_kernel,..., &end_event);
+clWaitForEvents(1, &end_event);
+clGetEventProfilingInfo(start_event, CL_PROFILING_COMMAND_START, ..., &start, 0);
+clGetEventProfilingInfo(end_event, CL_PROFILING_COMMAND_END, ..., &end, 0);
+double milliseconds = (end - start) * (cl_double)(1e-03);
+\end{lstlisting}

@@ -6,7 +6,7 @@ cudaEventCreate(&start);
 cudaEventCreate(&stop);
 cudaEventRecord(start);
 
-cuda_fft(FFT_FORWARD, dev_in, dev_out, n);
+cuda_fft(...);
 
 cudaEventRecord(stop);
 cudaEventSynchronize(stop);

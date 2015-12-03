@@ -5,10 +5,9 @@
 	%  crop,%     Produce output with crop marks and paper size A4.  Liu-Tryck should like this.  Automatically adds information, including the physical page number, at the top of each page.
 	%     Add option 'noInfo' to suppress the info at the top of each page when using option 'crop'.
 	% Font options: 'kp' (default), 'times', 'lm'.  The KpFonts (loaded using 'kp'), is the most complete font among the provided options.  Among other, it supports slanted small caps.  See rtthesis.cls for more details regarding the font options.
-	kp,
 	largesmallcaps,intlimits,widermath,% Good options to KpFonts.
 	sharecounter,nobreak,definition=marks,%  See comments in the results chapter of this document for more information on these options!
-	article,
+	%article,
 	numbers, % If you want to cite references by numbers, use this option.
 	noparts % Use option 'noparts' if you do not make use of part divisions.	
 ]{rtthesis}
@@ -21,6 +20,8 @@
 \usepackage{tikz}
 \usepackage{listings}
 \usepackage{framed}
+\usepackage{todo}
+\usepackage{pgfplots}
 
 \usetikzlibrary{
 	fit,
@@ -31,8 +32,8 @@
 }
 
 \begin{document}
-
-%%%% Speed up of compiling doc
+%
+%%%%% Speed up of compiling doc
 \selectlanguage{english}
 \makeFrontPage
 \frontmatter
@@ -51,7 +52,7 @@
 \include{chapter/technologies}
 \include{chapter/theory}
 \include{chapter/implementation}
-%\include{chapter/result}
+\include{chapter/evaluation}
 \include{chapter/summary}
 
 \part*{Appendix}

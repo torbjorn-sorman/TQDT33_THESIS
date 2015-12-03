@@ -8,7 +8,7 @@ The FFT application has been implemented in C/C++, CUDA, OpenCL, DirectCompute a
 
 \subsubsection{Setup}
 
-The implementation of the FFT algorithm on a GPU can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for an simplified overview. The application setup differs among the tested technologies, however some steps can be generalized; get platform and device information, allocate device buffers and upload data to device.
+The implementation of the FFT algorithm on a GPU can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for a simplified overview. The application setup differs among the tested technologies, however some steps can be generalized; get platform and device information, allocate device buffers and upload data to device.
 \begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/overview}
@@ -20,13 +20,13 @@ The next step is to calculate the specific FFT arguments for a $N$-point sequenc
 \begin{table}
 	\centering
 	\includestandalone[width=\textwidth]{tables/threadsperblock}
-	\caption{Shared memory size, threads and block configuration per device.}
+	\caption{Shared memory size in bytes, threads and block configuration per device.}
 	\label{tab:threads-per-block}
 \end{table}
 
 \subsubsection{Butterfly}
 
-The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, showed in figure \ref{fig:butterfly}.
+The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
 \begin{figure}[h]
 	\centering
 	\input{figures/butterfly}
@@ -36,7 +36,7 @@ The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages w
 
 \subsubsection{Thread and block scheme}
 
-The thread and block scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences twice as long as the threads per block configuration needed the algorithm to be split over several blocks. If the sequence exceed one block then the sequence is mapped over multiple blocks using the \texttt{blockIdx.y} dimension. The block dimension \texttt{blockIdx.x} is used to calculate sequence id in when running a large batch, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \texttt{x}, \texttt{y}, \texttt{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
+The threading scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences requiring more butterfly operations then the threads per block configuration needed the computations to be split over several blocks. In the case of sequence exceeding one block, the sequence is mapped over the \texttt{blockIdx.y} dimension with size \texttt{gridDim.y}. The block dimension \texttt{blockIdx.x} is used to calculate sequence id when running a batch of sequences, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \texttt{x}, \texttt{y}, \texttt{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
 \begin{figure}
 	\input{figures/exampleflow}
 	\caption{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
@@ -45,7 +45,7 @@ The thread and block scheme was one butterfly per thread, so that a sequence of 
 
 \subsubsection{Synchronization}
 
-Thread synchronization is only available within a block. When the sequence or partial sequence fitted within a block all data was transferred to local memory before completing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the Cooley-Tukey FFT algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory to the bit reversed index of the complete sequence. See figure \ref{fig:flowgraph-16} where the sequence length is sixteen and the thread per block is set to two.
+Thread synchronization is only available within a block. When the sequence or partial sequence fitted within a block all data was transferred to local memory before computing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels in the same stream to be executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the Cooley-Tukey FFT algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory in bit reversed order to the global memory. See figure \ref{fig:flowgraph-16} where the sequence length is 16 and the threads per block is set to two.
 
 \subsubsection{Calculation}
 
@@ -209,33 +209,19 @@ All implementations are limited to handle sequences of $2^n$ length or $2^m \tim
 
 \subsection{Testing}
 
-All tests executed on the GPU utilize some form of event timestamps supplied by the technology used. See figure \ref{fig:code:timestamps} for specific method per technology.
+All tests executed on the GPU utilize some implementation of event time stamps. The time stamp event retrieve the actual start of the kernel if the current stream is busy, if the time is measured by the host, some technologies are not able to synchronize and the timings may be very unstable. The CPU implementations used Windows \textit{QueryPerformanceCounter} function, which is a high resolution (<1{\micro}s) time stamp.
 
-\begin{figure}[h!]
+All tests on the GTX 670 are run in batches of constant size 1073741824 bytes. A batch with 256-point sequences would run a total of 262144 sequences.
+
+The tests on the R7 260X was not stable on the same sizes and some technologies would fail on large sequences.
+
+\subsection{Reference libraries}
+
+A couple of reference libraries was included to compare how well the FFT implementation performed. See table \ref{tab:external-implementations}.
+
+\begin{table}
 	\centering
-		\begin{framed}
-			\subfloat[CUDA event]{
-				\label{fig:code:timestamp:cu}
-				\includestandalone[width=\textwidth]{code/timestamps/cu}
-	    	}
-			\subfloat[CUDA event]{
-				\label{fig:code:timestamp:ocl}
-				\includestandalone[width=\textwidth]{code/timestamps/cu}
-    		}
-			\subfloat[CUDA event]{
-				\label{fig:code:timestamp:dx}
-				\includestandalone[width=\textwidth]{code/timestamps/cu}
-	    	}
-			\subfloat[CUDA event]{
-				\label{fig:code:timestamp:gl}
-				\includestandalone[width=\textwidth]{code/timestamps/cu}
-	    	}
-			\subfloat[CUDA event]{
-				\label{fig:code:timestamp:omp}
-				\includestandalone[width=\textwidth]{code/timestamps/cu}
-	    	}
-		\end{framed}
-	\caption{ Method to extract timestamps for kernel events for the different technologies. }
-	\label{fig:code:timestamps}
-\end{figure}
-
+	\input{tables/external-implementations}
+	\caption{Libraries included to compare with the implementation.}
+	\label{tab:external-implementations}
+\end{table}

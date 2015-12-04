@@ -1,17 +1,19 @@
 \lstset{language=C++}
 \begin{lstlisting}
-/* OpenGL need a valid rendering context, supplied by the OS */
+// OpenGL needs a valid rendering
+// context, supplied by the OS.
 glutInit(&argc, argv);
-glutCreateWindow("GL Context");
+glutCreateWindow("GLContext");
 glewInit();
 
-glCreateProgram()\;
-glCreateShader(GL\_COMPUTE\_SHADER)\;
+glCreateProgram();
+glCreateShader(GL_COMPUTE_SHADER);
 glShaderSource
 glCompileShader
 glAttachShader
 glLinkProgram
 
+// Create buffer and upload
 glGenBuffers
 glBindBufferBase
 glBufferData

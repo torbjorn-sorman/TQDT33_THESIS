@@ -1,0 +1,8 @@
+\begin{tabular}{|l|l|l|}
+	\hline
+	Technology & Threads in blocks & Host and Device \\ \hline
+	CUDA & \texttt{\_\_syncthreads();} & \texttt{cudaDeviceSynchronize();} \\ \hline
+	OpenCL & \texttt{barrier(CLK\_LOCAL\_MEM\_FENCE);} & \texttt{clFinish(cmd\_queue);} \\ \hline
+	OpenGL & \texttt{barrier();} & \texttt{glFinish();} \\ \hline
+	DirectCompute & \texttt{GroupMemoryBarrierWithGroupSync();} & - \\ \hline
+\end{tabular}

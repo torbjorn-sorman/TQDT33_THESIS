@@ -110,7 +110,7 @@ return((x >> 16) | (x << 16));
 
 The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
 
-\begin{figure}[h!]
+\begin{figure}[!h]
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
@@ -136,7 +136,9 @@ The difference between the FFT kernel for 1D and 2D are the indexing scheme. 2D 
 
 \subsubsection{Transpose}
 
-The transpose kernel uses a different index mapping of the 2D-data and blocks/threads then the FFT kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \texttt{blockIdx.x} and \texttt{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tiles rows and columns are diveded over the \texttt{threadIdx.x} and \texttt{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example. Example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\texttt{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
+The transpose kernel uses a different index mapping of the 2D-data and blocks/threads then the FFT kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \texttt{blockIdx.x} and \texttt{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tiles rows and columns are diveded over the \texttt{threadIdx.x} and \texttt{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example.
+
+Shared memory example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\texttt{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
 
 \begin{figure}[h!]
 	\centering
@@ -163,17 +165,23 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 The major differences was mostly related to the setup phase. The CUDA implementation is the most straight forward, \texttt{cudaMalloc(...)} to allocate a buffer and \texttt{cudaMemcpy(...)} to populate it. With CUDA you can write the device code in the same file as the host code and even share functions, the OpenCL and OpenGL require a \texttt{char *} buffer and is most practical if written in seperate file and read as a file stream to a \texttt{char} buffer. DirectCompute Shaders are most easily compiled from file.
 
 This is a simplified path of how the setup is for OpenCL:
-\begin{enumerate}
-	\item \texttt{clGetPlatformIDs}\ldots
-	\item \texttt{clGetDeviceIDs}\ldots
-	\item \texttt{clCreateContext}\ldots
-	\item \texttt{clCreateCommandQueue}\ldots
-	\item \texttt{clCreateBuffer}\ldots
-	\item \texttt{clEnqueueWriteBuffer}\ldots
-	\item \texttt{clCreateProgramWithSource}\ldots
-	\item \texttt{clBuildProgram}\ldots
-	\item \texttt{clCreateKernel}\ldots
-\end{enumerate}
+\begin{figure}
+	\centering	
+	\def \setupWidth {{\textwidth} / 2 - 10pt}
+	\subfloat[OpenCL setup\label{setup:ocl}]{		
+		\includestandalone[width={\setupWidth}]{code/setup/ocl}		
+	}
+	\hfill
+	\subfloat[OpenCL setup\label{setup:dx}]{		
+		\includestandalone[width={\setupWidth}]{code/setup/dx}		
+	}
+	\newline
+	\subfloat[OpenCL setup\label{setup:gl}]{		
+		\includestandalone[width={\setupWidth}]{code/setup/gl}		
+	}
+	\caption{}		
+	\label{fig:code:setup:ocl}
+\end{figure}
 
 DirectCompute Compute Shader:
 \begin{enumerate}
@@ -213,16 +221,33 @@ OpenGL Compute Shader:
 
 \subsubsection{Kernel execution}
 
-Kernel execution share more similarities
+Kernel execution in CUDA is very much like any C-like language and the only difference is that the kernel launch syntax, $<<<$ and $>>>$, setting number of blocks and threads.
 
-\begin{table}
-	\begin{tabular}{|l|l|}
-		\hline
-		CUDA & \texttt{cuda\_kernel$<<<$ blocks, threads $>>>$(Arguments)} \\ \hline
-	\end{tabular}
+The other technologies require some more setup, OpenCL and OpenGL set one parameter per line. OpenCL maps with index whereas OpenGL maps with a string to the parameter. DirectCompute is best suited to use a constant buffer for the parameters, the constant buffer is read only and accessible globally over the kernel. DirectCompute and OpenGL share a similar launch style where the compute shader is set as the current program and then a dispatch call is made with the group (block) configuration. See table \ref{tab:kernel-execution} for a list of how the kernels are launched.
+
+\begin{table}[h!]
+	\centering
+	\includestandalone[width=\textwidth]{tables/kernel-execution}
+	\caption{Table illustrating how to set parameters and launch a kernel.}
+	\label{tab:kernel-execution}
 \end{table}
 
 \subsubsection{Kernel code}
+
+This is the part where the code differ the least on but a few points. CUDA have the strongest support for a C/C++ -like language and only adds a function type specifier. The kernel program is accessible from the host via the \texttt{\_\_global\_\_} specifier. OpenCL share much of this but restricted to a C99-style in the current version (2.0). One difference is how one can reference global and local buffers, these must be specified with the specifier \texttt{\_\_global} or \texttt{\_\_local}.
+
+DirectCompute and OpenGL Compute Shader uses HLSL (High-Level Shading Language) and GLSL (OpenGL Shading Language) respectively. These languages are similar and share the same restrictions compared to CUDA C/C++ and OpenCL C-code. Device functions can not use pointers or recursion. However these are of little importance for the performance since all code is in-lined in the compilation/building of the kernel program.
+
+\subsubsection{Synchronization}
+
+The synchronization of threads and blocks is slightly different, CUDA have the options to synchronize threads within a block and to synchronize host and device, the equivalent exists in all but DirectCompute (DirectX 11) where the device synchronization is not done trivially as with a blocking function call. See table \ref{tab:kernel-synchronization} for the code used for each technology.
+
+\begin{table}[h!]
+	\centering
+	\includestandalone[width=\textwidth]{tables/kernel-synchronization}
+	\caption{Synchronize functions regarding within blocks/groups and between host and device. CUDA, OpenCL and DirectCompute uses the same kernel stream to run them sequentially; OpenGL uses the command \texttt{glMemoryBarrier(GL\_SHADER\_STORAGE\_BARRIER\_BIT)} to ensure kernels are run in the same order as launched.}
+	\label{tab:kernel-synchronization}
+\end{table}
 
 \section{Benchmark application CPU}
 

@@ -156,9 +156,73 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 	\label{fig:transpose-memory}
 \end{figure}
 
-\subsection{Differences between technologies}
+\subsection{Differences}
 
+\subsubsection{Setup}
 
+The major differences was mostly related to the setup phase. The CUDA implementation is the most straight forward, \texttt{cudaMalloc(...)} to allocate a buffer and \texttt{cudaMemcpy(...)} to populate it. With CUDA you can write the device code in the same file as the host code and even share functions, the OpenCL and OpenGL require a \texttt{char *} buffer and is most practical if written in seperate file and read as a file stream to a \texttt{char} buffer. DirectCompute Shaders are most easily compiled from file.
+
+This is a simplified path of how the setup is for OpenCL:
+\begin{enumerate}
+	\item \texttt{clGetPlatformIDs}\ldots
+	\item \texttt{clGetDeviceIDs}\ldots
+	\item \texttt{clCreateContext}\ldots
+	\item \texttt{clCreateCommandQueue}\ldots
+	\item \texttt{clCreateBuffer}\ldots
+	\item \texttt{clEnqueueWriteBuffer}\ldots
+	\item \texttt{clCreateProgramWithSource}\ldots
+	\item \texttt{clBuildProgram}\ldots
+	\item \texttt{clCreateKernel}\ldots
+\end{enumerate}
+
+DirectCompute Compute Shader:
+\begin{enumerate}
+	\item Select adapter (the graphics card)
+	\item \texttt{D3D11CreateDevice}\ldots
+	\item \texttt{ID3D11Device::CreateBuffer}\ldots
+	\begin{enumerate}
+		\item \texttt{ID3D11DeviceContext::UpdateSubresource}\ldots
+		\item \texttt{ID3D11Device::CreateShaderResourceView}\ldots
+		\item \texttt{ID3D11Device::CreateUnorderedAccessView}\ldots
+	\end{enumerate}
+	\item \texttt{D3DCompileFromFile}\ldots
+	\item \texttt{ID3D11Device::CreateComputeShader}\ldots
+	\item \texttt{ID3D11DeviceContext::CSSetConstantBuffers}\ldots
+\end{enumerate}
+
+OpenGL Compute Shader:
+\begin{enumerate}
+	\item OpenGL need a valid rendering context, supplied by the OS
+	\begin{enumerate}
+		\item \texttt{glutInit(\&argc, argv)}\;
+		\item \texttt{glutCreateWindow("GL Context")}\;
+		\item \texttt{glewInit()\;}
+	\end{enumerate}
+	\item \texttt{glCreateProgram()\;}
+	\item \texttt{glCreateShader(GL\_COMPUTE\_SHADER)\;}
+	\item \texttt{glShaderSource}\ldots
+	\item \texttt{glCompileShader}\ldots
+	\item \texttt{glAttachShader}\ldots
+	\item \texttt{glLinkProgram}\ldots
+	\item \texttt{glGenBuffers}\ldots
+	\begin{enumerate}
+		\item \texttt{glBindBufferBase}\ldots
+		\item \texttt{glBufferData}\ldots
+	\end{enumerate}
+\end{enumerate}
+
+\subsubsection{Kernel execution}
+
+Kernel execution share more similarities
+
+\begin{table}
+	\begin{tabular}{|l|l|}
+		\hline
+		CUDA & \texttt{cuda\_kernel $<<<$ blocks, threads $>>>$ (Arguments)} \\ \hline
+	\end{tabular}
+\end{table}
+
+\subsubsection{Kernel code}
 
 \section{Benchmark application CPU}
 

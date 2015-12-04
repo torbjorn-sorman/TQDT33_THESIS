@@ -263,6 +263,10 @@ See figure \ref{fig:omp:bit-reverse-order} for code showing the bit reverse orde
 
 The implementation of 2D FFT with OpenMP run the transformations row wise and transposes the image and repeat. The twiddle factors are calculated once and stays the same.
 
+\subsection{Differences with GPU}
+
+The OpenMP implementation differs from the GPU with the fact that twiddle factors are pre computed and it uses the constant geometry implementation in all stages. The amount of parallel threads are on the Intel i7 3770K four whereas on the GPU in the order of up to 192 (seven warps, one per SM, with 32 threads each). This highly effects performance when the size of the problem grows.
+
 \section{Benchmark configurations}
 
 \subsection{Limitations}

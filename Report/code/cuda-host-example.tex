@@ -7,7 +7,7 @@ __global__ void myKernel(float val)
 }
 
 // Host program (CPU)
-__host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n)
+__host__ void cuda_fft(transform dir, cpx *in, cpx *out, int n)
 {
     fft_args args;
     dim3 blocks;

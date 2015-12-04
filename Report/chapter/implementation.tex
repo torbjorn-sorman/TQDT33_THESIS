@@ -9,7 +9,7 @@ The FFT application has been implemented in C/C++, CUDA, OpenCL, DirectCompute a
 \subsubsection{Setup}
 
 The implementation of the FFT algorithm on a GPU can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for a simplified overview. The application setup differs among the tested technologies, however some steps can be generalized; get platform and device information, allocate device buffers and upload data to device.
-\begin{figure}
+\begin{figure}[H]
 	\centering
 	\includestandalone[width=\textwidth]{figures/overview}
 	\caption{Overview of the events in the algorithm.}
@@ -27,7 +27,7 @@ The next step is to calculate the specific FFT arguments for a $N$-point sequenc
 \subsubsection{Butterfly}
 
 The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
 	\input{figures/butterfly}
 	\caption{Butterfly operations}
@@ -37,7 +37,8 @@ The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages w
 \subsubsection{Thread and block scheme}
 
 The threading scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences requiring more butterfly operations then the threads per block configuration needed the computations to be split over several blocks. In the case of sequence exceeding one block, the sequence is mapped over the \texttt{blockIdx.y} dimension with size \texttt{gridDim.y}. The block dimension \texttt{blockIdx.x} is used to calculate sequence id when running a batch of sequences, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \texttt{x}, \texttt{y}, \texttt{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
-\begin{figure}
+
+\begin{figure}[htbp]
 	\input{figures/exampleflow}
 	\caption{Example flow graph of a sixteen-point FFT using (stage 1 and 2) Cooley-Tukey algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
 	\label{fig:flowgraph-16}
@@ -50,7 +51,7 @@ Thread synchronization is only available within a block. When the sequence or pa
 \subsubsection{Calculation}
 
 The indexing for the global kernel was calculated from the thread id and block id (\texttt{threadIdx.x} and \texttt{blockIdx.x} in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
-\begin{figure}
+\begin{figure}[htbp]
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -65,7 +66,7 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
 \end{figure}
 
 Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are separate from the indexing in the global memory. The global memory offset depends on threads per block (\texttt{blockDim.x} in CUDA) and block id.
-\begin{figure}
+\begin{figure}[htbp]
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -83,14 +84,14 @@ int n_per_block = N / gridDim.x.
 
 The last operation after the last stage is to perform the bit-reverse indexing operation, this is done when writing from shared to global memory. The implementation of bit reversing is available as a intrinsic integer instruction, see table \ref{tab:bit-reverse-intrinsics}. If instruction is not available figure \ref{fig:code-bit-reverse} shows the code used. The bit reversed value had to be right shifted the number of zeroes leading the number in a 32-bit int. Example of the bit-reverse index operation: index 8 of a 16 point sequence is bit-reversed to 1, in binary its 1000 reversed to 0001. Index 8 of a 32 point sequence is bit-reversed to 2, corresponds to 01000 to 00010. Figure \ref{fig:flowgraph-16} show the complete bit-reverse operations of a 16-point sequence in the output step after the last stage.
 
-\begin{table}[h!]
+\begin{table}[!htbp]
 	\centering
 	\includestandalone[width=\textwidth]{tables/bit-reverse-intrinsics}
 	\caption{Integer intrinsic bit-reverse function for different technologies.}
 	\label{tab:bit-reverse-intrinsics}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -108,18 +109,7 @@ return((x >> 16) | (x << 16));
 
 \subsection{FFT 2D}
 
-The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
-
-\begin{figure}[!h]
-	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
-	\end{framed}
-	\caption{CUDA host code for the 2D FFT algorithm.}
-	\label{lst:cuda:host-2d-example}	
-\end{figure}
-
-\begin{figure}
+\begin{figure}[htbp]
 	\centering
 	\subfloat[Original image\label{image-1:lena}]{
 		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena.jpg}{}		
@@ -128,8 +118,19 @@ The FFT algorithm for two dimensional data, such as images, is first transformed
     \subfloat[Magnitude representation\label{image-2:lena}]{
 		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena_transformed.jpg}{}
     }
-	\caption{Original image \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization \ref{image-2:lena}. }
+	\caption{Original image \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization (magnitude scale skewed for better visuals). \ref{image-2:lena}. }
     \label{fig:twodimentransform}
+\end{figure}
+
+The FFT algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{framed}
+		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
+	\end{framed}
+	\caption{CUDA host code for the 2D FFT algorithm.}
+	\label{lst:cuda:host-2d-example}	
 \end{figure}
 
 The difference between the FFT kernel for 1D and 2D are the indexing scheme. 2D are indexed as rows at \texttt{blockIdx.x} and columns at $\texttt{threadIdx.x} + \texttt{blockIdx.y} \cdot \texttt{blockDim.x}$. For 2D \texttt{blockIdx.z} is used as the sequence id in a batch.
@@ -140,7 +141,7 @@ The transpose kernel uses a different index mapping of the 2D-data and blocks/th
 
 Shared memory example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\texttt{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
 
-\begin{figure}[h!]
+\begin{figure}[H]
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/cuda-device-transpose}	
@@ -151,7 +152,7 @@ Shared memory example: The CUDA shared memory can allocate 49152 bytes and a sin
 
 The transpose kernel uses the shared memory and tiling of the image to avoid large strides through global memory. Each block represents a tile in the image. The first step is to write the complete tile to shared memory and synchronize the threads before writing to the output buffer. Both reading from the input memory and writing to the output memory is performed in close stride. Figure \ref{fig:transpose-memory} shows how the transpose is performed in memory.
 
-\begin{figure}[h!]
+\begin{figure}[H]
 	\centering
 	\includestandalone[width=\textwidth]{figures/transpose-tile}
 	\caption{Illustration of how shared memory is used in transposing an image. Input data is tiled and each tile is written to shared memory and transposed before written to the output memory. }
@@ -166,21 +167,22 @@ The major differences was mostly related to the setup phase. The CUDA implementa
 
 Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.
 \begin{figure}
-	\centering	
-	\subfloat[OpenCL setup\label{setup:ocl}]{		
-		\includestandalone[scale=0.9]{code/setup/cu}		
+	\centering
+	\def \setupWidth {\textwidth / 2 - 20pt}	
+	\subfloat[OpenCL setup\label{setup:cu}]{		
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/cu}}
 	}	
 	\hfill
 	\subfloat[OpenCL setup\label{setup:ocl}]{		
-		\includestandalone[scale=0.9]{code/setup/ocl}		
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/ocl}}
 	}
 	\newline
 	\subfloat[DirectCompute setup\label{setup:dx}]{		
-		\includestandalone[scale=0.8]{code/setup/dx}		
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/dx}}
 	}
 	\hfill
 	\subfloat[OpenGL setup\label{setup:gl}]{		
-		\includestandalone[scale=0.8]{code/setup/gl}		
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/gl}}
 	}
 	\caption{A simplified overview of the different functions required for a kernel launch and upload of initial data. }		
 	\label{fig:code:setup}
@@ -192,7 +194,7 @@ Kernel execution in CUDA is very much like any C-like language and the only diff
 
 The other technologies require some more setup, OpenCL and OpenGL set one parameter per line. OpenCL maps with index whereas OpenGL maps with a string to the parameter. DirectCompute is best suited to use a constant buffer for the parameters, the constant buffer is read only and accessible globally over the kernel. DirectCompute and OpenGL share a similar launch style where the compute shader is set as the current program and then a dispatch call is made with the group (block) configuration. See table \ref{tab:kernel-execution} for a list of how the kernels are launched.
 
-\begin{table}[h!]
+\begin{table}[H]
 	\centering
 	\includestandalone[width=\textwidth]{tables/kernel-execution}
 	\caption{Table illustrating how to set parameters and launch a kernel.}
@@ -209,7 +211,7 @@ DirectCompute and OpenGL Compute Shader uses HLSL (High-Level Shading Language) 
 
 The synchronization of threads and blocks is slightly different, CUDA have the options to synchronize threads within a block and to synchronize host and device, the equivalent exists in all but DirectCompute (DirectX 11) where the device synchronization is not done trivially as with a blocking function call. See table \ref{tab:kernel-synchronization} for the code used for each technology.
 
-\begin{table}[h!]
+\begin{table}[H]
 	\centering
 	\includestandalone[width=\textwidth]{tables/kernel-synchronization}
 	\caption{Synchronize functions regarding within blocks/groups and between host and device. CUDA, OpenCL and DirectCompute uses the same kernel stream to run them sequentially; OpenGL uses the command \texttt{glMemoryBarrier(GL\_SHADER\_STORAGE\_BARRIER\_BIT)} to ensure kernels are run in the same order as launched.}
@@ -233,7 +235,7 @@ The OpenMP implementation benefits in performance from calculating the twiddle f
 
 The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps, first calculate the real values, secondly copy from real to imaginary.
 
-\begin{table}[h!]
+\begin{table}[H]
 	\centering
 	\input{tables/omp-twiddle}
 	\caption{Twiddle factors for a 16-point sequence where $\alpha = (2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
@@ -248,7 +250,7 @@ The same butterfly operation uses the constant geometry index scheme. The indexe
 
 See figure \ref{fig:omp:bit-reverse-order} for code showing the bit reverse ordering operation in C/C++ code.
 
-\begin{figure}[h!]
+\begin{figure}[H]
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/omp-bit-reverse}	

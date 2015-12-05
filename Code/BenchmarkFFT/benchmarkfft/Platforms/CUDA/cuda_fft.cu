@@ -58,6 +58,10 @@ __host__ int cuda_2d_validate(int n, bool write_img)
     if (write_img) {
         cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
         write_normalized_image("CUDA", "freq", host_buffer, n, true);
+
+
+        //cpx_to_console(host_buffer, "CUDA Forward 1/2:", 8);
+        //getchar();
     }
     cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaDeviceSynchronize();
@@ -175,6 +179,7 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
     dim3 threads;
     set_block_and_threads_transpose(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
+    //return;
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
@@ -237,16 +242,30 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
         arg0(arg1 + arg4),
         arg3(threadIdx.x + blockDim.x);
     cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
+    /*
+    if (blockIdx.x == 1023 && threadIdx.x == 511) {
+        // N = 64
+        out[0].x = arg0;                // 69504
+        out[1].x = arg1;                // 4032
+        out[2].x = arg3;                // 63
+        out[3].x = arg4;                // 65472
+
+        out[4].x = blockIdx.y;     // 1023
+        out[5].x = blockDim.x;   // 32
+        out[6].x = blockIdx.x;     // 63        
+        out[7].x = gridDim.x;   // 64
+    }
+    */
 }
 
 __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int dist)
 {
     cpx w;
     SIN_COS_F(angle * ((tid << steps) & ((dist - 1) << steps)), &w.y, &w.x);
-    cpx l = *in;
-    cpx h = in[dist];
-    float x = l.x - h.x;
-    float y = l.y - h.y;
+    cpx l = *in,
+        h = in[dist];
+    float x = l.x - h.x,
+        y = l.y - h.y;
     *in = { l.x + h.x, l.y + h.y };
     in[dist] = { (w.x * x) - (w.y * y), (w.y * x) + (w.x * y) };
 }

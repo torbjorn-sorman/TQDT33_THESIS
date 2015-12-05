@@ -27,7 +27,6 @@ cl_int ocl_setup_work_groups(ocl_args *args, const int group_size)
     args->group_work_size[0] = 1;
     args->group_work_size[1] = item_dim;
     args->group_work_size[2] = 1;
-    args->n_per_block = args->n / item_dim;
     args->number_of_blocks = group_dim / item_dim;
     return err;
 }
@@ -36,28 +35,28 @@ cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size)
 {
     cl_int err = CL_SUCCESS;
     const int n = args->n;
-    int item_dim = (n / 2) > group_size ? group_size : (n / 2);
+    const int n_half = n >> 1;
+    int item_dim = n_half > group_size ? group_size : n_half;
     int n_per_block = n / item_dim;
     args->work_size[0] = n * item_dim;
-    args->work_size[1] = n / (item_dim * 2);
+    args->work_size[1] = n_half / item_dim;
     args->work_size[2] = batch_count(args->n);
     args->group_work_size[0] = item_dim;
     args->group_work_size[1] = 1;
     args->group_work_size[2] = 1;
-    args->n_per_block = n_per_block;
-    args->number_of_blocks = n / (item_dim * 2);
+    args->number_of_blocks = args->work_size[1];
     return err;
 }
 
 void setWorkDimForTranspose(ocl_args *args, const int tile_dim, const int block_dim, const int n)
 {
     int minDim = n > tile_dim ? (n / tile_dim) : 1;
-    args->work_size[2] = batch_count(args->n);
-    args->work_size[1] = minDim * block_dim;
     args->work_size[0] = minDim * block_dim;
-    args->group_work_size[2] = 1;
-    args->group_work_size[1] = block_dim;
+    args->work_size[1] = minDim * block_dim;
+    args->work_size[2] = batch_count(args->n);
     args->group_work_size[0] = block_dim;
+    args->group_work_size[1] = block_dim;
+    args->group_work_size[2] = 1;
 }
 
 cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
@@ -129,7 +128,7 @@ cl_int oclSetupDeviceMemoryData(ocl_args *args, cpx *dev_in)
 }
 
 cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
-{
+{    
     cl_int err = CL_SUCCESS;
     args->input = clCreateBuffer(args->context, CL_MEM_READ_WRITE, data_mem_size, NULL, &err);
     if (err != CL_SUCCESS)

@@ -1,4 +1,5 @@
 #include "ocl_fft.h"
+#include <iostream>
 
 __inline void ocl_fft(ocl_args *a_host, ocl_args *a_dev);
 __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans);
@@ -78,7 +79,11 @@ bool ocl_2d_validate(const int n, bool write_img)
 
     if (write_img) {
         ocl_check_err(clEnqueueReadBuffer(a_dev.commands, a_dev.output, CL_TRUE, 0, a_dev.data_mem_size, data, 0, NULL, NULL), "Read Output Buffer!");
-        write_normalized_image("OpenCL", "freq", data, n, true);
+
+        //cpx_to_console(data, "Forward 1/2:", 8);
+        //getchar();
+
+        write_normalized_image("OpenCL", "freq", data, n, true);        
     }
 
     a_dev.dir = a_host.dir = FFT_INVERSE;
@@ -196,9 +201,11 @@ __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
     cl_mem _out = a_dev->output;
     ocl_set_args(a_trans, _out, _in, sizeof(cpx) * ocl_tile_dim() * ocl_tile_dim());
 
-    ocl_fft(a_host, a_dev);
+    ocl_fft(a_host, a_dev);   
+    //return;
+    
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
-    ocl_fft(a_host, a_dev);
+    ocl_fft(a_host, a_dev);    
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
 
     a_host->input = a_dev->input = _out;

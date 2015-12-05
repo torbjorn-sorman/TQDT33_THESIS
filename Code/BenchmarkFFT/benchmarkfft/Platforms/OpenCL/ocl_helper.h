@@ -11,7 +11,6 @@
 
 struct ocl_args {
     int n;
-    int n_per_block;
     int number_of_blocks;
     float dir;
     cl_uint workDim;

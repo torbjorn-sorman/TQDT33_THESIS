@@ -34,10 +34,10 @@ void ocl_global(__global cpx *in, int tid, float angle, int steps, int dist)
 {
     cpx w;    
     w.y = sincos(angle * ((tid << steps) & ((dist - 1) << steps)), &w.x);
-    cpx l = *in;
-    cpx h = in[dist];
-    float x = l.x - h.x;
-    float y = l.y - h.y;
+    cpx l = *in,
+        h = in[dist];
+    float x = l.x - h.x,
+        y = l.y - h.y;
     cpx a = { l.x + h.x, l.y + h.y };
     cpx b = { (w.x * x) - (w.y * y), (w.y * x) + (w.x * y) };
     *in = a;
@@ -47,7 +47,7 @@ void ocl_global(__global cpx *in, int tid, float angle, int steps, int dist)
 __kernel void ocl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     int arg1 = (get_group_id(1) * get_local_size(1) + get_local_id(1)),
-        arg0 = (arg1 + (arg1 & lmask) + get_group_id(0) * ((get_num_groups(1) * get_local_size(1)) << 1));
+        arg0 = (arg1 + (arg1 & lmask) + get_group_id(0) * get_num_groups(1) * (get_local_size(1) << 1));
     ocl_global(in + arg0, arg1, angle, steps, dist);
 }
 
@@ -58,10 +58,9 @@ __kernel void ocl_kernel_global_row(__global cpx *in, float angle, unsigned int 
     ocl_global(in + arg0, arg1, angle, steps, dist);
 }
 
-__kernel void ocl_contant_geometry(__local cpx *shared, __local cpx *in_l, __local cpx *in_h, float angle, int steps_limit)
+__kernel void ocl_contant_geometry(unsigned int tid, __local cpx *shared, __local cpx *in_l, __local cpx *in_h, float angle, int steps_limit)
 {
     cpx w, l, h;
-    int tid = get_local_id(1);
     __local cpx *out_i = shared + (tid << 1),
                 *out_ii = out_i + 1;
     float x, y;
@@ -80,16 +79,16 @@ __kernel void ocl_contant_geometry(__local cpx *shared, __local cpx *in_l, __loc
     }
 }
 
-__kernel void ocl_partial(__global cpx *in, __global cpx *out, __local cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
+__kernel void ocl_partial(__global cpx *in, __global cpx *out, __local cpx *shared, unsigned int in_low, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    int in_low = get_local_id(1);
+    //int in_low = get_local_id(1);
     __local cpx *in_l = shared + in_low,
                 *in_u = shared + in_high;
     *in_l = in[in_low];
     *in_u = in[in_high];
-    ocl_contant_geometry(shared, in_l, in_u, local_angle, steps_left);
-    cpx a = { in_l->x * scalar, in_l->y * scalar };
-    cpx b = { in_u->x * scalar, in_u->y * scalar };
+    ocl_contant_geometry(in_low, shared, in_l, in_u, local_angle, steps_left);
+    cpx a = { in_l->x * scalar, in_l->y * scalar },
+        b = { in_u->x * scalar, in_u->y * scalar };
     out[reverse(in_low + offset) >> leading_bits] = a;
     out[reverse(in_high + offset) >> leading_bits] = b;
 }
@@ -101,7 +100,7 @@ __kernel void ocl_kernel_local(__global cpx *in, __global cpx *out, __local cpx 
         arg1 = (get_num_groups(1) * n_block * get_group_id(0)),
         arg0 = (arg1 + arg4),
         arg3 = (get_local_id(1) + get_local_size(1));
-    ocl_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
+    ocl_partial(in + arg0, out + arg1, shared, get_local_id(1), arg3, arg4, local_angle, steps_left, leading_bits, scalar);
 }
 
 __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar)
@@ -110,7 +109,24 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
         arg1 = ((get_group_id(0) + get_group_id(2) * get_num_groups(0)) * get_num_groups(0)),
         arg0 = (arg1 + arg4),
         arg3 = (get_local_id(0) + get_local_size(0));
-    ocl_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
+    ocl_partial(in + arg0, out + arg1, shared, get_local_id(0), arg3, arg4, local_angle, steps_left, leading_bits, scalar);
+    //return;
+    //out[arg4 + get_local_id(1)] = in[arg4 + get_local_id(1)];
+    //out[arg4 + arg3] = in[arg4 + arg3];
+    /*
+    if (get_group_id(0) == 1023 && get_local_id(0) == 511) {
+        // N = 64
+        out[0].x = arg0;                // 69504
+        out[1].x = arg1;                // 4032
+        out[2].x = arg3;                // 63
+        out[3].x = arg4;                // 65472
+
+        out[4].x = get_group_id(1);     // 1023
+        out[5].x = get_local_size(0);   // 32
+        out[6].x = get_group_id(0);     // 63
+        out[7].x = get_num_groups(0);   // 64
+    } 
+    */   
 }
 
 __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[OCL_TILE_DIM][OCL_TILE_DIM], int n)

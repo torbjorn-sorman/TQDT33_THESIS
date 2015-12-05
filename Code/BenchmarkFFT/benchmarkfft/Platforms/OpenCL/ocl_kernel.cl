@@ -21,12 +21,34 @@ typedef struct {
     float y;
 } cpx;
 
-#define CU_BATCH_ID (blockIdx.x)
-#define CU_N_POINTS ((gridDim.y * blockDim.x) << 1)
-#define CU_THREAD_ID (blockIdx.y * blockDim.x + threadIdx.x)
+#define OCL_BATCH_ID (get_group_id(0))
+#define OCL_N_POINTS ((get_num_groups(1) * get_local_size(1)) << 1)
+#define OCL_THREAD_ID (get_group_id(1) * get_local_size(1) + get_local_id(1))
+#define OCL_BLOCK_OFFSET (get_group_id(1) * (get_local_size(1) << 1))
 
-#define CU_OFFSET_2D ((blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x)
-#define CU_COL_ID (blockIdx.y * blockDim.x + threadIdx.x)
+#define OCL_OCL_BATCH_ID_2D (blockIdx.z)
+#define OCL_OCL_N_POINTS_2D (gridDim.x * gridDim.x)
+#define OCL_OFFSET_2D ((get_group_id(0) + blockIdx.z * gridDim.x) * gridDim.x)
+#define OCL_COL_ID (get_group_id(1) * get_local_size(0) + get_local_id(0))
+
+#define OCL_IMG_DIST (blockIdx.z * gridDim.x * gridDim.x * OCL_TILE_DIM * OCL_TILE_DIM)
+
+#define OCL_IN_OFFSET (OCL_BLOCK_OFFSET + OCL_BATCH_ID * OCL_N_POINTS)
+
+#define OCL_N_PER_BLOCK (get_local_size(1) << 1)
+#define OCL_O4 (get_group_id(1) * OCL_N_PER_BLOCK)
+#define OCL_O1 (get_num_groups(1) * OCL_N_PER_BLOCK * get_group_id(0))
+#define OCL_O0 (OCL_O1 + OCL_O4)
+#define OCL_O3 (get_local_id(1) + get_local_size(1))
+
+unsigned int reverse(register unsigned int x)
+{
+    x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
+    x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
+    x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
+    x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
+    return((x >> 16) | (x << 16));
+}
 
 void add_sub_mul_global(__global cpx* low, __global cpx* high, cpx* w)
 {
@@ -46,15 +68,6 @@ void add_sub_mul_local(cpx* inL, cpx* inU, __local cpx *outL, __local cpx *outU,
     outL->y = inL->y + inU->y;
     outU->x = (w->x * x) - (w->y * y);
     outU->y = (w->y * x) + (w->x * y);
-}
-
-unsigned int reverse(register unsigned int x)
-{
-    x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
-    x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
-    x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
-    x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
-    return((x >> 16) | (x << 16));
 }
 
 void algorithm_partial(__local cpx *shared, int in_high, float angle, int bit)
@@ -89,21 +102,23 @@ void ocl_global(__global cpx *in, int tid, float angle, int steps, int dist)
     *in = a;
     in[dist] = b;
 }
-/*
-__global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int steps, int dist)
-{
-    cu_global(in + CU_THREAD_ID + (CU_THREAD_ID & lmask) + CU_BATCH_ID * CU_N_POINTS, CU_THREAD_ID, angle, steps, dist);
-}
 
-__global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
-{
-    cu_global(in + (CU_COL_ID + (CU_COL_ID & lmask)) + CU_OFFSET_2D, CU_COL_ID, angle, steps, dist);
-}
-*/
 __kernel void ocl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
     ocl_global(in + get_global_id(1) + (get_global_id(1) & lmask) + get_global_id(0) * get_global_size(1), get_global_id(1), angle, steps, dist);
 }
+
+/*
+__global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int steps, int dist)
+{
+    cu_global(in + OCL_THREAD_ID + (OCL_THREAD_ID & lmask) + OCL_BATCH_ID * OCL_N_POINTS, OCL_THREAD_ID, angle, steps, dist);
+}
+
+__global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
+{
+    cu_global(in + (OCL_COL_ID + (OCL_COL_ID & lmask)) + OCL_OFFSET_2D, OCL_COL_ID, angle, steps, dist);
+}
+*/
 /*
 // GPU takes care of overall syncronization
 __kernel void ocl_kernel_global(__global cpx *in, float angle, unsigned int lmask, int steps, int dist)
@@ -164,7 +179,8 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
 __kernel void ocl_contant_geometry(__local cpx *shared, __local cpx *in_l, __local cpx *in_h, float angle, int steps_limit)
 {
     cpx w, l, h;
-    __local cpx *out_i = shared + (get_local_id(1) << 1),
+    int tid = get_local_id(1);
+    __local cpx *out_i = shared + (tid << 1),
                 *out_ii = out_i + 1;
     float x, y;
     for (int steps = 0; steps < steps_limit; ++steps) {
@@ -172,7 +188,7 @@ __kernel void ocl_contant_geometry(__local cpx *shared, __local cpx *in_l, __loc
         h = *in_h;
         x = l.x - h.x;
         y = l.y - h.y;
-        w.y = sincos(angle * (get_local_id(1) & (0xFFFFFFFF << steps)), &w.x);
+        w.y = sincos(angle * (tid & (0xFFFFFFFF << steps)), &w.x);
         barrier(CLK_LOCAL_MEM_FENCE);
         cpx a = { l.x + h.x, l.y + h.y };
         cpx b = { (w.x * x) - (w.y * y), (w.y * x) + (w.x * y) };
@@ -184,25 +200,22 @@ __kernel void ocl_contant_geometry(__local cpx *shared, __local cpx *in_l, __loc
 
 __kernel void ocl_partial(__global cpx *in, __global cpx *out, __local cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    __local cpx *in_l = shared + get_local_id(1),
+    int in_low = get_local_id(1);
+    __local cpx *in_l = shared + in_low,
                 *in_u = shared + in_high;
-    *in_l = in[get_local_id(1)];
+    *in_l = in[in_low];
     *in_u = in[in_high];
     ocl_contant_geometry(shared, in_l, in_u, local_angle, steps_left);
     cpx a = { in_l->x * scalar, in_l->y * scalar };
     cpx b = { in_u->x * scalar, in_u->y * scalar };
-    out[reverse(get_local_id(1) + offset) >> leading_bits] = a;
+    out[reverse(in_low + offset) >> leading_bits] = a;
     out[reverse(in_high + offset) >> leading_bits] = b;
 }
 
+
 __kernel void ocl_kernel_local(__global cpx *in, __global cpx *out, __local cpx shared[], float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    int blk_offset = ((get_local_size(1) * get_group_id(1)) << 1),
-        in_offset = blk_offset + get_global_id(1) * get_global_size(1),
-        out_offset = get_global_id(0) * get_global_size(1),
-        in_high = get_local_id(1) + get_local_size(1);
-    
-    ocl_partial(in + in_offset, out + out_offset, shared, in_high, blk_offset, local_angle, steps_left, leading_bits, scalar);
+    ocl_partial(in + OCL_O0, out + OCL_O1, shared, OCL_O3, OCL_O4, local_angle, steps_left, leading_bits, scalar);
 }
 
 __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[OCL_TILE_DIM][OCL_TILE_DIM], int n)

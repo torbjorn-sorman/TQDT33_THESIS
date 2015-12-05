@@ -15,7 +15,6 @@ struct ocl_args {
     int number_of_blocks;
     float dir;
     cl_uint workDim;
-    size_t shared_mem_size;
     size_t data_mem_size;
     size_t work_size[3];
     size_t group_work_size[3];

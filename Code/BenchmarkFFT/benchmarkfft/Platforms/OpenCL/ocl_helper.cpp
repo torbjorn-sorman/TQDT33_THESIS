@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-cl_int ocl_setup_work_groups(ocl_args *args, const int group_size);
-cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size);
-
 cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size);
 
 int ocl_check_err(cl_int error, char *msg)
@@ -16,6 +13,40 @@ int ocl_check_err(cl_int error, char *msg)
         exit(99);
     }
     return 0;
+}
+
+cl_int ocl_setup_work_groups(ocl_args *args, const int group_size)
+{
+    cl_int err = CL_SUCCESS;
+    const int n_half = args->n / 2;
+    int group_dim = n_half;
+    int item_dim = n_half > group_size ? group_size : n_half;
+    args->work_size[0] = batch_count(args->n);
+    args->work_size[1] = group_dim;
+    args->work_size[2] = 1;
+    args->group_work_size[0] = 1;
+    args->group_work_size[1] = item_dim;
+    args->group_work_size[2] = 1;
+    args->n_per_block = args->n / item_dim;
+    args->number_of_blocks = group_dim / item_dim;
+    return err;
+}
+
+cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size)
+{
+    cl_int err = CL_SUCCESS;
+    const int n = args->n;
+    int item_dim = (n / 2) > group_size ? group_size : (n / 2);
+    int n_per_block = n / item_dim;
+    args->work_size[0] = n * item_dim;
+    args->work_size[1] = n / (item_dim * 2);
+    args->work_size[2] = 1;
+    args->group_work_size[0] = item_dim;
+    args->group_work_size[1] = 1;
+    args->group_work_size[2] = 1;
+    args->n_per_block = n_per_block;
+    args->number_of_blocks = n / (item_dim * 2);
+    return err;
 }
 
 cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
@@ -94,24 +125,6 @@ cl_int oclSetupDeviceMemoryData(ocl_args *args, cpx *dev_in)
     return err;
 }
 
-cl_int ocl_setup_work_groups(ocl_args *args, const int group_size)
-{
-    cl_int err = CL_SUCCESS;
-    const int n_half = args->n / 2;
-    int group_dim = n_half;
-    int item_dim = n_half > group_size ? group_size : n_half;
-    args->work_size[0] = batch_count(args->n);
-    args->work_size[1] = group_dim;
-    args->work_size[2] = 1;
-    args->group_work_size[0] = 1;
-    args->group_work_size[1] = item_dim;
-    args->group_work_size[2] = 1;
-    args->shared_mem_size = sizeof(cpx) * item_dim * 2;
-    args->n_per_block = args->n / item_dim;
-    args->number_of_blocks = group_dim / item_dim;
-    return err;
-}
-
 cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
 {
     cl_int err = CL_SUCCESS;
@@ -122,25 +135,6 @@ cl_int ocl_setup_io_buffers(ocl_args *args, size_t data_mem_size)
     if (err != CL_SUCCESS)
         return err;
     args->data_mem_size = data_mem_size;
-    return err;
-}
-
-cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size)
-{
-    cl_int err = CL_SUCCESS;
-    const int n = args->n;
-    int item_dim = (n / 2) > group_size ? group_size : (n / 2);
-    int n_per_block = n / item_dim;
-    size_t shared_mem_size = sizeof(cpx) * item_dim * 2;
-    args->work_size[0] = n * item_dim;
-    args->work_size[1] = n / (item_dim * 2);
-    args->work_size[2] = 1;
-    args->group_work_size[0] = item_dim;
-    args->group_work_size[1] = 1;
-    args->group_work_size[2] = 1;
-    args->shared_mem_size = shared_mem_size;
-    args->n_per_block = n_per_block;
-    args->number_of_blocks = n / (item_dim * 2);
     return err;
 }
 
@@ -181,7 +175,6 @@ void setWorkDimForTranspose(ocl_args *args, const int tile_dim, const int block_
     args->group_work_size[2] = 1;
     args->group_work_size[1] = block_dim;
     args->group_work_size[0] = block_dim;
-    args->shared_mem_size = tile_dim * (tile_dim)* sizeof(cpx);
     args->workDim = 2;
 }
 

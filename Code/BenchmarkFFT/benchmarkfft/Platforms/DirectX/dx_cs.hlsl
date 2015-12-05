@@ -16,7 +16,6 @@ cbuffer Constants : register(b0)
     int             leading_bits;
     int             steps_gpu;
     int             number_of_blocks;
-    int             block_range;
     int             steps;
     unsigned int    lmask;
     int             dist;
@@ -102,6 +101,7 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
+    int block_range = 0;
     dx_partial(in_low, in_low + block_range, ((groupID.x * GROUP_SIZE_X) << 1), 0);    
 }
 
@@ -112,5 +112,6 @@ void dx_2d_local_row(uint3 threadIDInGroup : SV_GroupThreadID,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int in_low = threadIDInGroup.x;
+    int block_range = 0;
     dx_partial(in_low, block_range + in_low, (groupID.y * GROUP_SIZE_X) << 1, GRID_DIM_X * groupID.x);
 }

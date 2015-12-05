@@ -150,13 +150,12 @@ __inline void gl_bind_io_buffers(gl_args *a)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, a->buf_out);
 }
 
-__inline void gl_set_local_args(gl_args *a, float local_angle, unsigned int steps_left, unsigned int leading_bits, float scalar, unsigned int block_range)
+__inline void gl_set_local_args(gl_args *a, float local_angle, unsigned int steps_left, unsigned int leading_bits, float scalar)
 {
     glUniform1f(glGetUniformLocation(a->program, "local_angle"), local_angle);
     glUniform1ui(glGetUniformLocation(a->program, "steps_left"), steps_left);
     glUniform1f(glGetUniformLocation(a->program, "scalar"), scalar);
     glUniform1ui(glGetUniformLocation(a->program, "leading_bits"), leading_bits);
-    glUniform1ui(glGetUniformLocation(a->program, "block_range"), block_range);
 }
 
 __inline void gl_set_global_args(gl_args *a, float global_angle, unsigned int dist, unsigned int lmask, unsigned int steps)
@@ -183,7 +182,7 @@ __inline void gl_fft(transform_direction dir, gl_args *a_dev, gl_args* a_host, c
     }
     glUseProgram(a_dev->program);
     gl_bind_io_buffers(a_dev);
-    gl_set_local_args(a_dev, args.local_angle, args.steps_left, args.leading_bits, args.scalar, args.block_range);
+    gl_set_local_args(a_dev, args.local_angle, args.steps_left, args.leading_bits, args.scalar);
     glDispatchCompute(a_dev->groups.x, a_dev->groups.y, a_dev->groups.z);
 }
 

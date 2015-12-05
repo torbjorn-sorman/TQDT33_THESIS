@@ -167,9 +167,9 @@ __inline void dx_set_buffers(dx_args *a)
     a->context->CSSetShaderResources(0, 1, &a->buf_input_srv);
 }
 
-__inline void dx_set_args(dx_args *a, float global_angle, float local_angle, float scalar, int steps_left, int leading_bits, int steps_gpu, int number_of_blocks, int block_range, int steps, unsigned int lmask, int dist)
+__inline void dx_set_args(dx_args *a, float global_angle, float local_angle, float scalar, int steps_left, int leading_bits, int steps_gpu, int number_of_blocks, int steps, unsigned int lmask, int dist)
 {
-    dx_cs_args cb = { global_angle, local_angle, scalar, steps_left, leading_bits, steps_gpu, number_of_blocks, block_range, steps, lmask, dist };
+    dx_cs_args cb = { global_angle, local_angle, scalar, steps_left, leading_bits, steps_gpu, number_of_blocks, steps, lmask, dist };
     dx_map_args<dx_cs_args>(a->context, a->buf_constant, &cb);
 }
 
@@ -181,7 +181,7 @@ __inline void dx_fft(transform_direction dir, dx_args *a, const int n)
     if (a->number_of_blocks > 1) {
         a->context->CSSetShader(a->cs_global, nullptr, 0);
         while (--args.steps_left > args.steps_gpu) {
-            dx_set_args(a, args.global_angle, 0, 0, 0, 0, 0, 0, 0, args.steps++, 0xFFFFFFFF << args.steps_left, args.dist >>= 1);
+            dx_set_args(a, args.global_angle, 0, 0, 0, 0, 0, 0, args.steps++, 0xFFFFFFFF << args.steps_left, args.dist >>= 1);
             a->context->Dispatch(a->n_groups.x, a->n_groups.y, a->n_groups.z);
             swap_io(a);
             dx_set_buffers(a);
@@ -189,7 +189,7 @@ __inline void dx_fft(transform_direction dir, dx_args *a, const int n)
         ++args.steps_left;
     }
     a->context->CSSetShader(a->cs_local, nullptr, 0);
-    dx_set_args(a, args.global_angle, args.local_angle, args.scalar, args.steps_left, args.leading_bits, args.steps_gpu, 1, args.block_range, 0, 0, 0);
+    dx_set_args(a, args.global_angle, args.local_angle, args.scalar, args.steps_left, args.leading_bits, args.steps_gpu, 1, 0, 0, 0);
     a->context->Dispatch(a->n_groups.x, a->n_groups.y, a->n_groups.z);
 }
 

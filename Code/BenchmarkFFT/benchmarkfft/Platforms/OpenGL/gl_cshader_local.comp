@@ -18,7 +18,6 @@ uniform float local_angle;
 uniform float scalar;
 uniform uint leading_bits;
 uniform uint steps_left;
-uniform uint block_range;
 
 void dx_algorithm_local(uint in_low, uint in_high);
 

@@ -8,12 +8,10 @@
 #define CU_TILE_DIM 64 // Sets local/shared mem when transposing
 #define CU_BLOCK_DIM 32 // Sets threads when transposing
 
-__host__ void cuda_fft(transform_direction dir, cpx *in, cpx *out, int n, bool experimental);
-
-__global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
+__global__ void cuda_kernel_global    (cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 
-__global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
+__global__ void cuda_kernel_local    (cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
@@ -189,18 +187,6 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
 //
 // -------------------------------
 
-#define CU_BATCH_ID (blockIdx.x)
-#define CU_N_POINTS ((gridDim.y * blockDim.x) << 1)
-#define CU_THREAD_ID (blockIdx.y * blockDim.x + threadIdx.x)
-#define CU_BLOCK_OFFSET (blockIdx.y * (blockDim.x << 1))
-
-#define CU_CU_BATCH_ID_2D (blockIdx.z)
-#define CU_CU_N_POINTS_2D (gridDim.x * gridDim.x)
-#define CU_OFFSET_2D ((blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x)
-#define CU_COL_ID (blockIdx.y * blockDim.x + threadIdx.x)
-
-#define CU_IMG_DIST (blockIdx.z * gridDim.x * gridDim.x * CU_TILE_DIM * CU_TILE_DIM)
-
 __device__ __inline void cu_contant_geometry(cpx *shared, cpx *in_l, cpx *in_h, float angle, int steps_limit)
 {
     cpx w, l, h;
@@ -222,27 +208,35 @@ __device__ __inline void cu_contant_geometry(cpx *shared, cpx *in_l, cpx *in_h, 
 
 __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    cpx *in_l = shared + threadIdx.x,
+    int in_low = threadIdx.x;
+    cpx *in_l = shared + in_low,
         *in_u = shared + in_high;
-    *in_l = in[threadIdx.x];
+    *in_l = in[in_low];
     *in_u = in[in_high];
     cu_contant_geometry(shared, in_l, in_u, local_angle, steps_left);
-    out[BIT_REVERSE(threadIdx.x + offset, leading_bits)] = { in_l->x * scalar, in_l->y * scalar };
+    out[BIT_REVERSE(in_low + offset, leading_bits)] = { in_l->x * scalar, in_l->y * scalar };
     out[BIT_REVERSE(in_high + offset, leading_bits)] = { in_u->x * scalar, in_u->y * scalar };
 }
 
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    extern __shared__ cpx shared[];
-    cuda_partial(in + CU_BLOCK_OFFSET + CU_BATCH_ID * CU_N_POINTS, out + CU_BATCH_ID * CU_N_POINTS, shared, threadIdx.x + blockDim.x, CU_BLOCK_OFFSET, local_angle, steps_left, leading_bits, scalar);
+    extern __shared__ cpx shared[];    
+    int n_block (blockDim.x << 1),
+        arg4 (blockIdx.y * n_block),
+        arg1 (gridDim.y * n_block * blockIdx.x),
+        arg0 (arg1 + arg4),
+        arg3 (threadIdx.x + blockDim.x);
+    cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
 }
 
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar)
 {
     extern __shared__ cpx shared[];
-    int row_start = gridDim.x * blockIdx.x + CU_CU_BATCH_ID_2D * CU_CU_N_POINTS_2D;
-    int offset = (blockIdx.y * blockDim.x) << 1;
-    cuda_partial(in + row_start + offset, out + row_start, shared, blockDim.x + threadIdx.x, offset, local_angle, steps_left, leading_bits, scalar);
+    int arg4((blockIdx.y * blockDim.x) << 1),
+        arg1((blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x),
+        arg0(arg1 + arg4),
+        arg3(blockDim.x + threadIdx.x);
+    cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
 }
 
 __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int dist)
@@ -259,12 +253,16 @@ __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int
 
 __global__ void cuda_kernel_global(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    cu_global(in + CU_THREAD_ID + (CU_THREAD_ID & lmask) + CU_BATCH_ID * CU_N_POINTS, CU_THREAD_ID, angle, steps, dist);
+    int arg1(blockIdx.y * blockDim.x + threadIdx.x),
+        arg0(arg1 + (arg1 & lmask) + blockIdx.x * ((gridDim.y * blockDim.x) << 1));
+    cu_global(in + arg0, arg1, angle, steps, dist);
 }
 
 __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask, int steps, int dist)
 {
-    cu_global(in + (CU_COL_ID + (CU_COL_ID & lmask)) + CU_OFFSET_2D, CU_COL_ID, angle, steps, dist);
+    int arg1(blockIdx.y * blockDim.x + threadIdx.x),
+        arg0(arg1 + (arg1 & lmask) + (blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x);
+    cu_global(in + arg0, arg1, angle, steps, dist);
 }
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
@@ -273,8 +271,10 @@ __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
     __shared__ cpx tile[CU_TILE_DIM][CU_TILE_DIM + 1];
 
     // Image offset
-    in += CU_IMG_DIST;
-    out += CU_IMG_DIST;
+    int offset = gridDim.x * CU_TILE_DIM;
+    offset = (blockIdx.z * offset * offset);
+    in += offset;
+    out += offset;
 
     // Write to shared from Global (in)
     int x = blockIdx.x * CU_TILE_DIM + threadIdx.x;

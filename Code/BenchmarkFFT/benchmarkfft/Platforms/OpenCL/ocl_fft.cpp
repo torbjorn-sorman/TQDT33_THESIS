@@ -69,7 +69,7 @@ bool ocl_2d_validate(const int n, bool write_img)
 {
     cl_int err = CL_SUCCESS;
     cpx *data, *data_ref;
-    ocl_setup_buffers(&data, NULL, &data_ref, n);
+    setup_seq_2d(&data, NULL, &data_ref, batch_count(n), n);
     ocl_args a_dev, a_host, argTranspose;
     ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
 

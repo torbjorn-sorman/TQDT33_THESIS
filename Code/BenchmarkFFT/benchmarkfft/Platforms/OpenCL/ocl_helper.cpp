@@ -40,13 +40,24 @@ cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size)
     int n_per_block = n / item_dim;
     args->work_size[0] = n * item_dim;
     args->work_size[1] = n / (item_dim * 2);
-    args->work_size[2] = 1;
+    args->work_size[2] = batch_count(args->n);
     args->group_work_size[0] = item_dim;
     args->group_work_size[1] = 1;
     args->group_work_size[2] = 1;
     args->n_per_block = n_per_block;
     args->number_of_blocks = n / (item_dim * 2);
     return err;
+}
+
+void setWorkDimForTranspose(ocl_args *args, const int tile_dim, const int block_dim, const int n)
+{
+    int minDim = n > tile_dim ? (n / tile_dim) : 1;
+    args->work_size[2] = batch_count(args->n);
+    args->work_size[1] = minDim * block_dim;
+    args->work_size[0] = minDim * block_dim;
+    args->group_work_size[2] = 1;
+    args->group_work_size[1] = block_dim;
+    args->group_work_size[0] = block_dim;
 }
 
 cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
@@ -61,7 +72,7 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
 
     size_t data_size = sizeof(cpx) * batch_size(args->n);
     if (dim2) {
-        data_size = batch_size(args->n * args->n);
+        data_size = sizeof(cpx) * batch_size(args->n * args->n);
         ocl_check_err(ocl_setup_work_groups_2d(args, group_size), "ocl_setup_work_groups_2d");
     }
     else {
@@ -74,20 +85,16 @@ cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_arg
 {
     cl_int err = CL_SUCCESS;
     cl_program program;
-    cl_kernel kernel;
-
-    // Read kernel file as a char *
-    //char *src = get_kernel_src(std::string("Platforms/OpenCL/" + kernel_filename + ".cl"), NULL);
+    
     std::string str = get_file_content(std::string("Platforms/OpenCL/" + kernel_filename + ".cl"));
-    //free(src);
+    
     manip_content(&str, L"OCL_TILE_DIM", tile_dim);
     manip_content(&str, L"OCL_BLOCK_DIM", block_dim);
     char *src = get_kernel_src_from_string(str, NULL);
-    // Create the compute program from the source buffer
+
     program = clCreateProgramWithSource(args->context, 1, (const char **)&src, NULL, &err);
     if (err != CL_SUCCESS) return err;
 
-    // Build the program executable
     if (err = clBuildProgram(program, 0, NULL, "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math", NULL, NULL) != CL_SUCCESS) {
         size_t len;
         clGetProgramBuildInfo(program, args->device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
@@ -97,13 +104,9 @@ cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_arg
         free(buffer);
         return err;
     }
-
-    // Create the compute kernel in the program we wish to run    
-    kernel = clCreateKernel(program, kernel_name, &err);
-    if (err != CL_SUCCESS) return err;
-
+    
     args->program = program;
-    args->kernel = kernel;
+    args->kernel = clCreateKernel(program, kernel_name, &err);
     free(src);
     return err;
 }
@@ -158,24 +161,12 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
 cl_int ocl_setup_timestamp(ocl_args *arg_target, ocl_args *arg_tm)
 {
     memcpy(arg_tm, arg_target, sizeof(ocl_args));
-    cl_int err = ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");
+    cl_int err = ocl_check_err(ocl_setup_program("ocl_kernel", "ocl_timestamp_kernel", arg_tm), "Failed to setup GPU Program!");    
     arg_tm->work_size[0] = 1;
     arg_tm->work_size[1] = 1;
     arg_tm->group_work_size[0] = 1;
     arg_tm->group_work_size[1] = 1;
     return err;
-}
-
-void setWorkDimForTranspose(ocl_args *args, const int tile_dim, const int block_dim, const int n)
-{
-    int minDim = n > tile_dim ? (n / tile_dim) : 1;
-    args->work_size[2] = 1;
-    args->work_size[1] = minDim * block_dim;
-    args->work_size[0] = minDim * block_dim;
-    args->group_work_size[2] = 1;
-    args->group_work_size[1] = block_dim;
-    args->group_work_size[0] = block_dim;
-    args->workDim = 2;
 }
 
 cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data_in, transform_direction dir, const int group_size, const int tile_dim, const int block_dim, const int n)
@@ -197,8 +188,9 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans, cpx *data
     a_trans->input = a_host->input = a_dev->input;
     a_trans->output = a_host->output = a_dev->output;
     a_trans->data_mem_size = a_host->data_mem_size = a_dev->data_mem_size;
-    a_host->workDim = 2;
-    a_dev->workDim = 2;
+    a_host->workDim = 3;
+    a_dev->workDim = 3;
+    a_trans->workDim = 3;
     return err;
 }
 
@@ -251,7 +243,7 @@ cl_int ocl_shakedown(cpx *dev_in, cpx *dev_out, ocl_args *a_host, ocl_args *a_de
 int ocl_free(cpx **din, cpx **dout, cpx **dref, const int n)
 {
     int res = 0;
-    if (dref != NULL)   res = diff_seq(*din, *dref, n) > RELATIVE_ERROR_MARGIN;
+    if (dref != NULL)   res = diff_seq(*din, *dref, batch_size(n)) > RELATIVE_ERROR_MARGIN;
     if (din != NULL)    free(*din);
     if (dout != NULL)   free(*dout);
     if (dref != NULL)   free(*dref);

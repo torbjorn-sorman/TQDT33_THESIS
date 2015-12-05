@@ -235,7 +235,7 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
     int arg4((blockIdx.y * blockDim.x) << 1),
         arg1((blockIdx.x + blockIdx.z * gridDim.x) * gridDim.x),
         arg0(arg1 + arg4),
-        arg3(blockDim.x + threadIdx.x);
+        arg3(threadIdx.x + blockDim.x);
     cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
 }
 
@@ -267,28 +267,19 @@ __global__ void cuda_kernel_global_row(cpx *in, float angle, unsigned int lmask,
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n)
 {
-    // Banking issues when CU_TILE_DIM % WARP_SIZE == 0, current WARP_SIZE == 32
     __shared__ cpx tile[CU_TILE_DIM][CU_TILE_DIM + 1];
-
-    // Image offset
     int offset = gridDim.x * CU_TILE_DIM;
     offset = (blockIdx.z * offset * offset);
     in += offset;
     out += offset;
-
-    // Write to shared from Global (in)
     int x = blockIdx.x * CU_TILE_DIM + threadIdx.x;
     int y = blockIdx.y * CU_TILE_DIM + threadIdx.y;
-#pragma unroll
     for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
         for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
             tile[threadIdx.y + j][threadIdx.x + i] = in[(y + j) * n + (x + i)];
-
     SYNC_THREADS;
-    // Write to global
     x = blockIdx.y * CU_TILE_DIM + threadIdx.x;
     y = blockIdx.x * CU_TILE_DIM + threadIdx.y;
-#pragma unroll
     for (int j = 0; j < CU_TILE_DIM; j += CU_BLOCK_DIM)
         for (int i = 0; i < CU_TILE_DIM; i += CU_BLOCK_DIM)
             out[(y + j) * n + (x + i)] = tile[threadIdx.x + i][threadIdx.y + j];

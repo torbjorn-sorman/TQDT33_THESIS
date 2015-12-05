@@ -24,7 +24,7 @@ static __inline int log2_32(int value)
 
 static __inline int batch_count(const int n)
 {
-    return 1;//batch_total_points >> log2_32(n);
+    return batch_total_points >> log2_32(n);
 }
 
 static __inline int batch_size(const int n)

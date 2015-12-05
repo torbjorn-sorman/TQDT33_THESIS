@@ -78,22 +78,11 @@ int cuda_shakedown(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx 
 
 void cuda_setup_buffers_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o, size_t *size, int n)
 {
-    char input_file[40];
-    sprintf_s(input_file, 40, "Images/%u.ppm", n);
-    int sz;
-    size_t total_size = batch_size(n * n) * sizeof(cpx);
-
-    *in = (cpx *)malloc(total_size); 
-    read_image(*in, input_file, &sz);
-    for (int i = 1; i < batch_count(n * n); ++i) {
-        memcpy(*in + i * n * n, *in, n * n);
-    }
-    *ref = (cpx *)malloc(total_size);
-    memcpy(*ref, *in, total_size);
-    *size = total_size;
-    cudaMalloc((void**)dev_i, total_size);
-    cudaMalloc((void**)dev_o, total_size);
-    cudaMemcpy(*dev_i, *in, total_size, cudaMemcpyHostToDevice);
+    setup_seq_2d(in, NULL, ref, batch_count(n), n);
+    *size = batch_size(n * n) * sizeof(cpx);
+    cudaMalloc((void**)dev_i, *size);
+    cudaMalloc((void**)dev_o, *size);
+    cudaMemcpy(*dev_i, *in, *size, cudaMemcpyHostToDevice);
 }
 
 void cuda_shakedown_2d(cpx **in, cpx **ref, cpx **dev_i, cpx **dev_o)

@@ -40,21 +40,28 @@ cpx *get_seq(int n, cpx *src)
     return seq;
 }
 
-void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int n)
+void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int batches, int n)
 {
     char input_file[40];
     sprintf_s(input_file, 40, "Images/%u.ppm", n);
     int sz;
-    cpx *_in = (cpx *)malloc(sizeof(cpx) * n * n);
+    size_t total_size = sizeof(cpx) * n * n * batches;
+    cpx *_in = (cpx *)malloc(total_size);
     if (_in) {
         if (buf != NULL)
-            *buf = (cpx *)malloc(sizeof(cpx) * n * n);
-        *ref = (cpx *)malloc(sizeof(cpx) * n * n);
+            *buf = (cpx *)malloc(total_size);
+        *ref = (cpx *)malloc(total_size);
         read_image(_in, input_file, &sz);
-
-        memcpy(*ref, _in, sizeof(cpx) * n * n);
+        for (int i = 0; i < batches; ++i)
+            memcpy(_in + i * n * n, _in, sizeof(cpx) * n * n);
+        memcpy(*ref, _in, total_size);
         *in = _in;
     }
+}
+
+void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int n)
+{
+    setup_seq_2d(in, buf, ref, 1, n);
 }
 
 cpx **get_seq_2d(const int n, const int type)

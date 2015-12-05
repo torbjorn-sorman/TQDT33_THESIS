@@ -7,6 +7,7 @@
 #include "../../Definitions.h"
 #include "../../Common/mycomplex.h"
 #include "../../Common/imglib.h"
+#include "../../Common/mathutil.h"
 
 struct ocl_args {
     int n;

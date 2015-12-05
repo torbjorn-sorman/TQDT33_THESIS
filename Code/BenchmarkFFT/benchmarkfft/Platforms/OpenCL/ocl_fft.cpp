@@ -37,11 +37,13 @@ int ocl_block_dim()
 // 1D
 //
 
+
+
 bool ocl_validate(const int n)
 {
     cl_int err = CL_SUCCESS;
-    cpx *data = get_seq(n, 1);
-    cpx *data_ref = get_seq(n, data);
+    cpx *data = get_seq(n, batch_count(n), 1);
+    cpx *data_ref = get_seq(batch_size(n), data);
     ocl_args a_dev, a_host;
     ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
 
@@ -49,6 +51,8 @@ bool ocl_validate(const int n)
     clFinish(a_dev.commands);
     ocl_check_err(clEnqueueReadBuffer(a_dev.commands, a_dev.output, CL_TRUE, 0, a_dev.data_mem_size, data, 0, NULL, NULL), "Read output for validation failed!");
     double diff = diff_forward_sinus(data, n);
+
+    
 
     a_dev.dir = a_host.dir = FFT_INVERSE;
     swap(&a_dev.input, &a_dev.output);
@@ -86,43 +90,6 @@ bool ocl_2d_validate(const int n, bool write_img)
     return ocl_free(&data, NULL, &data_ref, n) == 0;
 }
 
-#ifndef MEASURE_BY_TIMESTAMP
-double ocl_performance(const int n)
-{
-    cl_int err = CL_SUCCESS;
-    double measurements[number_of_tests];
-    cpx *data_in = get_seq(n, 1);
-    ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
-
-    for (int i = 0; i < number_of_tests; ++i) {
-        start_timer();
-        ocl_fft(&a_host, &a_dev);
-        clFinish(a_dev.commands);
-        measurements[i] = stop_timer();
-    }
-    ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev), "Release failed!");
-    int res = ocl_free(&data_in, NULL, NULL, n);
-    return average_best(measurements, number_of_tests);
-}
-double ocl_2d_performance(const int n)
-{
-    cl_int err = CL_SUCCESS;
-    double measurements[number_of_tests];
-    cpx *data_in = (cpx *)malloc(sizeof(cpx) * n * n);
-    ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
-    for (int i = 0; i < number_of_tests; ++i) {
-        start_timer();
-        ocl_fft_2d(&a_host, &a_dev, &argTranspose);
-        clFinish(a_dev.commands);
-        measurements[i] = stop_timer();
-    }
-    ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
-    int res = ocl_free(&data_in, NULL, NULL, n);
-    return average_best(measurements, number_of_tests);
-}
-#else
 double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
@@ -165,7 +132,6 @@ double ocl_2d_performance(const int n)
     int res = ocl_free(&data_in, NULL, NULL, n);
     return average_best(measurements, number_of_tests);
 }
-#endif
 
 // ---------------------------------
 //

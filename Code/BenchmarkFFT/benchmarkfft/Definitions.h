@@ -48,6 +48,7 @@ typedef float transform_direction;
 
 extern int vendor_gpu;
 extern int number_of_tests;
+extern int batch_total_points;
 
 struct benchmarkArgument
 {

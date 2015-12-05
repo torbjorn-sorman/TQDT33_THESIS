@@ -102,17 +102,6 @@ __device__ static __inline__ void mem_stog_db_col(int low, int high, int offset,
     SURF2D_WRITE(cuCmulf(shared[high], scalar), surf, blockIdx.x, col_high);
 }
 
-__host__ static __inline int cu_batch_count(const int n)
-{
-    //return 67108864 >> log2_32(n); 
-    return 1;   
-}
-
-__host__ static __inline int cu_batch_size(const int n)
-{
-    return cu_batch_count(n) * n;
-}
-
 __host__ static __inline void set_block_and_threads(dim3 *number_of_blocks, int *threads_per_block, int block_size, int size)
 {
     if (size > block_size) {
@@ -123,13 +112,13 @@ __host__ static __inline void set_block_and_threads(dim3 *number_of_blocks, int 
         number_of_blocks->y = 1;
         *threads_per_block = size;
     }
-    number_of_blocks->x = cu_batch_count(size << 1);
+    number_of_blocks->x = batch_count(size << 1);
 }
 
 __host__ static __inline void set_block_and_threads_2d(dim3 *number_of_blocks, int *threads_per_block, int block_size, int n)
 {
     number_of_blocks->x = n;
-    number_of_blocks->z = cu_batch_count(n * n);
+    number_of_blocks->z = batch_count(n * n);
     int n_half = n >> 1;
     if (n_half > block_size) {
         number_of_blocks->y = n_half / block_size;
@@ -145,7 +134,7 @@ __host__ static __inline void set_block_and_threads_transpose(dim3 *bTrans, dim3
 {
     int minDim = n > tile_dim ? (n / tile_dim) : 1;
     tTrans->z = 1;
-    bTrans->z = cu_batch_count(n * n);
+    bTrans->z = batch_count(n * n);
     bTrans->x = bTrans->y = minDim;
     tTrans->x = tTrans->y = block_dim;
 }

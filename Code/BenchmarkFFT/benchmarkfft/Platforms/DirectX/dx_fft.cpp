@@ -127,7 +127,6 @@ double dx_perf(void(*fft_fn)(transform_direction, dx_args*, const int), dx_args*
     }
     return average_best(measurements, number_of_tests);
 #elif defined(_NVIDIA)
-    double measurements[64];
     profiler_data p_data[64];
     for (int i = 0; i < number_of_tests; ++i) {
         profiler_data p;

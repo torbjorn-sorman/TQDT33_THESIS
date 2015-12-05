@@ -22,6 +22,16 @@ static __inline int log2_32(int value)
     return tab32[(unsigned int)(value * 0x07C4ACDD) >> 27];
 }
 
+static __inline int batch_count(const int n)
+{
+    return 1;//batch_total_points >> log2_32(n);
+}
+
+static __inline int batch_size(const int n)
+{
+    return batch_count(n) * n;
+}
+
 static __inline int cmp(const void *in_l, const void *in_h)
 {
     double xx = *(double*)in_l, yy = *(double*)in_h;

@@ -28,9 +28,9 @@ cl_int ocl_setup_kernels(ocl_args *args, const int group_size, bool dim2)
     args->commands = clCreateCommandQueue(args->context, args->device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
     ocl_check_err(err, "clCreateCommandQueue");
 
-    size_t data_size = sizeof(cpx) * args->n;
+    size_t data_size = sizeof(cpx) * batch_size(args->n);
     if (dim2) {
-        data_size *= args->n;
+        data_size = batch_size(args->n * args->n);
         ocl_check_err(ocl_setup_work_groups_2d(args, group_size), "ocl_setup_work_groups_2d");
     }
     else {
@@ -100,11 +100,11 @@ cl_int ocl_setup_work_groups(ocl_args *args, const int group_size)
     const int n_half = args->n / 2;
     int group_dim = n_half;
     int item_dim = n_half > group_size ? group_size : n_half;
-    args->work_size[0] = group_dim;
-    args->work_size[1] = 1;
+    args->work_size[0] = batch_count(args->n);
+    args->work_size[1] = group_dim;
     args->work_size[2] = 1;
-    args->group_work_size[0] = item_dim;
-    args->group_work_size[1] = 1;
+    args->group_work_size[0] = 1;
+    args->group_work_size[1] = item_dim;
     args->group_work_size[2] = 1;
     args->shared_mem_size = sizeof(cpx) * item_dim * 2;
     args->n_per_block = args->n / item_dim;
@@ -157,7 +157,7 @@ cl_int ocl_setup(ocl_args *a_host, ocl_args *a_dev, cpx *data_in, transform_dire
     cl_int err = CL_SUCCESS;
     if (data_in != NULL)
         err = oclSetupDeviceMemoryData(a_dev, data_in);
-    a_host->workDim = a_dev->workDim = 1;
+    a_host->workDim = a_dev->workDim = 2;
     return err;
 }
 

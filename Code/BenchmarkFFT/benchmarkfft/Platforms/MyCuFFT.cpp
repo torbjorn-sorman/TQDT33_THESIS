@@ -29,7 +29,7 @@ void MyCuFFT::runPerformance(const int n)
     float milliseconds = 0;
     if (dimensions == 1) {
         int rank[1] = { n };
-        cufftPlanMany(&plan, 1, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, cu_batch_count(n));
+        cufftPlanMany(&plan, 1, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, batch_count(n));
         for (int i = 0; i < number_of_tests; ++i) {
             cudaDeviceSynchronize();
             cudaEventRecord(start);
@@ -42,7 +42,7 @@ void MyCuFFT::runPerformance(const int n)
     }
     else {
         int rank[2] = { n, n };
-        cufftPlanMany(&plan, 2, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, cu_batch_count(n * n));
+        cufftPlanMany(&plan, 2, rank, NULL, 1, 1024, NULL, 1, 1024, CUFFT_C2C, batch_count(n * n));
 
         for (int i = 0; i < number_of_tests; ++i) {
             cudaDeviceSynchronize();

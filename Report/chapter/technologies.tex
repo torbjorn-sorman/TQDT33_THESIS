@@ -1,0 +1,47 @@
+\chapter{Technologies}
+
+Five different multi-core technologies are used in this study. One is specialized in GPGPU, namely CUDA. OpenGL and DirectCompute are parts of graphic programming languages but breaks away from the graphics abstraction with \textit{Compute Shaders}. OpenCL aims at any heterogeneous multi-core system and is used in this study to use on the GPU. To compare with the CPU, OpenMP is included as a fast and easy way to parallelize C/C++ -code.
+
+\section{CUDA}
+
+CUDA is an acronym for Compute Unified Device Architecture, developed by NVIDIA and released in 2006. CUDA is an extension of the C/C++ language and have its own compiler. CUDA supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} (CUDA implementation of BLAS, Basic Linear Algebra Subprograms) or \textit{cuFFT} (CUDA implementation of FFT).
+
+A program running on the GPU is called a kernel. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a CUDA kernel all that is needed is to declare the program with a function type specifier, see table \ref{tab:cuda:func-types}, and call it from the host with launch parameters.
+
+\begin{table}
+	%\includestandalone[width=\textwidth]{tables/cuda-function-types}
+	\centering
+	%\input{tables/cuda-function-types}
+	\caption{Table of function types in CUDA.}
+	\label{tab:cuda:func-types}
+\end{table}
+
+\begin{figure}
+	\centering
+	\lstset{language=C++}
+	\begin{framed}
+	\begin{lstlisting}
+// Device program (GPU)
+__global__ void myKernel(float val)
+{
+  int tid = threadIdx.x + blockDim.x * blockIdx.x;
+}
+
+// Host program (CPU)
+__host__ void myFunction(float value)
+{
+  dim3 threads = {1024, 1, 1};
+  dim3 blocks  = {1, 1, 1};
+  myKernel<<<blocks, threads>>>(value);
+}
+	\end{lstlisting}
+	\end{framed}
+\end{figure}
+
+\section{OpenCL}
+
+\section{DirectCompute}
+
+\section{OpenGL Compute Shader}
+
+\section{OpenMP}

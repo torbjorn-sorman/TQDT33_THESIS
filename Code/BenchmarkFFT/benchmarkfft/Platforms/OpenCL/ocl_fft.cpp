@@ -79,10 +79,10 @@ bool ocl_2d_validate(const int n, bool write_img)
 
     if (write_img) {
         ocl_check_err(clEnqueueReadBuffer(a_dev.commands, a_dev.output, CL_TRUE, 0, a_dev.data_mem_size, data, 0, NULL, NULL), "Read Output Buffer!");
-
-        //cpx_to_console(data, "Forward 1/2:", 8);
-        //getchar();
-
+#if defined(OCL_REF)
+        cpx_to_console(data, "Forward 1/2:", 9);
+        getchar();
+#endif
         write_normalized_image("OpenCL", "freq", data, n, true);        
     }
 
@@ -202,8 +202,9 @@ __inline void ocl_fft_2d(ocl_args *a_host, ocl_args *a_dev, ocl_args *a_trans)
     ocl_set_args(a_trans, _out, _in, sizeof(cpx) * ocl_tile_dim() * ocl_tile_dim());
 
     ocl_fft(a_host, a_dev);   
-    //return;
-    
+#if defined(OCL_REF)
+    return;
+#endif
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);
     ocl_fft(a_host, a_dev);    
     clEnqueueNDRangeKernel(a_trans->commands, a_trans->kernel, a_trans->workDim, NULL, a_trans->work_size, a_trans->group_work_size, 0, NULL, NULL);

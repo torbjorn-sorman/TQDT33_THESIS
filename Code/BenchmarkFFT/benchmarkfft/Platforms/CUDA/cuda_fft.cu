@@ -1,5 +1,7 @@
 #include "cuda_fft.cuh"
+#include <iostream>
 #if defined(_NVIDIA)
+
 // Comment: Max values all over seems to give the biggest benefit when running large sets of data
 //          Smaller sets benefits a little from smaller groups/blocks.
 //          I my opinion, the large values seems to suit CUDA best.
@@ -8,10 +10,10 @@
 #define CU_TILE_DIM 64 // Sets local/shared mem when transposing
 #define CU_BLOCK_DIM 32 // Sets threads when transposing
 
-__global__ void cuda_kernel_global    (cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
+__global__ void cuda_kernel_global(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 __global__ void cuda_kernel_global_row(cpx *in, float global_angle, unsigned int lmask, int steps, int dist);
 
-__global__ void cuda_kernel_local    (cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
+__global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
 __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar);
 
 __global__ void cuda_transpose_kernel(cpx *in, cpx *out, int n);
@@ -36,7 +38,7 @@ __host__ int cuda_validate(int n)
     cudaMemcpy(out, dev_out, buffer_size, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
     double diff = diff_forward_sinus(out, batch_count(n), n);
-    
+
     cuda_fft(FFT_INVERSE, dev_out, dev_in, n);
     cudaDeviceSynchronize();
     cudaMemcpy(in, dev_in, buffer_size, cudaMemcpyDeviceToHost);
@@ -55,13 +57,11 @@ __host__ int cuda_2d_validate(int n, bool write_img)
     cuda_fft_2d(FFT_FORWARD, &dev_in, &dev_out, n);
     cudaDeviceSynchronize();
 
+    std::cout << batch_count(n * n) << std::endl;
+
     if (write_img) {
         cudaMemcpy(host_buffer, dev_out, size, cudaMemcpyDeviceToHost);
         write_normalized_image("CUDA", "freq", host_buffer, n, true);
-
-
-        //cpx_to_console(host_buffer, "CUDA Forward 1/2:", 8);
-        //getchar();
     }
     cuda_fft_2d(FFT_INVERSE, &dev_out, &dev_in, n);
     cudaDeviceSynchronize();
@@ -179,7 +179,6 @@ __host__ void cuda_fft_2d(transform_direction dir, cpx **dev_in, cpx **dev_out, 
     dim3 threads;
     set_block_and_threads_transpose(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
-    //return;
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
     cuda_fft_2d_helper(dir, *dev_in, *dev_out, n);
     cuda_transpose_kernel KERNEL_ARGS2(blocks, threads) (*dev_out, *dev_in, n);
@@ -225,12 +224,12 @@ __device__ __inline void cuda_partial(cpx *in, cpx *out, cpx *shared, unsigned i
 
 __global__ void cuda_kernel_local(cpx *in, cpx *out, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    extern __shared__ cpx shared[];    
-    int n_block (blockDim.x << 1),
-        arg4 (blockIdx.y * n_block),
-        arg1 (gridDim.y * n_block * blockIdx.x),
-        arg0 (arg1 + arg4),
-        arg3 (threadIdx.x + blockDim.x);
+    extern __shared__ cpx shared[];
+    int n_block(blockDim.x << 1),
+        arg4(blockIdx.y * n_block),
+        arg1(gridDim.y * n_block * blockIdx.x),
+        arg0(arg1 + arg4),
+        arg3(threadIdx.x + blockDim.x);
     cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
 }
 
@@ -242,20 +241,6 @@ __global__ void cuda_kernel_local_row(cpx *in, cpx *out, float local_angle, int 
         arg0(arg1 + arg4),
         arg3(threadIdx.x + blockDim.x);
     cuda_partial(in + arg0, out + arg1, shared, arg3, arg4, local_angle, steps_left, leading_bits, scalar);
-    /*
-    if (blockIdx.x == 1023 && threadIdx.x == 511) {
-        // N = 64
-        out[0].x = arg0;                // 69504
-        out[1].x = arg1;                // 4032
-        out[2].x = arg3;                // 63
-        out[3].x = arg4;                // 65472
-
-        out[4].x = blockIdx.y;     // 1023
-        out[5].x = blockDim.x;   // 32
-        out[6].x = blockIdx.x;     // 63        
-        out[7].x = gridDim.x;   // 64
-    }
-    */
 }
 
 __device__ __inline void cu_global(cpx *in, int tid, float angle, int steps, int dist)

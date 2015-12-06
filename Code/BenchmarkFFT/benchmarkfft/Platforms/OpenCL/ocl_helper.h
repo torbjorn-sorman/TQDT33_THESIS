@@ -2,6 +2,8 @@
 #ifndef MYHELPEROPENCL_H
 #define MYHELPEROPENCL_H
 
+//#define OCL_REF
+
 #include <CL/cl.h>
 
 #include "../../Definitions.h"

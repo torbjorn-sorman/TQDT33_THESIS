@@ -44,7 +44,7 @@ cl_int ocl_setup_work_groups_2d(ocl_args *args, const int group_size)
     args->group_work_size[0] = item_dim;
     args->group_work_size[1] = 1;
     args->group_work_size[2] = 1;
-    args->number_of_blocks = args->work_size[1];
+    args->number_of_blocks = (int)args->work_size[1];
     return err;
 }
 
@@ -89,6 +89,9 @@ cl_int ocl_setup_program(std::string kernel_filename, char *kernel_name, ocl_arg
     
     manip_content(&str, L"OCL_TILE_DIM", tile_dim);
     manip_content(&str, L"OCL_BLOCK_DIM", block_dim);
+#if defined(OCL_REF)
+    manip_content(&str, L"SHOW_REF", 1);
+#endif
     char *src = get_kernel_src_from_string(str, NULL);
 
     program = clCreateProgramWithSource(args->context, 1, (const char **)&src, NULL, &err);

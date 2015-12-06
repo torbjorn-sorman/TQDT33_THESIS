@@ -15,6 +15,7 @@
 
 #define OCL_TILE_DIM 64
 #define OCL_BLOCK_DIM 16
+#define SHOW_REF 0
 
 typedef struct {
     float x;
@@ -32,7 +33,7 @@ unsigned int reverse(register unsigned int x)
 
 void ocl_global(__global cpx *in, int tid, float angle, int steps, int dist)
 {
-    cpx w;    
+    cpx w;
     w.y = sincos(angle * ((tid << steps) & ((dist - 1) << steps)), &w.x);
     cpx l = *in,
         h = in[dist];
@@ -62,7 +63,7 @@ __kernel void ocl_contant_geometry(unsigned int tid, __local cpx *shared, __loca
 {
     cpx w, l, h;
     __local cpx *out_i = shared + (tid << 1),
-                *out_ii = out_i + 1;
+        *out_ii = out_i + 1;
     float x, y;
     for (int steps = 0; steps < steps_limit; ++steps) {
         l = *in_l;
@@ -81,9 +82,8 @@ __kernel void ocl_contant_geometry(unsigned int tid, __local cpx *shared, __loca
 
 __kernel void ocl_partial(__global cpx *in, __global cpx *out, __local cpx *shared, unsigned int in_low, unsigned int in_high, unsigned int offset, float local_angle, int steps_left, int leading_bits, float scalar)
 {
-    //int in_low = get_local_id(1);
     __local cpx *in_l = shared + in_low,
-                *in_u = shared + in_high;
+        *in_u = shared + in_high;
     *in_l = in[in_low];
     *in_u = in[in_high];
     ocl_contant_geometry(in_low, shared, in_l, in_u, local_angle, steps_left);
@@ -109,12 +109,10 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
         arg1 = ((get_group_id(0) + get_group_id(2) * get_num_groups(0)) * get_num_groups(0)),
         arg0 = (arg1 + arg4),
         arg3 = (get_local_id(0) + get_local_size(0));
+#if SHOW_REF == 0
     ocl_partial(in + arg0, out + arg1, shared, get_local_id(0), arg3, arg4, local_angle, steps_left, leading_bits, scalar);
-    //return;
-    //out[arg4 + get_local_id(1)] = in[arg4 + get_local_id(1)];
-    //out[arg4 + arg3] = in[arg4 + arg3];
-    /*
-    if (get_group_id(0) == 1023 && get_local_id(0) == 511) {
+#else
+    if (get_group_id(0) == 255 && get_local_id(0) == 127 && get_group_id(2) == 15) {
         // N = 64
         out[0].x = arg0;                // 69504
         out[1].x = arg1;                // 4032
@@ -124,9 +122,10 @@ __kernel void ocl_kernel_local_row(__global cpx *in, __global cpx *out, __local 
         out[4].x = get_group_id(1);     // 1023
         out[5].x = get_local_size(0);   // 32
         out[6].x = get_group_id(0);     // 63
-        out[7].x = get_num_groups(0);   // 64
-    } 
-    */   
+        out[7].x = get_group_id(2);
+        out[8].x = get_num_groups(0);   // 64
+    }
+#endif   
 }
 
 __kernel void ocl_transpose_kernel(__global cpx *in, __global cpx *out, __local cpx tile[OCL_TILE_DIM][OCL_TILE_DIM], int n)

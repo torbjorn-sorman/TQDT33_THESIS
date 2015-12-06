@@ -271,7 +271,7 @@ The OpenMP implementation differs from the GPU with the fact that twiddle factor
 
 \subsection{Limitations}
 
-All implementations are limited to handle sequences of $2^n$ length or $2^m \times 2^m$ where $n$ and $m$ are integers. The GPUs have a maximum of 2GB global memory available and the upper limit of 2D transformations are $m = 8192$ since the implementation uses two buffers and require $8192 \cdot 8192 \cdot \texttt{sizeof(float2)} \cdot 2 = 1073741824$ bytes, however the Radeon R7 260X card does not handle that size well and is limited to $m = 4096$ (and OpenGL is even limited to $m = 2048$).
+All implementations are limited to handle sequences of $2^n$ length or $2^m \times 2^m$ where $n$ and $m$ are integers. The GPUs have a maximum of 2GB global memory available and the upper limit of 2D transformations are $m = 8192$ since the implementation uses two buffers and require $8192 \cdot 8192 \cdot \texttt{sizeof(float2)} \cdot 2 = 1073741824$ bytes. However on the Radeon R7 260X card, problems with DirectCompute and OpenGL set the limit lower and where DirectCompute handled sizes of $n$ up to $2^{24}$ and OpenGL $n$ and $m$ up to $2^{24}$ and $2^{9}$ respectively.
 
 \subsection{Testing}
 

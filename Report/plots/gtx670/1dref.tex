@@ -1,8 +1,10 @@
 \begin{tikzpicture}
-	\newcommand{\AllTechnologies}{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+	\newcommand{\AllTechnologies}{CUDA,cuFFT}
 	\begin{axis}[
 		width=\linewidth,
 		xmode = log,
+		log basis x=2,
+		%log basis y=2,
 		ymode = log,
 		grid = major,
 		grid style = {
@@ -21,6 +23,6 @@
         \foreach \tech in \AllTechnologies {
 			\addplot table[x=n,y=\tech,col sep=comma]{plots/gtx670/1d.csv}; 
 		}
-		\legend{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+		\legend{CUDA,cuFFT}
 	\end{axis}
 \end{tikzpicture}

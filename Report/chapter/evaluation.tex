@@ -6,11 +6,48 @@
 
 \todo{Present all performance comparisons.}
 
+\newcommand{\plotwidth}{{\textwidth} / 2 + 120pt}
+
 \begin{figure}
 	\centering
-	\includestandalone[width=\textwidth]{plots/gtx670/1d}
-	\caption{Plot showing 1D FFT on GTX 670}
-	\label{fig:gtx:1d}
+	\includestandalone[width=\plotwidth]{plots/gtx-overview}
+	\caption{Broad overview of the results of measuring the time of a single forward transform on the GeForce GTX 670.}
+	\label{fig:gtx:overview}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\plotwidth]{plots/r260x-overview}
+	\caption{Broad overview of the results of measuring the time of a single forward transform on the \AMDCARD. The time measured of the clFFT library is at host synchronization.}
+	\label{fig:r260x:overview}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\plotwidth]{plots/gtx-implementation}
+	\caption{Performance relative CUDA implementation on \NVCARD.}
+	\label{fig:gtx:implementation}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\plotwidth]{plots/r260x-implementation}
+	\caption{Performance relative OpenCL implementation on \AMDCARD.}
+	\label{fig:r260x:implementation}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\plotwidth]{plots/gtx-cpu}
+	\caption{Performance relative CUDA implementation on \NVCARD and \INTELCPU.}
+	\label{fig:gtx:cpu}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\plotwidth]{plots/gpu-comparison}
+	\caption{Performance of respective implementation on the \AMDCARD and the \NVCARD.}
+	\label{fig:gpu-comparison}
 \end{figure}
 
 \section{Qualitative assessment}

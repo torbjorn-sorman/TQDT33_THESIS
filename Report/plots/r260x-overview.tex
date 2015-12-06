@@ -1,5 +1,5 @@
 \begin{tikzpicture}
-	\newcommand{\AllTechnologies}{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+	\newcommand{\AllTechnologies}{AMD OCL,AMD DX,AMD GL,CLFFT,FFTW,OMP}
 	\begin{axis}[
 		width=\linewidth,
 		xmode = log,
@@ -19,8 +19,8 @@
 			anchor = north west},
         ]
         \foreach \tech in \AllTechnologies {
-			\addplot table[x=n,y=\tech,col sep=comma]{plots/gtx670/1d.csv}; 
+			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
 		}
-		\legend{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+		\legend{OpenCL,DirectCompute,OpenGL,clFFT (host time),FFTW,OpenMP}
 	\end{axis}
 \end{tikzpicture}

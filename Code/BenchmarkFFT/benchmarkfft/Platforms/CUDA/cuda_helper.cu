@@ -40,13 +40,10 @@ void console_print_cpx_img(cpx *seq, int n)
 
 void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
-    size_t total_size = batch_size(n);
-    int batches = batch_count(n);
-    if (dev_in)  { *dev_in = 0;  cudaMalloc((void**)dev_in,  total_size * sizeof(cpx)); }
-    if (dev_out) { *dev_out = 0; cudaMalloc((void**)dev_out, total_size * sizeof(cpx)); }    
-    if (in) *in =   get_seq(n, batches, 1);
-    if (ref) *ref = get_seq(n * batches, *in);
-    if (out) *out = get_seq(n * batches);
+    size_t total_size = sizeof(cpx) * batch_size(n);
+    if (dev_in)  { *dev_in = 0;  cudaMalloc((void**)dev_in,  total_size); }
+    if (dev_out) { *dev_out = 0; cudaMalloc((void**)dev_out, total_size); }    
+    setup_seq(in, out, ref, batch_count(n), n);
 }
 
 void _cudaFree(cpx **dev_in, cpx **dev_out)

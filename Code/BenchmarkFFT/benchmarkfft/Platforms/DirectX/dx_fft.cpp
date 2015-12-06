@@ -40,20 +40,19 @@ int dx_block_dim()
 
 int dx_validate(const int n)
 {
-    cpx *in = get_seq(n, 1);
-    cpx *out = get_seq(n);
-    cpx *ref = get_seq(n, in);
+    cpx *in, *out, *ref;
     dx_args args;
+    setup_seq(&in, &out, &ref, batch_count(n), n);    
     dx_setup(&args, in, dx_block_size(), n);
 
     dx_fft(FFT_FORWARD, &args, n);
-    dx_read_buffer(&args, args.buf_output, out, n);
-    double forward_diff = diff_forward_sinus(out, n);
+    dx_read_buffer(&args, args.buf_output, out, batch_size(n));
+    double forward_diff = diff_forward_sinus(out, batch_count(n), n);
 
     swap_io(&args);
     dx_fft(FFT_INVERSE, &args, n);
-    dx_read_buffer(&args, args.buf_output, out, n);
-    double inverse_diff = diff_seq(out, ref, n);
+    dx_read_buffer(&args, args.buf_output, out, batch_size(n));
+    double inverse_diff = diff_seq(out, ref, batch_size(n));
 
     dx_shakedown(&args);
     free_all(in, out, ref);

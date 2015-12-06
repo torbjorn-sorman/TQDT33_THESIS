@@ -1,5 +1,8 @@
-#define GROUP_SIZE_X 256
-#define GRID_DIM_X 512
+#define GROUP_SIZE_X 512
+#define GRID_DIM_X 1
+#define GRID_DIM_Y 512
+#define GRID_DIM_Z 512
+#define N_POINTS 1024
 
 struct cpx
 {
@@ -26,14 +29,21 @@ RWStructuredBuffer<cpx> rw_buf : register(u0);
 
 groupshared cpx shared_buf[GROUP_SIZE_X << 1];
 
-void add_sub_mul(in cpx low, in cpx high, out cpx o_low, out cpx o_high, in cpx w)
+void butterfly(in cpx low, in cpx high, out cpx o_low, out cpx o_high, in cpx w)
 {
-    float x = low.x - high.x;
-    float y = low.y - high.y;
+    float x = low.x - high.x,
+          y = low.y - high.y;
     o_low.x = low.x + high.x;
     o_low.y = low.y + high.y;
     o_high.x = (w.x * x) - (w.y * y);
     o_high.y = (w.y * x) + (w.x * y);
+}
+
+void dx_global(in int tid, in int in_low, in int in_high)
+{
+    cpx w;
+    sincos(global_angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
+    butterfly(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
 }
 
 [numthreads(GROUP_SIZE_X, 1, 1)]
@@ -42,12 +52,11 @@ void dx_global(uint3 threadIDInGroup : SV_GroupThreadID,
     uint groupIndex : SV_GroupIndex,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    int tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
-    int in_low = tid + (tid & lmask);
+    int tid = groupID.y * GROUP_SIZE_X + threadIDInGroup.x;
+    int offset = groupID.x * N_POINTS;
+    int in_low = tid + (tid & lmask) + offset;
     int in_high = in_low + dist;
-    cpx w;
-    sincos(global_angle * ((tid << steps) & ((dist - 1) << steps)), w.y, w.x);
-    add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
+    dx_global(tid, in_low, in_high);    
 }
 
 [numthreads(GROUP_SIZE_X, 1, 1)]
@@ -56,12 +65,11 @@ void dx_2d_global(uint3 threadIDInGroup : SV_GroupThreadID,
     uint groupIndex : SV_GroupIndex,
     uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    cpx w;
     int col_id = groupID.y * GROUP_SIZE_X + threadIDInGroup.x;
-    int in_low = (col_id + (col_id & lmask)) + groupID.x * GRID_DIM_X;
-    int in_high = in_low + dist;
-    sincos(global_angle * ((col_id << steps) & ((dist - 1) << steps)), w.y, w.x);
-    add_sub_mul(input[in_low], input[in_high], rw_buf[in_low], rw_buf[in_high], w);
+    int offset = groupID.z * N_POINTS;
+    int in_low = (col_id + (col_id & lmask)) + groupID.x * GRID_DIM_X + offset;
+    int in_high = in_low + dist;    
+    dx_global(col_id, in_low, in_high); 
 }
 
 void dx_algorithm_local(in int in_low, in int in_high)
@@ -76,7 +84,7 @@ void dx_algorithm_local(in int in_low, in int in_high)
         in_lower = shared_buf[in_low];
         in_upper = shared_buf[in_high];
         GroupMemoryBarrierWithGroupSync();
-        add_sub_mul(in_lower, in_upper, shared_buf[out_i], shared_buf[out_ii], w);
+        butterfly(in_lower, in_upper, shared_buf[out_i], shared_buf[out_ii], w);
         GroupMemoryBarrierWithGroupSync();
     }
 }
@@ -102,7 +110,7 @@ void dx_local(uint3 threadIDInGroup : SV_GroupThreadID,
 {
     int in_low = threadIDInGroup.x;
     int block_range = 0;
-    dx_partial(in_low, in_low + block_range, ((groupID.x * GROUP_SIZE_X) << 1), 0);    
+    dx_partial(in_low, in_low + block_range, ((groupID.y * GROUP_SIZE_X) << 1), groupID.x * N_POINTS);
 }
 
 [numthreads(GROUP_SIZE_X, 1, 1)]
@@ -113,5 +121,5 @@ void dx_2d_local_row(uint3 threadIDInGroup : SV_GroupThreadID,
 {
     int in_low = threadIDInGroup.x;
     int block_range = 0;
-    dx_partial(in_low, block_range + in_low, (groupID.y * GROUP_SIZE_X) << 1, GRID_DIM_X * groupID.x);
+    dx_partial(in_low, block_range + in_low, (groupID.y * GROUP_SIZE_X) << 1, GRID_DIM_X * groupID.x + groupID.x * N_POINTS);
 }

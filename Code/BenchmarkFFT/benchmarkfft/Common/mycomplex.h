@@ -22,6 +22,7 @@ cpx *get_seq(int n, int batches, int sinus);
 cpx *get_seq(int n, int sinus);
 cpx *get_seq(int n);
 cpx *get_seq(int n, cpx *src);
+void setup_seq(cpx **in, cpx **buf, cpx **ref, int batches, int n);
 
 cpx **get_seq_2d(const int n, const int type);
 cpx **get_seq_2d(const int n, cpx **src);

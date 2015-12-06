@@ -123,8 +123,9 @@ void dx_read_buffer(dx_args* args, ID3D11Buffer* src, cpx* dst, const int n)
 void dx_setup_file(dx_args *a, LPCWSTR cs_file, const int group_size, const int n)
 {
     std::string str(get_file_content(cs_file));
-    manip_content(&str, L"GROUP_SIZE_X", (n >> 1) > group_size ? group_size : (n >> 1));
-    manip_content(&str, L"GRID_SIZE_X", a->n_groups.x);
+    manip_content(&str, L"GROUP_SIZE_X", (n >> 1) > group_size ? group_size : (n >> 1));        
+    manip_content(&str, L"GRID_DIM_X", batch_count(n));
+    manip_content(&str, L"N_POINTS", n);
     set_file_content(cs_file, str);
 }
 
@@ -158,16 +159,16 @@ IDXGIAdapter1 *dx_get_adapter(int vendor)
 
 void dx_setup(dx_args* a, cpx* in, int group_size, const int n)
 {
-    a->number_of_blocks = a->n_groups.x = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
+    a->number_of_blocks = a->n_groups.y = (n >> 1) > group_size ? ((n >> 1) / group_size) : 1;
     LPCWSTR cs_file = L"Platforms/DirectX/dx_cs.hlsl";
 
     dx_setup_file(a, cs_file, group_size, n);
 
     D3D_FEATURE_LEVEL featureLevel;
-    D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(n);
-    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(n);
+    D3D11_BUFFER_DESC rw_buffer_desc = get_output_buffer_description(batch_size(n));
+    D3D11_BUFFER_DESC staging_buffer_desc = get_staging_buffer_description(batch_size(n));
     D3D11_BUFFER_DESC constant_buffer_desc = get_constant_buffer_description();
-    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(n);
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = get_unordered_access_view_description(batch_size(n));
     ID3DBlob* errorBlob = 0;
 
     const D3D_FEATURE_LEVEL feature_levels[1] = { D3D_FEATURE_LEVEL_11_0 };
@@ -220,10 +221,12 @@ void dx_setup_2d_files(dx_args *a, LPCWSTR cs_file, LPCWSTR cs_file_tr, const in
     const int n2 = n >> 1;
     manip_content(&str, L"GROUP_SIZE_X", n2 > group_size ? group_size : n2);
     manip_content(&str, L"GRID_DIM_X", n);
+    manip_content(&str, L"GRID_DIM_Z", batch_count(n * n));
+    manip_content(&str, L"N_POINTS", n * n);
     set_file_content(cs_file, str);
     str = get_file_content(cs_file_tr);
     manip_content(&str, L"WIDTH", n);
-    manip_content(&str, L"DX_TILE_DIM", tile_dim);
+    manip_content(&str, L"DX_TILE_DIM", tile_dim);    
     set_file_content(cs_file_tr, str);
 }
 

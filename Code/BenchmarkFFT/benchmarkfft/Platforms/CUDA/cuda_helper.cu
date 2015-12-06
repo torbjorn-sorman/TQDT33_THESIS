@@ -1,5 +1,6 @@
 #include "cuda_helper.cuh"
 #if defined(_NVIDIA)
+
 void checkCudaError(char *msg)
 {
     cudaError_t e;
@@ -14,46 +15,13 @@ void checkCudaError()
 
 #define ERROR_MARGIN 0.0001
 
-// Useful functions for debugging
-void console_print(cpx *seq, int n)
-{
-    for (int i = 0; i < n; ++i) printf("%f\t%f\n", seq[i].x, seq[i].y);
-}
-
-void console_print_cpx_img(cpx *seq, int n)
-{
-    printf("\n");
-    for (int y = 0; y < n; ++y) {
-        for (int x = 0; x < n; ++x) {
-            printf("%.2f\t", seq[y * n + x].x);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    for (int y = 0; y < n; ++y) {
-        for (int x = 0; x < n; ++x) {
-            printf("%.2f\t", seq[y * n + x].y);
-        }
-        printf("\n");
-    }
-}
-
-void _cudaMalloc(int n, cpx **dev_in, cpx **dev_out)
-{
-    *dev_in = 0;    
-    cudaMalloc((void**)dev_in, n * sizeof(cpx));
-    if (dev_out != NULL) {
-        *dev_out = 0;
-        cudaMalloc((void**)dev_out, n * sizeof(cpx));
-    }
-}
-
 void cuda_setup_buffers(int n, cpx **dev_in, cpx **dev_out, cpx **in, cpx **ref, cpx **out)
 {
-    _cudaMalloc(n, dev_in, dev_out);
-    if (in == NULL && ref == NULL && out == NULL)
-        return;
-    fft_alloc_sequences(n, in, ref, out);
+    setup_seq(in, ref, out, n);
+    size_t total_size = sizeof(cpx) * n;
+    if (dev_in)  { *dev_in = 0;  cudaMalloc((void**)dev_in, total_size); }
+    if (dev_out) { *dev_out = 0; cudaMalloc((void**)dev_out, total_size); }
+    cudaMemcpy(*dev_in, *in, n * sizeof(cpx), cudaMemcpyHostToDevice);
 }
 
 void _cudaFree(cpx **dev_in, cpx **dev_out)

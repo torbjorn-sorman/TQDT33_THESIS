@@ -21,6 +21,7 @@ template<typename T> static __inline void swap(T *a, T *b)
 cpx *get_seq(int n, int sinus);
 cpx *get_seq(int n);
 cpx *get_seq(int n, cpx *src);
+void setup_seq(cpx **in, cpx **ref, cpx **out, int n);
 
 cpx **get_seq_2d(const int n, const int type);
 cpx **get_seq_2d(const int n, cpx **src);
@@ -67,13 +68,6 @@ static __inline cpx cpx_sub(cpx *a, cpx *b)
     return {a->x - b->x, a->y - b->y};
 }
 #endif
-
-static __inline void fft_alloc_sequences(int n, cpx **in, cpx **ref, cpx **out)
-{
-    *in = get_seq(n, 1);
-    *ref = get_seq(n, *in);
-    *out = get_seq(n);
-}
 
 template<typename T>
 static void free_all(T t)

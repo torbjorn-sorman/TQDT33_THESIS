@@ -86,34 +86,6 @@ int dx_2d_validate(const int n, bool write_img)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-#ifndef MEASURE_BY_TIMESTAMP
-double dx_performance(const int n)
-{
-    double measures[number_of_tests];
-    dx_args args;
-    for (int i = 0; i < number_of_tests; ++i) {
-        dx_setup(&args, NULL, n);
-        start_timer();
-        dx_fft(FFT_FORWARD, &args, n);
-        measures[i] = stop_timer();
-        dx_shakedown(&args);
-    }
-    return average_best(measures, number_of_tests);
-}
-double dx_2d_performance(const int n)
-{
-    double measures[number_of_tests];
-    dx_args args;
-    for (int i = 0; i < number_of_tests; ++i) {
-        dx_setup_2d(&args, NULL, n);
-        start_timer();
-        dx_fft_2d(FFT_FORWARD, &args, n);
-        measures[i] = stop_timer();
-        dx_shakedown(&args);
-    }
-    return average_best(measures, number_of_tests);
-}
-#else
 double dx_perf(void(*fft_fn)(transform_direction, dx_args*, const int), dx_args* args, const int n)
 {
 #if defined(_AMD)
@@ -139,6 +111,7 @@ double dx_perf(void(*fft_fn)(transform_direction, dx_args*, const int), dx_args*
     return dx_avg(p_data, args);
 #endif
 }
+
 double dx_performance(const int n)
 {
     dx_args args;
@@ -155,7 +128,6 @@ double dx_2d_performance(const int n)
     dx_shakedown(&args);
     return m;
 }
-#endif
 
 //
 // Algorithm

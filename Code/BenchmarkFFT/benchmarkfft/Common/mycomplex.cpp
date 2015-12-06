@@ -33,6 +33,13 @@ cpx *get_seq(int n, cpx *src)
     return seq;
 }
 
+void setup_seq(cpx **in, cpx **ref, cpx **out, int n)
+{
+    if (in) *in = get_seq(n, 1);
+    if (ref) *ref = get_seq(n, *in);
+    if (out) *out = get_seq(n);
+}
+
 void setup_seq_2d(cpx **in, cpx **buf, cpx **ref, int n)
 {
     char input_file[40];

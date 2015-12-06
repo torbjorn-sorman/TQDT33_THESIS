@@ -77,7 +77,7 @@ void MyClFFT::runPerformance(const int n)
     cl_device_id device = 0;
     cl_context ctx = 0;
     cl_command_queue queue = 0;
-    cl_event event = NULL;
+    cl_event event = NULL, start_event, end_event;
     clfftPlanHandle planHandle;
 
     /* Setup OpenCL environment. */
@@ -109,13 +109,24 @@ void MyClFFT::runPerformance(const int n)
     cl_mem buf_in = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (dim1 ? n : n * n) * sizeof(cpx), NULL, &err);
     cl_mem buf_out = clCreateBuffer(ctx, CL_MEM_READ_WRITE, (dim1 ? n : n * n) * sizeof(cpx), NULL, &err);
     cl_event e;
+
+
+    ocl_args tm;
+    ocl_check_err(setTimeKernel(ctx, device, &tm), "setTimeKernel");
     clFinish(queue);
     for (int i = 0; i < number_of_tests; ++i) {
+        clFinish(queue);
         start_timer();
+        //clEnqueueNDRangeKernel(queue, tm.kernel, tm.workDim, NULL, tm.work_size, tm.group_work_size, 0, NULL, &start_event);
+        //clWaitForEvents(1, &start_event);
         clfftEnqueueTransform(planHandle, CLFFT_FORWARD, 1, &queue, 0, NULL, &e, &buf_in, &buf_out, NULL);
-        clWaitForEvents(1, &e);
-        //clFinish(queue);
+        //clWaitForEvents(1, &e);
+        //clEnqueueNDRangeKernel(queue, tm.kernel, tm.workDim, NULL, tm.work_size, tm.group_work_size, 0, NULL, &end_event);
+        clWaitForEvents(1, &e);        
+        //clWaitForEvents(1, &end_event);
         measurements[i] = stop_timer();        
+        //measurements[i] = ocl_get_elapsed(start_event, end_event);
+        clFinish(queue);
     }
     time = average_best(measurements, number_of_tests);
     //double tm = ocl_get_elapsed(e, e);

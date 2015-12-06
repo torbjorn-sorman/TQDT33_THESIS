@@ -39,11 +39,14 @@ int ocl_block_dim()
 
 bool ocl_validate(const int n)
 {
+    
     cl_int err = CL_SUCCESS;
     cpx *data = get_seq(n, 1);
     cpx *data_ref = get_seq(n, data);
     ocl_args a_dev, a_host;
     ocl_check_err(ocl_setup(&a_host, &a_dev, data, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
+    clFinish(a_dev.commands);
+    clFlush(a_dev.commands);
 
     ocl_fft(&a_host, &a_dev);
     clFinish(a_dev.commands);
@@ -54,6 +57,8 @@ bool ocl_validate(const int n)
     swap(&a_dev.input, &a_dev.output);
     ocl_fft(&a_host, &a_dev);
     clFinish(a_dev.commands);
+    clFlush(a_dev.commands);
+
     ocl_check_err(ocl_shakedown(NULL, data, &a_host, &a_dev), "Release failed!");
     return (ocl_free(&data, NULL, &data_ref, n) == 0) && (diff <= RELATIVE_ERROR_MARGIN);
 }
@@ -65,12 +70,16 @@ bool ocl_2d_validate(const int n, bool write_img)
     ocl_setup_buffers(&data, NULL, &data_ref, n);
     ocl_args a_dev, a_host, argTranspose;
     ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
+    clFinish(a_dev.commands);
+    clFlush(a_dev.commands);
 
     ocl_fft_2d(&a_host, &a_dev, &argTranspose);
     clFinish(a_dev.commands);
 
     if (write_img) {
         ocl_check_err(clEnqueueReadBuffer(a_dev.commands, a_dev.output, CL_TRUE, 0, a_dev.data_mem_size, data, 0, NULL, NULL), "Read Output Buffer!");
+        clFinish(a_dev.commands);
+        clFlush(a_dev.commands);
         write_normalized_image("OpenCL", "freq", data, n, true);
     }
 
@@ -78,51 +87,15 @@ bool ocl_2d_validate(const int n, bool write_img)
     swap(&a_dev.input, &a_dev.output);
     ocl_fft_2d(&a_host, &a_dev, &argTranspose);
     clFinish(a_dev.commands);
-    ocl_check_err(ocl_shakedown(NULL, data, &a_host, &a_dev, &argTranspose), "Release failed!");
+    clFlush(a_dev.commands);
 
+    ocl_check_err(ocl_shakedown(NULL, data, &a_host, &a_dev, &argTranspose), "Release failed!");
     if (write_img) {
         write_image("OpenCL", "spat", data, n);
     }
     return ocl_free(&data, NULL, &data_ref, n) == 0;
 }
 
-#ifndef MEASURE_BY_TIMESTAMP
-double ocl_performance(const int n)
-{
-    cl_int err = CL_SUCCESS;
-    double measurements[number_of_tests];
-    cpx *data_in = get_seq(n, 1);
-    ocl_args a_dev, a_host;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, data_in, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
-
-    for (int i = 0; i < number_of_tests; ++i) {
-        start_timer();
-        ocl_fft(&a_host, &a_dev);
-        clFinish(a_dev.commands);
-        measurements[i] = stop_timer();
-    }
-    ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev), "Release failed!");
-    int res = ocl_free(&data_in, NULL, NULL, n);
-    return average_best(measurements, number_of_tests);
-}
-double ocl_2d_performance(const int n)
-{
-    cl_int err = CL_SUCCESS;
-    double measurements[number_of_tests];
-    cpx *data_in = (cpx *)malloc(sizeof(cpx) * n * n);
-    ocl_args a_dev, a_host, argTranspose;
-    ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
-    for (int i = 0; i < number_of_tests; ++i) {
-        start_timer();
-        ocl_fft_2d(&a_host, &a_dev, &argTranspose);
-        clFinish(a_dev.commands);
-        measurements[i] = stop_timer();
-    }
-    ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
-    int res = ocl_free(&data_in, NULL, NULL, n);
-    return average_best(measurements, number_of_tests);
-}
-#else
 double ocl_performance(const int n)
 {
     cl_int err = CL_SUCCESS;
@@ -131,14 +104,18 @@ double ocl_performance(const int n)
     ocl_check_err(ocl_setup(&a_host, &a_dev, NULL, FFT_FORWARD, ocl_group_size(), n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
-    clFinish(a_dev.commands);
+    
     for (int i = 0; i < number_of_tests; ++i) {
+        clFinish(a_dev.commands);
+        clFlush(a_dev.commands);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft(&a_host, &a_dev);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
         measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
+
     clFinish(a_dev.commands);
+    clFlush(a_dev.commands);
     ocl_check_err(ocl_shakedown(NULL, NULL, &a_host, &a_dev), "Release failed!");
     return average_best(measurements, number_of_tests);
 }
@@ -153,19 +130,22 @@ double ocl_2d_performance(const int n)
     ocl_check_err(ocl_setup(&a_host, &a_dev, &argTranspose, data_in, FFT_FORWARD, ocl_group_size(), ocl_tile_dim(), ocl_block_dim(), n), "Create failed!");
     ocl_setup_timestamp(&a_dev, &arg_timestamp);
     cl_event start_event, end_event;
-    clFinish(a_dev.commands);
+    
     for (int i = 0; i < number_of_tests; ++i) {
+        clFinish(a_dev.commands);
+        clFlush(a_dev.commands);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &start_event);
         ocl_fft_2d(&a_host, &a_dev, &argTranspose);
         clEnqueueNDRangeKernel(arg_timestamp.commands, arg_timestamp.kernel, arg_timestamp.workDim, NULL, arg_timestamp.work_size, arg_timestamp.group_work_size, 0, NULL, &end_event);
         measurements[i] = ocl_get_elapsed(start_event, end_event);
     }
+
     clFinish(a_dev.commands);
+    clFlush(a_dev.commands);
     ocl_check_err(ocl_shakedown(data_in, NULL, &a_host, &a_dev, &argTranspose), "Release failed!");
     int res = ocl_free(&data_in, NULL, NULL, n);
     return average_best(measurements, number_of_tests);
 }
-#endif
 
 // ---------------------------------
 //

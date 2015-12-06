@@ -27,9 +27,12 @@ int gl_validate(const int n)
     double forward_diff, inverse_diff;
     {
         gl_args a_dev, a_host;
-        gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);        
+        gl_setup(&a_dev, &a_host, in, NULL, GL_GROUP_SIZE, n);    
+        glFinish();
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
+        glFinish();
         gl_read_buffer(out, a_dev.buf_out, 1, n);
+        glFinish();
         forward_diff = diff_forward_sinus(out, n);
         gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
@@ -37,8 +40,11 @@ int gl_validate(const int n)
     {
         gl_args a_dev, a_host;
         gl_setup(&a_dev, &a_host, out, NULL, GL_GROUP_SIZE, n);
+        glFinish();
         gl_fft(FFT_INVERSE, &a_dev, &a_host, n);
+        glFinish();
         gl_read_buffer(out, a_dev.buf_out, 1, n);
+        glFinish();
         inverse_diff = diff_seq(out, ref, n);
         gl_check_errors();
         gl_shakedown(&a_dev, &a_host);
@@ -54,9 +60,12 @@ int gl_2d_validate(const int n, bool write_img)
     {
         gl_args a_dev, a_host, a_trans;
         gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
+        glFinish();
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
+        glFinish();
         gl_read_buffer(data, a_dev.buf_out, 1, n * n);
+        glFinish();
         if (write_img) {            
             write_normalized_image("OpenGL", "freq", data, n, true);                 
         }
@@ -65,9 +74,12 @@ int gl_2d_validate(const int n, bool write_img)
     {
         gl_args a_dev, a_host, a_trans;
         gl_setup_2d(&a_dev, &a_host, &a_trans, data, tmp, GL_GROUP_SIZE, GL_TILE_DIM, n);
+        glFinish();
         memset(data, 0, sizeof(cpx) * n * n);
         gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
+        glFinish();
         gl_read_buffer(data, a_dev.buf_out, 1, n * n);
+        glFinish();
         if (write_img) {
             write_image("OpenGL", "spat", data, n);
         }
@@ -78,42 +90,13 @@ int gl_2d_validate(const int n, bool write_img)
     return diff < RELATIVE_ERROR_MARGIN;
 }
 
-#ifndef MEASURE_BY_TIMESTAMP
-double gl_performance(const int n)
-{
-    double measures[number_of_tests];
-    gl_args a_dev, a_host;    
-    for (int i = 0; i < number_of_tests; ++i) {
-        gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
-        start_timer();
-        gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
-        glFinish();
-        measures[i] = stop_timer();
-        gl_shakedown(&a_dev, &a_host);       
-    }
-    return average_best(measures, number_of_tests);
-}
-double gl_2d_performance(const int n)
-{
-    double measures[number_of_tests];
-    gl_args a_dev, a_host, a_trans;
-    for (int i = 0; i < number_of_tests; ++i) {
-        gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
-        start_timer();
-        gl_fft_2d(FFT_INVERSE, &a_dev, &a_host, &a_trans, n);
-        glFinish();
-        measures[i] = stop_timer();
-        gl_shakedown(&a_dev, &a_host);
-    }
-    return average_best(measures, number_of_tests);
-}
-#else
 double gl_performance(const int n)
 {
     gl_args a_dev, a_host;
     GLuint queries[64][2];
     gl_setup(&a_dev, &a_host, NULL, NULL, GL_GROUP_SIZE, n);
     for (int i = 0; i < number_of_tests; ++i) {
+        glFinish();
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
         gl_fft(FFT_FORWARD, &a_dev, &a_host, n);
@@ -123,12 +106,14 @@ double gl_performance(const int n)
     gl_shakedown(&a_dev, &a_host);
     return gl_query_time(queries);
 }
+
 double gl_2d_performance(const int n)
 {
     gl_args a_dev, a_host, a_trans;
     GLuint queries[64][2];
     gl_setup_2d(&a_dev, &a_host, &a_trans, NULL, NULL, GL_GROUP_SIZE, GL_TILE_DIM, n);
     for (int i = 0; i < number_of_tests; ++i) {
+        glFinish();
         glGenQueries(2, queries[i]);
         glQueryCounter(queries[i][0], GL_TIMESTAMP);
         gl_fft_2d(FFT_FORWARD, &a_dev, &a_host, &a_trans, n);
@@ -138,7 +123,6 @@ double gl_2d_performance(const int n)
     gl_shakedown(&a_dev, &a_host, &a_trans);
     return gl_query_time(queries);
 }
-#endif
 
 //
 // Algorithm

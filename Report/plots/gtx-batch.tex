@@ -1,5 +1,5 @@
 \begin{tikzpicture}
-	\newcommand{\AllTechnologies}{AMD/NV OCL,AMD/NV DX,AMD/NV GL}
+	\newcommand{\AllTechnologies}{CU/CUFFT BATCH}
 	\begin{axis}[
 		width=\linewidth,
 		xmode = log,
@@ -9,18 +9,18 @@
 			dashed,
 			gray!30},
 		xlabel = $n$-point sequence,
-		ylabel = Relative performance per technology and graphics card,
+		ylabel = Relative cuFFT,
 		yticklabel pos=right,
 		x unit = n,
-		ymax=8,
+		ymax = 12,
 		legend style = {
-			at = {(0.05,0.95)}, 
-			anchor = north west},
-        ]        
-        \addplot[mark=none] table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
+			at = {(0.5,0.95)}, 
+			anchor = north},
+        ]
+		\addplot[mark=none] table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
         \foreach \tech in \AllTechnologies {
 			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
 		}
-		\legend{\NVCARD,OpenCL on \AMDCARD,DirectCompute on \AMDCARD,OpenGL on \AMDCARD}
+		\legend{CUDA,cuFFT}
 	\end{axis}
 \end{tikzpicture}

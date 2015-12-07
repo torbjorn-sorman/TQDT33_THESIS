@@ -1,5 +1,6 @@
 \begin{tikzpicture}
 	\newcommand{\AllTechnologies}{CU,NV DX,NV GL,NV OCL,CUFFT,FFTW,OMP}
+	\newcommand{\PlotSource}{plots/2d.csv}
 	\begin{axis}[
 		width=\linewidth,
 		xmode = log,
@@ -9,7 +10,7 @@
 		grid style = {
 			dashed,
 			gray!30},
-		xlabel = $n$-point sequence,
+		xlabel = $n{\times}n$-point sequence,
 		ylabel = Time,
 		yticklabel pos=right,
 		y SI prefix = micro,
@@ -20,7 +21,7 @@
 			anchor = north west},
         ]
         \foreach \tech in \AllTechnologies {
-			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
+			\addplot table[x=n,y=\tech,col sep=comma]{\PlotSource};
 		}
 		\legend{CUDA,DirectCompute,OpenGL,OpenCL,cuFFT,FFTW,OpenMP}
 	\end{axis}

@@ -21,6 +21,7 @@
 \usepackage{framed}
 \usepackage{todo}
 \usepackage{pgfplots}
+\usepackage{tablefootnote}
 
 \usetikzlibrary{
 	fit,
@@ -33,7 +34,17 @@
 
 \newcommand{\NVCARD}{GeForce GTX 670}
 \newcommand{\AMDCARD}{Radeon R7 R260X}
-\newcommand{\INTELCPU}{Intel Core i7 3770K CPU}
+\newcommand{\INTELCPU}{Intel Core i7 3770K 3.5GHz CPU}
+
+\newcommand{\CU}{CUDA}
+\newcommand{\OCL}{OpenCL}
+\newcommand{\GL}{OpenGL}
+\newcommand{\DX}{DirectCompute}
+\newcommand{\OMP}{OpenMP}
+\newcommand{\CPP}{C/C++}
+\newcommand{\CUFFT}{cuFFT}
+\newcommand{\CLFFT}{clFFT}
+\newcommand{\FFTW}{FFTW}
 
 \begin{document}
 %
@@ -58,7 +69,6 @@
 \include{chapter/technologies}
 \include{chapter/implementation}
 \include{chapter/evaluation}
-\include{chapter/summary}
 
 \part*{Appendix}
 \appendix

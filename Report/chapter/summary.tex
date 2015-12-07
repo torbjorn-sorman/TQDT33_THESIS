@@ -2,36 +2,6 @@
 
 \todo{Do discussion, conclusions and future work here}
 
-\section{Discussion}
 
-\todo{Do discussion}
-
-\section{Conclusions}
-
-\todo{do conclusions}
-
-\section{Future work}
-
-This thesis work leave room for expanding with more test applications and perhaps improve already implemented algorithm.
-
-\subsection{Algorithm}
-
-The implementation is much slower then the external libraries for the GPU, the room for improvements ought to be rather large. One can not expect to beat a mature and optimized library such as cuFFT, but one could at least expect a smaller difference in performance in some cases. Improved/further use of shared memory and explore a precomputed twiddle factor table would be interesting. Most important would probably be how the memory buffers are used in the context of data locality and stride.
-
-\subsubsection{Test other algorithms}
-
-The FFT algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The FFT is very easy parallelizable but put great demand on the memory by making large strides. It would be of interest to test algorithms, also highly parallelizable, but puts more strain on the use of arithmetic operations.
-
-\subsection{The hardware}
-
-The graphic cards used in this thesis are at least one generation old compared to the current latest graphic cards. There would be interesting to see if the cards have the same differences in later series and to see how much have been improved over the generations. It is likely that the software drivers are differently optimized towards the newer graphic cards.
-
-\subsubsection{GeForce GTX 670}
-
-The GeForce GTX 670 have the \textit{Kepler} micro architecture. The model have been succeeded by booth the 700 and 900 GeForce series and the micro architecture have been followed by \textit{Maxwell} (2014). Both Kepler and Maxwell uses 28nm design. The next micro architecture is \textit{Pascal} and is due in 2016. Pascal will include 3D memory, HBM2 (High Bandwidth Memory), that will move onto the same package as the GPU and greatly improve memory bandwidth and total size. Pascal will use 16nm transistor design that will grant higher speed and energy effeciency.
-
-\subsubsection{Radeon R7 260X}
-
-The Radeon R7 260X have the GCN 1.1 (Graphics Core Next) micro architecture and have been succeeded by the Radeon Rx 300 Series and GCN 1.2. The latest graphic cards in the Rx 300 series include cards with HBM.
 
 

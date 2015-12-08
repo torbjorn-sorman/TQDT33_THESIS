@@ -1,26 +1,27 @@
 \begin{tikzpicture}
-	\newcommand{\AllTechnologies}{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+	\newcommand{\AllTechnologies}{AMD+NV DX,AMD+NV GL}
 	\begin{axis}[
 		width=\linewidth,
 		xmode = log,
-		ymode = log,
+		log basis x=2,
 		grid = major,
 		grid style = {
 			dashed,
 			gray!30},
 		xlabel = $n$-point sequence,
-		ylabel = Time,
+		ylabel = Combined performance relative OpenCL,
 		yticklabel pos=right,
-		y SI prefix = micro,
-		y unit = s,
 		x unit = n,
+		ymin=0,
+		ymax=2,
 		legend style = {
 			at = {(0.05,0.95)}, 
 			anchor = north west},
-        ]
+        ]        
+        \addplot table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
         \foreach \tech in \AllTechnologies {
-			\addplot table[x=n,y=\tech,col sep=comma]{plots/gtx670/1d.csv}; 
+			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
 		}
-		\legend{CUDA,DirectCompute,OpenGL Compute Shader,OpenCL,cuFFT,FFTW,OpenMP,C/C++}
+		\legend{OpenCL,DirectCompute,OpenGL}
 	\end{axis}
 \end{tikzpicture}

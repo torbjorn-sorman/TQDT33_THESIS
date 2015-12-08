@@ -5,7 +5,7 @@
 \newcommand{\plotwidth}{{\textwidth} / 2 + 110pt}
 \newcommand{\AllPlacementOptions}{!htbp}
 
-The results will be shown for both graphics cards, {\NVCARD} and \AMDCARD, where applicable and supported. The tested technologies are shown in table \ref{tab:platform-technologies}.
+The results will be shown for both graphics cards, {\NVCARD} and \AMDCARD, where the technologies where applicable. The tested technologies are shown in table \ref{tab:platform-technologies}.
 
 \begin{table}[\AllPlacementOptions]
 	\centering
@@ -43,7 +43,7 @@ The results for a single transform over a $2^{n}$-point sequence are shown in fi
 \begin{figure}\AllPlacementOptions
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gtx-overview}
-	\caption{Overview of the results of a single forward transform on the {\NVCARD}.}
+	\caption{Overview of the results of a single forward transform on the {\NVCARD}. Lower is faster.}
 	\label{fig:gtx:overview}
 \end{figure}
 
@@ -51,7 +51,7 @@ The results for a single transform over a $2^{n}$-point sequence are shown in fi
 \begin{figure}[\AllPlacementOptions]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/r260x-overview}
-	\caption{Overview of the results of single forward transform on the {\AMDCARD}. The time of the {\CLFFT} library is at the host.}
+	\caption{Overview of the results of single forward transform on the {\AMDCARD}. Lower is better. The time of the {\CLFFT} library is at the host.}
 	\label{fig:r260x:overview}
 \end{figure}
 
@@ -60,7 +60,7 @@ The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. F
 \begin{figure}[\AllPlacementOptions]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gtx-implementation}
-	\caption{Performance relative {\CU} implementation on {\NVCARD}.}
+	\caption{Performance relative {\CU} implementation on {\NVCARD}. Lower is better.}
 	\label{fig:gtx:implementation}
 \end{figure}
 
@@ -89,13 +89,22 @@ Results from comparing the implementations on the different graphics cards are s
 	\label{fig:gpu-comparison}
 \end{figure}
 
+{\DX}, {\GL} and {\OCL} was supported on both graphics cards, the results of normalizing the resulting times with the time of the {\OCL} implementation is shown in figure \ref{fig:gpu-comparison-tech}.
+
+\begin{figure}[\AllPlacementOptions]
+	\centering
+	\includestandalone[width=\plotwidth]{plots/gpu-comparison-tech}
+	\caption{Performance relative {\OCL} added from both cards.}
+	\label{fig:gpu-comparison-tech}
+\end{figure}
+
 % 2D Figures
 
 \newpage
 
 \subsection{FFT 2D}
 
-The equivalent test very done for 2D-data represented by an image of $m{\times}m$ size. The image contained three channels (red, green blue), the transformation was performed over one channel. Figure \ref{fig:gtx:overview-2d} and \ref{fig:r260x:overview-2d} shows an overview of the measured time ranging from $2^{6}$ to $2^{13}$.
+The equivalent test very done for 2D-data represented by an image of $m{\times}m$ size. The image contained three channels (red, green blue), the transformation was performed over one channel. Figure \ref{fig:gtx:overview-2d} and \ref{fig:r260x:overview-2d} shows an overview of the results of images seizes ranging from $2^{6}{\times}2^{6}$ to $2^{13}{\times}2^{13}$.
 
 \begin{figure}[\AllPlacementOptions]
 	\centering
@@ -145,6 +154,15 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 	\label{fig:gpu-comparison-2d}
 \end{figure}
 
+{\DX}, {\GL} and {\OCL} was supported on both graphics cards, the results of normalizing the resulting times with the time of the {\OCL} implementation is shown in figure \ref{fig:gpu-comparison-tech-2d}.
+
+\begin{figure}[\AllPlacementOptions]
+	\centering
+	\includestandalone[width=\plotwidth]{plots/gpu-comparison-tech-2d}
+	\caption{Performance relative {\OCL} added from both cards.}
+	\label{fig:gpu-comparison-tech-2d}
+\end{figure}
+
 \newpage
 
 \section{Discussion}
@@ -159,19 +177,51 @@ The unsurprising result from the experiments are that {\CU} is the fastest techn
 
 {\GL} is performing at the same level of {\DX} but only on the {\AMDCARD}. The exception is that the {\GL}-solution fails on the {\AMDCARD} at longer sequences otherwise working on the {\NVCARD}. The performance of the {\GL} tests are performance equal or better then {\OCL} in 1D but outperforming {\OCL} in 2D.
 
-The biggest surprise is actually the {\OCL} implementation. The lack of performance compared to the other technologies, even on the most "native" card: \AMDCARD. Effort has been made to assure that the code does in fact run fair compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about 1.6 and 1.8 times slower for 1D and 2D respectively on the {\NVCARD}.
+The biggest surprise is actually the {\OCL} implementation. Falling behind by a rather big margin, even behind on the \AMDCARD. Effort has been made to assure that the code does in fact run fair compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about 1.6 and 1.8 times slower for 1D and 2D respectively on the {\NVCARD}. The figure \ref{fig:gpu-comparison-tech} and \ref{fig:gpu-comparison-tech-2d} shows that {\DX} is about 0.8 of the execution-time of {\OCL}. {\GL} beats the {\OCL} on shorter sequences about as effective as {\DX}, however does not handle longer sequences on the {\AMDCARD}. The one thing that goes in favor of {\OCL} is the fact that the implementation did scale without problem, all lengths of sequences was handles as expected. The figures \ref{fig:r260x:implementation} and \ref{fig:r260x:implementation-2d} shows that something happened with the other implementations, even {\CLFFT} had problem with the last sequence. {\GL} and {\DX} could not execute all sequences.
 
 \subsection{Qualitative assessment}
 
-\subsubsection{Scalability}
+When working with programming, raw performance is seldom worth sacrificing all other considerations. This subsection will provide qualitative assessments of the technologies used.
+
+\subsubsection{Scalability of problems}
+
+
 
 \subsubsection{Portability}
 
+
+
 \subsubsection{Programmability}
+
+{\CU} in the experience of this thesis, {\CU} was by far the least complicated to implement. The fewest lines of code needed to get started and few limitations compared to regular {\CPP}. The {\CU} community and online documentation is full of useful information, finding solutions to problem was relatively easy.
+
+{\OCL} was not as straight forward as {\CU}. The biggest difference is the execution setup, likely because the code is compiled runtime.
+
+\subsection{Method}
+
+Was the benchmarking the right way to go? FFT?
 
 \section{Conclusions}
 
-\todo{do conclusions}
+\begin{itemize}
+	\item Comparing overall performance on the {\NVCARD} (fastest first).
+	\begin{enumerate}	
+		\item {\CU}
+		\item {\DX}
+		\item {\GL}
+		\item {\OCL}
+	\end{enumerate}
+	\item {\CU} compared to CPU implementations on long 1D sequences.
+	\begin{itemize}
+		\item {\OMP}: 13 times faster.
+		\item {\CPP}: 18 times faster.
+	\end{itemize}
+	\item {\CU} compared to CPU implementations on large images.
+	\begin{itemize}
+		\item {\OMP}: 15 times faster.
+		\item {\CPP}: 40 times faster.
+	\end{itemize}
+\end{itemize}
 
 \section{Future work}
 

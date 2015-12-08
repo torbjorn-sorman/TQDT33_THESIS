@@ -17,7 +17,7 @@
 			at = {(0.5,0.95)}, 
 			anchor = north},
         ]
-		\addplot[mark=none] table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
+		\addplot table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
         \foreach \tech in \AllTechnologies {
 			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
 		}

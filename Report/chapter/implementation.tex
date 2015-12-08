@@ -275,11 +275,7 @@ All implementations are limited to handle sequences of $2^n$ length or $2^m \tim
 
 \subsection{Testing}
 
-All tests executed on the GPU utilize some implementation of event time stamps. The time stamp event retrieve the actual start of the kernel if the current stream is busy, if the time is measured by the host, some technologies are not able to synchronize and the timings may be very unstable. The CPU implementations used Windows \textit{QueryPerformanceCounter} function, which is a high resolution (<1{\micro}s) time stamp.
-
-All tests on the GTX 670 are run in batches of constant size 1073741824 bytes. A batch with 256-point sequences would run a total of 262144 sequences.
-
-The tests on the R7 260X was not stable on the same sizes and some technologies would fail on large sequences.
+All tests executed on the GPU utilize some implementation of event time stamps. The time stamp event retrieve the actual start of the kernel if the current stream is busy. The CPU implementations used Windows \textit{QueryPerformanceCounter} function, which is a high resolution (<1{\micro}s) time stamp.
 
 \subsection{Reference libraries}
 

@@ -1,24 +1,18 @@
 \chapter{Theory}
 
-This chapter will give an introduction to the FFT algorithm and brief introduction of Graphics Processing Unit (GPU).
-
-\section{Related work}
-
-Write about other benchmark papers.
-
-Read more about it on NVIDIA CUDA resources.
+This chapter will give an introduction to the FFT algorithm and a brief introduction of the Graphics Processing Unit (GPU).
 
 \section{Graphics Processing Unit}
 
-A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing. The inherent parallel structure in handling images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is applying any computationally heavy and parallelizable problem to the GPU platform instead of the CPU or multi-core system.
+A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is applying a problem to the GPU platform instead of the CPU or multi-core system.
 
-\subsection{Graphics pipeline}
+\subsection{Graphics hardware pipeline}
 
-The graphic pipeline setup is an abstraction for handling graphics in a 
+The traditional GPU can be described as a pipeline of a few linked steps. Every step receives input from the previous, processes the input and send it to the next. 
 
 \subsection{GPGPU}
 
-In the early days of GPGPU one had to rely on knowing a lot of graphics abstractions since the then available APIs was build purely with graphic processing in mind. The dominant APIs was OpenGL and DirectX (Direct3D)
+In the early days of GPGPU one had to rely on knowing a lot of graphics abstractions since the then available APIs was created with graphic processing in mind. The dominant APIs was OpenGL and DirectX (Direct3D).
 
 \subsection{GPU vs CPU}
 
@@ -30,7 +24,7 @@ The Fast Fourier Transform is by far mostly associated with the Cooley-Tukey alg
 
 \subsection{FFT Cooley-Tukey}
 
-The Cooley-Tukey alg
+The Cooley-Tukey algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$.  
 
 "
 This is a divide and conquer algorithm that recursively breaks down a DFT of any composite size N = N1N2 into many smaller DFTs of sizes N1 and N2, along with O(N) multiplications by complex roots of unity traditionally called twiddle factors (after Gentleman and Sande, 1966[11]).

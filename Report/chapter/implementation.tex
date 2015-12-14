@@ -58,7 +58,7 @@ The indexing for the global kernel was calculated from the thread id and block i
 	\begin{lstlisting}
 int tid     = blockIdx.x * blockDim.x + threadIdx.x,
     io_low  = tid + (tid & (0xFFFFFFFF << stages_left)),
-    io_high = index1 + (N >> 1);
+    io_high = io_low + (N >> 1);
 	\end{lstlisting}
 	\end{framed}
 	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \texttt{io\_low} is the index of the first input in the butterfly operation and \texttt{io\_high} the index of the second.}
@@ -75,7 +75,7 @@ int n_per_block = N / gridDim.x.
     in_low      = threadId.x.
     in_high     = threadId.x + (n_per_block >> 1).
     out_low     = threadId.x << 1.
-    out_high    = out1 + 1;
+    out_high    = out_low + 1;
 	\end{lstlisting}
 	\end{framed}
 	\caption{ CUDA example code showing index calculation for points in shared memory for the CUDA local kernel. }

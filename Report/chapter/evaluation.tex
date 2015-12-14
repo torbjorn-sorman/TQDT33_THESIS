@@ -3,11 +3,10 @@
 \section{Results}
 
 \newcommand{\plotwidth}{{\textwidth} / 2 + 110pt}
-\newcommand{\AllPlacementOptions}{[!htbp]}
 
 The results will be shown for both graphics cards, {\NVCARD} and \AMDCARD, where the technologies where applicable. The tested technologies are shown in table \ref{tab:platform-technologies}.
 
-\begin{table}\AllPlacementOptions
+\begin{table}[!htbp]
 	\centering
 	\begin{tabular}{|l|l|}
 		\hline
@@ -40,7 +39,7 @@ The experiments are tuned on a few parameters, the number of threads per block a
 The results for a single transform over a $2^{n}$-point sequence are shown in figure \ref{fig:gpu:overview} for the {\NVCARD}, {\AMDCARD} and {\INTELCPU}.
 
 %1D TIME GTX
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\subfloat[\NVCARD]{	
 		\includestandalone[width=\plotwidth]{plots/gtx-overview}
@@ -55,7 +54,7 @@ The results for a single transform over a $2^{n}$-point sequence are shown in fi
 
 The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. For the {\AMDCARD} the {\OCL} implementation was the only who could run the whole test range. DirectCompute managed up to $2^{24}$ and OpenGL up to $2^{23}$. A normalized comparison using {\CU} and {\OCL} is shown in figure \ref{fig:gpu:implementation}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\subfloat[\NVCARD\label{fig:gpu:implementation:gtx}]{	
 		\includestandalone[width=\plotwidth]{plots/gtx-implementation}
@@ -70,7 +69,7 @@ The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. F
 
 The experimental setup for the CPU involved low overhead and the short sequences could not be measured accurately, shown as $0{\micro}s$ in the figures. Results from comparing the sequential {\CPP} and multi-core {\OMP} implementation with {\CU} are shown in figure \ref{fig:gtx:cpu}. {\FFTW} was included and demonstrated how a optimized (per $n$-point length) sequential CPU implementation perform.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gtx-cpu}
 	\caption{Performance relative {\CU} implementation on {\NVCARD} and {\INTELCPU}.}
@@ -79,7 +78,7 @@ The experimental setup for the CPU involved low overhead and the short sequences
 
 Results from comparing the implementations on the different graphics cards are shown in figure \ref{fig:gpu-comparison}. The results are normalized on the result of the tests on the {\NVCARD}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gpu-comparison}
 	\caption{Performance of respective implementation on the {\AMDCARD} and the {\NVCARD}.}
@@ -88,7 +87,7 @@ Results from comparing the implementations on the different graphics cards are s
 
 {\DX}, {\GL} and {\OCL} was supported on both graphics cards, the results of normalizing the resulting times with the time of the {\OCL} implementation is shown in figure \ref{fig:gpu-comparison-tech}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gpu-comparison-tech}
 	\caption{Performance relative {\OCL} added from both cards.}
@@ -103,7 +102,7 @@ Results from comparing the implementations on the different graphics cards are s
 
 The equivalent test very done for 2D-data represented by an image of $m{\times}m$ size. The image contained three channels (red, green blue), the transformation was performed over one channel. Figure \ref{fig:gpu:overview-2d} shows an overview of the results of images seizes ranging from $2^{6}{\times}2^{6}$ to $2^{13}{\times}2^{13}$.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\subfloat[\NVCARD]{	
 		\includestandalone[width=\plotwidth]{plots/gtx-overview-2d}
@@ -118,7 +117,7 @@ The equivalent test very done for 2D-data represented by an image of $m{\times}m
 
 The implementations on the {\NVCARD} and {\AMDCARD} compared to {\CU} and {\OCL} is shown in figure \ref{fig:gpu:implementation-2d}. The {\GL} implementation failed at images larger then $2^{11}{\times}2^{11}$.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\subfloat[\NVCARD\label{fig:gpu:implementation-2d:gtx}]{	
 		\includestandalone[width=\plotwidth]{plots/gtx-implementation}
@@ -133,7 +132,7 @@ The implementations on the {\NVCARD} and {\AMDCARD} compared to {\CU} and {\OCL}
 
 The results of comparing the GPU and CPU handling of a 2D forward transform is shown in figure \ref{fig:gtx:cpu-2d}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gtx-cpu-2d}
 	\caption{Performance relative {\CU} implementation on {\NVCARD} and {\INTELCPU}.}
@@ -142,7 +141,7 @@ The results of comparing the GPU and CPU handling of a 2D forward transform is s
 
 Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gpu-comparison-2d}
 	\caption{Performance of respective implementation on the {\AMDCARD} and the {\NVCARD}.}
@@ -151,7 +150,7 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
 {\DX}, {\GL} and {\OCL} was supported on both graphics cards, the results of normalizing the resulting times with the time of the {\OCL} implementation is shown in figure \ref{fig:gpu-comparison-tech-2d}.
 
-\begin{figure}\AllPlacementOptions
+\begin{figure}[!htbp]
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gpu-comparison-tech-2d}
 	\caption{Performance relative {\OCL} added from both cards.}

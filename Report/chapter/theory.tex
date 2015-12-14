@@ -41,3 +41,55 @@ By looking at the FFT algorithm illustrated, it is easy to see how one can split
 \subsubsection{Problems parallelizing}
 
 Memory latencies can be hidden by caches and fast context switching, however the distance in memory will matter. Large distances between data in the butterfly operations will make the memory the bottleneck. Coalesced memory read goes well with good context switching since the fewer memory request will be performed.
+
+\subsection{FFT on GPU}
+
+\begin{algorithm}
+	\centering
+	\begin{algorithmic}[1]
+		\Procedure{GlobalKernel}{$data, bitmask, angle, stage, dist$}
+            \State $tid \gets \Call{GlobalThreadId}{}$
+            \newline
+            \State // Calculate input offset          
+            \State $low \gets tid + (tid \And bitmask)$
+            \State $high \gets low + dist$            
+            \newline
+            \State // Calculate twiddle-factor
+            \State $angle \gets angle \cdot ((tid \cdot 2^{stage}) \And \Call{ShiftLeft}{dist - 1, stage})$
+            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{angle}$
+            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{angle}$
+            \newline
+            \State // Calculate butterfly-operations
+            \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
+            \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
+            \State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
+        \EndProcedure
+	\end{algorithmic}
+	\caption{Pseudo-code for the global kernel with input from the host.}
+	\label{alg:device:global-kernel}
+\end{algorithm}
+
+\begin{algorithm}
+	\centering
+	\begin{algorithmic}[1]
+		\Procedure{LocalKernel}{$input$, $output$, $angle$, $stepsLeft$, $leadingBits$, $scalar$, $blockRange$}
+            \State let $shared$ be shared/local memory
+            \State $offset \gets blockIdx.x \cdot blockDim.x \cdot 2$
+            \State // Calculate input offset          
+            \State $low \gets tid + (tid \And bitmask)$
+            \State $high \gets low + dist$            
+            \newline
+            \State // Calculate twiddle-factor
+            \State $angle \gets angle \cdot ((tid \cdot 2^{stage}) \And \Call{ShiftLeft}{dist - 1, stage})$
+            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{angle}$
+            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{angle}$
+            \newline
+            \State // Calculate butterfly-operations
+            \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
+            \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
+            \State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
+        \EndProcedure
+	\end{algorithmic}
+	\caption{Pseudo-code for the local kernel with input from the host.}
+	\label{alg:device:local-kernel}
+\end{algorithm}

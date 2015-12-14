@@ -1,0 +1,27 @@
+\lstset{language=C++,
+	morekeywords={uint, cpx}
+}
+\begin{lstlisting}
+void main()
+{
+    cpx w;
+    uint tid = gl_GlobalInvocationID.x;
+	
+    // Input offset
+    uint in_low = tid + (tid & mask);
+    uint in_high = in_low + dist;    
+    
+    // Twiddle factor
+    float a = angle * ((tid << steps) & ((dist - 1U) << steps));    
+    w.x = cos(a);
+    w.y = sin(a);
+    
+    // Butterfly
+    cpx low = data[in_low];
+    cpx high = data[in_high];
+    float x = low.x - high.x;
+    float y = low.y - high.y;
+    data[in_low]  = cpx(low.x + high.x, low.y + high.y);
+    data[in_high] = cpx((w.x * x)-(w.y * y),(w.y * x)+(w.x * y));
+}
+\end{lstlisting}

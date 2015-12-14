@@ -1,0 +1,31 @@
+\lstset{language=C,
+	morekeywords={__kernel, __global, cpx}
+}
+\begin{lstlisting}
+__kernel void ocl_global (
+    __global cpx *in,
+    float angle,
+    unsigned int mask,
+    int steps,
+    int dist )
+{
+    cpx w;
+    int tid = get_global_id(0);
+    
+    // Input offset
+    in += tid + (tid & mask);
+    cpx *high = in + dist;
+        
+    // Twiddle factor
+    angle *= ((tid << steps) & ((dist - 1) << steps));
+    w.y = sincos(angle, &w.x);
+    
+    // Butterfly
+    float x = in->x - high->x;
+    float y = in->y - high->y;
+    in->x   = in->x + high->x;
+    in->y   = in->y + high->y;
+    high->x = (w.x * x) - (w.y * y);
+    high->y = (w.y * x) + (w.x * y);
+}
+\end{lstlisting}

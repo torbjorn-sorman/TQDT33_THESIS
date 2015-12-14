@@ -1,0 +1,31 @@
+\lstset{language=C++,
+	morekeywords={uint3, cpx}
+}
+\begin{lstlisting}
+[numthreads(GROUP_SIZE_X, 1, 1)]
+void dx_global(
+    uint3 threadIDInGroup : SV_GroupThreadID,
+    uint3 groupID : SV_GroupID,
+    uint groupIndex : SV_GroupIndex,
+    uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    cpx w;
+    int tid = groupID.x * GROUP_SIZE_X + threadIDInGroup.x;
+	
+    // Input offset
+    int in_low = tid + (tid & mask);
+    int in_high = in_low + dist;    
+    
+    // Twiddle factor
+    float a = angle * ((tid << steps)&((dist - 1)<< steps));
+    sincos(a, w.y, w.x);	
+    
+    // Butterfly
+    float x = input[in_low].x - input[in_high].x;
+    float y = input[in_low].y - input[in_high].y;
+    rw_buf[in_low].x  = input[in_low].x + input[in_high].x;
+    rw_buf[in_low].y  = input[in_low].y + input[in_high].y;
+    rw_buf[in_high].x = (w.x * x) - (w.y * y);
+    rw_buf[in_high].y = (w.y * x) + (w.x * y);
+}
+\end{lstlisting}

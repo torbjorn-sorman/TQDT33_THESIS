@@ -1,0 +1,29 @@
+\lstset{language=C++,
+	morekeywords={__global__, cpx}
+}
+\begin{lstlisting}
+__global__ void cu_global(
+    cpx *in,
+    unsigned int mask,
+    float angle,
+    int steps,
+    int dist)
+{
+    cpx w;
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    // Input offset
+    in += tid + (tid & mask);
+    cpx *h = in + dist;
+    
+    // Twiddle factor
+    angle *= ((tid << steps) & ((dist - 1) << steps));
+    __sincosf(angle, &w.y, &w.x);    
+        
+    // Butterfly
+    float x = in->x - h->x;
+    float y = in->y - h->y;
+    *in = { in->x + h->x, in->y + h->y };
+    *h  = {(w.x * x)-(w.y * y), (w.y * x)+(w.x * y)};
+}
+\end{lstlisting}

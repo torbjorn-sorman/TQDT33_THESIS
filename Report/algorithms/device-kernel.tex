@@ -1,0 +1,17 @@
+\Procedure{DeviceKernel}{$data, bitmask, angle, stage, dist$}
+	\State $tid \gets \Call{GlobalThreadId}{}$
+	\newline
+	\State // Calculate input offset          
+	\State $low \gets tid + (tid \And bitmask)$
+	\State $high \gets low + dist$            
+	\newline
+	\State // Calculate twiddle-factor
+	\State $angle \gets angle \cdot ((tid \cdot 2^{stage}) \And \Call{ShiftLeft}{dist - 1, stage})$
+	\State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{angle}$
+	\State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{angle}$
+	\newline
+	\State // Calculate butterfly-operations
+	\State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
+	\State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
+	\State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
+\EndProcedure

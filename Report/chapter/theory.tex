@@ -44,22 +44,24 @@ Memory latencies can be hidden by caches and fast context switching, however the
 
 \subsection{FFT on GPU}
 
+The complete FFT algorithm was implemented in two kernels, one kernel running a single stage and one kernel running the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with a \textit{bitmask} created a bitwise left shift operation.
+
 \begin{algorithm}
 	\centering
 	\begin{algorithmic}[1]
 		\Procedure{GlobalKernel}{$data, bitmask, angle, stage, dist$}
-            \State $tid \gets \Call{GlobalThreadId}{}$
-            \newline
-            \State // Calculate input offset          
+            \State $tid \gets \Call{GlobalThreadId}{}$ 
             \State $low \gets tid + (tid \And bitmask)$
-            \State $high \gets low + dist$            
+            \State $high \gets low + dist$
             \newline
-            \State // Calculate twiddle-factor
-            \State $angle \gets angle \cdot ((tid \cdot 2^{stage}) \And \Call{ShiftLeft}{dist - 1, stage})$
-            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{angle}$
-            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{angle}$
+            %\State // Calculate twiddle-factor
+            \State $twMask \gets \Call{ShiftLeft}{dist - 1, stage}$
+            \State $twStage \gets \Call{PowerOfTwo}{stage} \cdot tid$
+            \State $a \gets angle \cdot (twStage \And twMask)$
+            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
+            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
             \newline
-            \State // Calculate butterfly-operations
+            %\State // Calculate butterfly-operations
             \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
             \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
             \State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
@@ -72,22 +74,32 @@ Memory latencies can be hidden by caches and fast context switching, however the
 \begin{algorithm}
 	\centering
 	\begin{algorithmic}[1]
-		\Procedure{LocalKernel}{$input$, $output$, $angle$, $stepsLeft$, $leadingBits$, $scalar$, $blockRange$}
-            \State let $shared$ be shared/local memory
-            \State $offset \gets blockIdx.x \cdot blockDim.x \cdot 2$
-            \State // Calculate input offset          
-            \State $low \gets tid + (tid \And bitmask)$
-            \State $high \gets low + dist$            
-            \newline
-            \State // Calculate twiddle-factor
-            \State $angle \gets angle \cdot ((tid \cdot 2^{stage}) \And \Call{ShiftLeft}{dist - 1, stage})$
-            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{angle}$
-            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{angle}$
-            \newline
-            \State // Calculate butterfly-operations
-            \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
-            \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
-            \State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
+		\Procedure{LocalKernel}{$in$, $out$, $angle$, $stages$, $leadingBits$, $c$, $range$}
+            \State let $shared$ be a shared/local memory buffer     
+            \State $low  \gets \Call{ThreadId}{}$
+            \State $high \gets low + range$   
+            \State $offset \gets blockId \cdot blockDim \cdot 2$
+            \State $shared_{low}  \gets in_{low + offset}$
+            \State $shared_{high} \gets in_{high + offset}$
+            \State $\Call{ConstantGeometry}{shared, low, high, angle, stages}$
+            \State $revLow  \gets \Call{BitReverse}{low + offset, leadingBits}$
+            \State $revHigh \gets \Call{BitReverse}{high + offset, leadingBits}$
+            \State $out_{revLow}  \gets \Call{ComplexMul}{c, shared_{low}}$
+            \State $out_{revHigh} \gets \Call{ComplexMul}{c, shared_{high}}$
+        \EndProcedure
+        \Statex
+        \Procedure{ConstantGeometry}{$shared$, $low$, $high$, $angle$, $stages$}
+            \State $outI \gets low \cdot 2$
+            \State $outII \gets outI + 1$
+            \For {$stage \gets 0, stages - 1$}
+            	\State $bitmask \gets \Call{ShiftLeft}{0xFFFFFFFF, stage}$
+            	\State $a \gets angle \cdot (low \And bitmask)$
+            	\State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
+            	\State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
+				\State $temp \gets \Call{ComplexSub}{shared_{low}, shared_{high}}$
+				\State $shared_{outI} \gets \Call{ComplexAdd}{shared_{low}, shared_{high}}$
+				\State $shared_{outII} \gets \Call{ComplexMul}{twiddleFactor, temp}$
+			\EndFor
         \EndProcedure
 	\end{algorithmic}
 	\caption{Pseudo-code for the local kernel with input from the host.}

@@ -6,33 +6,50 @@ This chapter will give an introduction to the FFT algorithm and a brief introduc
 
 A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is applying a problem to the GPU platform instead of the CPU or multi-core system.
 
-\subsection{Graphics hardware pipeline}
-
-The traditional GPU can be described as a pipeline of a few linked steps. Every step receives input from the previous, processes the input and send it to the next. 
-
 \subsection{GPGPU}
 
-In the early days of GPGPU one had to rely on knowing a lot of graphics abstractions since the then available APIs was created with graphic processing in mind. The dominant APIs was OpenGL and DirectX (Direct3D).
+In the early days of GPGPU one had to know a lot about computer graphics to compute general data. The then available APIs was created solely for graphic processing. The dominant APIs was OpenGL and DirectX (Direct3D). HLSL (High Level Shader Language) and GLSL (OpenGL Shader Language) made it easier but it still generated code into the APIs.
+
+A big change was when NVIDIA released \CU and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell microarchitecture compared to the predecessor Kepler, both similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
 
 \subsection{GPU vs CPU}
 
-The GPU is build on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the two and the GPU performs a much higher floating point operations per second (FLOP) if running at optimal conditions. What the GPU sacrifice is the ability to run one task in sequential. The GPU relies much on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency. The CPU is excellent at sequential tasks and uses branch prediction and ... among other finesses that is not used on the GPU.
+The GPU is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the CPU with the GPU, the GPU performs a much higher floating point operations per second (FLOP) if running at optimal conditions. The GPU relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The CPU is excellent at sequential tasks with features like branch prediction that can not be found on the GPU.
+
+The GPU thread is very lightweight and its creation have very little overhead, whereas on the CPU the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a GPU is very inefficient if not enough threads are ready to work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
+
+A CPU thread have its own registers but the GPU thread work in groups where they share registers and memory. One can not give individual instructions to each thread, all of them will execute the same instruction. The figure \ref{fig:gpu-vs-cpu} demonstrates this by showing that by sharing control-structure and cache, the GPU puts more resources on processing then the CPU where more resources goes into control structures and memory cache.
+
+\begin{figure}
+	\centering
+	\includestandalone[width=\textwidth]{figures/gpu-cpu}
+	\caption{The GPU uses more transistors for data processing}
+	\label{fig:gpu-vs-cpu}
+\end{figure}
 
 \section{Fast Fourier Transform}
 
-The Fast Fourier Transform is by far mostly associated with the Cooley-Tukey algorithm.
+This section extends the information from section \ref{sec:algorithms:fft} in the Benchmark application chapter.
 
 \subsection{FFT Cooley-Tukey}
 
-The Cooley-Tukey algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$.  
+The Fast Fourier Transform is by far mostly associated with the Cooley-Tukey algorithm. The Cooley-Tukey algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$.
 
-"
-This is a divide and conquer algorithm that recursively breaks down a DFT of any composite size N = N1N2 into many smaller DFTs of sizes N1 and N2, along with O(N) multiplications by complex roots of unity traditionally called twiddle factors (after Gentleman and Sande, 1966[11]).
-"
+\begin{figure}
+	\input{figures/cooley-tukey}
+	\caption{The Cooley-Tukey algorithm of an 8-point FFT}
+	\label{fig:flowgraph-16}
+\end{figure}
 
 \subsubsection{FFT Constant Geometry}
 
-Essentially the same algorithm but with some clever indexing the structure of the FFT do not changes through the stages and the indexing stays the same.
+Essentially the same algorithm but with another access pattern that alters the structure of the FFT to use the same indexing over all stages.
+
+\begin{figure}
+	\input{figures/constant-geometry}
+	\caption{The Contant Geometry algorithm of an 8-point FFT}
+	\label{fig:flowgraph-16}
+\end{figure}
 
 \subsection{FFT parallelism}
 
@@ -44,14 +61,14 @@ Memory latencies can be hidden by caches and fast context switching, however the
 
 \subsection{FFT on GPU}
 
-The complete FFT algorithm was implemented in two different kernels, one kernel executing over a span of a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is displayed in pseudo-code in algorithm \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block).
+The complete FFT algorithm was implemented in two different kernels, one kernel executing over a span of a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements Cooley-Tukey algorithm.
 
 \begin{table}
 	\centering
 	\begin{tabular}{|l|l|}
 		\hline
 		Parameter & Argument \\ \hline
-		\textit{data} & Data to be transformed \\ \hline
+		\textit{data} & Data buffer \\ \hline
 		\textit{stage} & $[0,\log_{2}(N) - \log_{2}(N_{block})]$ \\ \hline
 		\textit{bitmask} & $\Call{LeftShift}{\texttt{FFFFFFFF}_{16}, 32 - stage}$ \\ \hline
 		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
@@ -86,20 +103,21 @@ The complete FFT algorithm was implemented in two different kernels, one kernel 
 	\label{alg:device:global-kernel}
 \end{algorithm}
 
-The \textit{local kernel} is always called
+\subsubsection{Shared/Local memory}
+
+The \textit{local kernel} is always called and encapsulates all remaining stages and the bit reverse order output procedure. It is devised as to utilize shared memory completely for all stages. This reduces the primary memory access to read input and write output. The kernel implements the constant geometry algorithm to increase performance in the inner loop, the input and output index is calculated once. See algorithm \ref{alg:device:local-kernel}.
 
 \begin{table}
 	\centering
 	\begin{tabular}{|l|l|}
 		\hline
 		Parameter & Argument \\ \hline
-		\textit{in} & Data to be transformed \\ \hline
-		\textit{out} & Data to be transformed \\ \hline
+		\textit{in} & Input data \\ \hline
+		\textit{out} & Transformed data \\ \hline
 		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
 		\textit{stages} & $[\log_{2}(N) - \log_{2}(N_{block}), \log_{2}(N)]$ \\ \hline
 		\textit{leadingBits} & $32 - \log_{2}(N)$ \\ \hline
 		\textit{c} & Forward: $-1$, Inverse: $1/N$ \\ \hline
-		\textit{range} & $\Call{RightShift}{N, steps}$ \\ \hline		
 	\end{tabular}
 	\caption{Local kernel parameter list with argument depending on size of input $N$ and number of stages left to complete.}
 	\label{tab:local-kernel}
@@ -108,11 +126,11 @@ The \textit{local kernel} is always called
 \begin{algorithm}
 	\centering
 	\begin{algorithmic}[1]
-		\Procedure{LocalKernel}{$in$, $out$, $angle$, $stages$, $leadingBits$, $c$, $range$}
+		\Procedure{LocalKernel}{$in$, $out$, $angle$, $stages$, $leadingBits$, $c$}
             \State let $shared$ be a shared/local memory buffer     
             \State $low  \gets \Call{ThreadId}{}$
-            \State $high \gets low + range$   
-            \State $offset \gets blockId \cdot blockDim \cdot 2$
+            \State $high \gets low + \Call{BlockDim}{}$   
+            \State $offset \gets \Call{BlockId}{} \cdot \Call{BlockDim}{} \cdot 2$
 			\newline
             \State $shared_{low}  \gets in_{low + offset}$
             \State $shared_{high} \gets in_{high + offset}$
@@ -143,3 +161,23 @@ The \textit{local kernel} is always called
 	\caption{Pseudo-code for the local kernel with input from the host.}
 	\label{alg:device:local-kernel}
 \end{algorithm}
+
+\subsubsection{Register width}
+
+An important GPU specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the Cooley-Tukey algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
+
+Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When using $1008 = 1111110000_{2}$ for bit-reversal in this context with the problem size $1024$, the result is $63$. Using a $32$ bit register:
+\begin{equation}
+	1008 = 00000000000000000000001111110000_{2}
+\end{equation}
+bits reversed:
+\begin{equation}
+	264241152 = 00001111110000000000000000000000_{2} 
+\end{equation}
+The leading zeroes becomes trailing zeroes that need to be removed. A logic right shift operation by the length of leadingBits = $32 - \log_{2}(1024) = 22$ solves this.
+
+\begin{table}
+	\centering
+
+	\caption{Example of a bit-reverse operation on a 10 bit integer in a 32 bit register.}
+\end{table}

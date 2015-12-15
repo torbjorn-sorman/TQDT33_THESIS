@@ -203,6 +203,12 @@ The biggest issue with {\GL} is the way the device is selected, it is handled by
 
 Was the benchmarking the right way to go? FFT?
 
+\subsubsection{Abandoned methods or optimizations}
+
+Some optimizations was attempted during the implementations and later abandoned. The reason could be the lack of time or no improvement (or even worse performance). The use of shared memory comes with a great gain in reducing global memory access, however the shared memory can be used in optimized ways such as avoiding banking conflicts. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that more shared memory had to allocated per block.
+
+The use of shared memory in the global kernel and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Naively guessed, would not only this reduce time spent on global memory accesses but it would also reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
+
 \section{Conclusions}
 
 \begin{itemize}

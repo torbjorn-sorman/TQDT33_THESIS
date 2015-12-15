@@ -44,12 +44,27 @@ Memory latencies can be hidden by caches and fast context switching, however the
 
 \subsection{FFT on GPU}
 
-The complete FFT algorithm was implemented in two kernels, one kernel running a single stage and one kernel running the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with a \textit{bitmask} created a bitwise left shift operation.
+The complete FFT algorithm was implemented in two different kernels, one kernel executing over a span of a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is displayed in pseudo-code in algorithm \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block).
+
+\begin{table}
+	\centering
+	\begin{tabular}{|l|l|}
+		\hline
+		Parameter & Argument \\ \hline
+		\textit{data} & Data to be transformed \\ \hline
+		\textit{stage} & $[0,\log_{2}(N) - \log_{2}(N_{block})]$ \\ \hline
+		\textit{bitmask} & $\Call{LeftShift}{\texttt{FFFFFFFF}_{16}, 32 - stage}$ \\ \hline
+		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
+		\textit{dist} & $\Call{RightShift}{N, steps}$ \\ \hline		
+	\end{tabular}
+	\caption{Global kernel parameter list with argument depending on size of input $N$ and $stage$.}
+	\label{tab:global-kernel}
+\end{table}
 
 \begin{algorithm}
 	\centering
 	\begin{algorithmic}[1]
-		\Procedure{GlobalKernel}{$data, bitmask, angle, stage, dist$}
+		\Procedure{GlobalKernel}{$data, stage, bitmask, angle, dist$}
             \State $tid \gets \Call{GlobalThreadId}{}$ 
             \State $low \gets tid + (tid \And bitmask)$
             \State $high \gets low + dist$
@@ -71,6 +86,25 @@ The complete FFT algorithm was implemented in two kernels, one kernel running a 
 	\label{alg:device:global-kernel}
 \end{algorithm}
 
+The \textit{local kernel} is always called
+
+\begin{table}
+	\centering
+	\begin{tabular}{|l|l|}
+		\hline
+		Parameter & Argument \\ \hline
+		\textit{in} & Data to be transformed \\ \hline
+		\textit{out} & Data to be transformed \\ \hline
+		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
+		\textit{stages} & $[\log_{2}(N) - \log_{2}(N_{block}), \log_{2}(N)]$ \\ \hline
+		\textit{leadingBits} & $32 - \log_{2}(N)$ \\ \hline
+		\textit{c} & Forward: $-1$, Inverse: $1/N$ \\ \hline
+		\textit{range} & $\Call{RightShift}{N, steps}$ \\ \hline		
+	\end{tabular}
+	\caption{Local kernel parameter list with argument depending on size of input $N$ and number of stages left to complete.}
+	\label{tab:local-kernel}
+\end{table}
+
 \begin{algorithm}
 	\centering
 	\begin{algorithmic}[1]
@@ -79,9 +113,11 @@ The complete FFT algorithm was implemented in two kernels, one kernel running a 
             \State $low  \gets \Call{ThreadId}{}$
             \State $high \gets low + range$   
             \State $offset \gets blockId \cdot blockDim \cdot 2$
+			\newline
             \State $shared_{low}  \gets in_{low + offset}$
             \State $shared_{high} \gets in_{high + offset}$
             \State $\Call{ConstantGeometry}{shared, low, high, angle, stages}$
+            \newline
             \State $revLow  \gets \Call{BitReverse}{low + offset, leadingBits}$
             \State $revHigh \gets \Call{BitReverse}{high + offset, leadingBits}$
             \State $out_{revLow}  \gets \Call{ComplexMul}{c, shared_{low}}$
@@ -89,16 +125,18 @@ The complete FFT algorithm was implemented in two kernels, one kernel running a 
         \EndProcedure
         \Statex
         \Procedure{ConstantGeometry}{$shared$, $low$, $high$, $angle$, $stages$}
-            \State $outI \gets low \cdot 2$
-            \State $outII \gets outI + 1$
+            \State $out_{i} \gets low \cdot 2$
+            \State $out_{ii} \gets outI + 1$
             \For {$stage \gets 0, stages - 1$}
+	            \newline
             	\State $bitmask \gets \Call{ShiftLeft}{0xFFFFFFFF, stage}$
             	\State $a \gets angle \cdot (low \And bitmask)$
             	\State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
             	\State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
+            	\newline
 				\State $temp \gets \Call{ComplexSub}{shared_{low}, shared_{high}}$
-				\State $shared_{outI} \gets \Call{ComplexAdd}{shared_{low}, shared_{high}}$
-				\State $shared_{outII} \gets \Call{ComplexMul}{twiddleFactor, temp}$
+				\State $shared_{out_{i}} \gets \Call{ComplexAdd}{shared_{low}, shared_{high}}$
+				\State $shared_{out_{ii}} \gets \Call{ComplexMul}{twiddleFactor, temp}$
 			\EndFor
         \EndProcedure
 	\end{algorithmic}

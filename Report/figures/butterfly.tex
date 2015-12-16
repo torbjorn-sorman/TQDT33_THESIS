@@ -13,18 +13,18 @@
 	\node[n, pin={[pin edge={latex'-,black}]left:$x(0)$}] (N-0-0) at (0,-0) {};
 	\node[n, pin={[pin edge={latex'-,black}]left:$x(1)$}] (N-0-1) at (0,-1) {};
                             
-	\node[add, name=N-1-0, pin={[pin edge={-latex',black}]right:$X(0)$}] at (1,-0) {${+}$};
+	\node[add, name=N-1-0, pin={[pin edge={-latex',black},pin distance=1.175cm]right:$X(0)$}] at (1,-0) {${+}$};
 	\node[sub, name=N-1-1, label={[label distance=-10pt]90:${-}$}] at (1,-1) {};
             
 	\node[mul, right of=N-1-1, label={above right:\tiny $W^{k}_{N}$},
 		pin={[pin edge={-latex',black}]right:$X(1)$}] (N-2-1) {${\times}$};       
 
-	\path (N-0-0) edge[->] (N-1-0);	
-	\path (N-0-1) edge[->] (N-1-1);
-	\path (N-1-1) edge[->] (N-2-1);
+	\path (N-0-0) edge[-latex'] (N-1-0);	
+	\path (N-0-1) edge[-latex'] (N-1-1);
+	\path (N-1-1) edge[-latex'] (N-2-1);
       
     % Connect nodes
     \foreach \src / \dst in {	0/0, 0/1, 1/0, 1/1}
-       \path (N-0-\src.east) edge[->] (N-1-\dst.west);
+       \path (N-0-\src.east) edge[-latex'] (N-1-\dst.west);
        
 \end{tikzpicture}

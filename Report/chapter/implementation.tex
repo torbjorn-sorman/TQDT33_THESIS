@@ -24,19 +24,9 @@ The next step is to calculate the specific FFT arguments for a $N$-point sequenc
 	\label{tab:threads-per-block}
 \end{table}
 
-\subsubsection{Butterfly}
-
-The implementation of a $N$-point radix-2 FFT algorithm have $\log_2 N$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
-\begin{figure}[H]
-	\centering
-	\input{figures/butterfly}
-	\caption{Butterfly operations}
-	\label{fig:butterfly}
-\end{figure}
-
 \subsubsection{Thread and block scheme}
 
-The threading scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences requiring more butterfly operations then the threads per block configuration needed the computations to be split over several blocks. In the case of sequence exceeding one block, the sequence is mapped over the \texttt{blockIdx.y} dimension with size \texttt{gridDim.y}. The block dimension \texttt{blockIdx.x} is used to calculate sequence id when running a batch of sequences, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \texttt{x}, \texttt{y}, \texttt{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
+The threading scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences requiring more butterfly operations then the threads per block configuration needed the computations to be split over several blocks. In the case of sequence exceeding one block, the sequence is mapped over the \code{blockIdx.y} dimension with size \code{gridDim.y}. The block dimension \code{blockIdx.x} is used to calculate sequence id when running a batch of sequences, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \code{x}, \code{y}, \code{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
 
 \begin{figure}[htbp]
 	\input{figures/exampleflow}
@@ -50,7 +40,7 @@ Thread synchronization is only available within a block. When the sequence or pa
 
 \subsubsection{Calculation}
 
-The indexing for the global kernel was calculated from the thread id and block id (\texttt{threadIdx.x} and \texttt{blockIdx.x} in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
+The indexing for the global kernel was calculated from the thread id and block id (\code{threadIdx.x} and \code{blockIdx.x} in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
 \begin{figure}[htbp]
 	\centering
 	\lstset{language=C++}
@@ -61,11 +51,11 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
     io_high = io_low + (N >> 1);
 	\end{lstlisting}
 	\end{framed}
-	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \texttt{io\_low} is the index of the first input in the butterfly operation and \texttt{io\_high} the index of the second.}
+	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \code{io\_low} is the index of the first input in the butterfly operation and \code{io\_high} the index of the second.}
 	\label{fig:code-global-index}
 \end{figure}
 
-Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are separate from the indexing in the global memory. The global memory offset depends on threads per block (\texttt{blockDim.x} in CUDA) and block id.
+Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are separate from the indexing in the global memory. The global memory offset depends on threads per block (\code{blockDim.x} in CUDA) and block id.
 \begin{figure}[htbp]
 	\centering
 	\lstset{language=C++}
@@ -133,13 +123,13 @@ The FFT algorithm for two dimensional data, such as images, is first transformed
 	\label{lst:cuda:host-2d-example}	
 \end{figure}
 
-The difference between the FFT kernel for 1D and 2D are the indexing scheme. 2D are indexed as rows at \texttt{blockIdx.x} and columns at $\texttt{threadIdx.x} + \texttt{blockIdx.y} \cdot \texttt{blockDim.x}$. For 2D \texttt{blockIdx.z} is used as the sequence id in a batch.
+The difference between the FFT kernel for 1D and 2D are the indexing scheme. 2D are indexed as rows at \code{blockIdx.x} and columns at $\code{threadIdx.x} + \code{blockIdx.y} \cdot \code{blockDim.x}$. For 2D \code{blockIdx.z} is used as the sequence id in a batch.
 
 \subsubsection{Transpose}
 
-The transpose kernel uses a different index mapping of the 2D-data and blocks/threads then the FFT kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \texttt{blockIdx.x} and \texttt{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tiles rows and columns are diveded over the \texttt{threadIdx.x} and \texttt{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example.
+The transpose kernel uses a different index mapping of the 2D-data and blocks/threads then the FFT kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \code{blockIdx.x} and \code{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tiles rows and columns are diveded over the \code{threadIdx.x} and \code{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example.
 
-Shared memory example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\texttt{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
+Shared memory example: The CUDA shared memory can allocate 49152 bytes and a single data point require $\code{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
 
 \begin{figure}[H]
 	\centering
@@ -163,7 +153,7 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \subsubsection{Setup}
 
-The major differences was mostly related to the setup phase. The CUDA implementation is the most straight forward, \texttt{cudaMalloc(...)} to allocate a buffer and \texttt{cudaMemcpy(...)} to populate it. With CUDA you can write the device code in the same file as the host code and even share functions, the OpenCL and OpenGL require a \texttt{char *} buffer and is most practical if written in seperate file and read as a file stream to a \texttt{char} buffer. DirectCompute Shaders are most easily compiled from file.
+The major differences was mostly related to the setup phase. The CUDA implementation is the most straight forward, \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With CUDA you can write the device code in the same file as the host code and even share functions, the OpenCL and OpenGL require a \code{char *} buffer and is most practical if written in seperate file and read as a file stream to a \code{char} buffer. DirectCompute Shaders are most easily compiled from file.
 
 Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.
 \begin{figure}
@@ -203,7 +193,7 @@ The other technologies require some more setup, OpenCL and OpenGL set one parame
 
 \subsubsection{Kernel code}
 
-This is the part where the code differ the least on but a few points. CUDA have the strongest support for a C/C++ -like language and only adds a function type specifier. The kernel program is accessible from the host via the \texttt{\_\_global\_\_} specifier. OpenCL share much of this but restricted to a C99-style in the current version (2.0). One difference is how one can reference global and local buffers, these must be specified with the specifier \texttt{\_\_global} or \texttt{\_\_local}.
+This is the part where the code differ the least on but a few points. CUDA have the strongest support for a C/C++ -like language and only adds a function type specifier. The kernel program is accessible from the host via the \code{\_\_global\_\_} specifier. OpenCL share much of this but restricted to a C99-style in the current version (2.0). One difference is how one can reference global and local buffers, these must be specified with the specifier \code{\_\_global} or \code{\_\_local}.
 
 DirectCompute and OpenGL Compute Shader uses HLSL (High-Level Shading Language) and GLSL (OpenGL Shading Language) respectively. These languages are similar and share the same restrictions compared to CUDA C/C++ and OpenCL C-code. Device functions can not use pointers or recursion. However these are of little importance for the performance since all code is in-lined in the compilation/building of the kernel program.
 
@@ -214,7 +204,7 @@ The synchronization of threads and blocks is slightly different, CUDA have the o
 \begin{table}[H]
 	\centering
 	\includestandalone[width=\textwidth]{tables/kernel-synchronization}
-	\caption{Synchronize functions regarding within blocks/groups and between host and device. CUDA, OpenCL and DirectCompute uses the same kernel stream to run them sequentially; OpenGL uses the command \texttt{glMemoryBarrier(GL\_SHADER\_STORAGE\_BARRIER\_BIT)} to ensure kernels are run in the same order as launched.}
+	\caption{Synchronize functions regarding within blocks/groups and between host and device. CUDA, OpenCL and DirectCompute uses the same kernel stream to run them sequentially; OpenGL uses the command \code{glMemoryBarrier(GL\_SHADER\_STORAGE\_BARRIER\_BIT)} to ensure kernels are run in the same order as launched.}
 	\label{tab:kernel-synchronization}
 \end{table}
 
@@ -271,15 +261,15 @@ The OpenMP implementation differs from the GPU with the fact that twiddle factor
 
 \subsection{Limitations}
 
-All implementations are limited to handle sequences of $2^n$ length or $2^m \times 2^m$ where $n$ and $m$ are integers. The GPUs have a maximum of 2GB global memory available and the upper limit of 2D transformations are $m = 8192$ since the implementation uses two buffers and require $8192 \cdot 8192 \cdot \texttt{sizeof(float2)} \cdot 2 = 1073741824$ bytes. However on the Radeon R7 260X card, problems with DirectCompute and OpenGL set the limit lower and where DirectCompute handled sizes of $n$ up to $2^{24}$ and OpenGL $n$ and $m$ up to $2^{24}$ and $2^{9}$ respectively.
+All implementations are limited to handle sequences of $2^n$ length or $2^m \times 2^m$ where $n$ and $m$ are integers with maximal value of $n = m + m = 26$. The selected GPUs have a maximum of 2GB global memory available. The limitation is required since the implementation uses a total of $2^{26} \cdot \code{sizeof(float2)} \cdot 2 = 1073741824$ bytes. However on the {\AMDCARD} card, problems with {\DX} and {\GL} set the limit lower. {\DX} handled sizes of $n <= 2^{24}$ and {\GL} $n <= 2^{24}$ and $m <= 2^{9}$.
 
 \subsection{Testing}
 
-All tests executed on the GPU utilize some implementation of event time stamps. The time stamp event retrieve the actual start of the kernel if the current stream is busy. The CPU implementations used Windows \textit{QueryPerformanceCounter} function, which is a high resolution (<1{\micro}s) time stamp.
+All tests executed on the GPU utilize some implementation of event time stamps. The time stamp event retrieve the actual start of the kernel if the current stream is busy. The CPU implementations used Windows \emph{QueryPerformanceCounter} function, which is a high resolution ($<1{\micro}s$) time stamp.
 
 \subsection{Reference libraries}
 
-A couple of reference libraries was included to compare how well the FFT implementation performed. See table \ref{tab:external-implementations}.
+A reference libraries per platform was included to compare how well the FFT implementation performed. The \emph{\FFTW} library for the CPU, runs a planning scheme to create an execution plan for each environment and data input size. Similar strategy is used in the {\CUFFT} and {\CLFFT} libraries used for the {\NVCARD} and {\AMDCARD} respectively. Table \ref{tab:external-implementations} sums up information about the external libraries.
 
 \begin{table}
 	\centering

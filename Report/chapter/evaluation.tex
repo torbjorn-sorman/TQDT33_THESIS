@@ -120,11 +120,11 @@ The implementations on the {\NVCARD} and {\AMDCARD} compared to {\CU} and {\OCL}
 \begin{figure}[!htbp]
 	\centering
 	\subfloat[\NVCARD\label{fig:gpu:implementation-2d:gtx}]{	
-		\includestandalone[width=\plotwidth]{plots/gtx-implementation}
+		\includestandalone[width=\plotwidth]{plots/gtx-implementation-2d}
 	}
 	\vfill
 	\subfloat[\AMDCARD\label{fig:gpu:implementation-2d:r260x}]{
-		\includestandalone[width=\plotwidth]{plots/r260x-implementation}
+		\includestandalone[width=\plotwidth]{plots/r260x-implementation-2d}
 	}	
 	\caption{2D performance relative {\CU} implementation in \ref{fig:gpu:implementation-2d:gtx} and {\OCL} in \ref{fig:gpu:implementation-2d:r260x}. Lower is better.}
 	\label{fig:gpu:implementation-2d}
@@ -179,11 +179,13 @@ When working with programming, raw performance is seldom the only requirement. T
 
 \subsubsection{Scalability of problems}
 
-
+The different technologies are restricted in different ways. {\CU} and {\OCL} are device limited and suggest polling the device for capabilities and limitations. {\DX} and {\GL} are standardized with each version supported. An example of this is the shared memory limit, {\CU} allowed for full access whereas {\DX} was limited to a minimum. The advantage of this is the easy of programming with {\DX} and {\GL} when knowing that a minimum support is expected.
 
 \subsubsection{Portability}
 
-{\OCL} have a stated goal of being portable and open for many architecture enabling computations.
+{\OCL} have a stated goal of being portable and open for many architecture enabling computations. [REF NEEDED, ELSE REMOVE] There where no problems running the code on different graphic cards on either {\OCL} or {\DX}. {\GL} proved to be more problematic with two cards connected to the same host. Platform-specific solution using either OS tweaking or specific device {\GL} expansions, made {\GL} less convenient as GPGPU platform. {\CU} is a proprietary technology and only usable with NVIDIAs own hardware.
+
+Moving from the GPU, the only technology is {\OCL} and here is where it excels among the others. This was not in the scope of the thesis however its worth noting that it would be applicable with minor effort within the application. [DO TEST THIS!]
 
 \subsubsection{Programmability}
 
@@ -197,13 +199,15 @@ When working with programming, raw performance is seldom the only requirement. T
 \end{itemize}
 Both {\DX} and {\GL} follows this pattern, however both have inherently suffer from more graphics abstractions. Especially how memory buffers are created and handled are more prone to mistakes primarily because of the extra steps to actually create and use them in a compute shader.
 
-The biggest issue with {\GL} is the way the device is selected, it is handled by the operating system (OS). It the case of running \textit{Windows 10}: the card have to be connected to a screen. Secondly, that screen needs to be selected as the primary screen. This issue is also a problem when using services like \textit{Windows Remote Desktop} (RDP). RDP enables the user to log in into a computer remotly, this works for the other technologies but not {\GL}.
+The biggest issue with {\GL} is the way the device is selected, it is handled by the operating system (OS). In the case of running \emph{Windows 10}: the card have to be connected to a screen. Secondly, that screen needs to be selected as the primary screen. This issue is also a problem when using services like \textit{Windows Remote Desktop} (RDP). RDP enables the user to log in into a computer remotly, this works for the other technologies but not {\GL}. Not all techniques for remote access have this issue, however it is convenient if the build in tool in the OS support GPGPU features such as selecting the device, especially when running a benchmarking application.
 
 \subsection{Method}
 
-Was the benchmarking the right way to go? FFT?
+The first issue that have to be lifted is the fact that 1D FFTs were measured by single sequence execution instead of running it in batches of sequences. The 2D FFT implementation did inherently run several 1D sequences in batch and compensated for this fact. One solution would have been to modified the 2D execution to accept a batch of sequences organized as 2D data but would have skipped the second part of running column wise transforms.
 
-\subsubsection{Abandoned methods or optimizations}
+\subsubsection{Algorithm}
+
+The FFT implementation was rather straight forward and the implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} indicates {\CUFFT} to perform three to four times faster then the application. Obviously there are a lot to improve. This is not a big issue when running benchmarks but it removes some of the credibility of the application as something practically useful.
 
 Some optimizations was attempted during the implementations and later abandoned. The reason could be the lack of time or no improvement (or even worse performance). The use of shared memory comes with a great gain in reducing global memory access, however the shared memory can be used in optimized ways such as avoiding banking conflicts. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that more shared memory had to allocated per block.
 
@@ -233,15 +237,15 @@ The use of shared memory in the global kernel and also remove the better part of
 
 \section{Future work}
 
-This thesis work leave room for expanding with more test applications and perhaps improve already implemented algorithm.
+This thesis work leave room for expanding with more test applications and improve already implemented algorithm.
 
-\subsection{Algorithm}
+\subsection{Application}
 
-The implementation is much slower then the external libraries for the GPU, the room for improvements ought to be rather large. One can not expect to beat a mature and optimized library such as cuFFT, but one could at least expect a smaller difference in performance in some cases. Improved/further use of shared memory and explore a precomputed twiddle factor table would be interesting. Most important would probably be how the memory buffers are used in the context of data locality and stride.
+The FFT implementation is much slower then the external libraries for the GPU, the room for improvements ought to be rather large. One can not expect to beat a mature and optimized library such as {\CUFFT}, but one could at least expect a smaller difference in performance in some cases. Improved/further use of shared memory and explore a precomputed twiddle factor table would be interesting. Most important would probably be how the memory buffers are used in the context of data locality and stride.
 
 \subsubsection{Test other algorithms}
 
-The FFT algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The FFT is very easy parallelizable but put great demand on the memory by making large strides. It would be of interest to test algorithms, also highly parallelizable, but puts more strain on the use of arithmetic operations.
+The FFT algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The FFT is very easy parallelizable but put great demand on the memory by making large strides. It would be of interest to test algorithms (also highly parallelizable) but puts more strain on the use of arithmetic operations.
 
 \subsection{The hardware}
 

@@ -10,12 +10,13 @@ The Fourier transform is of use when analysing the spectrum of a continuous anal
 \begin{equation}
 	X_k=\sum_{n=0}^{N-1}x(n)W_N^{kn}, k \in {[0, N-1]}	
 \end{equation}
-where $W_N^{kn}=e^{-2iknN}$, commonly named the twiddle factor\cite{Gentleman1966}.
+where $W_N=e^{-\frac{i2{\pi}}{N}}$, commonly named the twiddle factor\cite{Gentleman1966}.
 
-The DFT is used in many practical applications to perform Fourier analysis. Its a powerful mathematical tool that enabled a perspective from another domain where difficult and complex problems becomes easier to analyse. Practically used in digital signal processing, such as discrete samples of sound waves, radio signal or any continuous signal over a finite time interval. In image processing the sampled sequence can be pixels along a row or column. The DFT takes input in complex numbers and outputs in complex coefficients. In practical applications the input is usually real numbers.
+The DFT is used in many practical applications to perform Fourier analysis. Its a powerful mathematical tool that enables a perspective from another domain where difficult and complex problems becomes easier to analyse. Practically used in digital signal processing, such as discrete samples of sound waves, radio signal or any continuous signal over a finite time interval. In image processing the sampled sequence can be pixels along a row or column. The DFT takes input in complex numbers and outputs in complex coefficients. In practical applications the input is usually real numbers.
 
 \subsection{Fast Fourier Transform}\label{sec:algorithms:fft}
-The problem with the DFT is that it has by definition a time complexity of $\mathcal{O}(n^n)$ that makes it too slow for some applications. The Fast Fourier Transform (FFT) is one of the most common algorithm used to compute the DFT of a sequence. An FFT computes the transformation by factorizing the transformation matrix of the DFT into a product of mostly zero factors. This reduces the time complexity to $\mathcal{O}(n\log{}n)$.
+The problem with the DFT is that the direct computation require $\mathcal{O}(n^n)$ complex multiplications and complex additions, that makes it computationally heavy and impractical in high throughput applications. The Fast Fourier Transform (FFT) is one of the most common algorithm used to compute the DFT of a sequence. An FFT computes the transformation by factorizing the transformation matrix of the DFT into a product of mostly zero factors. This reduces the order of computations to $\mathcal{O}(n\log{}n)$ complex multiplications and additions.
+
 The FFT was made popular in 1965 by J.W Cooley and J.W. Tukey and it found its way into practical use at the same time and meant a serious breakthrough in digital signal processing \cite{Cooley1969, Brigham1967}. However the complete algorithm was not invented at the time, the history of the Cooley-Tukey FFT algorithm can be traced back to around 1805 by work of the famous mathematician Carl Friedrich Gauss\cite{Heideman1985}.
 
 The algorithm is a divide and conquer algorithm that relies on recursively dividing the input into sub-blocks and eventually the problem is small enough to be solved and the sub-blocks are combined into the final result.

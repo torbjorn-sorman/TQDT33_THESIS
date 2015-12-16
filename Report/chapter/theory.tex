@@ -10,7 +10,7 @@ A GPU is traditionally specialized hardware for efficient manipulation of comput
 
 In the early days of GPGPU one had to know a lot about computer graphics to compute general data. The then available APIs was created solely for graphic processing. The dominant APIs was OpenGL and DirectX (Direct3D). HLSL (High Level Shader Language) and GLSL (OpenGL Shader Language) made it easier but it still generated code into the APIs.
 
-A big change was when NVIDIA released \CU and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell microarchitecture compared to the predecessor Kepler, both similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
+A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture compared to the predecessor Kepler, both similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
 
 \subsection{GPU vs CPU}
 
@@ -29,46 +29,57 @@ A CPU thread have its own registers but the GPU thread work in groups where they
 
 \section{Fast Fourier Transform}
 
-This section extends the information from section \ref{sec:algorithms:fft} in the Benchmark application chapter.
+This section extends the information from section \ref{sec:algorithms:fft} in the \textit{Benchmark application} chapter.
 
-\subsection{FFT Cooley-Tukey}
+\subsection{\CTALG}
 
-The Fast Fourier Transform is by far mostly associated with the Cooley-Tukey algorithm. The Cooley-Tukey algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$.
+The Fast Fourier Transform is by far mostly associated with the {\CTALG} algorithm. The {\CTALG} algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$. The algorithm decomposes the DFT into $s = \log_r{N}$ stages. The $N$-point DFT is composed of $r$-point small DFTs in $s$ stages. In this context the $r$-point DFT is called radix-$r$ butterfly.
+
+\subsubsection{Butterfly and radix-2}
+
+The implementation of a $N$-point radix-2 FFT algorithm have $\log_2{N}$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
 
 \begin{figure}
+	\centering
+	\input{figures/butterfly}
+	\caption{Radix-2 butterfly operations}
+	\label{fig:butterfly}
+\end{figure}
+
+Figure \ref{fig:cooley-tukey-8} shows an 8-point radix-2 DIF FFT. The input are in natural order whereas the output are in bit reversed order.
+
+\begin{figure}
+	\centering
 	\input{figures/cooley-tukey}
-	\caption{The Cooley-Tukey algorithm of an 8-point FFT}
-	\label{fig:flowgraph-16}
+	\caption{8-point radix-2 FFT using {\CTALG} algorithm}
+	\label{fig:cooley-tukey-8}
 \end{figure}
 
-\subsubsection{FFT Constant Geometry}
+\subsubsection{\CGALG}
 
-Essentially the same algorithm but with another access pattern that alters the structure of the FFT to use the same indexing over all stages.
+Similar to {\CTALG} but with another data access pattern that uses the same indexing in all stages. This removes the overhead of calculating the data input index at each stage as in figure \ref{fig:cooley-tukey-8} where the top butterfly first stage require input $x[0], x[4]$ and in the second stage $x[0], x[2]$ whereas using the {\CGALG} algorithm in figure \ref{fig:constant-geometry-8} the equivalent input are $x[0], x[4]$ for all stages.
 
 \begin{figure}
+	\centering
 	\input{figures/constant-geometry}
-	\caption{The Contant Geometry algorithm of an 8-point FFT}
-	\label{fig:flowgraph-16}
+	\caption{8-point radix-2 FFT using {\CGALG} algorithm}
+	\label{fig:constant-geometry-8}
 \end{figure}
 
-\subsection{FFT parallelism}
+\subsection{Parallelism in FFT}
 
-By looking at the FFT algorithm illustrated, it is easy to see how one can split operations over parallel tasks. Naturally one can start by selecting one thread per data input, however that would lead to unbalanced load as the second input is multiplied by the twiddle factor. By selecting one thread per butterfly operation each thread will share the same arithmetic workload.
+By examining the FFT algorithm, parallelism can be exploited in several ways. Naturally when decomposing the DFT into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the other is not. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
 
-\subsubsection{Problems parallelizing}
+\subsection{GPU algorithm}
 
-Memory latencies can be hidden by caches and fast context switching, however the distance in memory will matter. Large distances between data in the butterfly operations will make the memory the bottleneck. Coalesced memory read goes well with good context switching since the fewer memory request will be performed.
-
-\subsection{FFT on GPU}
-
-The complete FFT algorithm was implemented in two different kernels, one kernel executing over a span of a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements Cooley-Tukey algorithm.
+The complete FFT application was implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
 
 \begin{table}
 	\centering
 	\begin{tabular}{|l|l|}
 		\hline
 		Parameter & Argument \\ \hline
-		\textit{data} & Data buffer \\ \hline
+		\textit{data} & Input/Output data buffer \\ \hline
 		\textit{stage} & $[0,\log_{2}(N) - \log_{2}(N_{block})]$ \\ \hline
 		\textit{bitmask} & $\Call{LeftShift}{\texttt{FFFFFFFF}_{16}, 32 - stage}$ \\ \hline
 		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
@@ -105,15 +116,15 @@ The complete FFT algorithm was implemented in two different kernels, one kernel 
 
 \subsubsection{Shared/Local memory}
 
-The \textit{local kernel} is always called and encapsulates all remaining stages and the bit reverse order output procedure. It is devised as to utilize shared memory completely for all stages. This reduces the primary memory access to read input and write output. The kernel implements the constant geometry algorithm to increase performance in the inner loop, the input and output index is calculated once. See algorithm \ref{alg:device:local-kernel}.
+The \textit{local kernel} is always called and encapsulates all remaining stages and the bit reverse order output procedure. It is devised as to utilize shared memory completely for all stages. This reduces the primary memory access to read input and write output. The kernel implements the {\CGALG} algorithm to increase performance in the inner loop, the input and output index is calculated once. See algorithm \ref{alg:device:local-kernel}.
 
 \begin{table}
 	\centering
 	\begin{tabular}{|l|l|}
 		\hline
 		Parameter & Argument \\ \hline
-		\textit{in} & Input data \\ \hline
-		\textit{out} & Transformed data \\ \hline
+		\textit{in} & Input data buffer \\ \hline
+		\textit{out} & Output data buffer \\ \hline
 		\textit{angle} & $(2 \cdot \pi)/N$ \\ \hline
 		\textit{stages} & $[\log_{2}(N) - \log_{2}(N_{block}), \log_{2}(N)]$ \\ \hline
 		\textit{leadingBits} & $32 - \log_{2}(N)$ \\ \hline
@@ -164,7 +175,7 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
 
 \subsubsection{Register width}
 
-An important GPU specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the Cooley-Tukey algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
+An important GPU specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
 
 Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When using $1008 = 1111110000_{2}$ for bit-reversal in this context with the problem size $1024$, the result is $63$. Using a $32$ bit register:
 \begin{equation}
@@ -175,9 +186,3 @@ bits reversed:
 	264241152 = 00001111110000000000000000000000_{2} 
 \end{equation}
 The leading zeroes becomes trailing zeroes that need to be removed. A logic right shift operation by the length of leadingBits = $32 - \log_{2}(1024) = 22$ solves this.
-
-\begin{table}
-	\centering
-
-	\caption{Example of a bit-reverse operation on a 10 bit integer in a 32 bit register.}
-\end{table}

@@ -3,24 +3,24 @@
 \begin{tabular}{|l|l|}
 	\hline
 	Technology & Code to set parameters and execute kernel \\ \hline
-	CUDA & \texttt{cuda\_kernel$<<<$blocks, threads$>>>$(in, out,\ldots);} \\ \hline
+	CUDA & \code{cuda\_kernel$<<<$blocks, threads$>>>$(\textbf{in}, \textbf{out},\ldots);} \\ \hline
 	\multirow{4}{*}{OpenCL} & \specialcell[t]{
-		\texttt{clSetKernelArg(kernel, 0, sizeof(cl\_mem), \&in);} \\
-		\texttt{clSetKernelArg(kernel, 0, sizeof(cl\_mem), \&out);} \\
+		\code{clSetKernelArg(kernel, 0, sizeof(cl\_mem), \&\textbf{in});} \\
+		\code{clSetKernelArg(kernel, 0, sizeof(cl\_mem), \&\textbf{out});} \\
 		/* Set rest of the arguments. */ \\
-		\texttt{clEnqueueNDRangeKernel(cmd\_queue, kernel, dim, 0, work\_sz, \ldots);}} \\ \hline
+		\code{clEnqueueNDRangeKernel(cmd\_queue, kernel, dim, 0, work\_sz, \ldots);}} \\ \hline
 	\multirow{6}{*}{DirectCompute} & \specialcell[t]{	
-    	\texttt{context->CSSetUnorderedAccessViews(0, 1, output\_uav, NULL);} \\
-    	\texttt{context->CSSetShaderResources(0, 1, \&input\_srv);} \\
-		\texttt{context->CSSetShader(compute\_shader, nullptr, 0);} \\
-		\texttt{arguments = \{}/* Struct holding all arguments */ \texttt{\ldots \}} \\
-		\texttt{dx\_map\_args<dx\_cs\_args>(context, constant\_buffer, \&arguments);} \\
-		\texttt{context->Dispatch(groups.x, groups.y, groups.z);}} \\ \hline
+    	\code{context->CSSetUnorderedAccessViews(0, 1, \textbf{output\_uav}, NULL);} \\
+    	\code{context->CSSetShaderResources(0, 1, \textbf{\&input\_srv});} \\
+		\code{context->CSSetShader(compute\_shader, nullptr, 0);} \\
+		\code{arguments = \{}/* Struct holding all arguments */ \code{\ldots \}} \\
+		\code{dx\_map\_args<dx\_cs\_args>(context, constant\_buffer, \&arguments);} \\
+		\code{context->Dispatch(groups.x, groups.y, groups.z);}} \\ \hline
 	\multirow{6}{*}{OpenGL} & \specialcell[t] {
-		\texttt{glUseProgram(program);} \\
-		\texttt{glBindBufferBase(GL\_SHADER\_STORAGE\_BUFFER, 0, buffer\_in);} \\
-		\texttt{glBindBufferBase(GL\_SHADER\_STORAGE\_BUFFER, 1, buffer\_out);} \\
-		\texttt{glUniform1f(glGetUniformLocation(program, "angle"), angle);} \\	
+		\code{glUseProgram(program);} \\
+		\code{glBindBufferBase(GL\_SHADER\_STORAGE\_BUFFER, 0, \textbf{buffer\_in});} \\
+		\code{glBindBufferBase(GL\_SHADER\_STORAGE\_BUFFER, 1, \textbf{buffer\_out});} \\
+		\code{glUniform1f(glGetUniformLocation(program, "angle"), angle);} \\	
 		/* Set rest of the arguments. */ \\
-		\texttt{glDispatchCompute(groups.x, groups.y, groups.z)}} \\ \hline
+		\code{glDispatchCompute(groups.x, groups.y, groups.z)}} \\ \hline
 \end{tabular}

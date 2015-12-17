@@ -1,12 +1,14 @@
 \chapter{Technologies}
 
-Five different multi-core technologies are used in this study. One is specialized in GPGPU, namely CUDA. OpenGL and DirectCompute are parts of graphic programming languages but breaks away from the graphics abstraction with \textit{Compute Shaders}. OpenCL aims at any heterogeneous multi-core system and is used in this study to use on the GPU. To compare with the CPU, OpenMP is included as a fast and easy way to parallelize C/C++ -code.
+\newcommand{\procwidth}{{\textwidth * 3 / 4}}
+
+Five different multi-core technologies are used in this study. One is a proprietary parallel computing platform and API, namely {\CU}. \textit{Compute Shaders} in {\GL} and {\DX} are parts of graphic programming languages but have a fairly general structure and allows for general computing. {\OCL} aims at any heterogeneous multi-core system and is used in this study solely on the GPU. To compare with the CPU, {\OMP} is included as a fast and easy way to parallelize sequential {\CPP} -code.
 
 \section{CUDA}
 
-CUDA is an acronym for Compute Unified Device Architecture, developed by NVIDIA and released in 2006. CUDA is an extension of the C/C++ language and have its own compiler. CUDA supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} (CUDA implementation of BLAS, Basic Linear Algebra Subprograms) or \textit{cuFFT} (CUDA implementation of FFT).
+CUDA is an acronym for Compute Unified Device Architecture, developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of BLAS, Basic Linear Algebra Subprograms) or \textit{cuFFT} ({\CU} implementation of FFT).
 
-A program running on the GPU is called a kernel. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a CUDA kernel all that is needed is to declare the program with a function type specifier, see table \ref{tab:cuda:func-types}, and call it from the host with launch parameters.
+A program running on the GPU is called a kernel. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel all that is needed is to declare the program with a function type specifier, see table \ref{tab:cuda:func-types}, and call it from the host with launch parameters.
 
 \begin{table}
 	%\includestandalone[width=\textwidth]{tables/cuda-function-types}
@@ -18,10 +20,8 @@ A program running on the GPU is called a kernel. The GPU is referred to as the \
 
 \begin{figure}
 	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/sample/cu}
-	\end{framed}
-	\caption{CUDA global kernel}
+	\fbox{\includestandalone[width=\procwidth]{code/sample/cu}}
+	\caption{Example {\CU} global kernel}
 	\label{lst:sample:global:cu}	
 \end{figure}
 
@@ -29,10 +29,8 @@ A program running on the GPU is called a kernel. The GPU is referred to as the \
 
 \begin{figure}
 	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/sample/ocl}	
-	\end{framed}
-	\caption{OpenCL global kernel}
+	\fbox{\includestandalone[width=\procwidth]{code/sample/ocl}}
+	\caption{{\OCL} global kernel}
 	\label{lst:sample:global:ocl}	
 \end{figure}
 
@@ -40,10 +38,8 @@ A program running on the GPU is called a kernel. The GPU is referred to as the \
 
 \begin{figure}
 	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/sample/dx}	
-	\end{framed}
-	\caption{DirectCompute global kernel}
+	\fbox{\includestandalone[width=\procwidth]{code/sample/dx}}
+	\caption{{\DX} global kernel}
 	\label{lst:sample:global:dx}	
 \end{figure}
 
@@ -51,14 +47,19 @@ A program running on the GPU is called a kernel. The GPU is referred to as the \
 
 \begin{figure}
 	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/sample/gl}	
-	\end{framed}
-	\caption{OpenGL global kernel}
+	\fbox{\includestandalone[width=\procwidth]{code/sample/gl}}
+	\caption{{\GL} global kernel}
 	\label{lst:sample:global:gl}	
 \end{figure}
 
-\section{OpenMP}
+\section{OpenMP}%
+%
+\begin{figure}%
+	\centering%
+	\fbox{\includestandalone[width=\procwidth]{code/sample/omp}}%
+	\caption{{\OMP} procedure completing one stage}%
+	\label{lst:sample:global:omp}%
+\end{figure}%
 
 \section{Related work}
 

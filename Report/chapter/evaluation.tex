@@ -161,7 +161,7 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
 \section{Discussion}
 
-The foremost known technologies for GPGPU, based on other resarch-interest, is {\CU} and {\OCL}. The comparisons from earlier work have been focused primarily on the two \cite{Fang2011b}\cite{Karimi2010}\cite{Park2011}\cite{Su2012b}. Bringing {\DX} (or Direct3D Compute Shader) and {\GL} Compute Shader to table makes an interesting mix since the result from the experiment is that both are viable alternatives in terms of raw performance.
+The foremost known technologies for GPGPU, based on other resarch-interest, is {\CU} and {\OCL}. The comparisons from earlier work have been focused primarily on the two \cite{Fang2011b}\cite{Park2011}\cite{Su2012b}. Bringing {\DX} (or Direct3D Compute Shader) and {\GL} Compute Shader to table makes an interesting mix since the result from the experiment is that both are viable alternatives in terms of raw performance.
 
 The most accurate and fair comparison with GPUs are when data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturate the GPUs streaming multiprocessors there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The conclusions from running the benchmark application with small sequences should be taken lighter then the larger sequences. This is a flaw in the implementation to not handle more then one sequence at the time when sequences are short.
 

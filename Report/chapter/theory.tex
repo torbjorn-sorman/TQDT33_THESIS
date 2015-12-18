@@ -4,13 +4,13 @@ This chapter will give an introduction to the FFT algorithm and a brief introduc
 
 \section{Graphics Processing Unit}
 
-A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is applying a problem to the GPU platform instead of the CPU or multi-core system.
+A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is solving a problem on the GPU platform instead of a multi-core CPU system.
 
 \subsection{GPGPU}
 
-In the early days of GPGPU one had to know a lot about computer graphics to compute general data. The then available APIs was created solely for graphic processing. The dominant APIs was OpenGL and DirectX (Direct3D). HLSL (High Level Shader Language) and GLSL (OpenGL Shader Language) made it easier but it still generated code into the APIs.
+In the early days of GPGPU one had to know a lot about computer graphics to compute general data. The available APIs was created for graphics processing. The dominant APIs was OpenGL and DirectX. HLSL (High Level Shader Language) and GLSL (OpenGL Shader Language) made the step easier but it still generated code into the APIs.
 
-A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture compared to the predecessor Kepler, both similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
+A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
 
 \subsection{GPU vs CPU}
 
@@ -72,7 +72,7 @@ By examining the FFT algorithm, parallelism can be exploited in several ways. Na
 
 \subsection{GPU algorithm}
 
-The complete FFT application was implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \textit{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
+The complete FFT application can be implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \emph{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
 
 \begin{table}
 	\centering

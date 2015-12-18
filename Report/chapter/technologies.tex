@@ -8,7 +8,7 @@ Five different multi-core technologies are used in this study. One is a propriet
 
 CUDA is an acronym for Compute Unified Device Architecture, developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of BLAS, Basic Linear Algebra Subprograms) or \textit{cuFFT} ({\CU} implementation of FFT).
 
-A program running on the GPU is called a kernel. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_}, for others see table \ref{tab:cuda:func-types}, and call it from the host with launch arguments. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as 1-, 2- or 3-dimensional to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
+A program running on the GPU is called a \emph{kernel}. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as 1-, 2- or 3-dimensional to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
 
 All limitations can be polled from the device and all devices are have a minimum feature support called \emph{Compute capability}. The compute capability aimed at in this thesis is $3.0$ and includes the GPU models starting with \emph{GK} or later (\emph{Tegra} and \emph{GM}).
 
@@ -45,29 +45,12 @@ The {\OCL} kernel are compiled and executed on the host and then enqueued at a s
 \end{figure}
 
 Similarly to {\CU} the host application can poll the device for its capabilities and use some fast math function. The equivalent {\CU} kernel in figure \ref{lst:sample:global:cu} is implemented in {\OCL} in figure \ref{lst:sample:global:ocl} and displays small differences. The fast math function \code{\_\_sincosf} is swapped with \code{sincos}.
-%, some other terminology differences is found in table \ref{tab:sample:terms-cu-ocl}.
-
-%\begin{table}
-%	\centering
-%	\begin{tabular}{|l|l|l|}
-%		\hline
-%		\CU & \OCL & \DX \\ \hline
-%		\code{gridDim} & \code{get\_num\_groups()} & - \\ \hline
-%		\code{blockDim} & \code{get\_local\_size()} & - \\ \hline
-%		\code{blockIdx} & \code{get\_group\_id()} & \code{groupID} \\ \hline
-%		\code{threadIdx} & \code{get\_local\_id} & \code{threadIDInGroup} \\ \hline
-%		\code{blockDim $\times$ blockIdx + threadIdx} & \code{get\_global\_id()} & \code{groupID.x $\times$ GROUP\_SIZE\_X + threadIDInGroup} \\ \hline
-%		\code{gridDim $\times$ blockDim} & \code{get\_global\_size()} & \code{GROUP\_SIZE\_X $\times$ GRID\_DIM\_X} \\ \hline	
-%	\end{tabular}
-%	\caption{Terminology differences between the technologies, the dash (-) signifies that the struct was not applicable and instead the shader/kernel code was modified before compiled}
-%	\label{tab:sample:terms-cu-ocl}
-%\end{table}
 
 \section{DirectCompute}
 
-Microsoft {\DX} is an API that supports GPGPU on Microsoft's Windows OS (Vista, 7, 8, 10). {\DX} is part of the \emph{DirectX} collection of APIs. The initial release was with DirectX 11 API and have similarities with both {\CU} and {\OCL}. {\DX} is designed and implemented with \emph{High-Level Shading Language} (HLSL) for its kernel equivalent the \emph{compute shader}. The compute shader is not like the other type of shaders, like the vertex or pixel shaders used in graphic processing.
+Microsoft {\DX} is an API that supports GPGPU on Microsoft's Windows OS (Vista, 7, 8, 10). {\DX} is part of the \emph{DirectX} collection of APIs. DirectX was created to support computer games development for the \emph{Windows 95} OS. The initial release was with DirectX 11 API and have similarities with both {\CU} and {\OCL}. {\DX} is designed and implemented with \emph{High-Level Shading Language} (HLSL). The program (and kernel equivalent) is called a \emph{compute shader}. The compute shader is not like the other type of shaders that are used in the graphic processing pipeline (vertex or pixel shaders among others).
 
-The major differences from {\CU} and {\OCL} in implementing a compute shader comparing to a kernel are the lack of C-like parameters (a \emph{constant buffer} is used instead, each value is stored in a read-only data structure). The setup share much of the work that has to be done with {\OCL} and is compiled at run-time. The block dimensions is built in as a constant value in the compute shader and the block dimensions are specified at shader dispatch/execution.
+The major differences from {\CU} and {\OCL} in implementing a compute shader comparing to a kernel are the lack of C-like parameters (a \emph{constant buffer} is used instead, each value is stored in a read-only data structure). The setup share similarities with {\OCL} and the program is compiled at run-time. The thread dimensions is built in as a constant value in the compute shader and the block dimensions are specified at shader dispatch/execution.
 
 As the code example demonstrated in figure \ref{lst:sample:global:dx} the shader body is similar to that of {\CU} and {\OCL}.
 
@@ -80,7 +63,7 @@ As the code example demonstrated in figure \ref{lst:sample:global:dx} the shader
 
 \section{OpenGL}
 
-Open Graphics Library {\GL} share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. Analogous to HLSL, {\GL} programs are implemented with OpenGL Shading Language (GLSL). The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
+Open Graphics Library ({\GL}) share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. The {\GL} is managed by the Khronos Group and was released in 1992. Analogous to HLSL, {\GL} programs are implemented with OpenGL Shading Language (GLSL). The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
 
 \begin{figure}
 	\centering
@@ -89,17 +72,25 @@ Open Graphics Library {\GL} share much of the same graphics inheritance as {\DX}
 	\label{lst:sample:global:gl}	
 \end{figure}
 
-\section{OpenMP}%
-%
-\begin{figure}%
-	\centering%
-	\fbox{\includestandalone[width=\procwidth]{code/sample/omp}}%
+\section{OpenMP}
+
+{\OMP} (Open Multi-Processing) is an API for multi-platform shared memory multiprocessing programming. It uses a set of compiler directives and library routines to implement multithreading. {\OCL} uses a master thread that \emph{forks} slave threads where work is divided among them. The threads runs concurrently and are allocated to different processors by the runtime environment. The parallel section of the code is marked with preprocessor directives (\code{\#pragma}) and when the threads are running the code they can access their respective id with the \code{omp\_get\_thread\_num()} call. When the section is processed the threads \emph{join} back into the master thread (with id $0$).
+
+Figure \ref{lst:sample:global:omp} shows how the section within an iterator construction is parallelized by scheduling the workload evenly with the \code{static} keyword. Each thread will work on a consecutive span of the iterator variable. 
+
+\begin{figure}
+	\centering
+	\fbox{\includestandalone[width=\textwidth]{code/sample/omp}}%
 	\caption{{\OMP} procedure completing one stage}%
 	\label{lst:sample:global:omp}%
 \end{figure}%
 
-\section{Related work}
+\section{Comparison libraries}
 
-Write about other benchmark papers.
+\subsection{cuFFT}
 
-Read more about it on NVIDIA CUDA resources.
+NVIDIAs cuFFT\cite{cufft}.
+
+\subsection{clFFT}
+
+\subsection{FFTW}

@@ -4,7 +4,7 @@ This chapter will give an introduction to the FFT algorithm and a brief introduc
 
 \section{Graphics Processing Unit}
 
-A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing\cite{Owens2008a}. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is solving a problem on the GPU platform instead of a multi-core CPU system.
+A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing\cite{owens2008gpu}. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is solving a problem on the GPU platform instead of a multi-core CPU system.
 
 \subsection{GPGPU}
 
@@ -14,7 +14,7 @@ A big change was when NVIDIA released {\CU} and together with new hardware made 
 
 \subsection{GPU vs CPU}
 
-The GPU is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the CPU with the GPU, the GPU performs a much higher theoretical floating point operations per second (FLOP) and at the same time at a better cost and energy efficiency\cite{Owens2006}. The GPU relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The CPU is excellent at sequential tasks with features like branch prediction that can not be found on the GPU.
+The GPU is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the CPU with the GPU, the GPU performs a much higher theoretical floating point operations per second (FLOP) and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The GPU relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The CPU is excellent at sequential tasks with features like branch prediction that can not be found on the GPU.
 
 The GPU thread is very lightweight and its creation have very little overhead, whereas on the CPU the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a GPU is very inefficient if not enough threads are ready to work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
 
@@ -33,7 +33,7 @@ This section extends the information from section \ref{sec:algorithms:fft} in th
 
 \subsection{\CTALG}
 
-The Fast Fourier Transform is by far mostly associated with the {\CTALG} algorithm\cite{Cooley1965}. The {\CTALG} algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$. The algorithm decomposes the DFT into $s = \log_r{N}$ stages. The $N$-point DFT is composed of $r$-point small DFTs in $s$ stages. In this context the $r$-point DFT is called radix-$r$ butterfly.
+The Fast Fourier Transform is by far mostly associated with the {\CTALG} algorithm\cite{cooley1965algorithm}. The {\CTALG} algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$. The algorithm decomposes the DFT into $s = \log_r{N}$ stages. The $N$-point DFT is composed of $r$-point small DFTs in $s$ stages. In this context the $r$-point DFT is called radix-$r$ butterfly.
 
 \subsubsection{Butterfly and radix-2}
 

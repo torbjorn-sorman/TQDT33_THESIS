@@ -28,8 +28,10 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{mathtools}
-%\usepackage[english, swedish]{babel}
-\usepackage[smallcaps, acronym, toc, nomain]{glossaries}
+\usepackage[smallcaps, toc, nomain]{glossaries}
+
+\renewcommand*{\acronymtype}{acronym}
+\newglossary[alg]{acronym}{acr}{acn}{\acronymname}
 
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 
@@ -88,6 +90,12 @@
 \newacronym{SM}{SM}{Streaming Multiprocessor}
 \newacronym{OS}{OS}{Operating System}
 \newacronym{VLIW}{VLIW}{Very Long Instruction Word-processor}
+\newacronym{EBCOT}{EBCOT}{Embedded Block Coding with Optimized Truncation}
+\newacronym{DCT}{DCT}{Discrete Cosine Transform}
+\newacronym{FLOPS}{FLOPS}{Floating-point Operations Per Second}
+\newacronym{OpenMP}{OpenMP}{Open Multi-Processing}
+\newacronym{BLAS}{BLAS}{Basic Linear Algebra Subprograms}
+\newacronym{FPGA}{FPGA}{Field-Programmable Gate Array}
 
 \newglossaryentry{kernel}
 {
@@ -98,13 +106,16 @@
 \newglossaryentry{thread}
 {
   name=thread,
-  description={A way for a program to split itself to many simultaneously running tasks}
+  description={A way for a program to split itself to many simultaneously running tasks},
+  plural=threads
 }
 \newglossaryentry{block}
 {
   name=block,
-  description={A way to organize threads, a block is executed by a multiprocessing unit}
+  description={A way to organize threads, a block is executed by a multiprocessing unit},
+  plural=blocks
 }
+
 \makeglossaries
 
 \begin{document}%
@@ -120,10 +131,13 @@
 \include{chapter/thanks}%
 %
 \tableofcontents%
+\newpage
 \listoftables%
+\newpage
 \listoffigures%
-\printglossaries%
-%
+\newpage
+\printglossary[type=\acronymtype,nonumberlist]%
+\include{chapter/glossary}%
 \mainmatter%
 \include{chapter/introduction}%
 \include{chapter/algorithms}%

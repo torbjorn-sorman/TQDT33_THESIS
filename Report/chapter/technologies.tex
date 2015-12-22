@@ -2,23 +2,23 @@
 
 \newcommand{\procwidth}{{\textwidth * 3 / 4}}
 
-Five different multi-core technologies are used in this study. One is a proprietary parallel computing platform and API, namely {\CU}. \textit{Compute Shaders} in {\GL} and {\DX} are parts of graphic programming languages but have a fairly general structure and allows for general computing. {\OCL} aims at any heterogeneous multi-core system and is used in this study solely on the GPU. To compare with the CPU, {\OMP} is included as an effective way to parallelize sequential {\CPP}-code.
+Five different multi-core technologies are used in this study. One is a proprietary parallel computing platform and \gls{API}, namely {\CU}. \textit{Compute Shaders} in {\GL} and {\DX} are parts of graphic programming languages but have a fairly general structure and allows for general computing. {\OCL} aims at any heterogeneous multi-core system and is used in this study solely on the \gls{GPU}. To compare with the \gls{CPU}, {\OMP} is included as an effective way to parallelize sequential {\CPP}-code.
 
 \section{CUDA}
 
-CUDA is an acronym for Compute Unified Device Architecture, developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of BLAS, Basic Linear Algebra Subprograms) or \textit{cuFFT} ({\CU} implementation of FFT).
+\gls{CUDA} developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of \gls{BLAS} or \textit{cuFFT} ({\CU} implementation of \gls{FFT}).
 
-A program running on the GPU is called a \emph{kernel}. The GPU is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as 1-, 2- or 3-dimensional to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
+A program running on the \gls{GPU} is called a \emph{kernel}. The \gls{GPU} is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as \gls{1D}, \gls{2D} or \gls{3D} to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
 
-All limitations can be polled from the device and all devices are have a minimum feature support called \emph{Compute capability}. The compute capability aimed at in this thesis is $3.0$ and includes the NVIDIA GPU models starting with \emph{GK} or later (\emph{Tegra} and \emph{GM}).
+All limitations can be polled from the device and all devices are have a minimum feature support called \emph{Compute capability}. The compute capability aimed at in this thesis is $3.0$ and includes the NVIDIA \gls{GPU} models starting with \emph{GK} or later (\emph{Tegra} and \emph{GM}).
 
-CUDA exposes intrinsic integer functions on the device and a variety of fast math functions, optimized single-precision operations, denoted with the suffix -\emph{f}. In the CUDA example in figure \ref{lst:sample:global:cu} the trigonometric function \code{\_\_sincosf} is used to calculate both $\sin{\alpha}$ and $\cos{\alpha}$ in a single call.
+{\CU} exposes intrinsic integer functions on the device and a variety of fast math functions, optimized single-precision operations, denoted with the suffix -\emph{f}. In the {\CU} example in figure \ref{lst:sample:global:cu} the trigonometric function \code{\_\_sincosf} is used to calculate both $\sin{\alpha}$ and $\cos{\alpha}$ in a single call.
 
 \begin{table}
 	%\includestandalone[width=\textwidth]{tables/cuda-function-types}
 	\centering
 	\input{tables/cuda-function-types}
-	\caption{Table of function types in CUDA.}
+	\caption{Table of function types in {\CU}.}
 	\label{tab:cuda:func-types}
 \end{table}
 
@@ -31,9 +31,9 @@ CUDA exposes intrinsic integer functions on the device and a variety of fast mat
 
 \section{OpenCL}
 
-{\OCL} is a framework and open standard for writing programs that executes on a many multi-core platforms such as CPUs, GPUs and FPGAs among other processors and hardware accelerators. {\OCL} uses a similar structure as {\CU}, the language is based on \emph{C99} when programming a device. The standard is supplied by the \emph{The Khronos Groups} and the implementation is supplied by the manufacturing company or device vendor such as AMD, INTEL or NVIDIA.
+{\OCL} is a framework and open standard for writing programs that executes on multi-core platforms such as the \gls{CPU}, \gls{GPU} and \gls{FPGA} among other processors and hardware accelerators. {\OCL} uses a similar structure as {\CU}, the language is based on \emph{C99} when programming a device. The standard is supplied by the \emph{The Khronos Groups} and the implementation is supplied by the manufacturing company or device vendor such as AMD, INTEL or NVIDIA.
 
-{\OCL} views the system from a perspective where computing resources (CPU or other accelerators) are a number of \emph{compute devices} attached to a host (a CPU). The programs executed on a compute device is called a kernel. Programs in the {\OCL} language are intended to be compiled at run-time to preserve portability between implementations from various host devices.
+{\OCL} views the system from a perspective where computing resources (\gls{CPU} or other accelerators) are a number of \emph{compute devices} attached to a host (a \gls{CPU}). The programs executed on a compute device is called a kernel. Programs in the {\OCL} language are intended to be compiled at run-time to preserve portability between implementations from various host devices.
 
 The {\OCL} kernel are compiled and executed on the host and then enqueued at a specific device. The kernel function accessible by the host to enqueue is specified with \code{\_\_kernel}. Data residing in global memory is specified in the parameter list by \code{\_\_global} and local memory have the specifier \code{\_\_local}. The {\CU} threads are in {\OCL} terminology called \emph{Work-items} and they are organized in \emph{Work-groups}.
 
@@ -48,7 +48,7 @@ Similarly to {\CU} the host application can poll the device for its capabilities
 
 \section{DirectCompute}
 
-Microsoft {\DX} is an API that supports GPGPU on Microsoft's Windows OS (Vista, 7, 8, 10). {\DX} is part of the \emph{DirectX} collection of APIs. DirectX was created to support computer games development for the \emph{Windows 95} OS. The initial release of {\DX} was with DirectX 11 API and have similarities with both {\CU} and {\OCL}. {\DX} is designed and implemented with \emph{High-Level Shading Language} (HLSL). The program (and kernel equivalent) is called a \emph{compute shader}. The compute shader is not like the other type of shaders that are used in the graphic processing pipeline (like vertex or pixel shaders).
+Microsoft {\DX} is an \gls{API} that supports \gls{GPGPU} on Microsoft's Windows \gls{OS} (Vista, 7, 8, 10). {\DX} is part of the \emph{DirectX} collection of APIs. DirectX was created to support computer games development for the \emph{Windows 95} OS. The initial release of {\DX} was with DirectX 11 \gls{API} and have similarities with both {\CU} and {\OCL}. {\DX} is designed and implemented with \gls{HLSL}. The program (and kernel equivalent) is called a \emph{compute shader}. The compute shader is not like the other type of shaders that are used in the graphic processing pipeline (like vertex or pixel shaders).
 
 The major differences from {\CU} and {\OCL} in implementing a compute shader comparing to a kernel are the lack of C-like parameters (a \emph{constant buffer} is used instead, each value is stored in a read-only data structure). The setup share similarities with {\OCL} and the program is compiled at run-time. The thread dimensions is built in as a constant value in the compute shader and the block dimensions are specified at shader dispatch/execution.
 
@@ -63,7 +63,7 @@ As the code example demonstrated in figure \ref{lst:sample:global:dx} the shader
 
 \section{OpenGL}
 
-Open Graphics Library ({\GL}) share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. The {\GL} is managed by the Khronos Group and was released in 1992. Analogous to HLSL, {\GL} programs are implemented with OpenGL Shading Language (GLSL). The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
+\gls{OpenGL} share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. The {\GL} is managed by the Khronos Group and was released in 1992. Analogous to HLSL, {\GL} programs are implemented with \gls{GLSL}. The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
 
 Figure \ref{lst:sample:global:gl} show the {\GL} version of the global kernel.
 
@@ -76,7 +76,7 @@ Figure \ref{lst:sample:global:gl} show the {\GL} version of the global kernel.
 
 \section{OpenMP}
 
-{\OMP} (Open Multi-Processing) is an API for multi-platform shared memory multiprocessing programming. It uses a set of compiler directives and library routines to implement multithreading. {\OMP} uses a master thread that \emph{forks} slave threads where work is divided among them. The threads runs concurrently and are allocated to different processors by the runtime environment. The parallel section of the code is marked with preprocessor directives (\code{\#pragma}) and when the threads are running the code they can access their respective id with the \code{omp\_get\_thread\_num()} call. When the section is processed the threads \emph{join} back into the master thread (with id $0$).
+\gls{OpenMP} is an API for multi-platform shared memory multiprocessing programming. It uses a set of compiler directives and library routines to implement multithreading. {\OMP} uses a master thread that \emph{forks} slave threads where work is divided among them. The threads runs concurrently and are allocated to different processors by the runtime environment. The parallel section of the code is marked with preprocessor directives (\code{\#pragma}) and when the threads are running the code they can access their respective id with the \code{omp\_get\_thread\_num()} call. When the section is processed the threads \emph{join} back into the master thread (with id $0$).
 
 Figure \ref{lst:sample:global:omp} shows how the \emph{for-loop} section is parallelized by scheduling the workload evenly with the \code{static} keyword. The biggest difference in the {\OMP}-example is that the twiddle factor is computed in advance. Each thread will work on a consecutive span of the iterator variable.
 

@@ -1,29 +1,29 @@
 \chapter{Theory}
 
-This chapter will give an introduction to the FFT algorithm and a brief introduction of the Graphics Processing Unit (GPU).
+This chapter will give an introduction to the \gls{FFT} algorithm and a brief introduction of the \gls{GPU}.
 
 \section{Graphics Processing Unit}
 
-A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing\cite{owens2008gpu}. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of General-purpose computing on graphics processing units (GPGPU) is solving a problem on the GPU platform instead of a multi-core CPU system.
+A GPU is traditionally specialized hardware for efficient manipulation of computer graphics and image processing\cite{owens2008gpu}. The inherent parallel structure of images and graphics makes them very efficient at some more general problems where parallelism can be exploited. The concept of \gls{GPGPU} is solving a problem on the \gls{GPU} platform instead of a multi-core \gls{CPU} system.
 
 \subsection{GPGPU}
 
-In the early days of GPGPU one had to know a lot about computer graphics to compute general data. The available APIs was created for graphics processing. The dominant APIs was OpenGL and DirectX. HLSL (High Level Shader Language) and GLSL (OpenGL Shader Language) made the step easier but it still generated code into the APIs.
+In the early days of \gls{GPGPU} one had to know a lot about computer graphics to compute general data. The available APIs was created for graphics processing. The dominant \gls{API}s was OpenGL and DirectX. \gls{HLSL} and \gls{GLSL} made the step easier but it still generated code into the \gls{API}s.
 
-A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the GPU (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the GPU for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
+A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the \gls{GPU} (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the \gls{GPU} for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
 
 \subsection{GPU vs CPU}
 
-The GPU is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the CPU with the GPU, the GPU performs a much higher theoretical floating point operations per second (FLOP) and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The GPU relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The CPU is excellent at sequential tasks with features like branch prediction that can not be found on the GPU.
+The \gls{GPU} is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the \gls{CPU} with the \gls{GPU}, the \gls{GPU} performs a much higher theoretical \gls{FLOPS} and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The \gls{GPU} relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The \gls{CPU} is excellent at sequential tasks with features like branch prediction that can not be found on the \gls{GPU}.
 
-The GPU thread is very lightweight and its creation have very little overhead, whereas on the CPU the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a GPU is very inefficient if not enough threads are ready to work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
+The \gls{GPU} thread is very lightweight and its creation have very little overhead, whereas on the \gls{CPU} the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a \gls{GPU} is very inefficient if not enough threads are ready to work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
 
-A CPU thread have its own registers but the GPU thread work in groups where they share registers and memory. One can not give individual instructions to each thread, all of them will execute the same instruction. The figure \ref{fig:gpu-vs-cpu} demonstrates this by showing that by sharing control-structure and cache, the GPU puts more resources on processing then the CPU where more resources goes into control structures and memory cache.
+A \gls{CPU} thread have its own registers but the \gls{GPU} thread work in groups where they share registers and memory. One can not give individual instructions to each thread, all of them will execute the same instruction. The figure \ref{fig:gpu-vs-cpu} demonstrates this by showing that by sharing control-structure and cache, the \gls{GPU} puts more resources on processing then the \gls{CPU} where more resources goes into control structures and memory cache.
 
 \begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/gpu-cpu}
-	\caption{The GPU uses more transistors for data processing}
+	\caption{The \gls{GPU} uses more transistors for data processing}
 	\label{fig:gpu-vs-cpu}
 \end{figure}
 
@@ -33,11 +33,11 @@ This section extends the information from section \ref{sec:algorithms:fft} in th
 
 \subsection{\CTALG}
 
-The Fast Fourier Transform is by far mostly associated with the {\CTALG} algorithm\cite{cooley1965algorithm}. The {\CTALG} algorithm is a devide and conquer algorithm that recursively breaks down a DFT of any composite size of $N = N_1{\cdot}N_2$. The algorithm decomposes the DFT into $s = \log_r{N}$ stages. The $N$-point DFT is composed of $r$-point small DFTs in $s$ stages. In this context the $r$-point DFT is called radix-$r$ butterfly.
+The Fast Fourier Transform is by far mostly associated with the {\CTALG} algorithm\cite{cooley1965algorithm}. The {\CTALG} algorithm is a devide and conquer algorithm that recursively breaks down a \gls{DFT} of any composite size of $N = N_1{\cdot}N_2$. The algorithm decomposes the \gls{DFT} into $s = \log_r{N}$ stages. The $N$-point \gls{DFT} is composed of $r$-point small \gls{DFT}s in $s$ stages. In this context the $r$-point \gls{DFT} is called radix-$r$ butterfly.
 
 \subsubsection{Butterfly and radix-2}
 
-The implementation of a $N$-point radix-2 FFT algorithm have $\log_2{N}$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
+The implementation of a $N$-point radix-2 \gls{FFT} algorithm have $\log_2{N}$ stages with $N/2$ butterfly operations per stage. A butterfly operation is an addition, a subtraction, followed by a multiplication by a twiddle factor, see figure \ref{fig:butterfly}.
 
 \begin{figure}
 	\centering
@@ -46,12 +46,12 @@ The implementation of a $N$-point radix-2 FFT algorithm have $\log_2{N}$ stages 
 	\label{fig:butterfly}
 \end{figure}
 
-Figure \ref{fig:cooley-tukey-8} shows an 8-point radix-2 DIF FFT. The input are in natural order whereas the output are in bit reversed order.
+Figure \ref{fig:cooley-tukey-8} shows an 8-point radix-2 \gls{DIF} \gls{FFT}. The input are in natural order whereas the output are in bit reversed order.
 
 \begin{figure}
 	\centering
 	\input{figures/cooley-tukey}
-	\caption{8-point radix-2 FFT using {\CTALG} algorithm}
+	\caption{8-point radix-2 \gls{FFT} using {\CTALG} algorithm}
 	\label{fig:cooley-tukey-8}
 \end{figure}
 
@@ -62,17 +62,17 @@ Similar to {\CTALG} but with another data access pattern that uses the same inde
 \begin{figure}
 	\centering
 	\input{figures/constant-geometry}
-	\caption{8-point radix-2 FFT using {\CGALG} algorithm}
+	\caption{8-point radix-2 \gls{FFT} using {\CGALG} algorithm}
 	\label{fig:constant-geometry-8}
 \end{figure}
 
 \subsection{Parallelism in FFT}
 
-By examining the FFT algorithm, parallelism can be exploited in several ways. Naturally when decomposing the DFT into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the other is not. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
+By examining the \gls{FFT} algorithm, parallelism can be exploited in several ways. Naturally when decomposing the \gls{DFT} into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the other is not. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
 
 \subsection{GPU algorithm}
 
-The complete FFT application can be implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \emph{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
+The complete \gls{FFT} application can be implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \emph{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
 
 \begin{table}
 	\centering
@@ -175,7 +175,7 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
 
 \subsubsection{Register width}
 
-An important GPU specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
+An important \gls{GPU} specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
 
 Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When using $1008 = 1111110000_{2}$ for bit-reversal in this context with the problem size $1024$, the result is $63$. Using a $32$ bit register:
 \begin{equation}

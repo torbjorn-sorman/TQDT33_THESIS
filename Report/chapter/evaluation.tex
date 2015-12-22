@@ -32,7 +32,7 @@ The performance measure is time taken for a single forward transform using two b
 
 {\CU} and the {\NVCARD} are the primary technology and platform and the other implementations are ported from {\CU}. To compare the implementation, external libraries are included and can be found italicised in the table \ref{tab:platform-technologies}. Note that the {\CLFFT} library failed to be measured in the same manner as the other GPU implementations, the times are measured at host and short sequences suffer from large overhead.
 
-The experiments are tuned on a few parameters, the number of threads per block and how large the tile dimensions are in the transpose kernel, see chapter \ref{cha:implementation} and table \ref{tab:threads-per-block}.
+The experiments are tuned on a few parameters, the number of threads per block and how large the tile dimensions are in the transpose \gls{kernel}, see chapter \ref{cha:implementation} and table \ref{tab:threads-per-block}.
 
 \subsection{Forward FFT}
 

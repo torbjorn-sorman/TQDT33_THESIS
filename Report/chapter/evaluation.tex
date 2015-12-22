@@ -207,7 +207,7 @@ Moving from the GPU, the only technology is {\OCL} and here is where it excels a
 \begin{itemize}
 	\item Device selection, not needed actively in {\CU}
 	\item Command queue or stream, created by default in {\CU}
-	\item Create and build the kernel run-time instead of compile-time.
+	\item Create and build the \gls{kernel} run-time instead of compile-time.
 \end{itemize}
 Both {\DX} and {\GL} follows this pattern, however both have inherently suffer from more graphics abstractions. Especially how memory buffers are created and handled are more prone to mistakes primarily because of the extra steps to actually create and use them in a compute shader.
 
@@ -227,7 +227,7 @@ By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profi
 
 Some optimizations was attempted during the implementation phase and later abandoned. The reason could be the lack of time or no measurable improvement (or even worse performance). The use of shared memory comes reduced global memory access, however the shared memory can be used in optimized ways such as avoiding banking conflicts\footnote{Good access pattern allows for all threads in a warp to read in parallel, one per memory bank at a total of 32 banks on {\NVCARD}, a banking conflict is two threads in a warp attempting to read from the same bank and becomes serialized reads.}. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that an overhead was introduced and more shared memory had to be allocated per block.
 
-The use of shared memory in the global kernel and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Naively guessed, would not only this reduce time spent on global memory accesses but it would also reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
+The use of shared memory in the global \gls{kernel} and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Naively guessed, would not only this reduce time spent on global memory accesses but it would also reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
 
 \section{Conclusions}
 
@@ -281,6 +281,6 @@ The {\AMDCARD} have the GCN 1.1 (Graphics Core Next) micro architecture and have
 
 \subsubsection{\INTELCPU}
 
-The used {\INTELCPU} have four real cores but can utilize up to eight threads in hardware. Currently the trend is to utilize more cores per die when designing new CPUs. The release of Intel Core i7-6950X and i7-6900K targeting the high-end consumer market will have 10/20 and 8/16 cores / threads respectively. The i7-6950X is expected some time Q2 2016.
+The used {\INTELCPU} have four real cores but can utilize up to eight threads in hardware. Currently the trend is to utilize more cores per die when designing new CPUs. The release of Intel Core i7-6950X and i7-6900K targeting the high-end consumer market will have 10 and 8 cores. The i7-6950X is expected some time in the second quarter in 2016.
 
 This cores will definitely challenge older GPUs, however it would make a interesting comparison with high-end consumer products by compare the newest multi-core CPU and GPU. This thesis was made with hardware from the same generation (released 2012-2013) and the development in parallel programming have progressed and matured even more since.

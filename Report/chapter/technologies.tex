@@ -63,7 +63,7 @@ As the code example demonstrated in figure \ref{lst:sample:global:dx} the shader
 
 \section{OpenGL}
 
-\gls{OpenGL} share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. The {\GL} is managed by the Khronos Group and was released in 1992. Analogous to HLSL, {\GL} programs are implemented with \gls{GLSL}. The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
+\gls{OpenGL} share much of the same graphics inheritance as {\DX} but also provides a compute shader that breaks out of the graphics pipeline. The {\GL} is managed by the Khronos Group and was released in 1992. Analogous to \gls{HLSL}, {\GL} programs are implemented with \gls{GLSL}. The minor differences between the two are subtle but include how arguments are passed and the use of specifiers.
 
 Figure \ref{lst:sample:global:gl} show the {\GL} version of the global kernel.
 
@@ -76,7 +76,7 @@ Figure \ref{lst:sample:global:gl} show the {\GL} version of the global kernel.
 
 \section{OpenMP}
 
-\gls{OpenMP} is an API for multi-platform shared memory multiprocessing programming. It uses a set of compiler directives and library routines to implement multithreading. {\OMP} uses a master thread that \emph{forks} slave threads where work is divided among them. The threads runs concurrently and are allocated to different processors by the runtime environment. The parallel section of the code is marked with preprocessor directives (\code{\#pragma}) and when the threads are running the code they can access their respective id with the \code{omp\_get\_thread\_num()} call. When the section is processed the threads \emph{join} back into the master thread (with id $0$).
+\gls{OpenMP} is an \gls{API} for multi-platform shared memory multiprocessing programming. It uses a set of compiler directives and library routines to implement multithreading. {\OMP} uses a master thread that \emph{forks} slave threads where work is divided among them. The threads runs concurrently and are allocated to different processors by the runtime environment. The parallel section of the code is marked with preprocessor directives (\code{\#pragma}) and when the threads are running the code they can access their respective id with the \code{omp\_get\_thread\_num()} call. When the section is processed the threads \emph{join} back into the master thread (with id $0$).
 
 Figure \ref{lst:sample:global:omp} shows how the \emph{for-loop} section is parallelized by scheduling the workload evenly with the \code{static} keyword. The biggest difference in the {\OMP}-example is that the twiddle factor is computed in advance. Each thread will work on a consecutive span of the iterator variable.
 
@@ -93,12 +93,12 @@ External libraries selected for reference values. {\FFTW} and {\CUFFT} selected 
 
 \subsubsection{FFTW}
 
-{\FFTW} (Fastest Fourier Transform in the West) is a C subroutine library for computing the discrete Fourier transform. {\FFTW} is a free software\cite{fftw2015} that have been available since 1997 and several papers have been published about the {\FFTW}\cite{frigo1999fast,frigo1998fftw,frigo2005design}. {\FFTW} supports a variety of algorithms and by estimating performance it builds a plan to execute the transform. The estimation can be done by performance test of an extensive set of algorithms or by a few known fast algorithms.
+\gls{FFTW} is a C subroutine library for computing the \gls{DFT}. {\FFTW} is a free software\cite{fftw2015} that have been available since 1997 and several papers have been published about the {\FFTW}\cite{frigo1999fast,frigo1998fftw,frigo2005design}. {\FFTW} supports a variety of algorithms and by estimating performance it builds a plan to execute the transform. The estimation can be done by performance test of an extensive set of algorithms or by a few known fast algorithms.
 
 \subsubsection{cuFFT}
 
-The library {\CUFFT} (NVIDIA CUDA Fast Fourier Transform product)\cite{nvidia2013userguide} is designed to provide high performance on NVIDIA GPUs. {\CUFFT} uses algorithms based on the {\CTALG} and Bluestein algorithm\cite{bluestein1970linear}.
+The library {\CUFFT} (NVIDIA CUDA Fast Fourier Transform product)\cite{nvidia2013userguide} is designed to provide high performance on NVIDIA \gls{GPU}s. {\CUFFT} uses algorithms based on the {\CTALG} and Bluestein algorithm\cite{bluestein1970linear}.
 
 \subsubsection{clFFT}
 
-The library {\CLFFT}, found in\cite{githubclfft} is part of the open source AMD Compute Libraries (ACL)\cite{amdacl}. According to an AMD blog post\cite{amd2015performance} the library performs at a similar level of {\CUFFT}\footnote{The performance tests was done using \emph{NVIDIA Tesla K40} for {\CUFFT} and \emph{AMD Firepro W9100} for {\CLFFT}.}.
+The library {\CLFFT}, found in\cite{githubclfft} is part of the open source \gls{ACL}\cite{amdacl}. According to an AMD blog post\cite{amd2015performance} the library performs at a similar level of {\CUFFT}\footnote{The performance tests was done using \emph{NVIDIA Tesla K40} for {\CUFFT} and \emph{AMD Firepro W9100} for {\CLFFT}.}.

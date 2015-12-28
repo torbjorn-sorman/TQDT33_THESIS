@@ -30,6 +30,7 @@
 \usepackage{mathtools}
 \usepackage[smallcaps, toc, nomain]{glossaries}
 
+
 \renewcommand*{\acronymtype}{acronym}
 \newglossary[alg]{acronym}{acr}{acn}{\acronymname}
 
@@ -96,6 +97,7 @@
 \newacronym{OpenMP}{OpenMP}{Open Multi-Processing}
 \newacronym{BLAS}{BLAS}{Basic Linear Algebra Subprograms}
 \newacronym{FPGA}{FPGA}{Field-Programmable Gate Array}
+\newacronym{ACL}{ACL}{AMD Compute Libraries}
 
 \newglossaryentry{kernel}
 {
@@ -137,7 +139,7 @@
 \listoffigures%
 \newpage
 \printglossary[type=\acronymtype,nonumberlist]%
-\include{chapter/glossary}%
+%\include{chapter/glossary}%
 \mainmatter%
 \include{chapter/introduction}%
 \include{chapter/algorithms}%

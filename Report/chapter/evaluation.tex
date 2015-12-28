@@ -11,7 +11,7 @@ The results will be shown for both graphics cards, {\NVCARD} and \AMDCARD, where
 	\begin{tabular}{|l|l|}
 		\hline
 		Platform & Tested technology \\ \hline
-		\multirow{3}{*}{\INTELCPU} & C/C++ \\
+		\multirow{3}{*}{\INTELCPU} & \CPP \\
 		{} & \OMP \\
 		{} & \textit{\FFTW}\tablefootnote{Free software, available at \cite{fftw2015}.} \\ \hline	
 		\multirow{5}{*}{\NVCARD} & \CU \\
@@ -52,7 +52,7 @@ The results for a single transform over a $2^{n}$-point sequence are shown in fi
 	\label{fig:gpu:overview}
 \end{figure}
 
-The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. For the {\AMDCARD} the {\OCL} implementation was the only who could run the whole test range. DirectCompute managed up to $2^{24}$ and OpenGL up to $2^{23}$. A normalized comparison using {\CU} and {\OCL} is shown in figure \ref{fig:gpu:implementation}.
+The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. For the {\AMDCARD} the {\OCL} implementation was the only who could run the whole test range. {\DX} managed up to $2^{24}$ and OpenGL up to $2^{23}$. A normalized comparison using {\CU} and {\OCL} is shown in figure \ref{fig:gpu:implementation}.
 
 \begin{figure}[!htbp]
 	\centering
@@ -163,7 +163,7 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
 The foremost known technologies for GPGPU, based on other resarch-interest, is {\CU} and {\OCL}. The comparisons from earlier work have been focused primarily on the two \cite{fang2011comprehensive, park2011design, su2012overview}. Bringing {\DX} (or Direct3D Compute Shader) and {\GL} Compute Shader to table makes an interesting mix since the result from the experiment is that both are strong alternatives in terms of raw performance.
 
-The most accurate and fair comparison with GPUs are when data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturate the GPUs streaming multiprocessors there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The experience and conclusions from running the benchmark application with a short single sequence should be taken lighter then the longer sequences. This is a flaw in the benchmark application to not handle more then one sequence at the time when sequences are short.
+The most accurate and fair comparison with GPUs are when data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturate the GPUs streaming multiprocessors there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The experience and conclusions from running the benchmark application with a short single sequence should be taken lighter then the longer sequences.
 
 \subsubsection{The CPU}
 

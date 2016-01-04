@@ -12,6 +12,8 @@ In the early days of \gls{GPGPU} one had to know a lot about computer graphics t
 
 A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the \gls{GPU} (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the \gls{GPU} for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
 
+Using GPUs in the context of data centers and \gls{HPC}, studies show that \gls{GPU} acceleration can reduce power\cite{huang2009energy} and its important to know the behaviour of the GPUs in the context of power and \gls{HPC}\cite{ghosh2012energy} for the best utilization.
+
 \subsection{GPU vs CPU}
 
 The \gls{GPU} is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the \gls{CPU} with the \gls{GPU}, the \gls{GPU} performs a much higher theoretical \gls{FLOPS} and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The \gls{GPU} relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The \gls{CPU} is excellent at sequential tasks with features like branch prediction that can not be found on the \gls{GPU}.
@@ -96,14 +98,12 @@ The complete \gls{FFT} application can be implemented in two different kernels, 
             \State $tid \gets \Call{GlobalThreadId}{}$ 
             \State $low \gets tid + (tid \And bitmask)$
             \State $high \gets low + dist$
-            \newline
             %\State // Calculate twiddle-factor
             \State $twMask \gets \Call{ShiftLeft}{dist - 1, stage}$
             \State $twStage \gets \Call{PowerOfTwo}{stage} \cdot tid$
             \State $a \gets angle \cdot (twStage \And twMask)$
             \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
             \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
-            \newline
             %\State // Calculate butterfly-operations
             \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
             \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
@@ -142,11 +142,9 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
             \State $low  \gets \Call{ThreadId}{}$
             \State $high \gets low + \Call{BlockDim}{}$   
             \State $offset \gets \Call{BlockId}{} \cdot \Call{BlockDim}{} \cdot 2$
-			\newline
             \State $shared_{low}  \gets in_{low + offset}$
             \State $shared_{high} \gets in_{high + offset}$
             \State $\Call{ConstantGeometry}{shared, low, high, angle, stages}$
-            \newline
             \State $revLow  \gets \Call{BitReverse}{low + offset, leadingBits}$
             \State $revHigh \gets \Call{BitReverse}{high + offset, leadingBits}$
             \State $out_{revLow}  \gets \Call{ComplexMul}{c, shared_{low}}$
@@ -157,12 +155,10 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
             \State $out_{i} \gets low \cdot 2$
             \State $out_{ii} \gets outI + 1$
             \For {$stage \gets 0, stages - 1$}
-	            \newline
             	\State $bitmask \gets \Call{ShiftLeft}{0xFFFFFFFF, stage}$
             	\State $a \gets angle \cdot (low \And bitmask)$
             	\State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
             	\State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
-            	\newline
 				\State $temp \gets \Call{ComplexSub}{shared_{low}, shared_{high}}$
 				\State $shared_{out_{i}} \gets \Call{ComplexAdd}{shared_{low}, shared_{high}}$
 				\State $shared_{out_{ii}} \gets \Call{ComplexMul}{twiddleFactor, temp}$
@@ -175,7 +171,7 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
 
 \subsubsection{Register width}
 
-An important \gls{GPU} specific detail is that all integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
+An important \gls{GPU} specific detail is that all fast integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
 
 Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When using $1008 = 1111110000_{2}$ for bit-reversal in this context with the problem size $1024$, the result is $63$. Using a $32$ bit register:
 \begin{equation}

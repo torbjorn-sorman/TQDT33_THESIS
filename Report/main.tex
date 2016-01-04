@@ -1,6 +1,6 @@
-\documentclass[
-	english,
-	swedish,
+\documentclass[%
+	english,%
+	swedish,%
 	%draft,
 	utf8,%     More capable input encoding than latin-1.
 	parskip,%  For vertical whitespace between paragraphs.  This comes down to more than just using parskip.sty, so it's better to use this class option.
@@ -11,68 +11,57 @@
 	largesmallcaps,intlimits,widermath,% Good options to KpFonts.
 	sharecounter,nobreak,definition=marks,%  See comments in the results chapter of this document for more information on these options!
 	%article,
-	numbers, % If you want to cite references by numbers, use this option.
-	noparts % Use option 'noparts' if you do not make use of part divisions.	
-]{rtthesis}
-\usepackage{etex}
-
-\usepackage{graphicx}
-\usepackage{standalone}
-\usepackage{mythesis}
-\usepackage{multirow}
-\usepackage{listings}
-\usepackage{framed}
-\usepackage{todo}
-\usepackage{pgfplots}
-\usepackage{tablefootnote}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\usepackage{mathtools}
-\usepackage[smallcaps, toc, nomain]{glossaries}
-
-
-\renewcommand*{\acronymtype}{acronym}
-\newglossary[alg]{acronym}{acr}{acn}{\acronymname}
-
-\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
-
-\usetikzlibrary{
-	fit,
-	positioning,
-	arrows,
-	arrows.meta,
-	patterns
-}
-\usepgfplotslibrary{units}
-
+	numbers,% If you want to cite references by numbers, use this option.
+	noparts% Use option 'noparts' if you do not make use of part divisions.	
+]{rtthesis}%
+\usepackage{etex}%
+%
+\usepackage{graphicx}%
+\usepackage{standalone}%
+\usepackage{mythesis}%
+\usepackage{multirow}%
+\usepackage{listings}%
+\usepackage{framed}%
+\usepackage{todo}%
+\usepackage{pgfplots}%
+\usepackage{tablefootnote}%
+\usepackage{algorithm}%
+\usepackage{algpseudocode}%
+\usepackage{mathtools}%
+\usepackage[smallcaps, toc, nomain]{glossaries}%
+%
+\renewcommand*{\acronymtype}{acronym}%
+\newglossary[alg]{acronym}{acr}{acn}{\acronymname}%
+%
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}%
+%
+\usetikzlibrary{fit,positioning,arrows,arrows.meta,patterns}%
+\usepgfplotslibrary{units}%
 % Common names (or names not decided on representation)
-
-\newcommand{\CTALG}{Cooley-Tukey}
-\newcommand{\CGALG}{Constant geometry}
-
-\newcommand{\NVCARD}{GeForce GTX 670}
-\newcommand{\AMDCARD}{Radeon R7 R260X}
-\newcommand{\INTELCPU}{Intel Core i7 3770K 3.5GHz CPU}
-
-\newcommand{\CU}{CUDA}
-\newcommand{\OCL}{OpenCL}
-\newcommand{\GL}{OpenGL}
-\newcommand{\DX}{DirectCompute}
-\newcommand{\OMP}{OpenMP}
-\newcommand{\CPP}{C/C++}
-\newcommand{\CUFFT}{cuFFT}
-\newcommand{\CLFFT}{clFFT}
-\newcommand{\FFTW}{FFTW}
-
-\newcommand{\code}{\texttt}
-
-\newacronym{ILP}{ILP}{Instruction Level Parallelism}
-\newacronym{1D}{1D}{One-dimensional}
-\newacronym{2D}{2D}{Two-dimensional}
-\newacronym{3D}{3D}{Three-dimensional}
-\newacronym{API}{API}{Application Programming Interface}
-\newacronym{CPU}{CPU}{Central Processing Unit}
-\newacronym{CUDA}{CUDA}{Compute Unified Device Architecture}
+\newcommand{\CTALG}{Cooley-Tukey}%
+\newcommand{\CGALG}{Constant geometry}%
+\newcommand{\NVCARD}{GeForce GTX 670}%
+\newcommand{\AMDCARD}{Radeon R7 R260X}%
+\newcommand{\INTELCPU}{Intel Core i7 3770K 3.5GHz CPU}%
+\newcommand{\CU}{CUDA}%
+\newcommand{\OCL}{OpenCL}%
+\newcommand{\GL}{OpenGL}%
+\newcommand{\DX}{DirectCompute}%
+\newcommand{\OMP}{OpenMP}%
+\newcommand{\CPP}{C/C++}%
+\newcommand{\CUFFT}{cuFFT}%
+\newcommand{\CLFFT}{clFFT}%
+\newcommand{\FFTW}{FFTW}%
+%
+\newcommand{\code}{\texttt}%
+%
+\newacronym{ILP}{ILP}{Instruction Level Parallelism}%
+\newacronym{1D}{1D}{One-dimensional}%
+\newacronym{2D}{2D}{Two-dimensional}%
+\newacronym{3D}{3D}{Three-dimensional}%
+\newacronym{API}{API}{Application Programming Interface}%
+\newacronym{CPU}{CPU}{Central Processing Unit}%
+\newacronym{CUDA}{CUDA}{Compute Unified Device Architecture}%
 \newacronym{DFT}{DFT}{Discrete Fourier Transform}
 \newacronym{DIF}{DIF}{Decimation In Frequency}
 \newacronym{DIT}{DIT}{Decimation In Time}
@@ -102,7 +91,8 @@
 \newacronym{HBM}{HBM}{High Bandwidth Memory}
 \newacronym{GCN}{GCN}{Graphics Core Next}
 \newacronym{RDP}{RDP}{Remote Desktop Protocol}
-
+\newacronym{HPC}{HPC}{High Performance Computing}
+%
 \newglossaryentry{kernel}
 {
   name=kernel,
@@ -121,9 +111,9 @@
   description={A way to organize threads, a block is executed by a multiprocessing unit},
   plural=blocks
 }
-
-\makeglossaries
-
+%
+\makeglossaries%
+%
 \begin{document}%
 %
 \selectlanguage{english}%
@@ -132,16 +122,16 @@
 \maketitle%
 \makeLibraryPage{\input{chapter/abstract}}%
 \begin{abstract}[english]%
-	\input{chapter/abstract}%
+\input{chapter/abstract}%
 \end{abstract}%
 \include{chapter/thanks}%
 %
 \tableofcontents%
-\newpage
+\newpage%
 \listoftables%
-\newpage
+\newpage%
 \listoffigures%
-\newpage
+\newpage%
 \printglossary[type=\acronymtype,nonumberlist]%
 %\include{chapter/glossary}%
 \mainmatter%

@@ -149,13 +149,10 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 	\label{fig:transpose-memory}
 \end{figure}
 
-\subsection{Differences}
+\subsection{Differences}%
+\subsubsection{Setup}%
+The majority of differences in the implementations was related to the setup phase. The {\CU} implementation is the most straight forward, \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer and is most practical if written in seperate file and read as a file stream to a \code{char} buffer. {\DX} Shaders are most easily compiled from file. Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.
 
-\subsubsection{Setup}
-
-The major differences was mostly related to the setup phase. The {\CU} implementation is the most straight forward, \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With {\CU} you can write the device code in the same file as the host code and even share functions, the {\OCL} and {\GL} require a \code{char *} buffer and is most practical if written in seperate file and read as a file stream to a \code{char} buffer. {\DX} Shaders are most easily compiled from file.
-
-Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.
 \begin{figure}
 	\centering
 	\def \setupWidth {\textwidth / 2 - 20pt}	
@@ -174,7 +171,7 @@ Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup t
 	\subfloat[{\GL} setup\label{setup:gl}]{		
 		\fbox{\includestandalone[width=\setupWidth]{code/setup/gl}}
 	}
-	\caption{A simplified overview of the different functions required for a kernel launch and upload of initial data. }		
+	\caption{A overview of the setup functions for a kernel launch and buffer initialization.}
 	\label{fig:code:setup}
 \end{figure}
 

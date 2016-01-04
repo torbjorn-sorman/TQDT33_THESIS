@@ -12,7 +12,7 @@ void main()
     uint in_high = in_low + dist;    
     
     // Twiddle factor
-    float a = angle * ((tid << steps) & ((dist - 1U) << steps));    
+    float a = angle * ((tid<<steps)&((dist - 1U)<<steps));    
     w.x = cos(a);
     w.y = sin(a);
     
@@ -22,6 +22,6 @@ void main()
     float x = low.x - high.x;
     float y = low.y - high.y;
     data[in_low]  = cpx(low.x + high.x, low.y + high.y);
-    data[in_high] = cpx((w.x * x)-(w.y * y),(w.y * x)+(w.x * y));
+    data[in_high] = cpx((w.x*x)-(w.y*y),(w.y*x)+(w.x*y));
 }
 \end{lstlisting}

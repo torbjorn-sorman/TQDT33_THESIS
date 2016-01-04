@@ -9,7 +9,7 @@ The computationally demanding problems have during a long period of time been so
 	\item The power wall
 \end{enumerate}
 
-The first wall states that its hard to further exploit simultanious \gls{CPU} instructions, techniques like instruction pipelining, superscalar execution and \gls{VLIW} exists but complexity and latency of hardware reduces the benefits. Related to the first is second wall, the gap between \gls{CPU} speed and memory access time, that may cost several hundreds of \gls{CPU} cykles if accessing primary memory. The third wall is power and heating problem. The power consumed is increased exponentially with each factorial increase of operating frequency.
+The first wall states that its hard to further exploit simultanious \gls{CPU} instructions, techniques like instruction pipelining, superscalar execution and \gls{VLIW} exists but complexity and latency of hardware reduces the benefits. Related to the first is second wall, the gap between \gls{CPU} speed and memory access time, that may cost several hundreds of \gls{CPU} cycles if accessing primary memory. The third wall is power and heating problem. The power consumed is increased exponentially with each factorial increase of operating frequency.
 
 Improvements can be found in exploiting parallelism. Either reconstruct the problem or the problem itself is already inherently parallelizable. This trend manifests in development towards use and construction of multi-core microprocessors. The \gls{GPU} is one such device, originally exploited the inherent parallelism within visual rendering but now is available as a tool for massively parallelizable problems.
 
@@ -19,7 +19,7 @@ Programmers might experience a threshold and slow learning curve to move from se
 Depending on one's preferences, needs and future goals; selecting one technology over the other might be derived from portability or hardware requirements, programmability, how well it integrates with other frameworks or \gls{API} or how well it's supported by the provider or developer community. Within the range of this thesis, the covered technologies are \gls{CUDA}, \gls{OpenCL}, DirectCompute (\gls{API} within DirectX) and \gls{OpenGL} Compute Shaders.
 
 \section{Purpose and goal of the thesis work}
-One goal is to evaluate, select and implement an application suitable for \gls{GPGPU}.
+Evaluate, select and implement an application suitable for \gls{GPGPU}.
 
 Implement the same application in important technologies for \gls{GPGPU}:
 \begin{itemize}
@@ -28,6 +28,9 @@ Implement the same application in important technologies for \gls{GPGPU}:
 	\item \DX
 	\item \GL
 \end{itemize}
-Compare results with sequential {\CPP} implementation and an multi-core {\OMP} implementation.
+Compare \gls{GPU} results with results from an sequential {\CPP} implementation and an multi-core {\OMP} implementation.
 
 The purpose is to compare the different technologies by means of benchmarking performance and make relevant qualitative assessments.
+
+\section{Delimitations}
+Only one benchmark application algorithm will be selected, the scope and time required only allows for one algorithm. Each technology have different debugging and profiling tools and those are not included in the comparison of the technologies, however important such tool can be, they are of a subjective nature and harder to put a measure on.

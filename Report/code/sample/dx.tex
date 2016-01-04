@@ -17,7 +17,7 @@ void dx_global(
     int in_high = in_low + dist;    
     
     // Twiddle factor
-    float a = angle * ((tid << steps)&((dist - 1)<< steps));
+    float a = angle * ((tid<<steps)&((dist - 1)<<steps));
     sincos(a, w.y, w.x);	
     
     // Butterfly

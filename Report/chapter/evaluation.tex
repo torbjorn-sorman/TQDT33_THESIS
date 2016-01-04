@@ -229,27 +229,52 @@ Some optimizations was attempted during the implementation phase and later aband
 
 The use of shared memory in the global \gls{kernel} and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Naively guessed, would not only this reduce time spent on global memory accesses but it would also reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
 
+\subsubsection{Wider context}
+
+Since \gls{GPU} acceleration can be put to great use in large computing environments, the fastest execution time and power usage is important. If the same hardware performs faster with another technology the selection or migration is motivated be reduced power costs. Data centers and \gls{HPC} is becoming a major energy consumer globally and future development must consider all energy saving options.
+
 \section{Conclusions}
 
-\begin{itemize}
-	\item Comparing overall performance on the {\NVCARD} (fastest first).
-	\begin{enumerate}	
-		\item {\CU}
-		\item {\DX}
-		\item {\GL}
-		\item {\OCL}
-	\end{enumerate}
-	\item {\CU} compared to CPU implementations on long 1D sequences.
-	\begin{itemize}
-		\item {\OMP}: 13 times faster.
-		\item {\CPP}: 18 times faster.
-	\end{itemize}
-	\item {\CU} compared to CPU implementations on large images.
-	\begin{itemize}
-		\item {\OMP}: 15 times faster.
-		\item {\CPP}: 40 times faster.
-	\end{itemize}
-\end{itemize}
+\subsection{Benchmark application}
+
+The \gls{FFT} algorithm was successfully implemented as benchmark application in all technologies. The application provided parallelism and enough computational complexity to take advantage of the \gls{GPU}. This is supported by the increase in speed compared to the \gls{CPU} and the benchmark algorithm executed up to $40$ times slower in the {\CPP} implementation, see table \ref{tab:cu-vs-cpu}.
+
+\begin{table}
+	\centering	
+	\begin{tabular}{|l|r|r|}
+		\hline
+		Implementation & 1D & 2D \\ \hline
+		{\CU} & 1 & 1 \\ \hline
+		{\OMP} & ${\times}13$ & ${\times}15$ \\ \hline
+		{\CPP} & ${\times}18$ & ${\times}40$ \\ \hline
+	\end{tabular}
+	\caption{Table comparing {\CU} to \gls{CPU} implementations.}
+	\label{tab:cu-vs-cpu}
+\end{table}
+
+\subsection{Benchmark performance}
+
+Ranked by execution time of the application on {\NVCARD} executing a \gls{2D} sequence:
+\begin{enumerate}	
+	\item {\CU}
+	\item {\DX}
+	\item {\GL}
+	\item {\OCL}
+\end{enumerate}
+
+Ranked by execution time of the application on {\AMDCARD} executing a \gls{2D} sequence:
+\begin{enumerate}	
+	\item {\DX}
+	\item {\GL}\footnote{Failed to compute sequences longer then $2^{23}$ elements.}
+	\item {\OCL}\footnote{Performance very close to or equal to {\DX} when sequence reached $2^{24}$ elements or more.}
+\end{enumerate}
+The \gls{2D} ranking reflects the results of a combined performance relative {\OCL} where {\DX} average at $0.8$ the speed of {\OCL}.	
+
+\subsection{Implementation}
+
+Code size and complexity was an advantage of the {\CU} implementation. The necessary steps to setup before executing the kernel was but a fraction of the other technologies. {\OCL} needs runtime compiling of the kernel and thus require many more steps and produces a lot more setup code. The {\DX} setup was similar to {\OCL} with the addition of some more specifications required, {\OCL} followed this pattern but did however lacked the support to select device if several was available.
+
+The kernel code was fairly straight forward and was relatively easy to port from {\CU} to any other technology. The most issues could be traced back to memory buffer handling and related back to the setup phase or how buffers needed to be declared in-code. {\CU} offered the most in terms of support to a {\CPP} like coding with fewer limitations than the rest.
 
 \section{Future work}
 
@@ -257,13 +282,15 @@ This thesis work leave room for expanding with more test applications and improv
 
 \subsection{Application}
 
-The FFT algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The FFT is very easy parallelizable but put great demand on the memory by making large strides. It would be of interest to test algorithms (also highly parallelizable) but puts more strain on the use of arithmetic operations.
+The \gls{FFT} algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The \gls{FFT} is very easy parallelized and put great demand on the memory by making large strides. It would be of interest to expand with other algorithms that puts more strain on the use of arithmetic operations.
 
 \subsubsection{FFT algorithms}
 
-The benchmark application is much slower then the external libraries for the GPU, the room for improvements ought to be rather large. One can not alone expect to beat a mature and optimized library such as {\CUFFT}, but one could at least expect a smaller difference in performance in some cases. Improved/further use of shared memory and explore a precomputed twiddle factor table would be interesting. Most important would probably be how both the shared and global memory buffers are used in the context of data locality and stride.
+The benchmark application is much slower then the external libraries for the \gls{GPU}, the room for improvements ought to be rather large. One can not alone expect to beat a mature and optimized library such as {\CUFFT}, but one could at least expect a smaller difference in performance in some cases. Improved or further use of shared memory and explore a precomputed twiddle factor table would be interest. Most important would probably be how both the shared and global memory buffers are used in the context of data locality and stride.
 
 For the basic algorithm there are several options to remove some of the overhead when including the bit-reversal as a separate step by selecting an algorithm with different geometry.
+
+Based on {\CUFFT} that uses {\CTALG} and Bluestein's algorithm, perhaps an extension would be to expand to other then $2^{k}$ sizes and implement to compare any size of sequence length.
 
 \subsection{Hardware}
 

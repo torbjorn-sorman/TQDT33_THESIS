@@ -1,34 +1,34 @@
 \begin{tikzpicture}[>=triangle 45,font=\sffamily]
 
-\definecolor{control-color}{rgb}{1, 0.90, 0.80}
+\definecolor{ctrl-color}{rgb}{1, 0.90, 0.80}
 \definecolor{alu-color}{rgb}{0.4, 1, 0.4}
-\definecolor{memory-color}{rgb}{0.5, 0.75, 1}
+\definecolor{mem-color}{rgb}{0.5, 0.75, 1}
 
-\tikzstyle{control-box} = [draw, fill={control-color}, anchor=south west]
-\tikzstyle{memory-box} = [draw, fill={memory-color}, anchor=south west]
+\tikzstyle{ctrl-box} = [draw, fill={ctrl-color}, anchor=south west]
+\tikzstyle{mem-box} = [draw, fill={mem-color}, anchor=south west]
 \tikzstyle{alu-box} = [draw, fill={alu-color}, anchor=south west]
 
-\node (cpu-control) at (0,2) [control-box, minimum width=3.9cm, minimum height=1.9cm] {Control};
-\node (cpu-cache) at (0,0) [memory-box, minimum width=7.9cm, minimum height=1.9cm] {Cache};
+\node (cpu-ctrl) at (0,2) [ctrl-box, minimum width=3.9cm, minimum height=1.9cm] {ctrl};
+\node (cpu-cache) at (0,0) [mem-box, minimum width=7.9cm, minimum height=1.9cm] {Cache};
 \node (cpu-alu-1) at (4, 3) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
 \node (cpu-alu-2) at (6, 3) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
 \node (cpu-alu-3) at (4, 2) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
 \node (cpu-alu-4) at (6, 2) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
-\node (cpu-dram) at (0,-1.25) [memory-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
-\node [draw, opacity = 0, fit=(cpu-control) (cpu-dram), label=above:{CPU}] {\hspace*{\fill}~};
+\node (cpu-dram) at (0,-1.25) [mem-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
 
 
 \foreach \y in {0,...,7} {
-	\node (gpu-cache-\y) at (8.5, \y / 2) [memory-box, minimum width=0.45cm, minimum height=0.225cm]{\hspace*{\fill}~};
-	\node (gpu-ctrl-\y) [control-box, minimum width=0.45cm, minimum height=0.225cm, above = -0.025cm of gpu-cache-\y]{\hspace*{\fill}~};	
+	\node (gpu-cache-\y) at (8.5, \y / 2) [mem-box, minimum width=0.45cm, minimum height=0.225cm]{ };
+	\node (gpu-ctrl-\y) [ctrl-box, minimum width=0.45cm, minimum height=0.225cm, above = -0.025cm of gpu-cache-\y]{ };	
 }
-
 \foreach \y in {0,...,7} {
 	\foreach \x in {0,...,15} {
-		\node (gpu-alu-\y-\x) at (\x / 2 + 9, \y / 2) [alu-box, minimum width=0.45cm, minimum height=0.45cm]{\hspace*{\fill}~};
+		\node (gpu-alu-\y-\x) at (\x / 2 + 9, \y / 2) [alu-box, minimum width=0.45cm, minimum height=0.45cm]{ };
 	}
 }
-\node (gpu-dram) at (9,-1.25) [memory-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
-\node [draw, opacity = 0, fit=(gpu-alu-7-15) (gpu-dram) (gpu-cache-0), label=above:{GPU}] {\hspace*{\fill}~};
+\node (gpu-dram) at (9,-1.25) [mem-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
+
+\node [draw, opacity = 0, fit=(cpu-ctrl) (cpu-dram), label=above:{CPU}] {};
+\node [draw, opacity = 0, fit=(gpu-alu-7-15) (gpu-dram) (gpu-cache-0), label=above:{GPU}] {};
 
 \end{tikzpicture}

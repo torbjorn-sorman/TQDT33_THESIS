@@ -9,7 +9,7 @@ The \gls{FFT} application has been implemented in {\CPP}, {\CU}, {\OCL}, {\DX} a
 \subsubsection{Setup}
 
 The implementation of the \gls{FFT} algorithm on a \gls{GPU} can be broken down into a few steps, see figure \ref{fig:algorithm-overview} for a simplified overview. The application setup differs among the tested technologies, however some steps can be generalized; get platform and device information, allocate device buffers and upload data to device.
-\begin{figure}[H]
+\begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/overview}
 	\caption{Overview of the events in the algorithm.}
@@ -28,7 +28,7 @@ The next step is to calculate the specific \gls{FFT} arguments for a $N$-point s
 
 The threading scheme was one butterfly per thread, so that a sequence of sixteen points require eight threads. Each platform was configured to a number of threads per block (see table \ref{tab:threads-per-block}) and any sequences requiring more butterfly operations then the threads per block configuration needed the computations to be split over several blocks. In the case of sequence exceeding one block, the sequence is mapped over the \code{blockIdx.y} dimension with size \code{gridDim.y}. The block dimension \code{blockIdx.x} is used to calculate sequence id when running a batch of sequences, the block dimensions are limited to $2^{31}$, $2^{16}$, $2^{16}$ respectively for \code{x}, \code{y}, \code{z}. Example: if the threads per block limit is two, then four blocks would be needed for a sixteen point sequence.
 
-\begin{figure}[htbp]
+\begin{figure}
 	\input{figures/exampleflow}
 	\caption{Flow graph of a 16-point \gls{FFT} using (stage 1 and 2) {\CTALG} algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
 	\label{fig:flowgraph-16}
@@ -41,7 +41,7 @@ Thread synchronization is only available within a block. When the sequence or pa
 \subsubsection{Calculation}
 
 The indexing for the global kernel was calculated from the thread id and block id (\code{threadIdx.x} and \code{blockIdx.x} in CUDA) as seen in figure \ref{fig:code-global-index}. Input and output is done on the same index.
-\begin{figure}[htbp]
+\begin{figure}
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -56,7 +56,7 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
 \end{figure}
 
 Index calculation for the local kernel is done once for all stages, see figure \ref{fig:code-local-index}. These indexes are separate from the indexing in the global memory. The global memory offset depends on threads per block (\code{blockDim.x} in {\CU}) and block id.
-\begin{figure}[htbp]
+\begin{figure}
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -74,14 +74,14 @@ int n_per_block = N / gridDim.x.
 
 The last operation after the last stage is to perform the bit-reverse indexing operation, this is done when writing from shared to global memory. The implementation of bit reversing is available as a intrinsic integer instruction, see table \ref{tab:bit-reverse-intrinsics}. If instruction is not available figure \ref{fig:code-bit-reverse} shows the code used. The bit reversed value had to be right shifted the number of zeroes leading the number in a 32-bit int. Example of the bit-reverse index operation: index 8 of a 16 point sequence is bit-reversed to 1, in binary its 1000 reversed to 0001. Index 8 of a 32 point sequence is bit-reversed to 2, corresponds to 01000 to 00010. Figure \ref{fig:flowgraph-16} show the complete bit-reverse operations of a 16-point sequence in the output step after the last stage.
 
-\begin{table}[!htbp]
+\begin{table}
 	\centering
 	\includestandalone[width=\textwidth]{tables/bit-reverse-intrinsics}
 	\caption{Integer intrinsic bit-reverse function for different technologies.}
 	\label{tab:bit-reverse-intrinsics}
 \end{table}
 
-\begin{figure}[!htbp]
+\begin{figure}
 	\centering
 	\lstset{language=C++}
 	\begin{framed}
@@ -99,7 +99,7 @@ return((x >> 16) | (x << 16));
 
 \subsection{FFT 2D}
 
-\begin{figure}[htbp]
+\begin{figure}
 	\centering
 	\subfloat[Original image\label{image-1:lena}]{
 		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena.jpg}{}		
@@ -122,7 +122,7 @@ The transpose kernel uses a different index mapping of the 2D-data and blocks/th
 
 Shared memory example: The {\CU} shared memory can allocate 49152 bytes and a single data point require $\code{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes.
 
-\begin{figure}[H]
+\begin{figure}
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/cuda-device-transpose}	
@@ -133,7 +133,7 @@ Shared memory example: The {\CU} shared memory can allocate 49152 bytes and a si
 
 The transpose kernel uses the shared memory and tiling of the image to avoid large strides through global memory. Each block represents a tile in the image. The first step is to write the complete tile to shared memory and synchronize the threads before writing to the output buffer. Both reading from the input memory and writing to the output memory is performed in close stride. Figure \ref{fig:transpose-memory} shows how the transpose is performed in memory.
 
-\begin{figure}[H]
+\begin{figure}
 	\centering
 	\includestandalone[width=\textwidth]{figures/transpose-tile}
 	\caption{Illustration of how shared memory is used in transposing an image. Input data is tiled and each tile is written to shared memory and transposed before written to the output memory. }
@@ -216,7 +216,7 @@ The {\OMP} implementation benefits in performance from calculating the twiddle f
 
 The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps, first calculate the real values, secondly copy from real to imaginary.
 
-\begin{table}[H]
+\begin{table}
 	\centering
 	\input{tables/omp-twiddle}
 	\caption{Twiddle factors for a 16-point sequence where $\alpha$ equals $(2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
@@ -231,7 +231,7 @@ The same butterfly operation uses the constant geometry index scheme. The indexe
 
 See figure \ref{fig:omp:bit-reverse-order} for code showing the bit reverse ordering operation in C/C++ code.
 
-\begin{figure}[H]
+\begin{figure}
 	\centering
 	\begin{framed}
 		\includestandalone[width=\textwidth]{code/omp-bit-reverse}	

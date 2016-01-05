@@ -1,8 +1,7 @@
-\documentclass[%
-	draft,%
-	%english,%
-	%swedish,%
-	%draft,
+\RequirePackage{etex}
+\RequirePackage{tikz}
+\documentclass[
+	draft,
 	utf8,%     More capable input encoding than latin-1.
 	parskip,%  For vertical whitespace between paragraphs.  This comes down to more than just using parskip.sty, so it's better to use this class option.
 	% S5MP % If you intend to really use margin paragraphs (not recommended!).
@@ -14,110 +13,27 @@
 	%article,
 	numbers,% If you want to cite references by numbers, use this option.
 	noparts% Use option 'noparts' if you do not make use of part divisions.	
-]{rtthesis}%
-\usepackage{etex}%
+]{rtthesis}
+
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.12}
-\usepackage{etoolbox}
+\usepgfplotslibrary{units}
 \apptocmd{\sloppy}{\hbadness 10000\relax}{}{}
-%
-\usepackage{graphicx}%
-\usepackage{standalone}%
-\usepackage{mythesis}%
-\usepackage{multirow}%
-\usepackage{listings}%
-\usepackage{framed}%
-\usepackage{todo}%
-\usepackage{pgfplots}%
-\usepackage{tablefootnote}%
-\usepackage{algorithm}%
-\usepackage{algpseudocode}%
-\usepackage{mathtools}%
-\usepackage[smallcaps, toc, nomain]{glossaries}%
-%
-\renewcommand*{\acronymtype}{acronym}%
-\newglossary[alg]{acronym}{acr}{acn}{\acronymname}%
-%
-\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}%
-%
-\usetikzlibrary{fit,positioning,arrows,arrows.meta,patterns}%
-\usepgfplotslibrary{units}%
-% Common names (or names not decided on representation)
-\newcommand{\CTALG}{Cooley-Tukey}%
-\newcommand{\NVCARD}{GeForce GTX 670}%
-\newcommand{\AMDCARD}{Radeon R7 R260X}%
-\newcommand{\INTELCPU}{Intel Core i7 3770K 3.5GHz CPU}%
-\newcommand{\CU}{CUDA}%
-\newcommand{\OCL}{OpenCL}%
-\newcommand{\GL}{OpenGL}%
-\newcommand{\DX}{DirectCompute}%
-\newcommand{\OMP}{OpenMP}%
-\newcommand{\CPP}{C/C++}%
-\newcommand{\CUFFT}{cuFFT}%
-\newcommand{\CLFFT}{clFFT}%
-\newcommand{\FFTW}{FFTW}%
-%
-\newcommand{\code}{\texttt}%
-%
-\newacronym{ILP}{ILP}{Instruction Level Parallelism}%
-\newacronym{1D}{1D}{One-dimensional}%
-\newacronym{2D}{2D}{Two-dimensional}%
-\newacronym{3D}{3D}{Three-dimensional}%
-\newacronym{API}{API}{Application Programming Interface}%
-\newacronym{CPU}{CPU}{Central Processing Unit}%
-\newacronym{CUDA}{CUDA}{Compute Unified Device Architecture}%
-\newacronym{DFT}{DFT}{Discrete Fourier Transform}
-\newacronym{DIF}{DIF}{Decimation In Frequency}
-\newacronym{DIT}{DIT}{Decimation In Time}
-\newacronym{DRAM}{DRAM}{Dynamic Random Access Memory}
-\newacronym{DWT}{DWT}{Discrete Wavelet Transform}
-\newacronym{FFT}{FFT}{Fast Fourier Transform}
-\newacronym{FFTW}{FFTW}{Fastest Fourier Transform in the West}
-\newacronym{GPGPU}{GPGPU}{General-Purpose computing on Graphics Processing Units}
-\newacronym{GPU}{GPU}{Graphics Processing Unit}
-\newacronym{OpenCL}{OpenCL}{Graphics Processing Unit}
-\newacronym{OpenGL}{OpenGL}{Open Graphics Language}
-\newacronym{HLSL}{HLSL}{High-Level Shading Language}
-\newacronym{GLSL}{GLSL}{OpenGL Shading Language}
-\newacronym{SIMD}{SIMD}{Graphics Processing Unit}
-\newacronym{SIMT}{SIMT}{Graphics Processing Unit}
-\newacronym{SM}{SM}{Streaming Multiprocessor}
-\newacronym{OS}{OS}{Operating System}
-\newacronym{VLIW}{VLIW}{Very Long Instruction Word-processor}
-\newacronym{EBCOT}{EBCOT}{Embedded Block Coding with Optimized Truncation}
-\newacronym{DCT}{DCT}{Discrete Cosine Transform}
-\newacronym{FLOPS}{FLOPS}{Floating-point Operations Per Second}
-\newacronym{OpenMP}{OpenMP}{Open Multi-Processing}
-\newacronym{BLAS}{BLAS}{Basic Linear Algebra Subprograms}
-\newacronym{FPGA}{FPGA}{Field-Programmable Gate Array}
-\newacronym{ACL}{ACL}{AMD Compute Libraries}
-\newacronym{HBM2}{HBM2}{High Bandwidth Memory}
-\newacronym{HBM}{HBM}{High Bandwidth Memory}
-\newacronym{GCN}{GCN}{Graphics Core Next}
-\newacronym{RDP}{RDP}{Remote Desktop Protocol}
-\newacronym{HPC}{HPC}{High Performance Computing}
-%
-\newglossaryentry{kernel}
-{
-  name=kernel,
-  description={A \gls{GPU} program},
-  plural=kernels
-}
-\newglossaryentry{thread}
-{
-  name=thread,
-  description={A way for a program to split itself to many simultaneously running tasks},
-  plural=threads
-}
-\newglossaryentry{block}
-{
-  name=block,
-  description={A way to organize threads, a block is executed by a multiprocessing unit},
-  plural=blocks
-}
-%
-\makeglossaries%
-%
+
+\usepackage{standalone}
+\usepackage{mythesis}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{framed}
+\usepackage{tablefootnote}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools}
+\usepackage[smallcaps, toc, nomain]{glossaries}
+\usetikzlibrary{fit,positioning,arrows,arrows.meta,patterns}
+
+\input{main_helper.tex}
+
 \begin{document}%
 %
 \selectlanguage{english}%
@@ -145,8 +61,6 @@
 \include{chapter/technologies}%
 \include{chapter/implementation}%
 \include{chapter/evaluation}%
-%
-%\include{chapter/rtthesis-doc}%
 %
 \backmatter%
 %

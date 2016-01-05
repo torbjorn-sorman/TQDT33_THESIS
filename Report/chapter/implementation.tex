@@ -30,7 +30,7 @@ The threading scheme was one butterfly per thread, so that a sequence of sixteen
 
 \begin{figure}[htbp]
 	\input{figures/exampleflow}
-	\caption{Example flow graph of a sixteen-point \gls{FFT} using (stage 1 and 2) {\CTALG} algorithm and (stage 3 and 4) {\CGALG} algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+	\caption{Flow graph of a 16-point \gls{FFT} using (stage 1 and 2) {\CTALG} algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
 	\label{fig:flowgraph-16}
 \end{figure}
 
@@ -51,7 +51,7 @@ int tid     = blockIdx.x * blockDim.x + threadIdx.x,
     io_high = io_low + (N >> 1);
 	\end{lstlisting}
 	\end{framed}
-	\caption{ CUDA example code showing index calculation for each stage in the global kernel, N is the total number of points. \code{io\_low} is the index of the first input in the butterfly operation and \code{io\_high} the index of the second.}
+	\caption{ {\CU} example code showing index calculation for each stage in the global kernel, N is the total number of points. \code{io\_low} is the index of the first input in the butterfly operation and \code{io\_high} the index of the second.}
 	\label{fig:code-global-index}
 \end{figure}
 
@@ -68,7 +68,7 @@ int n_per_block = N / gridDim.x.
     out_high    = out_low + 1;
 	\end{lstlisting}
 	\end{framed}
-	\caption{ {\CU} example code showing index calculation for points in shared memory for the {\CU} local kernel. }
+	\caption{ {\CU} code for index calculation of points in shared memory. }
 	\label{fig:code-local-index}
 \end{figure}
 
@@ -108,22 +108,13 @@ return((x >> 16) | (x << 16));
     \subfloat[Magnitude representation\label{image-2:lena}]{
 		\includegraphics[keepaspectratio=true, scale=0.33]{images/lena_transformed.jpg}{}
     }
-	\caption{Original image \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization (magnitude scale skewed for better visuals). \ref{image-2:lena}. }
+	\caption{Original image in \ref{image-1:lena} transformed and represented with a quadrant shifted magnitude visualization (scale skewed for better visuals) in \ref{image-2:lena}. }
     \label{fig:twodimentransform}
 \end{figure}
 
-The \gls{FFT} algorithm for two dimensional data, such as images, is first transformed row wise (each row as a separate sequence) and then a transform of each column. The implementation performs a row wise transformation and then transposes the whole image twice, see figure \ref{lst:cuda:host-2d-example}. A transformed image is shown in figure \ref{fig:twodimentransform}.
+The \gls{FFT} algorithm for \gls{2D} data, such as images, is first transformed row wise (each row as a separate sequence) and then an equal transform of each column. The application performs a row wise transformation and then a transpose of the image to reuse the row wise transform procedure for the columns. This method gives better memory locality when transforming the columns. A transformed image is shown in figure \ref{fig:twodimentransform}.
 
-\begin{figure}[htbp]
-	\centering
-	\begin{framed}
-		\includestandalone[width=\textwidth]{code/cuda-host-2d}	
-	\end{framed}
-	\caption{CUDA host code for the \gls{2D} \gls{FFT} algorithm.}
-	\label{lst:cuda:host-2d-example}	
-\end{figure}
-
-The difference between the \gls{FFT} kernel for \gls{1D} and \gls{2D} are the indexing scheme. \gls{2D} are indexed as rows at \code{blockIdx.x} and columns at $\code{threadIdx.x} + \code{blockIdx.y} \cdot \code{blockDim.x}$. For \gls{2D} \code{blockIdx.z} is used as the sequence id in a batch.
+The difference between the \gls{FFT} kernel for \gls{1D} and \gls{2D} are the indexing scheme. \gls{2D} rows are indexed with \code{blockIdx.x} and columns with \code{threadIdx.x} added with an offset of \code{blockIdx.y} $\cdot$ \code{blockDim.x}.
 
 \subsubsection{Transpose}
 
@@ -151,29 +142,28 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \subsection{Differences}%
 \subsubsection{Setup}%
-The majority of differences in the implementations was related to the setup phase. The {\CU} implementation is the most straight forward, \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer and is most practical if written in seperate file and read as a file stream to a \code{char} buffer. {\DX} Shaders are most easily compiled from file. Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.
-
-\begin{figure}
-	\centering
-	\def \setupWidth {\textwidth / 2 - 20pt}	
-	\subfloat[{\OCL} setup\label{setup:cu}]{		
-		\fbox{\includestandalone[width=\setupWidth]{code/setup/cu}}
-	}	
-	\hfill
-	\subfloat[{\OCL} setup\label{setup:ocl}]{		
-		\fbox{\includestandalone[width=\setupWidth]{code/setup/ocl}}
-	}
-	\newline
-	\subfloat[{\DX} setup\label{setup:dx}]{		
-		\fbox{\includestandalone[width=\setupWidth]{code/setup/dx}}
-	}
-	\hfill
-	\subfloat[{\GL} setup\label{setup:gl}]{		
-		\fbox{\includestandalone[width=\setupWidth]{code/setup/gl}}
-	}
-	\caption{A overview of the setup functions for a kernel launch and buffer initialization.}
-	\label{fig:code:setup}
-\end{figure}
+The majority of differences in the implementations was related to the setup phase. The {\CU} implementation is the most straight forward, \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer and is most practical if written in separate file and read as a file stream to a \code{char} buffer. {\DX} shaders are most easily compiled from file. Figure \ref{fig:code:setup} demonstrates a simplified overview of how to setup the kernels in the different technologies.%
+\begin{figure}%
+	\centering%
+	\def \setupWidth {\textwidth / 2 - 18pt}%
+	\subfloat[{\CU} setup\label{setup:cu}]{%
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/cu}}%
+	}%
+	\hfill%
+	\subfloat[{\OCL} setup\label{setup:ocl}]{%
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/ocl}}%
+	}%
+	\vfill%
+	\subfloat[{\DX} setup\label{setup:dx}]{%
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/dx}}%
+	}%
+	\hfill%
+	\subfloat[{\GL} setup\label{setup:gl}]{%		
+		\fbox{\includestandalone[width=\setupWidth]{code/setup/gl}}%
+	}%
+	\caption{An overview of the setup phase for the \gls{GPU} technologies.}%
+	\label{fig:code:setup}%
+\end{figure}%
 
 \subsubsection{Kernel execution}
 
@@ -196,12 +186,16 @@ This is the part where the code differ the least on but a few points. {\CU} have
 
 \subsubsection{Synchronization}
 
-The synchronization of threads and blocks is slightly different, CUDA have the options to synchronize threads within a block and to synchronize host and device, the equivalent exists in all but {\DX} (DirectX 11) where the device synchronization is not done trivially as with a blocking function call. See table \ref{tab:kernel-synchronization} for the code used for each technology.
+The synchronization of threads and blocks is slightly different, {\CU} have the options to synchronize threads within a block and to synchronize host and device, the equivalent exists in all but {\DX} where the device synchronization is not done trivially as with a blocking function call. {\CU}, {\OCL} and {\DX} uses the same kernel stream to execute kernels sequentially while in {\GL} the sequential execution is accomplished by the use of
+\begin{lstlisting}
+glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
+\end{lstlisting}
+in between launches. See table \ref{tab:kernel-synchronization} for the synchronization functions used.
 
 \begin{table}[H]
 	\centering
-	\includestandalone[width=\textwidth]{tables/kernel-synchronization}
-	\caption{Synchronize functions regarding within blocks/groups and between host and device. CUDA, {\OCL} and {\DX} uses the same kernel stream to run them sequentially; {\GL} uses the command \code{glMemoryBarrier(GL\_SHADER\_STORAGE\_BARRIER\_BIT)} to ensure kernels are run in the same order as launched.}
+	\includestandalone[width={\textwidth}]{tables/kernel-synchronization}
+	\caption{Synchronization in \gls{GPU} technologies.}
 	\label{tab:kernel-synchronization}
 \end{table}
 
@@ -225,7 +219,7 @@ The twiddle factor are stored for each butterfly operation. To save time, only t
 \begin{table}[H]
 	\centering
 	\input{tables/omp-twiddle}
-	\caption{Twiddle factors for a 16-point sequence where $\alpha = (2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
+	\caption{Twiddle factors for a 16-point sequence where $\alpha$ equals $(2 \cdot \pi) / 16$. Each row $i$ corresponds to the $i$th butterfly operation.}
 	\label{tab:omp:twiddle-overview}
 \end{table}
 

@@ -1,6 +1,7 @@
 \documentclass[%
-	english,%
-	swedish,%
+	draft,%
+	%english,%
+	%swedish,%
 	%draft,
 	utf8,%     More capable input encoding than latin-1.
 	parskip,%  For vertical whitespace between paragraphs.  This comes down to more than just using parskip.sty, so it's better to use this class option.
@@ -15,6 +16,10 @@
 	noparts% Use option 'noparts' if you do not make use of part divisions.	
 ]{rtthesis}%
 \usepackage{etex}%
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+\usepackage{etoolbox}
+\apptocmd{\sloppy}{\hbadness 10000\relax}{}{}
 %
 \usepackage{graphicx}%
 \usepackage{standalone}%
@@ -39,7 +44,6 @@
 \usepgfplotslibrary{units}%
 % Common names (or names not decided on representation)
 \newcommand{\CTALG}{Cooley-Tukey}%
-\newcommand{\CGALG}{Constant geometry}%
 \newcommand{\NVCARD}{GeForce GTX 670}%
 \newcommand{\AMDCARD}{Radeon R7 R260X}%
 \newcommand{\INTELCPU}{Intel Core i7 3770K 3.5GHz CPU}%

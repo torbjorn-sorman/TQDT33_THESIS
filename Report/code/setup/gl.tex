@@ -5,14 +5,13 @@
 glutInit(&argc, argv);
 glutCreateWindow("GLContext");
 glewInit();
-
+// Create compute shader
 glCreateProgram();
 glCreateShader(GL_COMPUTE_SHADER);
 glShaderSource
 glCompileShader
 glAttachShader
 glLinkProgram
-
 // Create buffer and upload
 glGenBuffers
 glBindBufferBase

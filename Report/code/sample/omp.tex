@@ -2,17 +2,17 @@
 	morekeywords={__inline, cpx}
 }
 \begin{lstlisting}
-void add_sub_mul(cpx *inL, cpx *inU, cpx *out, cpx *w)
+void add_sub_mul(cpx *l, cpx *u, cpx *out, cpx *w)
 {
-    float x = inL->x - inU->x;
-    float y = inL->y - inU->y;
-    *out = {inL->x + inU->x, inL->y + inU->y};
-    *(++out) = {(w->x * x) - (w->y * y), (w->y * x) + (w->x * y)};
+    float x = l->x - u->x;
+    float y = l->y - u->y;
+    *out = {l->x + u->x, l->y + u->y};
+    *(++out)={(w->x*x)-(w->y*y),(w->y*x)+(w->x*y)};
 }
-void fft_stage(cpx *in, cpx *out, cpx *w, uint mask, int range)
+void fft_stage(cpx *i, cpx *o, cpx *w, uint m, int r)
 {
 #pragma omp parallel for schedule(static)
-    for (int l = 0; l < range; ++l)
-        add_sub_mul(in+l, in+range+l, out+(l<<1), w+(l & mask));
+    for (int l = 0; l < r; ++l)
+        add_sub_mul(i+l,i+r+l,o+(l<<1),w+(l & m));
 }
 \end{lstlisting}

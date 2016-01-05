@@ -1,9 +1,9 @@
 \lstset{language=C++}
 \begin{lstlisting}
-set_transpose_dimensions(&blocks, &threads, CU_TILE_DIM, CU_BLOCK_DIM, n);    
+set_dim(&blocks, &threads, TILE_DIM, BLOCK_DIM, n);    
 cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-cuda_transpose_kernel <<<blocks, threads>>> (dev_out, dev_in, n);
+transpose <<<blocks, threads>>> (dev_out, dev_in, n);
 cuda_fft_2d_helper(dir, dev_in, dev_out, n);
-cuda_transpose_kernel <<<blocks, threads>>> (dev_out, dev_in, n);
+transpose <<<blocks, threads>>> (dev_out, dev_in, n);
 swap_buffer(&dev_in, &dev_out);
 \end{lstlisting}

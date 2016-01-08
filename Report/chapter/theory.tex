@@ -182,3 +182,9 @@ bits reversed:
 	264241152 = 00001111110000000000000000000000_{2} 
 \end{equation}
 The leading zeroes becomes trailing zeroes that need to be removed. A logic right shift operation by the length of leadingBits = $32 - \log_{2}(1024) = 22$ solves this.
+
+\section{Related research}
+
+The main latest scientific interest have mainly been targeting {\CU} and {\OCL} for comparisons. Benchmarking between the two have established that there is difference in {\CU}s favour, however it can be due to unfair comparisons\cite{fang2011comprehensive} and with the correct tuning {\OCL} can be just as fast. The same paper stated that the biggest difference came from running the forward \gls{FFT} algorithm. Examination showed that large differences could be found in the \gls{PTX} instructions (intermediary \gls{GPU} code).
+
+Porting from {\CU} to {\OCL} without loosing performance have been explored in \cite{du2012cuda} where the goal was to achieve a performance-portable solution, some of the main differences between the technologies are described in that paper.

@@ -87,12 +87,6 @@ Figure \ref{lst:sample:global:omp} shows how the \emph{for-loop} section is para
 	\label{lst:sample:global:omp}%
 \end{figure}%
 
-\section{Related research}
-
-The main latest scientific interest have mainly been targeting {\CU} and {\OCL} for comparisons. Benchmarking between the two have established that there is difference in {\CU}s favour, however it can be due to unfair comparisons\cite{fang2011comprehensive} and with the correct tuning {\OCL} can be just as fast. The same paper stated that the biggest difference came from running the forward \gls{FFT} algorithm. Examination showed that large differences could be found in the \gls{PTX} instructions (intermediary \gls{GPU} code).
-
-Porting from {\CU} to {\OCL} without loosing performance have been explored in \cite{du2012cuda} where the goal was to achieve a performance-portable solution, some of the main differences between the technologies are described in that paper.
-
 \section{External libraries}
 
 External libraries selected for reference values. {\FFTW} and {\CUFFT} selected because they are frequently used in other papers. {\CLFFT} selected by the assumption that it is the AMD equivalent of {\CUFFT} for AMDs graphic cards.

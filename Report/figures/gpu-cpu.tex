@@ -1,4 +1,21 @@
-\begin{tikzpicture}[>=triangle 45,font=\sffamily]
+\newcommand\xsc{0.9}
+\newlength{\full}
+\newlength{\half}
+\newlength{\quar}
+\newlength{\eigh}
+\newlength{\sixt}
+\newlength{\thir}
+\newlength{\marg}
+
+\setlength{\full}{7.9cm}
+\setlength{\half}{3.9cm}
+\setlength{\quar}{1.9cm}
+\setlength{\eigh}{0.9cm}
+\setlength{\sixt}{0.45cm}
+\setlength{\thir}{0.225cm}
+\setlength{\marg}{-0.025cm}
+
+\begin{tikzpicture}[>=triangle 45,font=\sffamily, xscale=\xsc,yscale=1.0]
 
 \definecolor{ctrl-color}{rgb}{1, 0.90, 0.80}
 \definecolor{alu-color}{rgb}{0.4, 1, 0.4}
@@ -8,25 +25,39 @@
 \tikzstyle{mem-box} = [draw, fill={mem-color}, anchor=south west]
 \tikzstyle{alu-box} = [draw, fill={alu-color}, anchor=south west]
 
-\node (cpu-ctrl) at (0,2) [ctrl-box, minimum width=3.9cm, minimum height=1.9cm] {ctrl};
-\node (cpu-cache) at (0,0) [mem-box, minimum width=7.9cm, minimum height=1.9cm] {Cache};
-\node (cpu-alu-1) at (4, 3) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
-\node (cpu-alu-2) at (6, 3) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
-\node (cpu-alu-3) at (4, 2) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
-\node (cpu-alu-4) at (6, 2) [alu-box, minimum width=1.9cm, minimum height=0.9cm] {ALU};
-\node (cpu-dram) at (0,-1.25) [mem-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
+\tikzstyle{w-full} = [minimum width=\xsc\full]
+\tikzstyle{w-half} = [minimum width=\xsc\half]
+\tikzstyle{w-quar} = [minimum width=\xsc\quar]
+\tikzstyle{w-eigh} = [minimum width=\xsc\eigh]
+\tikzstyle{w-sixt} = [minimum width=\xsc\sixt]
+\tikzstyle{w-thir} = [minimum width=\xsc\thir]
 
+\tikzstyle{h-full} = [minimum height=\full]
+\tikzstyle{h-half} = [minimum height=\half]
+\tikzstyle{h-quar} = [minimum height=\quar]
+\tikzstyle{h-eigh} = [minimum height=\eigh]
+\tikzstyle{h-sixt} = [minimum height=\sixt]
+\tikzstyle{h-thir} = [minimum height=\thir]
+
+\node (cpu-ctrl) at (0,2) [ctrl-box, w-half, h-quar] {ctrl};
+
+\node (cpu-cache) at (0,0) [mem-box, w-full, h-quar] {Cache};
+\node (cpu-alu-1) at (4, 3) [alu-box, w-quar, h-eigh] {ALU};
+\node (cpu-alu-2) at (6, 3) [alu-box, w-quar, h-eigh] {ALU};
+\node (cpu-alu-3) at (4, 2) [alu-box, w-quar, h-eigh] {ALU};
+\node (cpu-alu-4) at (6, 2) [alu-box, w-quar, h-eigh] {ALU};
+\node (cpu-dram) at (0,-1.25) [mem-box, w-full, h-eigh] {DRAM};
 
 \foreach \y in {0,...,7} {
-	\node (gpu-cache-\y) at (8.5, \y / 2) [mem-box, minimum width=0.45cm, minimum height=0.225cm]{ };
-	\node (gpu-ctrl-\y) [ctrl-box, minimum width=0.45cm, minimum height=0.225cm, above = -0.025cm of gpu-cache-\y]{ };	
+	\node (gpu-cache-\y) at (8.5, \y / 2) [mem-box, w-sixt, h-thir]{ };
+	\node (gpu-ctrl-\y) [ctrl-box, w-sixt, h-thir, above =-0.02cm of gpu-cache-\y]{ };	
 }
 \foreach \y in {0,...,7} {
 	\foreach \x in {0,...,15} {
-		\node (gpu-alu-\y-\x) at (\x / 2 + 9, \y / 2) [alu-box, minimum width=0.45cm, minimum height=0.45cm]{ };
+		\node (gpu-alu-\y-\x) at (\x / 2 + 9, \y / 2) [alu-box, w-sixt, h-sixt]{ };
 	}
 }
-\node (gpu-dram) at (9,-1.25) [mem-box, minimum width=7.9cm, minimum height=0.9cm] {DRAM};
+\node (gpu-dram) at (9,-1.25) [mem-box, w-full, h-eigh] {DRAM};
 
 \node [draw, opacity = 0, fit=(cpu-ctrl) (cpu-dram), label=above:{CPU}] {};
 \node [draw, opacity = 0, fit=(gpu-alu-7-15) (gpu-dram) (gpu-cache-0), label=above:{GPU}] {};

@@ -2,9 +2,9 @@
 This part cover possible applications for a \gls{GPGPU} study. The basic theory and motivation why they are suitable for benchmarking \gls{GPGPU} technologies is presented.% The \gls{FFT} algorithm is selected for the benchmarking application in this thesis work and will be in more detail in the next chapter.
 
 \section{Discrete Fourier Transform}
-The Fourier transform is of use when analysing the spectrum of a continuous analogue signal. When applying transformation to a signal it is decomposed into the frequencies that makes it up. In digital signal analysis the \gls{DFT} is the counterpart of the Fourier transform for analogue signals. The \gls{DFT} converts a sequence of finite length into a list of coefficients of a finite combination of complex sinusoids. Given that the sequence is a sampled function from the time or spatial domain it's a conversion to the frequency domain. It is defined as
+The Fourier transform is of use when analysing the spectrum of a continuous analogue signal. When applying transformation to a signal it is decomposed into the frequencies that makes it up. In digital signal analysis the \gls{DFT} is the counterpart of the Fourier transform for analogue signals. The \gls{DFT} converts a sequence of finite length into a list of coefficients of a finite combination of complex sinusoids. Given that the sequence is a sampled function from the time or spatial domain it's a conversion to the frequency domain. It is defined as 
 \begin{equation}
-	X_k=\sum_{n=0}^{N-1}x(n)W_N^{kn}, k \in {[0, N-1]}	
+X_k=\sum_{n=0}^{N-1}x(n)W_N^{kn}, k \in {[0, N-1]}
 \end{equation}
 where $W_N=e^{-\frac{i2{\pi}}{N}}$, commonly named the twiddle factor\cite{gentleman1966fast}.
 

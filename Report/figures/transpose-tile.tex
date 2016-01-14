@@ -51,6 +51,7 @@
 \node (vstride) at (\mtsz * 3 - 2.5 * \mrsz, 0) [sdata-vertical] {};
 
 \path [-{>[scale=\mtsz * 4, length=10, width=10]}, line width=\mtsz pt, myhcolor, shorten <= \mtsz, shorten >= \mtsz] (istride.east) edge[out=0, in=160] (hstride.west);
+
 \path [-{>[scale=\mtsz * 4, length=10, width=10]}, line width=\mtsz pt, myvcolor, shorten <= \mtsz, shorten >= \mtsz] (vstride.south) edge[out=270, in=190] (ostride.west);
 			
 \end{tikzpicture}

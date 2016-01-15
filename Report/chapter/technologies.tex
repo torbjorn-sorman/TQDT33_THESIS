@@ -6,7 +6,7 @@ Five different multi-core technologies are used in this study. One is a propriet
 
 \section{CUDA}
 
-\gls{CUDA} developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of \gls{BLAS} or \textit{cuFFT} ({\CU} implementation of \gls{FFT}).
+\gls{CUDA} developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of \gls{BLAS}) or \textit{cuFFT} ({\CU} implementation of \gls{FFT}).
 
 A program running on the \gls{GPU} is called a \emph{kernel}. The \gls{GPU} is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as \gls{1D}, \gls{2D} or \gls{3D} to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
 
@@ -44,7 +44,7 @@ The {\OCL} kernel are compiled and executed on the host and then enqueued at a s
 	\label{lst:sample:global:ocl}	
 \end{figure}
 
-Similarly to {\CU} the host application can poll the device for its capabilities and use some fast math function. The equivalent {\CU} kernel in figure \ref{lst:sample:global:cu} is implemented in {\OCL} in figure \ref{lst:sample:global:ocl} and displays small differences. The {\CU} fast math function \code{\_\_sincosf} is equivalent with \code{sincos}.
+Similarly to {\CU} the host application can poll the device for its capabilities and use some fast math function. The equivalent {\CU} kernel in figure \ref{lst:sample:global:cu} is implemented in {\OCL} in figure \ref{lst:sample:global:ocl} and displays small differences. The {\OCL} math function \code{sincos} is the equivalent of \code{\_\_sincosf}.
 
 \section{DirectCompute}
 

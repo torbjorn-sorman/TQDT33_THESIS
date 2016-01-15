@@ -70,11 +70,11 @@ Similar to {\CTALG} but with another data access pattern that uses the same inde
 
 \subsection{Parallelism in FFT}
 
-By examining the \gls{FFT} algorithm, parallelism can be exploited in several ways. Naturally when decomposing the \gls{DFT} into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the rest have no such step. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
+By examining the \gls{FFT} algorithm, parallelism can be exploited in several ways. Naturally when decomposing the \gls{DFT} into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the other half have no such step. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
 
 \subsection{GPU algorithm}
 
-The complete \gls{FFT} application can be implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \emph{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
+The complete \gls{FFT} application can be implemented in two different kernels, one kernel executing over a single stage and one kernel executing the last stages that could fit within one block. The single-stage kernel, called \emph{global kernel}, would execute in sequential order each stage of the algorithm. Each execution would require in total as many threads as there are butterfly-operations. The host would supply the kernel with arguments depending on stage number and problem size. See table \ref{tab:global-kernel} for full parameter list. The global kernel algorithm is shown in algorithm \ref{alg:device:global-kernel}. The global kernel would only be called for the number of stages not fitted in a single block (this depends on selected number of threads per block). The global kernel implements {\CTALG} algorithm.
 
 \begin{table}
 	\centering
@@ -116,7 +116,7 @@ The complete \gls{FFT} application can be implemented in two different kernels, 
 
 \subsubsection{Shared/Local memory}
 
-The \textit{local kernel} is always called and encapsulates all remaining stages and the bit reverse order output procedure. It is devised as to utilize shared memory completely for all stages. This reduces the primary memory access to read input and write output. The kernel implements the constant geometry algorithm to increase performance in the inner loop, the input and output index is calculated once. See algorithm \ref{alg:device:local-kernel}.
+The \textit{local kernel} is always called and encapsulates all remaining stages and the bit reverse order output procedure. It is devised as to utilize shared memory completely for all stages. This reduces the primary memory accesses to a single read and write per data point. The kernel implements the constant geometry algorithm to increase performance in the inner loop, the input and output index is calculated once. See algorithm \ref{alg:device:local-kernel}.
 
 \begin{table}
 	\centering
@@ -171,9 +171,9 @@ The \textit{local kernel} is always called and encapsulates all remaining stages
 
 \subsubsection{Register width}
 
-An important \gls{GPU} specific detail is that all fast integer arithmetic is based on $32$ bit registers. Procedures using bitwise operations uses this architectural specific information as in the bitmask parameter in table \ref{tab:global-kernel} and leadingBits parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
+The targeted \gls{GPU}s work on $32$ bit registers and all fast integer arithmetic is based on that. Procedures using bitwise operations are constructed with this architectural specific information as in the \emph{bitmask} parameter in table \ref{tab:global-kernel} and \emph{leadingBits} parameter in table \ref{tab:local-kernel}. The bitmask parameter is used to get the offset for each stage using the {\CTALG} algorithm. The leadingBits parameter is used when performing a bit-reverse operation and the leading zeroes resulting of using a $32$ bit register needs to be removed.
 
-Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When using $1008 = 1111110000_{2}$ for bit-reversal in this context with the problem size $1024$, the result is $63$. Using a $32$ bit register:
+Bit-reverse example: if the total size is $1024$ elements then the last $\log_{2}(1024) = 10$ bits are used. When encountering $1008 = 1111110000_{2}$ for bit-reversal in this context with a problem size of $1024$ points, the result is $63$. However, using a $32$ bit register:
 \begin{equation}
 	1008 = 00000000000000000000001111110000_{2}
 \end{equation}
@@ -185,6 +185,6 @@ The leading zeroes becomes trailing zeroes that need to be removed. A logic righ
 
 \section{Related research}
 
-The main latest scientific interest have mainly been targeting {\CU} and {\OCL} for comparisons. Benchmarking between the two have established that there is difference in {\CU}s favour, however it can be due to unfair comparisons\cite{fang2011comprehensive} and with the correct tuning {\OCL} can be just as fast. The same paper stated that the biggest difference came from running the forward \gls{FFT} algorithm. Examination showed that large differences could be found in the \gls{PTX} instructions (intermediary \gls{GPU} code).
+Scientific interest have mainly been targeting {\CU} and {\OCL} for comparisons. Benchmarking between the two have established that there is difference in favour of {\CU}, however it can be due to unfair comparisons\cite{fang2011comprehensive} and with the correct tuning {\OCL} can be just as fast. The same paper stated that the biggest difference came from running the forward \gls{FFT} algorithm. Examination showed that large differences could be found in the \gls{PTX} instructions (intermediary \gls{GPU} code).
 
 Porting from {\CU} to {\OCL} without loosing performance have been explored in \cite{du2012cuda} where the goal was to achieve a performance-portable solution, some of the main differences between the technologies are described in that paper.

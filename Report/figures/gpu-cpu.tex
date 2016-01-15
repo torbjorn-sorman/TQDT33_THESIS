@@ -1,4 +1,4 @@
-\newcommand\xsc{0.9}
+\newcommand\xsc{0.85}
 \newlength{\full}
 \newlength{\half}
 \newlength{\quar}
@@ -17,9 +17,9 @@
 
 \begin{tikzpicture}[>=triangle 45,font=\sffamily, xscale=\xsc,yscale=1.0]
 
-\definecolor{ctrl-color}{rgb}{1, 0.90, 0.80}
-\definecolor{alu-color}{rgb}{0.4, 1, 0.4}
-\definecolor{mem-color}{rgb}{0.5, 0.75, 1}
+\definecolor{ctrl-color}{rgb}{1.0, 0.90, 0.80}
+\definecolor{alu-color}{rgb}{0.4, 1.0, 0.4}
+\definecolor{mem-color}{rgb}{0.5, 0.75, 1.0}
 
 \tikzstyle{ctrl-box} = [draw, fill={ctrl-color}, anchor=south west]
 \tikzstyle{mem-box} = [draw, fill={mem-color}, anchor=south west]
@@ -51,14 +51,11 @@
 \foreach \y in {0,...,7} {
 	\node (gpu-cache-\y) at (8.5, \y / 2) [mem-box, w-sixt, h-thir]{ };
 	\node (gpu-ctrl-\y) [ctrl-box, w-sixt, h-thir, above =-0.02cm of gpu-cache-\y]{ };	
-}
-\foreach \y in {0,...,7} {
 	\foreach \x in {0,...,15} {
 		\node (gpu-alu-\y-\x) at (\x / 2 + 9, \y / 2) [alu-box, w-sixt, h-sixt]{ };
 	}
 }
 \node (gpu-dram) at (9,-1.25) [mem-box, w-full, h-eigh] {DRAM};
-
 \node [draw, opacity = 0, fit=(cpu-ctrl) (cpu-dram), label=above:{CPU}] {};
 \node [draw, opacity = 0, fit=(gpu-alu-7-15) (gpu-dram) (gpu-cache-0), label=above:{GPU}] {};
 

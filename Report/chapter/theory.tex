@@ -10,15 +10,15 @@ A GPU is traditionally specialized hardware for efficient manipulation of comput
 
 In the early days of \gls{GPGPU} one had to know a lot about computer graphics to compute general data. The available APIs was created for graphics processing. The dominant \gls{API}s was OpenGL and DirectX. \gls{HLSL} and \gls{GLSL} made the step easier but it still generated code into the \gls{API}s.
 
-A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the \gls{GPU} (with a few extensions). The fact that parallel software and hardware was a small market at the time, the simplified use of the \gls{GPU} for parallel tasks opened up to many more customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (used in graphics).
+A big change was when NVIDIA released {\CU} and together with new hardware made it possible to use standard C-code to program the \gls{GPU} (with a few extensions). Parallel software and hardware was a small market at the time and the simplified use of the \gls{GPU} for parallel tasks opened up to many new customers. However, the main business is still graphics and the manufacturers can not make cards too expensive, especially at the cost of graphics performance (as integrating more double precision capacity would). This can be exemplified with the release of NVIDIA's Maxwell micro architecture, compared to the predecessor Kepler, both are similar but with Maxwell some of the double precision support was removed in favour of single precision (preferred in graphics).
 
 Using GPUs in the context of data centers and \gls{HPC}, studies show that \gls{GPU} acceleration can reduce power\cite{huang2009energy} and its relevant to know the behaviour of the GPUs in the context of power and \gls{HPC}\cite{ghosh2012energy} for the best utilization.
 
 \subsection{GPU vs CPU}
 
-The \gls{GPU} is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the \gls{CPU} with the \gls{GPU}, the \gls{GPU} performs a much higher theoretical \gls{FLOPS} and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The \gls{GPU} relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The \gls{CPU} is excellent at sequential tasks with features like branch prediction that can not be found on the \gls{GPU}.
+The \gls{GPU} is built on a principle of more execution units instead of higher clock-frequency to improve performance. Comparing the \gls{CPU} with the \gls{GPU}, the \gls{GPU} performs a much higher theoretical \gls{FLOPS} and at the same time at a better cost and energy efficiency\cite{owens2007survey}. The \gls{GPU} relies on using high memory bandwidth and fast context switching (run the next warp of threads) to compensate for lower frequency and hide memory latencies. The \gls{CPU} is excellent at sequential tasks with features like branch prediction that can not be found in a similar fashion on the \gls{GPU}.
 
-The \gls{GPU} thread is very lightweight and its creation have very little overhead, whereas on the \gls{CPU} the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a \gls{GPU} is very inefficient if not enough threads are ready to work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
+The \gls{GPU} thread is very lightweight and its creation have very little overhead, whereas on the \gls{CPU} the thread can be seen as an abstraction of the processor and switching a thread is considered expensive since the context have to be loaded each time. On the other hand, a \gls{GPU} is very inefficient if not enough threads are ready to perform work. Memory latencies are supposed to be hidden by switching in a new set of working threads as fast as possible.
 
 A \gls{CPU} thread have its own registers but the \gls{GPU} thread work in groups where they share registers and memory. One can not give individual instructions to each thread, all of them will execute the same instruction. The figure \ref{fig:gpu-vs-cpu} demonstrates this by showing that by sharing control-structure and cache, the \gls{GPU} puts more resources on processing then the \gls{CPU} where more resources goes into control structures and memory cache.
 
@@ -59,7 +59,7 @@ Figure \ref{fig:cooley-tukey-8} shows an 8-point radix-2 \gls{DIF} \gls{FFT}. Th
 
 \subsubsection{Constant geometry}
 
-Similar to {\CTALG} but with another data access pattern that uses the same indexing in all stages. This removes the overhead of calculating the data input index at each stage as in figure \ref{fig:cooley-tukey-8} where the top butterfly first stage require input $x[0], x[4]$ and in the second stage $x[0], x[2]$ whereas using the constant geometry algorithm in figure \ref{fig:constant-geometry-8} the equivalent input are $x[0], x[4]$ for all stages.
+Similar to {\CTALG} but with another data access pattern that uses the same indexing in all stages. Constant geometry removes the overhead of calculating the data input index at each stage as in figure \ref{fig:cooley-tukey-8} where the top butterfly in the first stage require input $x[0], x[4]$ and in the second stage $x[0], x[2]$ whereas using the constant geometry algorithm in figure \ref{fig:constant-geometry-8} the equivalent input are $x[0], x[4]$ for all stages.
 
 \begin{figure}
 	\centering
@@ -70,7 +70,7 @@ Similar to {\CTALG} but with another data access pattern that uses the same inde
 
 \subsection{Parallelism in FFT}
 
-By examining the \gls{FFT} algorithm, parallelism can be exploited in several ways. Naturally when decomposing the \gls{DFT} into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the other is not. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
+By examining the \gls{FFT} algorithm, parallelism can be exploited in several ways. Naturally when decomposing the \gls{DFT} into radix-2 operations, parallelism can be achieved by mapping one thread per data input. That would however lead to unbalanced load as every second input is multiplied by the complex twiddle factor whereas the rest have no such step. By selecting one thread per radix-2 butterfly operation instead, each thread will share the same workload.
 
 \subsection{GPU algorithm}
 

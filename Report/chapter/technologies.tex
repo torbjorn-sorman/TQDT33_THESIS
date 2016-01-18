@@ -8,7 +8,7 @@ Five different multi-core technologies are used in this study. One is a propriet
 
 \gls{CUDA} developed by NVIDIA and released in 2006. {\CU} is an extension of the {\CPP} language and have its own compiler. {\CU} supports the functionality to execute kernels, modify the graphic card RAM memory and the use of several optimized function libraries such as \textit{cuBLAS} ({\CU} implementation of \gls{BLAS}) or \textit{cuFFT} ({\CU} implementation of \gls{FFT}).
 
-A program running on the \gls{GPU} is called a \emph{kernel}. The \gls{GPU} is referred to as the \textit{device} and the the CPU is called the \textit{host}. To run a {\CU} kernel, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The kernel execution call includes specifying the thread organization. Threads are organized in \emph{blocks} that in turn are specified within a \emph{grid}. Both the block and grid can be used as \gls{1D}, \gls{2D} or \gls{3D} to help the addressing in a program. These can be accessed within a kernel by the structures \code{blockDim} and \code{gridDim}. Thread and block identification is done with \code{threadIdx} and \code{blockIdx}.
+A program running on the \gls{GPU} is called a \gls{kernel}. The \gls{GPU} is referred to as the \textit{device} and the the \gls{CPU} is called the \textit{host}. To run a {\CU} \gls{kernel}, all that is needed is to declare the program with the function type specifier \code{\_\_global\_\_} and call it from the host with launch arguments, for other specifiers see table \ref{tab:cuda:func-types}. The \gls{kernel} execution call includes specifying the \gls{thread} organization. \Glspl{thread} are organized in \glspl{block} that in turn are specified within a \emph{grid}. Both the \gls{block} and grid can be used as \gls{1D}, \gls{2D} or \gls{3D} to help the addressing in a program. These can be accessed within a \gls{kernel} by the structures \code{blockDim} and \code{gridDim}. \Gls{thread} and \gls{block} identification is done with \code{threadIdx} and \code{blockIdx}.
 
 All limitations can be polled from the device and all devices are have a minimum feature support called \emph{Compute capability}. The compute capability aimed at in this thesis is $3.0$ and includes the NVIDIA \gls{GPU} models starting with \emph{GK} or later (\emph{Tegra} and \emph{GM}).
 
@@ -25,7 +25,7 @@ All limitations can be polled from the device and all devices are have a minimum
 \begin{figure}
 	\centering
 	\fbox{\includestandalone[width=\procwidth]{code/sample/cu}}
-	\caption{Example {\CU} global kernel}
+	\caption{{\CU} global kernel}
 	\label{lst:sample:global:cu}	
 \end{figure}
 

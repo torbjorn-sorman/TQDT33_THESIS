@@ -32,7 +32,7 @@ The performance measure is time taken for a single forward transform using two b
 
 {\CU} and the {\NVCARD} are the primary technology and platform and the other implementations are ported from {\CU}. To compare the implementation, external libraries are included and can be found italicised in the table \ref{tab:platform-technologies}. Note that the {\CLFFT} library failed to be measured in the same manner as the other GPU implementations, the times are measured at host and short sequences suffer from large overhead.
 
-The experiments are tuned on a few parameters, the number of threads per block and how large the tile dimensions are in the transpose \gls{kernel}, see chapter \ref{cha:implementation} and table \ref{tab:threads-per-block}.
+The experiments are tuned on a few parameters, the number of \glspl{thread} per \gls{block} and how large the tile dimensions are in the transpose \gls{kernel}, see chapter \ref{cha:implementation} and table \ref{tab:threads-per-block}.
 
 \subsection{Forward FFT}
 
@@ -48,7 +48,7 @@ The results for a single transform over a $2^{n}$-point sequence are shown in fi
 	\subfloat[\AMDCARD]{
 		\includestandalone[width=\plotwidth]{plots/r260x-overview}
 	}
-	\caption{Overview of the results of a single forward transform. Lower is faster. Timing of the {\CLFFT} library is measured at the host.}
+	\caption{Overview of the results of a single forward transform. The {\CLFFT} was timed by host synchronization resulting in an overhead in the range of $60{\micro}s$. Lower is faster.}
 	\label{fig:gpu:overview}
 \end{figure}
 
@@ -126,7 +126,7 @@ The implementations on the {\NVCARD} and {\AMDCARD} compared to {\CU} and {\OCL}
 	\subfloat[\AMDCARD\label{fig:gpu:implementation-2d:r260x}]{
 		\includestandalone[width=\plotwidth]{plots/r260x-implementation-2d}
 	}	
-	\caption{Time of \gls{2D} transform relative {\CU} in \ref{fig:gpu:implementation-2d:gtx} and {\OCL} in \ref{fig:gpu:implementation-2d:r260x}.}
+	\caption{Time of 2D transform relative {\CU} in \ref{fig:gpu:implementation-2d:gtx} and {\OCL} in \ref{fig:gpu:implementation-2d:r260x}.}
 	\label{fig:gpu:implementation-2d}
 \end{figure}
 
@@ -144,7 +144,7 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 \begin{figure}
 	\centering
 	\includestandalone[width=\plotwidth]{plots/gpu-comparison-2d}
-	\caption{Comparison between {\AMDCARD} and {\NVCARD} running \gls{2D} transform.}
+	\caption{Comparison between {\AMDCARD} and {\NVCARD} running 2D transform.}
 	\label{fig:gpu-comparison-2d}
 \end{figure}
 
@@ -223,9 +223,11 @@ The two graphics cards used are not each others counterparts, the releases diffe
 
 The \gls{FFT} implementation was rather naively and straight forward. The implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} indicates {\CUFFT} to perform three to four times faster then the benchmark application. Obviously there are a lot to improve. This is not a big issue when running benchmarks but it removes some of the credibility of the algorithm as something practically useful.
 
-By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profiling CUDA applications.}, the bottleneck was the memory access pattern when outputting data after bit reversal. There were no coalescing accesses and very bad overall data locality. There are algorithms that solves this by combining the transpose operations with the FFT computation as in \cite{govindaraju2008high}.
+By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profiling CUDA applications.}, the bottleneck was the memory access pattern when outputting data after bit reversing the index. There were no coalescing accesses and bad data locality. There are algorithms that solves this by combining the index transpose operations with the FFT computation as in \cite{govindaraju2008high}.
 
 Some optimizations was attempted during the implementation phase and later abandoned. The reason could be the lack of time or no measurable improvement (or even worse performance). The use of shared memory provide fewer global memory accesses, however the shared memory can be used in optimized ways such as avoiding banking conflicts\footnote{Good access pattern allows for all threads in a warp to read in parallel, one per memory bank at a total of 32 banks on {\NVCARD}, a banking conflict is two threads in a warp attempting to read from the same bank and becomes serialized reads.}. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that an overhead was introduced and more shared memory had to be allocated per block.
+
+% Performance optimizations were not portable all the time, some issues solved in \{CU} colud lead to reduced performance in another technology. A good practice was to improve the algorithm in general instead of attempting specialization in each platform, however some variables were tweaked since they had such great impact on performance. 
 
 The use of shared memory in the global \gls{kernel} and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Intuitively guessed, the use of shared memory in the global kernel would decrease global memory accesses and reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
 
@@ -248,7 +250,7 @@ The \gls{FFT} algorithm was successfully implemented as benchmark application in
 		{\OMP} & ${\times}13$ & ${\times}15$ \\ \hline
 		{\CPP} & ${\times}18$ & ${\times}40$ \\ \hline
 	\end{tabular}
-	\caption{Table comparing {\CU} to \gls{CPU} implementations.}
+	\caption{Table comparing {\CU} to CPU implementations.}
 	\label{tab:cu-vs-cpu}
 \end{table}
 
@@ -272,7 +274,7 @@ The \gls{2D} ranking reflects the results of a combined performance relative {\O
 
 \subsection{Implementation}
 
-Code size and complexity was an advantage of the {\CU} implementation. The necessary steps to setup before executing the kernel was but a fraction of the other technologies. {\OCL} needs runtime compiling of the kernel and thus require many more steps and produces a lot more setup code. Portability is in favour of {\OCL} but was not examined further (as in running the application on the \gls{CPU}). The {\DX} setup was similar to {\OCL} with the addition of some more specifications required, {\GL} followed this pattern but did however lacked the support to select device if several was available.
+The {\CU} implementation had a relative advantage in terms of code size and complexity. The necessary steps to setup a kernel before executing was but a fraction of the other technologies. {\OCL} needs runtime compiling of the kernel and thus require many more steps and produces a lot more setup code. Portability is in favour of {\OCL} but was not examined further (as in running the application on the \gls{CPU}). The {\DX} setup was similar to {\OCL} with the addition of some more specifications required, {\GL} followed this pattern but did however lacked the support to select device if several was available.
 
 The kernel code was fairly straight forward and was relatively easy to port from {\CU} to any other technology. The most issues could be traced back to memory buffer handling and related back to the setup phase or how buffers needed to be declared in-code. {\CU} offered the most in terms of support to a {\CPP} like coding with fewer limitations than the rest.
 

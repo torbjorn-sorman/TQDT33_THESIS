@@ -16,7 +16,7 @@ The implementation of the \gls{FFT} algorithm on a \gls{GPU} can be broken down 
 	\label{fig:algorithm-overview}
 \end{figure}
 
-The next step is to calculate the specific \gls{FFT} arguments for a $N$-point sequence for each kernel. The most important difference between devices and platforms are local memory capacity and thread and block configuration. Threads per block was selected for the best performance. See table \ref{tab:threads-per-block} for details.
+The next step is to calculate the specific \gls{FFT} arguments for a $N$-point sequence for each \gls{kernel}. The most important difference between devices and platforms are local memory capacity and thread and block configuration. \Glspl{thread} per block was selected for the best performance. See table \ref{tab:threads-per-block} for details.
 \begin{table}
 	\centering
 	\includestandalone[width=\textwidth]{tables/threadsperblock}
@@ -30,13 +30,13 @@ The threading scheme was one butterfly per thread, so that a sequence of sixteen
 
 \begin{figure}
 	\input{figures/exampleflow}
-	\caption{Flow graph of a 16-point \gls{FFT} using (stage 1 and 2) {\CTALG} algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
+	\caption{Flow graph of a 16-point FFT using (stage 1 and 2) {\CTALG} algorithm and (stage 3 and 4) constant geometry algorithm. The solid box is the bit-reverse order output. Dotted boxes are separate kernel launches, dashed boxes are data transfered to local memory before computing the remaining stages.}
 	\label{fig:flowgraph-16}
 \end{figure}
 
 \subsubsection{Synchronization}
 
-Thread synchronization is only available of threads within a block. When the sequence or partial sequence fitted within a block, that part was transferred to local memory before computing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels in the same stream to be executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the {\CTALG} \gls{FFT} algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory in bit reversed order to the global memory. See figure \ref{fig:flowgraph-16} where the sequence length is 16 and the threads per block is set to two.
+\Gls{thread} synchronization is only available of \glspl{thread} within a \gls{block}. When the sequence or partial sequence fitted within a block, that part was transferred to local memory before computing the last stages. If the sequence was larger and required more then one block the synchronization was handled by launching several kernels in the same stream to be executed in sequence. The kernel launched for block wide synchronization is called the global kernel and the kernel for thread synchronization within a block is called the local kernel. The global kernel had an implementation of the {\CTALG} \gls{FFT} algorithm and the local kernel had constant geometry (same indexing for every stage). The last stage outputs from shared memory in bit reversed order to the global memory. See figure \ref{fig:flowgraph-16} where the sequence length is 16 and the threads per block is set to two.
 
 \subsubsection{Calculation}
 
@@ -161,7 +161,7 @@ The majority of differences in the implementations was related to the setup phas
 	\subfloat[{\GL} setup\label{setup:gl}]{%		
 		\fbox{\includestandalone[width=\setupWidth]{code/setup/gl}}%
 	}%
-	\caption{An overview of the setup phase for the \gls{GPU} technologies.}%
+	\caption{An overview of the setup phase for the GPU technologies.}%
 	\label{fig:code:setup}%
 \end{figure}%
 
@@ -195,7 +195,7 @@ in between launches. See table \ref{tab:kernel-synchronization} for the synchron
 \begin{table}[H]
 	\centering
 	\includestandalone[width={\textwidth}]{tables/kernel-synchronization}
-	\caption{Synchronization in \gls{GPU} technologies.}
+	\caption{Synchronization in GPU technologies.}
 	\label{tab:kernel-synchronization}
 \end{table}
 

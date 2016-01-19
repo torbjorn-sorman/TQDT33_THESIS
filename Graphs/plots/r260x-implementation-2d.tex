@@ -1,0 +1,27 @@
+\begin{tikzpicture}
+	\newcommand{\AllTechnologies}{AMD DX/OCL,AMD GL/OCL,CLFFT/OCL}
+	\newcommand{\PlotSource}{plots/2d.csv}
+	\begin{axis}[
+		width=\linewidth,
+		xmode = log,
+		log basis x=2,
+		grid = major,
+		grid style = {
+			dashed,
+			gray!30},
+		xlabel = $n{\times}n$-point sequence,
+		ylabel = Relative OpenCL,
+		yticklabel pos=right,
+		x unit = n,
+		ymin = 0,
+		legend style = {
+			at = {(0.75,0.95)}, 
+			anchor = north east},
+        ]
+		\addplot table[x=n,y=NORM,col sep=comma]\PlotSource;
+        \foreach \tech in \AllTechnologies {
+			\addplot table[x=n,y=\tech,col sep=comma]\PlotSource;
+		}
+		\legend{OpenCL,DirectCompute,OpenGL,clFFT}
+	\end{axis}
+\end{tikzpicture}

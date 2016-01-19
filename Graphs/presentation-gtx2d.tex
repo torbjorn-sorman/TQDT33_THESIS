@@ -1,0 +1,57 @@
+\documentclass{standalone}
+\usepackage{pgfplots}
+
+\definecolor{gold}{RGB}{255,225,20}
+\definecolor{theme-green-1}{RGB}{187,232,99}
+\definecolor{theme-green-2}{RGB}{171,227,63}
+\definecolor{theme-light-blue}{RGB}{187,234,229}
+\definecolor{theme-turquoise-light}{RGB}{42,187,173}
+\definecolor{theme-turquoise-1}{RGB}{0,174,157}
+\definecolor{theme-turquoise-2}{RGB}{42,187,173}
+\definecolor{theme-turquoise-dark}{RGB}{0,76,82}
+\definecolor{theme-blue}{RGB}{0,134,179}
+
+\pgfplotsset{
+    cycle list={blue\\red\\gold\\green\\magenta\\},
+    axis line style={theme-blue}
+}
+\usepgfplotslibrary{units, fillbetween}
+
+\begin{document}
+
+\fontfamily{cmss}\selectfont
+\Large
+
+\begin{tikzpicture}
+	\newcommand{\AllTechnologies}{DX/CU,GL/CU,OCL/CU,CUFFT/CU}
+	\newcommand{\PlotSource}{plots/2d.csv}
+	\begin{axis}[
+		width=280pt,
+		xmode = log,
+		log basis x=2,
+		grid = major,
+		grid style = {
+			dashed,
+			gray!30},
+		xlabel = $n{\times}n$-point sequence,
+		ylabel = Relative CUDA,
+		yticklabel pos=right,
+		x unit = n,
+		ymin = 0,
+		legend style = {
+			at = {(1.25,0.50)}, 
+			anchor = west, 
+			text = theme-turquoise-dark},				
+		xlabel style = { text = theme-turquoise-dark },
+		ylabel style = { text = theme-turquoise-dark },
+		xticklabel style = {text = theme-turquoise-dark },
+		yticklabel style = {text = theme-turquoise-dark }
+        ]%
+		\addplot+[very thick] table[x=n,y=NORM,col sep=comma]{\PlotSource};
+        \foreach \tech in \AllTechnologies {%
+			\addplot+[very thick] table[x=n,y=\tech,col sep=comma]{\PlotSource};%
+		}%
+		\legend{CUDA,DirectCompute,OpenGL,OpenCL,cuFFT}%
+	\end{axis}
+\end{tikzpicture}
+\end{document}

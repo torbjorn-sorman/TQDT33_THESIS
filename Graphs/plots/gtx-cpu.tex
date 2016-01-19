@@ -1,0 +1,26 @@
+\begin{tikzpicture}
+	\newcommand{\AllTechnologies}{FFTW/CU,OMP/CU,C/CU}
+	\begin{axis}[
+		width=\linewidth,
+		xmode = log,
+		log basis x=2,
+		grid = major,
+		grid style = {
+			dashed,
+			gray!30},
+		xlabel = $n$-point sequence,
+		ylabel = Relative CUDA,
+		yticklabel pos=right,
+		x unit = n,
+		ymin = 0,
+		legend style = {
+			at = {(0.05,0.95)}, 
+			anchor = north west},
+        ]
+		\addplot table[x=n,y=NORM,col sep=comma]{plots/1d.csv};
+        \foreach \tech in \AllTechnologies {
+			\addplot table[x=n,y=\tech,col sep=comma]{plots/1d.csv};
+		}
+		\legend{CUDA,FFTW,OpenMP,C/C++}
+	\end{axis}
+\end{tikzpicture}

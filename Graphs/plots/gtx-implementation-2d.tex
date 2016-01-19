@@ -1,0 +1,27 @@
+\begin{tikzpicture}
+	\newcommand{\AllTechnologies}{DX/CU,GL/CU,OCL/CU,CUFFT/CU}
+	\newcommand{\PlotSource}{plots/2d.csv}
+	\begin{axis}[
+		width=\linewidth,
+		xmode = log,
+		log basis x=2,
+		grid = major,
+		grid style = {
+			dashed,
+			gray!30},
+		xlabel = $n{\times}n$-point sequence,
+		ylabel = Relative CUDA,
+		yticklabel pos=right,
+		x unit = n,
+		ymin = 0,
+		legend style = {
+			at = {(0.05,0.86)}, 
+			anchor = south west },
+        ]
+		\addplot table[x=n,y=NORM,col sep=comma]{\PlotSource};
+        \foreach \tech in \AllTechnologies {
+			\addplot table[x=n,y=\tech,col sep=comma]{\PlotSource};
+		}
+		\legend{CUDA,DirectCompute,OpenGL,OpenCL,cuFFT}
+	\end{axis}
+\end{tikzpicture}

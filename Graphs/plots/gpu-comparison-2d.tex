@@ -1,0 +1,28 @@
+\begin{tikzpicture}
+	\newcommand{\AllTechnologies}{AMD/NV OCL,AMD/NV DX,AMD/NV GL}
+	\newcommand{\PlotSource}{plots/2d.csv}
+	\begin{axis}[
+		width=\linewidth,
+		xmode = log,
+		log basis x=2,
+		grid = major,
+		grid style = {
+			dashed,
+			gray!30},
+		xlabel = $n{\times}n$-point sequence,
+		ylabel = Relative performance per technology and graphics card,
+		yticklabel pos=right,
+		x unit = n,
+		ymax = 10,
+		ymin = 0,
+		legend style = {
+			at = {(0.05,0.95)}, 
+			anchor = north west},
+        ]        
+        \addplot table[x=n,y=NORM,col sep=comma]{\PlotSource};
+        \foreach \tech in \AllTechnologies {
+			\addplot table[x=n,y=\tech,col sep=comma]{\PlotSource};
+		}
+		\legend{\NVCARD,OpenCL on \AMDCARD,DirectCompute on \AMDCARD,OpenGL on \AMDCARD}
+	\end{axis}
+\end{tikzpicture}

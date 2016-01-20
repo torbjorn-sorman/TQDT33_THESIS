@@ -1,0 +1,146 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usetikzlibrary{patterns}
+\usepackage{pgfplots}
+
+\definecolor{gold}{RGB}{184,134,11}
+\definecolor{green-1}{RGB}{187,232,99}
+\definecolor{green-2}{RGB}{171,227,63}
+\definecolor{light-blue}{RGB}{187,234,229}
+\definecolor{turquoise-light}{RGB}{42,187,173}
+\definecolor{turquoise-1}{RGB}{0,174,157}
+\definecolor{turquoise-2}{RGB}{42,187,173}
+\definecolor{turquoise-3}{RGB}{0,76,82}
+\definecolor{blue-theme}{RGB}{0,134,179}
+\definecolor{complementary}{RGB}{82,6,0}
+
+\definecolor{lcolor}{RGB}{0,76,82} %4C, 52
+\definecolor{ylabclr}{RGB}{0,76,82} %4C, 52
+
+\pgfplotsset{
+    cycle list={gray\\lcolor\\lcolor!70\\lcolor!40\\lcolor!10\\},
+    axis line style={turquoise-3!25},
+    compat=1.12,
+    every axis/.style={%
+    	width=280pt,
+		grid=major,
+		grid style={dashed,blue-theme!30},
+		log basis x=2,
+		xmode=log,
+		x unit=n,
+		xmin=(16+32),
+		xmax=(512+2048+8192),
+		legend style={
+			at={(0.00,0.50)},
+			anchor=east,
+			text=turquoise-3,
+			draw=none,
+			text width=100pt},
+		xlabel style={text=turquoise-3},
+		xticklabel style={text=turquoise-3},
+		ylabel style={
+			text=ylabclr,
+			rotate=-90,
+			at={(1.15,0.50)},
+			align=center},
+		yticklabel pos=right,
+		yticklabel style={text=turquoise-3}
+	}
+}
+\usepgfplotslibrary{units, fillbetween}
+
+\newcommand{\PlotSource}{plots/2d.csv}
+\newcommand{\doplot}[2]{
+	\addplot+[line width=2pt,name path=#1] table[x=n,y=#2,col sep=comma]{\PlotSource};
+}
+\newcommand{\dofill}[2]{
+	\addplot+[#1]fill between[of=ZERO and #2,soft clip={domain=64:8192}];
+}
+\newcommand{\dopattern}[3]{
+	\addplot+[draw opacity=#1, pattern=north east lines, pattern color=#2] fill between[of=CU and #3,soft clip={domain=32:16384}];
+}
+
+\newcommand{\dodashed}[1]{
+	\addplot+[complementary!75,dash pattern=on 8pt off 6pt,line width=2pt,name path=#1][domain=32:16384] {1};
+}
+\newcommand{\lbreak}{\\\color{white}{\small -}\\\color{ylabclr}}
+
+\begin{document}%
+\fontfamily{cmss}\selectfont%
+\Large%
+\begin{tabular}{c}%
+\begin{tikzpicture}%
+	\begin{axis}[%
+		xlabel=$n{\times}n$-point sequence,%
+		ylabel=Time relative\lbreak CUDA,%
+		ymin=0.001,ymax=2.499]%
+		\dodashed{CU};%
+		\doplot{CUFFT}{CUFFT/CU};%		
+		\doplot{DX}{DX/CU};%
+		\doplot{GL}{GL/CU};%		
+		\doplot{OCL}{OCL/CU};%
+		\legend{CUDA,cuFFT,DirectCompute,OpenGL,OpenCL}%		
+	\end{axis}%
+\end{tikzpicture}%
+\\%
+\begin{tikzpicture}%
+	\begin{axis}[%	
+		xlabel=$n{\times}n$-point sequence,%
+		ylabel=Time relative\lbreak OpenCL,%
+		ymin=0.001,ymax=1.999]%
+		\dodashed{OCL};%
+		\doplot{CLFFT}{CLFFT/OCL};%
+		\doplot{DX}{AMD DX/OCL};%		
+		\doplot{GL}{AMD GL/OCL};%
+		\legend{OpenCL,clFFT,DirectCompute,clFFT,}%		
+	\end{axis}%
+\end{tikzpicture}%
+\\%
+\begin{tikzpicture}%
+	\begin{axis}[%
+		xlabel=$n{\times}n$-point sequence,%
+		ylabel=Time relative\lbreak CUDA,%
+		ymin=0.001,ymax=44.999%
+		]%
+		\dodashed{CU};%
+		\doplot{CLFFT}{FFTW/CU};%
+		\doplot{OMP}{OMP/CU};%		
+		\doplot{C}{C/CU};%
+		\legend{CUDA,FFTW,OpenMP,C/C++,}%		
+	\end{axis}%
+\end{tikzpicture}%
+\\%
+\begin{tikzpicture}%
+	\begin{axis}[%	
+		xlabel=$n{\times}n$-point sequence,%
+		ylabel=Accumulated\lbreak relative\lbreak OpenCL,%
+		ymin=0.601,ymax=1.399]%
+		\dodashed{OCL};%
+		\doplot{DX}{AMD+NV DX};%
+		\doplot{GL}{AMD+NV GL};%
+		\legend{OpenCL,DirectCompute,OpenGL,,}%		
+	\end{axis}%
+\end{tikzpicture}%
+%CU,NV DX,NV GL,NV OCL,CUFFT,FFTW,OMP
+\\%
+\begin{tikzpicture}%
+	\begin{axis}[%
+		xlabel=$n{\times}n$-point sequence,%
+		ylabel=Accumulated\lbreak relative\lbreak OpenCL,%
+        ymin=9.999,%ymax=150000,
+		ymode=log,%
+	    cycle list={lcolor\\lcolor!87.5\\lcolor!75\\lcolor!62.5\\lcolor!50\\lcolor!37.5\\lcolor!25\\}]
+	    %cycle list={lcolor\\lcolor!80\\lcolor!60\\lcolor!40\\lcolor!20\\}]
+		\doplot{CUFFT}{CUFFT};%
+		\doplot{CU}{CU};%
+		\doplot{DX}{NV DX};%
+		\doplot{GL}{NV GL};%
+		\doplot{DX}{NV OCL};%
+		\doplot{FFTW}{FFTW};%
+		\doplot{OMP}{OMP};%
+		\legend{cuFFT,CUDA,DirectCompute,OpenGL,OpenCL,FFTW,OpenMP}%		
+	\end{axis}%
+\end{tikzpicture}%
+\end{tabular}%
+\end{document}

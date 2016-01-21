@@ -4,9 +4,9 @@
 \usepackage{pgfplots}
 \usepgfplotslibrary{units, fillbetween}
 \input{colors.tex}
-\newcommand{\PlotSource}{plots/2d.csv}
-\newcommand{\minDom}{64}
-\newcommand{\maxDom}{8192}
+\newcommand{\PlotSource}{plots/1d.csv}
+\newcommand{\minDom}{4}
+\newcommand{\maxDom}{67108864}
 \input{cmds.tex}
 \pgfplotsset{
     cycle list={gray\\lcolor\\lcolor!70\\lcolor!40\\lcolor!10\\},
@@ -19,8 +19,8 @@
 		log basis x=2,
 		xmode=log,
 		x unit=n,
-		xmin=(16+32),
-		xmax=(512+2048+8192),
+		xmin=(2),
+		xmax=(134217728),
 		legend style={
 			at={(0.00,0.50)},
 			anchor=east,
@@ -42,11 +42,13 @@
 \fontfamily{cmss}\selectfont%
 \Large%
 \begin{tabular}{c}%
+\\%
+\\%
 \begin{tikzpicture}%
 	\begin{axis}[%
 		xlabel=$n{\times}n$-point sequence,%
 		ylabel={Time ($\mu$s)},%
-        ymin=9.999,ymax=1500000,
+        ymin=2,ymax=3500000,
 		ymode=log,%
 	    cycle list={lcolor\\lcolor!87.5\\lcolor!75\\lcolor!62.5\\lcolor!50\\lcolor!37.5\\lcolor!25\\}]%
 		\doplot{CUFFT}{CUFFT};%
@@ -65,7 +67,7 @@
 	\begin{axis}[%
 		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
-		ymin=0.001,ymax=44.999%
+		ymin=0.001,ymax=20%
 		]%
 		\dodashed{CU};%
 		\doplot{CLFFT}{FFTW/CU};%
@@ -80,7 +82,7 @@
 	\begin{axis}[%
 		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
-		ymin=0.001,ymax=2.499]%
+		ymin=0.01,ymax=3.49]%
 		\dodashed{CU};%
 		\doplot{CUFFT}{CUFFT/CU};%		
 		\doplot{DX}{DX/CU};%
@@ -95,7 +97,7 @@
 	\begin{axis}[%	
 		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak OpenCL,%
-		ymin=0.001,ymax=1.999]%
+		ymin=0.01,ymax=2.99]%
 		\dodashed{OCL};%
 		\doplot{CLFFT}{CLFFT/OCL};%
 		\doplot{DX}{AMD DX/OCL};%		
@@ -109,7 +111,7 @@
 	\begin{axis}[%	
 		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Accumulated\lbreak relative\lbreak OpenCL,%
-		ymin=0.601,ymax=1.399]%
+		ymin=0.401,ymax=1.599]%
 		\dodashed{OCL};%
 		\doplot{DX}{AMD+NV DX};%
 		\doplot{GL}{AMD+NV GL};%

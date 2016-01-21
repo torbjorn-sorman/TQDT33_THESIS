@@ -1,14 +1,13 @@
-\newcommand{\PlotSource}{plots/2d.csv}
 \newcommand{\doplot}[2]{
 	\addplot+[line width=2pt,name path=#1] table[x=n,y=#2,col sep=comma]{\PlotSource};
 }
 \newcommand{\dofill}[2]{
-	\addplot+[#1]fill between[of=ZERO and #2,soft clip={domain=64:8192}];
+	\addplot+[#1]fill between[of=ZERO and #2,soft clip={domain=(\minDom):(\maxDom)}];
 }
 \newcommand{\dopattern}[3]{
-	\addplot+[draw opacity=#1, pattern=north east lines, pattern color=#2] fill between[of=CU and #3,soft clip={domain=32:16384}];
+	\addplot+[draw opacity=#1, pattern=north east lines, pattern color=#2] fill between[of=CU and #3,soft clip={domain=(\minDom)/2:(\maxDom)*2}];
 }
 \newcommand{\dodashed}[1]{
-	\addplot+[complementary!75,dash pattern=on 8pt off 6pt,line width=2pt,name path=#1][domain=32:16384] {1};
+	\addplot+[complementary!75,dash pattern=on 8pt off 6pt,line width=2pt,name path=#1][domain=(\minDom)/2:(\maxDom)*2] {1};
 }
 \newcommand{\lbreak}{\\\color{white}{\small -}\\\color{ylabclr}}

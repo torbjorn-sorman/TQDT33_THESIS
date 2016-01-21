@@ -3,62 +3,61 @@
 \usetikzlibrary{patterns}
 \usepackage{pgfplots}
 \usepgfplotslibrary{units, fillbetween}
-\input{colors.tex}
-\input{cmds.tex}
+\input{colors.tex}%
+\newcommand{\PlotSource}{plots/2d.csv}
+\newcommand{\minDom}{64}
+\newcommand{\maxDom}{8192}
+\input{cmds.tex}%
 \pgfplotsset{%
     every axis/.style={%
-		\input{pstyle.tex}%
-	}%
-%    cycle list={gray\\lcolor\\lcolor!70\\lcolor!40\\lcolor!10\\},
-%    axis line style={turquoise-3!25},
-%    compat=1.12,
-%    every axis/.style={%
-%    	width=280pt,
-%		grid=major,
-%		grid style={dashed,blue-theme!30},
-%		log basis x=2,
-%		xmode=log,
-%		x unit=n,
-%		xmin=(16+32),
-%		xmax=(512+2048+8192),
-%		legend style={
-%			at={(0.00,0.50)},
-%			anchor=east,
-%			text=turquoise-3,
-%			draw=none,
-%			text width=100pt},
-%		xlabel style={text=turquoise-3},
-%		xticklabel style={text=turquoise-3},
-%		ylabel style={
-%			text=ylabclr,
-%			rotate=-90,
-%			at={(1.15,0.50)},
-%			align=center},
-%		yticklabel pos=right,
-%		yticklabel style={text=turquoise-3}
-%	}
+    	width=280pt,%
+		grid=major,%
+		grid style={dashed,blue-theme!30},%
+		legend style={%
+			at={(0.00,0.50)},%
+			anchor=east,%
+			text=turquoise-3,%
+			draw=none,%
+			text width=100pt},%
+		xlabel style={text=turquoise-3},%
+		xticklabel style={text=turquoise-3},%
+		ylabel style={%
+			text=ylabclr,%
+			rotate=-90,%
+			at={(1.15,0.50)},%
+			align=center},%
+		yticklabel pos=right,%
+		yticklabel style={text=turquoise-3}%
+	},%
+    axis line style={turquoise-3!25},%
+    compat=1.12%
 }
 \begin{document}%
 \fontfamily{cmss}\selectfont%
 \Large%
 \begin{tabular}{c}%
 \begin{tikzpicture}
+\newcommand{\xlab}{$2^{26}$-point sequence}
 \begin{axis}[%
-    ybar,
-    enlargelimits=0.15,
-    %legend style={at={(0.5,-0.15)},
-      %anchor=north,legend columns=-1},
-    ylabel={\#participants},
-    symbolic x coords={$2^{13}$},
-    xtick=data,
-    nodes near coords,
-    nodes near coords align={vertical},
-    ]
-\addplot coordinates {($2^{13}$,100072)};
-%\addplot coordinates {(tool8,1)};
-%100072	110536.5	136885.3	175662.7	28934
-\legend{CUDA}
-\end{axis}
-\end{tikzpicture}
+    ybar,%
+    %enlargelimits=0.15,enlarge x limits=0.15,enlarge y limits={value=0.15,upper},
+    ymode=log,
+    ymin=10000,ymax=4500000,
+    %scaled y ticks={base 10:0},%
+    bar width=15pt,%
+    ylabel={Time ({$\mu$}s)},%
+    symbolic x coords={\xlab},%
+    xtick=data]%
+	\addplot+[fill=lcolor,draw=turquoise-3] coordinates {(\xlab,28934)};%
+	\addplot+[fill=lcolor!85.7,draw=turquoise-3] coordinates {(\xlab,100072)};%
+	\addplot+[fill=lcolor!71.4,draw=turquoise-3] coordinates {(\xlab,110536.5)};%
+	\addplot+[fill=lcolor!57.1,draw=turquoise-3] coordinates {(\xlab,136885.3)};%
+	\addplot+[fill=lcolor!42.9,draw=turquoise-3] coordinates {(\xlab,175662.7)};%
+	\addplot+[fill=lcolor!28.6,draw=turquoise-3] coordinates {(\xlab,967890)};%
+	\addplot+[fill=lcolor!14.3,draw=turquoise-3] coordinates {(\xlab,1457567)};%
+	\addplot+[fill=lcolor!5,draw=turquoise-3] coordinates {(\xlab,3978498)};%
+	\legend{cuFFT,CUDA,DirectCompute,OpenGL,OpenCL,FFTW,OpenMP,C++}%
+\end{axis}%
+\end{tikzpicture}%
 \end{tabular}%
 \end{document}

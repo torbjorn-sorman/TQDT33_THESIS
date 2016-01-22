@@ -1,0 +1,58 @@
+\documentclass[varwidth]{standalone}
+\usepackage{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\begin{document}%
+1\\%
+\begin{algorithm}%
+\begin{algorithmic}[1]%
+\Procedure{GlobalKernel}{}%
+	\State $tid \gets \Call{GlobalThreadId}{}$%
+	\State $a \gets \Call{FirstIndex}{tid}$%
+	\State $b \gets \Call{SecondIndex}{tid}$%
+	\State $\Call{GlobalMem}{a,b} \gets \Call{Butterfly}{a,b}$%
+\EndProcedure%
+\end{algorithmic}%
+\end{algorithm}%
+1\\%
+\begin{algorithm}%
+\begin{algorithmic}[1]%
+\Procedure{LocalKernel}{}%
+	\State $tid \gets \Call{GlobalThreadId}{}$%
+	\State $a \gets \Call{FirstGlobalIndex}{tid}$%
+	\State $b \gets \Call{SecondGlobalIndex}{tid}$%
+	\State $c \gets \Call{FirstLocalIndex}{tid}$%
+	\State $d \gets \Call{SecondLocalIndex}{tid}$%
+	\State $\Call{SharedMem}{c,d} \gets \Call{GlobalMem}{a,b}$%	
+	\State $in1 \gets 1$%
+	\State $in1 \gets in1$%
+    \For {$stage \gets 0, stages - 1$}%
+    	\State $\Call{SharedMem}{c,d} \gets \Call{Butterfly}{a,b}$%
+    \EndFor%
+	\State $\Call{Output}{a,b} \gets \Call{SharedMem}{c,b}$%
+\EndProcedure%
+\end{algorithmic}%
+\end{algorithm}%
+\end{document}
+%\begin{algorithm}
+%	\centering
+%	\begin{algorithmic}[1]
+%		\Procedure{GlobalKernel}{$data, stage, bitmask, angle, dist$}
+%            \State $tid \gets \Call{GlobalThreadId}{}$ 
+%            \State $low \gets tid + (tid \And bitmask)$
+%            \State $high \gets low + dist$
+%            %\State // Calculate twiddle-factor
+%            \State $twMask \gets \Call{ShiftLeft}{dist - 1, stage}$
+%            \State $twStage \gets \Call{PowerOfTwo}{stage} \cdot tid$
+%            \State $a \gets angle \cdot (twStage \And twMask)$
+%            \State $\Call{Imag}{twiddleFactor} \gets \Call{Sin}{a}$
+%            \State $\Call{Real}{twiddleFactor} \gets \Call{Cos}{a}$
+%            %\State // Calculate butterfly-operations
+%            \State $temp \gets \Call{ComplexSub}{data_{low}, data_{high}}$
+%            \State $data_{low} \gets \Call{ComplexAdd}{data_{low}, data_{high}}$
+%            \State $data_{high} \gets \Call{ComplexMul}{temp, twiddleFactor}$
+%        \EndProcedure
+%	\end{algorithmic}
+%	\caption{Pseudo-code for the global kernel with input from the host.}
+%	\label{alg:device:global-kernel}
+%\end{algorithm}

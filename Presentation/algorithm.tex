@@ -1,38 +1,43 @@
 \documentclass[varwidth]{standalone}
-\usepackage{algorithm2e}
+%\usepackage{algorithm2e}
 \usepackage{algpseudocode}
 \usepackage{multirow}
+\usepackage{xcolor}
+\input{colors.tex}
 \begin{document}%
-1\\%
-\begin{algorithm}%
+\fontfamily{cmss}\selectfont%
+\color{turquoise-3}
+-
+\begin{figure}%
 \begin{algorithmic}[1]%
-\Procedure{GlobalKernel}{}%
+\Procedure{GlobalKernel}{$stage$}%
 	\State $tid \gets \Call{GlobalThreadId}{}$%
-	\State $a \gets \Call{FirstIndex}{tid}$%
-	\State $b \gets \Call{SecondIndex}{tid}$%
-	\State $\Call{GlobalMem}{a,b} \gets \Call{Butterfly}{a,b}$%
+	\State $i_1 \gets \Call{FirstIndex}{tid}$%
+	\State $i_2 \gets \Call{SecondIndex}{tid}$%
+	\State $\Call{GlobalMem}{i_1,i_2} \gets \Call{Butterfly}{stage,i_1,i_2}$%
 \EndProcedure%
 \end{algorithmic}%
-\end{algorithm}%
-1\\%
-\begin{algorithm}%
+\end{figure}%
+-%
+\begin{figure}%
 \begin{algorithmic}[1]%
 \Procedure{LocalKernel}{}%
 	\State $tid \gets \Call{GlobalThreadId}{}$%
-	\State $a \gets \Call{FirstGlobalIndex}{tid}$%
-	\State $b \gets \Call{SecondGlobalIndex}{tid}$%
-	\State $c \gets \Call{FirstLocalIndex}{tid}$%
-	\State $d \gets \Call{SecondLocalIndex}{tid}$%
-	\State $\Call{SharedMem}{c,d} \gets \Call{GlobalMem}{a,b}$%	
-	\State $in1 \gets 1$%
-	\State $in1 \gets in1$%
+	\State $g \gets \Call{GlobalIndex}{tid}$%
+	\State $in \gets \Call{LocalIndex}{tid}$%
+	\State $SharedMem[in_1] \gets GlobalMem[g_1]$%
+	\State $SharedMem[in_2] \gets GlobalMem[g_2]$%
+	\State $out_1 \gets in_1 \cdot 2$%
+	\State $out_2 \gets out_1+1$%
     \For {$stage \gets 0, stages - 1$}%
-    	\State $\Call{SharedMem}{c,d} \gets \Call{Butterfly}{a,b}$%
+    	\State $\Call{SharedMem}{out_1,out_2} \gets \Call{Butterfly}{stage,in_1,in_2}$%
     \EndFor%
-	\State $\Call{Output}{a,b} \gets \Call{SharedMem}{c,b}$%
+	\State $GlobalMem[\Call{BitReverse}{g_1}] \gets SharedMem[in_1]$%
+	\State $GlobalMem[\Call{BitReverse}{g_2}] \gets SharedMem[in_2]$%
 \EndProcedure%
 \end{algorithmic}%
-\end{algorithm}%
+\end{figure}%
+-%
 \end{document}
 %\begin{algorithm}
 %	\centering

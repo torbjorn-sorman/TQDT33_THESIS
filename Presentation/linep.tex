@@ -7,9 +7,14 @@
 \newcommand{\PlotSource}{plots/2d.csv}
 \newcommand{\minDom}{64}
 \newcommand{\maxDom}{8192}
+%\newcommand{\cycleclr3}{lcolor\\lcolor!60\\lcolor!20\\}
+%\newcommand{\cycleclr4}{lcolor\\lcolor!75\\lcolor!50\\lcolor!25\\}
+%\newcommand{\cycleclr5}{lcolor\\lcolor!80\\lcolor!60\\lcolor!40\\lcolor!20\\}
+%\newcommand{\cycleclr6}{lcolor\\lcolor!83.3\\lcolor!66.7\\lcolor!50\\lcolor!33.3\\lcolor!16.7\\}
+%\newcommand{\cycleclr7}{lcolor\\lcolor!87.5\\lcolor!75\\lcolor!62.5\\lcolor!50\\lcolor!37.5\\lcolor!25\\}
 \input{cmds.tex}
 \pgfplotsset{
-    cycle list={gray\\lcolor\\lcolor!70\\lcolor!40\\lcolor!10\\},
+    cycle list={gray\\lcolor\\lcolor!75\\lcolor!50\\lcolor!25\\},
     axis line style={turquoise-3!25},
     compat=1.12,
     every axis/.style={%
@@ -21,6 +26,7 @@
 		x unit=n,
 		xmin=(16+32),
 		xmax=(512+2048+8192),
+		xlabel=$n{\times}n$-point sequence,%
 		legend style={
 			at={(0.00,0.50)},
 			anchor=east,
@@ -44,7 +50,6 @@
 \begin{tabular}{c}%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel={Time ($\mu$s)},%
         ymin=9.999,ymax=1500000,
 		ymode=log,%
@@ -63,9 +68,9 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
-		ymin=0.001,ymax=44.999%
+		ymin=0.001,ymax=44.999,%
+		cycle list={gray\\lcolor\\lcolor!66.66\\lcolor!33.33\\}%
 		]%
 		\dodashed{CU};%
 		\doplot{CLFFT}{FFTW/CU};%
@@ -78,7 +83,6 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
 		ymin=0.001,ymax=2.499]%
 		\dodashed{CU};%
@@ -93,9 +97,10 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%	
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak OpenCL,%
-		ymin=0.001,ymax=1.999]%
+		ymin=0.001,ymax=1.999,
+		cycle list={gray\\lcolor\\lcolor!66.66\\lcolor!33.33\\}
+		]%
 		\dodashed{OCL};%
 		\doplot{CLFFT}{CLFFT/OCL};%
 		\doplot{DX}{AMD DX/OCL};%		
@@ -107,9 +112,10 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%	
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Accumulated\lbreak relative\lbreak OpenCL,%
-		ymin=0.601,ymax=1.399]%
+		ymin=0.601,ymax=1.399,
+		cycle list={gray\\lcolor\\lcolor!50.0\\}
+		]%
 		\dodashed{OCL};%
 		\doplot{DX}{AMD+NV DX};%
 		\doplot{GL}{AMD+NV GL};%

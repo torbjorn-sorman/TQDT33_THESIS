@@ -9,7 +9,7 @@
 \newcommand{\maxDom}{67108864}
 \input{cmds.tex}
 \pgfplotsset{
-    cycle list={gray\\lcolor\\lcolor!70\\lcolor!40\\lcolor!10\\},
+    cycle list={gray\\lcolor\\lcolor!75\\lcolor!50\\lcolor!25\\},
     axis line style={turquoise-3!25},
     compat=1.12,
     every axis/.style={%
@@ -21,6 +21,7 @@
 		x unit=n,
 		xmin=(2),
 		xmax=(134217728),
+		xlabel=$n$-point sequence,%
 		legend style={
 			at={(0.00,0.50)},
 			anchor=east,
@@ -46,11 +47,11 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel={Time ($\mu$s)},%
         ymin=2,ymax=3500000,
 		ymode=log,%
-	    cycle list={lcolor\\lcolor!87.5\\lcolor!75\\lcolor!62.5\\lcolor!50\\lcolor!37.5\\lcolor!25\\}]%
+	    cycle list={lcolor\\lcolor!87.5\\lcolor!75\\lcolor!62.5\\lcolor!50\\lcolor!37.5\\lcolor!25\\}%
+	    ]%
 		\doplot{CUFFT}{CUFFT};%
 		\doplot{CU}{CU};%
 		\doplot{DX}{NV DX};%
@@ -65,9 +66,9 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
-		ymin=0.001,ymax=20%
+		ymin=0.001,ymax=20,%
+		cycle list={gray\\lcolor\\lcolor!66.66\\lcolor!33.33\\}%
 		]%
 		\dodashed{CU};%
 		\doplot{CLFFT}{FFTW/CU};%
@@ -80,7 +81,6 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak CUDA,%
 		ymin=0.01,ymax=3.49]%
 		\dodashed{CU};%
@@ -95,9 +95,10 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%	
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Time relative\lbreak OpenCL,%
-		ymin=0.01,ymax=2.99]%
+		ymin=0.01,ymax=2.99,%
+		cycle list={gray\\lcolor\\lcolor!66.66\\lcolor!33.33\\}%
+		]%
 		\dodashed{OCL};%
 		\doplot{CLFFT}{CLFFT/OCL};%
 		\doplot{DX}{AMD DX/OCL};%		
@@ -109,9 +110,10 @@
 \\%
 \begin{tikzpicture}%
 	\begin{axis}[%	
-		xlabel=$n{\times}n$-point sequence,%
 		ylabel=Accumulated\lbreak relative\lbreak OpenCL,%
-		ymin=0.401,ymax=1.599]%
+		ymin=0.401,ymax=1.599,%
+		cycle list={gray\\lcolor\\lcolor!50\\}%
+		]%
 		\dodashed{OCL};%
 		\doplot{DX}{AMD+NV DX};%
 		\doplot{GL}{AMD+NV GL};%

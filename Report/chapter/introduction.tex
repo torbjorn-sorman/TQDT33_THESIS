@@ -1,36 +1,31 @@
 \chapter{Introduction}\label{cha:intro}
-This chapter gives an introduction to the thesis. It describes the background, purpose and goal of the thesis, and also a list of abbreviations and the structure of this report.
+This chapter gives an introduction to the thesis. The background, purpose and goal of the thesis, describes a list of abbreviations and the structure of this report.
 
 \section{Background}
-The computationally demanding problems have during a long period of time been solved faster by technical improvements in hardware. However, some limitations have been reached the last decades. Operating frequency of the \gls{CPU} is no longer significantly improved. Problems relying on single thread performance are limited by three primary technical factors:
+Technical improvements of hardware has for a long period of time been the best way to solve computationally demanding problems faster. However, during the last decades, the limit of what can be achieved by hardware improvements appear to have been reached: The operating frequency of the \gls{CPU} does no longer significantly improve. Problems relying on single thread performance are limited by three primary technical factors:
 \begin{enumerate}
 	\item The \gls{ILP} wall
 	\item The memory wall
 	\item The power wall
 \end{enumerate}
 
-The first wall states that its hard to further exploit simultanious \gls{CPU} instructions, techniques like instruction pipelining, superscalar execution and \gls{VLIW} exists but complexity and latency of hardware reduces the benefits. Related to the first is second wall, the gap between \gls{CPU} speed and memory access time, that may cost several hundreds of \gls{CPU} cycles if accessing primary memory. The third wall is power and heating problem. The power consumed is increased exponentially with each factorial increase of operating frequency.
+The first wall states that it is hard to further exploit simultaneous \gls{CPU} instructions: techniques such as instruction pipelining, superscalar execution and \gls{VLIW} exists but complexity and latency of hardware reduces the benefits.
 
-Improvements can be found in exploiting parallelism. Either reconstruct the problem or the problem itself is already inherently parallelizable. This trend manifests in development towards use and construction of multi-core microprocessors. The \gls{GPU} is one such device, originally exploited the inherent parallelism within visual rendering but now is available as a tool for massively parallelizable problems.
+The second wall, the gap between \gls{CPU} speed and memory access time, that may cost several hundreds of \gls{CPU} cycles if accessing primary memory.
+
+The third wall is the power and heating problem. The power consumed is increased exponentially with each factorial increase of operating frequency.
+
+Improvements can be found in exploiting parallelism. Either the problem itself is already inherently parallelizable, or reconstruct the problem. This trend manifests in development towards use and construction of multi-core microprocessors. The \gls{GPU} is one such device, it originally exploited the inherent parallelism within visual rendering but now is available as a tool for massively parallelizable problems.
 
 \section{Problem statement}
-Programmers might experience a threshold and slow learning curve to move from sequential to thread-parallel programming that is \gls{GPU} programming. Obstacles involve learning about the hardware architecture and restructure the application. Knowing limitations and benefits might even provide reason to not utilize the \gls{GPU} and instead choose to work with a multi-core \gls{CPU}.
+Programmers might experience a threshold and a slow learning curve to move from a sequential to a thread-parallel programming paradigm that is \gls{GPU} programming. Obstacles involve learning about the hardware architecture, and restructure the application. Knowing the limitations and benefits might even provide reason to not utilize the \gls{GPU}, and instead choose to work with a multi-core \gls{CPU}.
 
-Depending on one's preferences, needs and future goals; selecting one technology over the other might be derived from portability or hardware requirements, programmability, how well it integrates with other frameworks or \gls{API} or how well it's supported by the provider or developer community. Within the range of this thesis, the covered technologies are \gls{CUDA}, \gls{OpenCL}, DirectCompute (\gls{API} within DirectX) and \gls{OpenGL} Compute Shaders.
+Depending on ones preferences, needs, and future goals; selecting one technology over the other can be very crucial for productivity. Factors concerning productivity can be portability, hardware requirements, programmability, how well it integrates with other frameworks and \gls{API}s, or how well it's supported by the provider and developer community. Within the range of this thesis, the covered technologies are \gls{CUDA}, \gls{OpenCL}, DirectCompute (\gls{API} within DirectX), and \gls{OpenGL} Compute Shaders.
 
 \section{Purpose and goal of the thesis work}
-Evaluate, select and implement an application suitable for \gls{GPGPU}.
+The purpose of this thesis is to evaluate, select, and implement an application suitable for \gls{GPGPU}.
 
-Implement the same application in important technologies for \gls{GPGPU}:
-\begin{itemize}
-	\item \CU
-	\item \OCL
-	\item \DX
-	\item \GL
-\end{itemize}
-Compare \gls{GPU} results with results from an sequential {\CPP} implementation and an multi-core {\OMP} implementation.
-
-The purpose is to compare the different technologies by means of benchmarking performance and make relevant qualitative assessments.
+To implement the same application in technologies for \gls{GPGPU}: ({\CU}, {\OCL}, {\DX}, and {\GL}), compare \gls{GPU} results with results from an sequential {\CPP} implementation and an multi-core {\OMP} implementation, and to compare the different technologies by means of benchmarking, and the goal is to make qualitative assessments of how it is to use the technologies.
 
 \section{Delimitations}
-Only one benchmark application algorithm will be selected, the scope and time required only allows for one algorithm. Each technology have different debugging and profiling tools and those are not included in the comparison of the technologies, however important such tool can be, they are of a subjective nature and harder to put a measure on.
+Only one benchmark application algorithm will be selected, the scope and time required only allows for one algorithm to be tested. Each technology have different debugging and profiling tools and those are not included in the comparison of the technologies. However important such tool can be, they are of a subjective nature and harder to put a measure on.

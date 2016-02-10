@@ -180,13 +180,13 @@ The other technologies require some more setup; {\OCL} and {\GL} need one functi
 
 \subsubsection{Kernel code}
 
-This is the part where the code differ the least on but a few points. {\CU} have the strongest support for a {\CPP} -like language and only adds a function type specifier. The kernel program is accessible from the host via the \code{\_\_global\_\_} specifier. {\OCL} share much of this but restricted to a C99-style in the current version (2.0). One difference is how one can reference global and local buffers, these must be specified with the specifier \code{\_\_global} or \code{\_\_local}.
+The kernel code for each technology had a few differences. {\CU} have the strongest support for a {\CPP} -like language and only adds a function-type specifier. The kernel program is accessible from the host via the \code{\_\_global\_\_} specifier. {\OCL} share much of this but is restricted to a C99-style in the current version (2.0). A difference is how global and local buffers can referenced, these must be declared with the specifier \code{\_\_global} or \code{\_\_local}.
 
-{\DX} and {\GL} Compute Shader is coded in \gls{HLSL} and \gls{GLSL} respectively. These languages are similar and share the same level of restrictions compared to CUDA C/C++ and {\OCL} C-code. Device functions can not use pointers or recursion. However these are of little importance for the performance since all code is in-lined in the compilation/building of the kernel program.
+{\DX} and {\GL} Compute Shader is coded in \gls{HLSL} and \gls{GLSL} respectively. These languages are similar and share the same level of restrictions compared to CUDA C/C++ and {\OCL} C-code. Device functions can not use pointers or recursion. However, these are of little importance for the performance since all code is in-lined in the building and compilation of the kernel program.
 
 \subsubsection{Synchronization}
 
-The synchronization of threads and blocks is slightly different, {\CU} have the options to synchronize threads within a block and to synchronize host and device, the equivalent exists in all but {\DX} where the device synchronization is not done trivially as with a blocking function call. {\CU}, {\OCL} and {\DX} uses the same kernel stream to execute kernels sequentially while in {\GL} the sequential execution is accomplished by the use of
+The synchronization on thread and block-level is different. In {\CU} can threads within a block can be synchronized directly on the \gls{GPU}. On block-level synchronization, the host is required as in building the stream or queue of commands. The equivalent exists in all technologies. Device and host synchronization is similar to block-level synchronization, however, in {\DX} this is not done trivially as with a blocking function call from the host. {\CU}, {\OCL} and {\DX} uses the same kernel stream to execute kernels sequentially, while the sequential execution in {\GL} is accomplished by the use of
 \begin{lstlisting}
 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 \end{lstlisting}
@@ -214,7 +214,7 @@ The {\OMP} implementation benefits in performance from calculating the twiddle f
 
 \subsubsection{Twiddle factors}
 
-The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps, first calculate the real values, secondly copy from real to imaginary.
+The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps: first calculate the real values, then copy from real to imaginary.
 
 \begin{table}
 	\centering
@@ -225,7 +225,7 @@ The twiddle factor are stored for each butterfly operation. To save time, only t
 
 \subsubsection{Butterfly}
 
-The same butterfly operation uses the constant geometry index scheme. The indexes are not stored from one stage to the next but it makes the output come in continues order. The butterfly operations are split among the threads by static scheduling.
+The same butterfly operation uses the constant geometry index scheme. The indexes are not stored from one stage to the next but it makes the output come in continuous order. The butterfly operations are split among the threads by static scheduling.
 
 \subsubsection{Bit-Reversed Order}
 
@@ -242,11 +242,11 @@ See figure \ref{fig:omp:bit-reverse-order} for code showing the bit-reverse orde
 
 \subsection{FFT 2D with OpenMP}
 
-The implementation of \gls{2D} \gls{FFT} with {\OMP} run the transformations row-wise and transposes the image and repeat. The twiddle factors are calculated once and stays the same.
+The implementation of \gls{2D} \gls{FFT} with {\OMP} runs the transformations row-wise and transposes the image and repeat. The twiddle factors are calculated once and stays the same.
 
 \subsection{Differences with GPU}
 
-The OpenMP implementation differs from the \gls{GPU} with the fact that twiddle factors are pre computed and it uses the constant geometry implementation in all stages. The amount of parallel threads are on the {\INTELCPU} four whereas on the \gls{GPU} in the order of up to 192 (seven warps, one per \gls{SM}, with 32 threads each). This highly effects performance when the size of the problem grows.
+The OpenMP implementation differs from the \gls{GPU}-implementations in two ways: twiddle factors are pre-computed, and all stages uses the constant geometry algorithm. The number of parallel threads are on the {\INTELCPU} four, whereas the number is on the \gls{GPU} up to 192 (seven warps, one per \gls{SM}, with 32 threads each). This highly effects the performance when the size of the problem grows.
 
 \section{Benchmark configurations}
 

@@ -30,7 +30,7 @@ The results will be shown for the two graphics cards {\NVCARD} and \AMDCARD, whe
 
 The performance measure is total execution time for a single forward transform using two buffers: one input and one output buffer. The implementation input size range is limited by the hardware (graphics card primary memory). However there are some unsolved issues near the upper limit on some technologies on the {\AMDCARD}.
 
-{\CU} is the primary technology and the {\NVCARD} graphics card is the primary platform. All implementations are ported from {\CU}. To compare the implementation, external libraries are included and can be found in italics in the table \ref{tab:platform-technologies}. Note that the {\CLFFT} library failed to be measured in the same manner as the other GPU implementations: the times are measured at host, and short sequences suffer from large overhead.
+{\CU} is the primary technology and the {\NVCARD} graphics card is the primary platform. All other implementations are ported from {\CU} implementation. To compare the implementation, external libraries are included and can be found in italics in the table \ref{tab:platform-technologies}. Note that the {\CLFFT} library failed to be measured in the same manner as the other GPU implementations: the times are measured at host, and short sequences suffer from large overhead.
 
 The experiments are tuned on two parameters, the number of \glspl{thread} per \gls{block} and how large the tile dimensions are in the transpose \gls{kernel}, see chapter \ref{cha:implementation} and table \ref{tab:threads-per-block}.
 
@@ -67,7 +67,7 @@ The {\CU} implementation was the fastest on the {\NVCARD} over most sequences. T
 	\label{fig:gpu:implementation}
 \end{figure}
 
-The experimental setup for the CPU involved low overhead and the short sequences could not be measured accurately, shown as $0{\micro}s$ in the figures. Results from comparing the sequential {\CPP} and multi-core {\OMP} implementation with {\CU} are shown in figure \ref{fig:gtx:cpu}. {\FFTW} was included and demonstrated how an optimized (per $n$-point length) sequential CPU implementation perform.
+The experimental setup for the CPU involved low overhead and the short sequences could not be measured accurately. This is shown as $0{\micro}s$ in the figures. Results from comparing the sequential {\CPP} and multi-core {\OMP} implementation with {\CU} are shown in figure \ref{fig:gtx:cpu}. {\FFTW} was included and demonstrated how an optimized (per $n$-point length) sequential CPU implementation perform.
 
 \begin{figure}
 	\centering
@@ -100,7 +100,7 @@ Results from comparing the implementations on the different graphics cards are s
 
 \subsection{FFT 2D}
 
-The equivalent test was done for \gls{2D}-data represented by an image of $m{\times}m$ size. The image contained three channels (red, green, and blue) and the transformation was performed over one channel. Figure \ref{fig:gpu:overview-2d} shows an overview of the results of images sizes ranging from $2^{6}{\times}2^{6}$ to $2^{13}{\times}2^{13}$.
+The equivalent test was done for \gls{2D}-data represented by an image of $m{\times}m$ size. The image contained three channels (red, green, and blue) and the transformation was performed over one channel. Figure \ref{fig:gpu:overview-2d} shows an overview of the results of image sizes ranging from $2^{6}{\times}2^{6}$ to $2^{13}{\times}2^{13}$.
 
 \begin{figure}
 	\centering
@@ -163,7 +163,7 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
 The foremost known technologies for GPGPU, based on other resarch-interests, are {\CU} and {\OCL}. The comparisons from earlier work have focused primarily on the two \cite{fang2011comprehensive, park2011design, su2012overview}. Bringing {\DX} (or Direct3D Compute Shader) and {\GL} Compute Shader to the table makes for an interesting mix since the result from the experiment is that both are strong alternatives in terms of raw performance.
 
-The most accurate and fair comparison with a GPU is when number of data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturating the GPUs streaming multiprocessors, there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The results from running the benchmark application on small sets of data are more or less discarded in the evaluation.
+The most accurate and fair comparison with a GPU is when number of data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturating the GPUs streaming multiprocessors, there is less gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The results from running the benchmark application on small sets of data are more or less discarded in the evaluation.
 
 \subsubsection{The CPU vs GPU}
 
@@ -173,9 +173,9 @@ The implementation aimed at sequences of two-dimensional data was however succes
 
 The unsurprising result from the experiments is that {\CU} is the fastest technology on {\NVCARD}, but only with small a margin. What might come as surprise, is the strength of the {\DX} implementation. Going head-to-head with {\CU} (only slightly slower) on the {\NVCARD}, and performing equally (or slightly faster) than {\OCL}.
 
-{\GL} is performing on par with {\DX} on the {\AMDCARD}. The exception is that the long sequences fails with {\GL}-solution on the {\AMDCARD}, sequences otherwise working on the {\NVCARD}. The performance of the {\GL} tests are equal or better then {\OCL} in 1D, but outperforming {\OCL} in 2D.
+{\GL} is performing on par with {\DX} on the {\AMDCARD}. The exception is the long sequences that fails with the {\GL}-solution on the {\AMDCARD}, sequences otherwise working on the {\NVCARD}. The performance of the {\GL} tests are equal or better then {\OCL} in 1D, but outperforming {\OCL} in 2D.
 
-The biggest surprise is actually the {\OCL} implementation. Falling behind by a relatively big margin on both graphics cards. This large margin was not anticipated based on other papers in comparisons. Effort has been made to assure that the code does in fact run fairly compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about $1.6$ and $1.8$ times slower for 1D and 2D respectively on the {\NVCARD}. The figure \ref{fig:gpu-comparison-tech} and \ref{fig:gpu-comparison-tech-2d} shows that {\DX} is a factor of about $0.8$ of the execution-time of {\OCL}. {\GL} beats the {\OCL} solution and is on par with {\DX} in terms of execution time. However, fails to execute the longest sequences on the {\AMDCARD}. The one thing that goes in favor of {\OCL} is that the implementation did scale without problem: All sequences were computed as expected. The figures \ref{fig:gpu:implementation:r260x} and \ref{fig:gpu:implementation-2d:r260x} shows that something happened with the other implementations, even {\CLFFT} had problem with the last sequence. {\GL} and {\DX} could not execute all sequences.
+The biggest surprise is actually the {\OCL} implementation. Falling behind by a relatively big margin on both graphics cards. This large margin was not anticipated based on other papers in comparisons. Effort has been made to assure that the code does in fact run fairly compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about $1.6$ and $1.8$ times slower for 1D and 2D respectively on the {\NVCARD}. The figure \ref{fig:gpu-comparison-tech} and \ref{fig:gpu-comparison-tech-2d} shows that {\DX} is faster by a factor of about $0.8$ of the execution-time of {\OCL}. The same comparisons of {\OCL} and {\GL} shows similar results. The one thing that goes in favor of {\OCL} is that the implementation did scale without problem: All sequences were computed as expected. The figures \ref{fig:gpu:implementation:r260x} and \ref{fig:gpu:implementation-2d:r260x} shows that something happened with the other implementations, even {\CLFFT} had problem with the last sequence. {\GL} and {\DX} could not execute all sequences.
 
 \subsubsection{External libraries}
 
@@ -189,7 +189,7 @@ When working with programming, raw performance is seldom the only requirement. T
 
 \subsubsection{Scalability of problems}
 
-The different technologies are restricted in different ways. {\CU} and {\OCL} are device limited and suggest polling the device for capabilities and limitations. {\DX} and {\GL} are standardized with each version supported. An example of this is the shared memory limit: {\CU} allowed for full access, whereas {\DX} was limited to a \gls{API}-specific size and not bound by the specific device. The advantage of this is the ease of programming with {\DX} and {\GL} when knowing that a minimum support is expected at certain feature support versions.
+The different technologies are restricted in different ways. {\CU} and {\OCL} are device limited and suggest polling the device for capabilities and limitations. {\DX} and {\GL} are standardized with each version supported. An example of this is the shared memory size limit: {\CU} allowed for full access, whereas {\DX} was limited to a \gls{API}-specific size and not bound by the specific device. The advantage of this is the ease of programming with {\DX} and {\GL} when knowing that a minimum support is expected at certain feature support versions.
 
 Both {\DX} and {\GL} had trouble when data sizes grew, no such indications when using {\CU} and {\OCL}.
 
@@ -227,7 +227,7 @@ By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profi
 
 Some optimizations were attempted during the implementation phase and later abandoned. The reason why attempts was abandoned was the lack of time or no measurable improvement (or even worse performance). The use of shared memory provide fewer global memory accesses, the shared memory can be used in optimized ways such as avoiding banking conflicts\footnote{Good access pattern allows for all threads in a warp to read in parallel, one per memory bank at a total of 32 banks on {\NVCARD}, a banking conflict is two threads in a warp attempting to read from the same bank and becomes serialized reads.}. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that an overhead was introduced and more shared memory had to be allocated per block.
 
-The use of shared memory in the global \gls{kernel} combined with removing the better part of multiple host-synchronizations is a potentially good optimization. The time distribution during this thesis did not allow further optimizations. The attempts to implement this in short time were never completed successfully. Intuitively guessed, the use of shared memory in the global kernel would decrease global memory accesses and reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
+The use of shared memory in the global \gls{kernel} combined with removing most of the host-synchronization is a potentially good optimization. The time distribution during this thesis did not allow further optimizations. The attempts to implement this in short time were never completed successfully. Intuitively guessed, the use of shared memory in the global kernel would decrease global memory accesses and reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
 
 \subsubsection{Wider context}
 
@@ -237,7 +237,7 @@ Since \gls{GPU} acceleration can be put to great use in large computing environm
 
 \subsection{Benchmark application}
 
-The \gls{FFT} algorithm was successfully implemented as benchmark application in all technologies. The application provided parallelism and enough computational complexity to take advantage of the \gls{GPU}. This is supported by the increase in speed compared to the \gls{CPU}. The benchmark algorithm executed up to a factor of $40$ times faster on the GPU as seen in table \ref{tab:cu-vs-cpu} where {\CU} is compared to the CPU implementations.
+The \gls{FFT} algorithm was successfully implemented as benchmark application in all technologies. The application provided parallelism and enough computational complexity to take advantage of the \gls{GPU}. This is supported by the increase in speed compared to the \gls{CPU}. The benchmark algorithm executed up to a factor of $40$ times faster on the GPU as seen in table \ref{tab:cu-vs-cpu} where the {\CU} implementation is compared to the CPU implementations.
 
 \begin{table}
 	\centering	
@@ -254,7 +254,7 @@ The \gls{FFT} algorithm was successfully implemented as benchmark application in
 
 \subsection{Benchmark performance}
 
-Benchmarking on the {\NVCARD} performing a \gls{2D} forward-transformation showed the following rank:
+Benchmarking on the {\NVCARD} graphics card performing a \gls{2D} forward-transformation resulted in the following rank:
 \begin{enumerate}	
 	\item {\CU}
 	\item {\DX}
@@ -262,7 +262,7 @@ Benchmarking on the {\NVCARD} performing a \gls{2D} forward-transformation showe
 	\item {\OCL}
 \end{enumerate}
 
-Benchmarking on the {\AMDCARD} performing a \gls{2D} forward-transformation showed the following rank:
+Benchmarking on the {\AMDCARD} graphics card performing a \gls{2D} forward-transformation resulted in the following rank:
 \begin{enumerate}	
 	\item {\DX}
 	\item {\GL}\footnote{Failed to compute sequences longer then $2^{23}$ elements.}
@@ -298,11 +298,11 @@ Based on {\CUFFT} that uses {\CTALG} and Bluestein's algorithm, a suggested exte
 
 The graphic cards used in this thesis are at least one generation old compared to the latest graphic cards as of late 2015. It would be interesting to see if the cards have the same differences in later generations and to see how much have been improved over the generations. It is likely that the software drivers are differently optimized towards the newer graphic cards.
 
-The DirectX 12 \gls{API} was released in the fourth quarter of 2015 but this thesis only utilized the DirectX 11 API drivers. The release of \emph{Vulkan}, comes with the premise much like DirectX 12 with high performance and more low level interaction. In a similar way AMDs \emph{Mantle} is an alternative to Direct3D with the aim of reducing overhead. Most likely, the (new) hardware will support the newer APIs in a more optimized way during the coming years.
+The DirectX 12 \gls{API} was released in the fourth quarter of 2015 but this thesis only utilized the DirectX 11 API drivers. The release of \emph{Vulkan}, comes with the premise much like DirectX 12 of high-performance and more low-level interaction. In a similar way AMDs \emph{Mantle} is an alternative to Direct3D with the aim of reducing overhead. Most likely, the (new) hardware will support the newer APIs in a more optimized way during the coming years.
 
 \subsubsection{Graphics cards}
 
-The {\NVCARD} have the \textit{Kepler} micro architecture. The model have been succeeded by booth the 700 and 900 GeForce series and the micro architecture have been followed by \textit{Maxwell} (2014). Both Kepler and Maxwell uses 28nm design. The next micro architecture is \textit{Pascal} and is due in 2016. Pascal will include 3D memory and \gls{HBM2} that will move onto the same package as the GPU and greatly improve memory bandwidth and total size. Pascal will use 16nm transistor design that will grant higher speed and energy efficiency.
+The {\NVCARD} have the \textit{Kepler} micro architecture. The model have been succeeded by booth the 700 and 900 GeForce series and the micro architecture have been followed by \textit{Maxwell} (2014). Both Kepler and Maxwell uses 28nm design. The next micro architecture is \textit{Pascal} and is due in 2016. Pascal will include 3D memory (\gls{HBM2}) that will move onto the same package as the GPU and greatly improve memory bandwidth and size. Pascal will use a 16nm transistor design that will grant higher speed and energy efficiency.
 
 The {\AMDCARD} have the \gls{GCN} 1.1 micro architecture and have been succeeded by the Radeon Rx 300 Series and \gls{GCN} 1.2. The latest graphic cards in the Rx 300 series include cards with \gls{HBM} and will likely be succeeded by \gls{HBM2}. The {\AMDCARD} is not target towards the high-end consumer so it would be interesting to see the performance with a high-end AMD GPU.
 

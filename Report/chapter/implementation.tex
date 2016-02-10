@@ -142,7 +142,7 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \subsection{Differences}%
 \subsubsection{Setup}%
-The majority of differences in the implementations were related to the setup phase. The {\CU} implementation is the most straight forward, using \code{cudaMalloc(...)} to allocate a buffer and \code{cudaMemcpy(...)} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer as the kernel source and is most practical if written in a separate file and read as a file stream to a \code{char} buffer. {\DX} shaders are most easily compiled from file. Figure \ref{fig:code:setup} gives a simplified overview of how to setup the kernels in the different technologies.%
+The majority of differences in the implementations were related to the setup phase. The {\CU} implementation is the most straight forward, using \code{cudaMalloc()} to allocate a buffer and \code{cudaMemcpy()} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer as the kernel source and is most practical if written in a separate file and read as a file stream to a \code{char} buffer. {\DX} shaders are most easily compiled from file. Figure \ref{fig:code:setup} gives a simplified overview of how to setup the kernels in the different technologies.%
 \begin{figure}%
 	\centering%
 	\def \setupWidth {\textwidth / 2 - 18pt}%

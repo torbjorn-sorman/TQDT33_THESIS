@@ -201,45 +201,43 @@ Moving from the \gls{GPU}, the only technology is {\OCL} and here is where it ex
 
 \subsubsection{Programmability}
 
-{\CU} in the experience of this thesis, was by far the least complicated to implement. The fewest lines of code needed to get started and few limitations compared to {\CPP}. The {\CU} community and online documentation is full of useful information, finding solutions to problems was relatively easy. The documentation\footnote{\textit{https://docs.nvidia.com/cuda/cuda-c-programming-guide/}} provided guidance for most use cases.
+The experience of this work was that {\CU} was by far the least complicated to implement. The fewest lines of code needed to get started and compared to {\CPP} there were fewer limitations. The {\CU} community and online documentation is full of useful information, finding solutions to problems was relatively easy. The documentation\footnote{\textit{https://docs.nvidia.com/cuda/cuda-c-programming-guide/}} provided guidance for most applications.
 
-{\OCL} implementation was not as straight forward as {\CU}. The biggest difference is the setup. Some differences in the setup:
+{\OCL} implementation was not as straight forward as {\CU}. The biggest difference is the setup. Some differences in the setup are:
 \begin{itemize}
-	\item Device selection, not needed actively in {\CU}
-	\item Command queue or stream, created by default in {\CU}
-	\item Create and build the \gls{kernel} run-time instead of compile-time.
+	\item Device selection is not needed actively in {\CU}
+	\item Command queue or stream is created by default in {\CU}
+	\item {\CU} creates and builds the \gls{kernel} run-time instead of compile-time.
 \end{itemize}
-Both {\DX} and {\GL} follows this pattern, however both inherently suffer from graphic specific abstractions. Especially how memory buffers are created and handled are more prone to mistakes because of the extra steps to actually create and use them in a compute shader.
+Both {\DX} and {\GL} follows this pattern, although they inherently suffer from graphic specific abstractions. The experience was that creating and handle memory-buffers was more prone to mistakes. Extra steps was introduced to create and use the memory in a compute shader compared to a {\CU} and {\OCL}-kernel.
 
-The biggest issue with {\GL} is the way the device is selected, it is handled by the \gls{OS}. In the case of running \emph{Windows 10}, the card had to be connected to a screen. Secondly, that screen needs to be selected as the primary screen. This issue is also a problem when using services based on \gls{RDP}. \gls{RDP} enables the user to log in to a computer remotely, this works for the other technologies but not {\GL}. Not all techniques for remote access have this issue, however it is convenient if the native tool in the \gls{OS} support \gls{GPGPU} features such as selecting the device, especially when running a benchmarking application.
+The biggest issue with {\GL} is the way the device is selected, it is handled by the \gls{OS}. Firstly, in the case of running \emph{Windows 10}, the card had to be connected to a screen. Secondly, that screen needed to be selected as the primary screen. This issue is also a problem when using services based on \gls{RDP}. \gls{RDP} enables the user to log in to a computer remotely. This works for the other technologies but not for {\GL}. Not all techniques for remote access have this issue, it is convenient if the native tool in the \gls{OS} support \gls{GPGPU} features such as selecting the device, especially when running a benchmarking application.
 
 \subsection{Method}
 
-The first issue that have to be highlighted is the fact that \gls{1D} \gls{FFT}s were measured by single sequence execution instead of executing sequences in batch. The \gls{2D} \gls{FFT} implementation did inherently run several \gls{1D} sequences in batch and provided relevant results. One solution would have been to modified the \gls{2D} execution to accept a batch of sequences organized as \gls{2D} data but would have skipped the second part of running column wise transformations.
+The first issue that have to be highlighted is the fact that \gls{1D} \gls{FFT}s were measured by single sequence execution instead of executing sequences in batch. The \gls{2D} \gls{FFT} implementation did inherently run several \gls{1D} sequences in batch and provided relevant results. One solution would have been to modify the \gls{2D} execution to accept a batch of sequences organized as \gls{2D} data, but this would have eliminated the second part of running column wise transformations.
 
-The two graphics cards used are not each others counterparts, the releases differs 17 months ({\NVCARD} released May 10, 2012 compared to {\AMDCARD} in October 8, 2013). The recommended release price hints the targeted audience and capacity of the cards, the {\NVCARD} was priced at \$400 compared to the {\AMDCARD} at \$139. However, looking at the {\OCL} performance on both cards in figure \ref{fig:gpu-comparison-2d}, revealed that medium to short sequences are about the same, but longer sequences goes into favour of the {\NVCARD}.
+The two graphics cards used are not each others counterparts, the releases differs 17 months ({\NVCARD} released May 10, 2012 compared to {\AMDCARD} in October 8, 2013). The recommended release price hints the targeted audience and capacity of the cards, the {\NVCARD} was priced at \$400 compared to the {\AMDCARD} at \$139. Looking at the {\OCL} performance on both cards as seen in figure \ref{fig:gpu-comparison-2d}, revealed that medium to short sequences are about the same, but longer sequences goes in favour of the {\NVCARD}.
 
 \subsubsection{Algorithm}
 
-The \gls{FFT} implementation was rather naively and straight forward. The implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} indicates {\CUFFT} to perform three to four times faster then the benchmark application. Obviously there are a lot to improve. This is not a big issue when running benchmarks but it removes some of the credibility of the algorithm as something practically useful.
+The \gls{FFT} implementation was rather straight forward and without heavy optimization. The implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} indicates {\CUFFT} to perform three to four times faster then the benchmark application. Obviously there is a lot to improve. This is not a big issue when benchmarking, but it removes some of the credibility of the algorithm as something practically useful.
 
-By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profiling CUDA applications.}, the bottleneck was the memory access pattern when outputting data after bit reversing the index. There were no coalescing accesses and bad data locality. There are algorithms that solves this by combining the index transpose operations with the FFT computation as in \cite{govindaraju2008high}.
+By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profiling CUDA applications.}, the bottleneck was the memory access pattern when outputting data after bit-reversing the index. There were no coalesced accesses and bad data locality. There are algorithms that solves this by combining the index transpose operations with the FFT computation as in \cite{govindaraju2008high}.
 
-Some optimizations was attempted during the implementation phase and later abandoned. The reason could be the lack of time or no measurable improvement (or even worse performance). The use of shared memory provide fewer global memory accesses, however the shared memory can be used in optimized ways such as avoiding banking conflicts\footnote{Good access pattern allows for all threads in a warp to read in parallel, one per memory bank at a total of 32 banks on {\NVCARD}, a banking conflict is two threads in a warp attempting to read from the same bank and becomes serialized reads.}. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that an overhead was introduced and more shared memory had to be allocated per block.
+Some optimizations were attempted during the implementation phase and later abandoned. The reason why attempts was abandoned was the lack of time or no measurable improvement (or even worse performance). The use of shared memory provide fewer global memory accesses, the shared memory can be used in optimized ways such as avoiding banking conflicts\footnote{Good access pattern allows for all threads in a warp to read in parallel, one per memory bank at a total of 32 banks on {\NVCARD}, a banking conflict is two threads in a warp attempting to read from the same bank and becomes serialized reads.}. This was successfully tested on the {\CU} technology with no banking conflicts at all, but gave no measurable gain in performance. The relative time gained compared to global memory access was likely to small or was negated by the fact that an overhead was introduced and more shared memory had to be allocated per block.
 
-% Performance optimizations were not portable all the time, some issues solved in \{CU} colud lead to reduced performance in another technology. A good practice was to improve the algorithm in general instead of attempting specialization in each platform, however some variables were tweaked since they had such great impact on performance. 
-
-The use of shared memory in the global \gls{kernel} and also remove the better part of multiple host synchronization points is a potentially good optimization. However the time distribution during this thesis did not allowed further optimizations, the attempts to implement this in short time was never completed successfully. Intuitively guessed, the use of shared memory in the global kernel would decrease global memory accesses and reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
+The use of shared memory in the global \gls{kernel} combined with removing the better part of multiple host-synchronizations is a potentially good optimization. The time distribution during this thesis did not allow further optimizations. The attempts to implement this in short time were never completed successfully. Intuitively guessed, the use of shared memory in the global kernel would decrease global memory accesses and reduce the total number of kernel launches to $\ceil{\log_{2}(\frac{N}{N_{block}})}$ compared to $\log_{2}(N) - \log_{2}(N_{block}) + 1$.
 
 \subsubsection{Wider context}
 
-Since \gls{GPU} acceleration can be put to great use in large computing environments, the fastest execution time and power usage is important. If the same hardware performs faster with another technology the selection or migration is motivated be reduced power costs. Data centers and \gls{HPC} is becoming a major energy consumer globally and future development must consider all energy saving options.
+Since \gls{GPU} acceleration can be put to great use in large computing environments, the fastest execution time and power usage is important. If the same hardware performs faster with another technology the selection or migration is motivated by reduced power costs. Data centers and \gls{HPC} is becoming a major energy consumer globally, and future development must consider all energy saving options.
 
 \section{Conclusions}
 
 \subsection{Benchmark application}
 
-The \gls{FFT} algorithm was successfully implemented as benchmark application in all technologies. The application provided parallelism and enough computational complexity to take advantage of the \gls{GPU}. This is supported by the increase in speed compared to the \gls{CPU} and the benchmark algorithm executed up to $40$ times slower in the {\CPP} implementation, see table \ref{tab:cu-vs-cpu}.
+The \gls{FFT} algorithm was successfully implemented as benchmark application in all technologies. The application provided parallelism and enough computational complexity to take advantage of the \gls{GPU}. This is supported by the increase in speed compared to the \gls{CPU}. The benchmark algorithm executed up to a factor of $40$ times faster on the GPU as seen in table \ref{tab:cu-vs-cpu} where {\CU} is compared to the CPU implementations.
 
 \begin{table}
 	\centering	
@@ -256,7 +254,7 @@ The \gls{FFT} algorithm was successfully implemented as benchmark application in
 
 \subsection{Benchmark performance}
 
-Ranked by execution time of the application on {\NVCARD} executing a \gls{2D} sequence:
+Benchmarking on the {\NVCARD} performing a \gls{2D} forward-transformation showed the following rank:
 \begin{enumerate}	
 	\item {\CU}
 	\item {\DX}
@@ -264,31 +262,31 @@ Ranked by execution time of the application on {\NVCARD} executing a \gls{2D} se
 	\item {\OCL}
 \end{enumerate}
 
-Ranked by execution time of the application on {\AMDCARD} executing a \gls{2D} sequence:
+Benchmarking on the {\AMDCARD} performing a \gls{2D} forward-transformation showed the following rank:
 \begin{enumerate}	
 	\item {\DX}
 	\item {\GL}\footnote{Failed to compute sequences longer then $2^{23}$ elements.}
 	\item {\OCL}\footnote{Performance very close to or equal to {\DX} when sequence reached $2^{24}$ elements or more.}
 \end{enumerate}
-The \gls{2D} ranking reflects the results of a combined performance relative {\OCL} where {\DX} average at $0.8$ the speed of {\OCL}.	
+The ranking reflects the results of a combined performance relative {\OCL}, where {\DX} average at a factor of $0.8$ the speed of {\OCL}.
 
 \subsection{Implementation}
 
-The {\CU} implementation had a relative advantage in terms of code size and complexity. The necessary steps to setup a kernel before executing was but a fraction of the other technologies. {\OCL} needs runtime compiling of the kernel and thus require many more steps and produces a lot more setup code. Portability is in favour of {\OCL} but was not examined further (as in running the application on the \gls{CPU}). The {\DX} setup was similar to {\OCL} with the addition of some more specifications required, {\GL} followed this pattern but did however lacked the support to select device if several was available.
+The {\CU} implementation had a relative advantage in terms of code size and complexity. The necessary steps to setup a kernel before executing was but a fraction of the other technologies. {\OCL} needs runtime compiling of the kernel and thus require many more steps and produces a lot more setup code. Portability is in favour of {\OCL}, but was not examined further (as in running the application on the \gls{CPU}). The {\DX} setup was similar to {\OCL} with the addition of some more specifications required. {\GL} followed this pattern but did lack the support to select device if several was available.
 
-The kernel code was fairly straight forward and was relatively easy to port from {\CU} to any other technology. The most issues could be traced back to memory buffer handling and related back to the setup phase or how buffers needed to be declared in-code. {\CU} offered the most in terms of support to a {\CPP} like coding with fewer limitations than the rest.
+The kernel code was fairly straight forward and was relatively easy to port from {\CU} to any other technology. Most issues could be traced back to the memory buffer handling and related back to the setup phase or how buffers needed to be declared in-code. {\CU} offered the most in terms of support to a {\CPP} like coding with fewer limitations than the rest.
 
 \section{Future work}
 
-This thesis work leave room for expanding with more test applications and improve already implemented algorithm.
+This thesis work leave room for expanding with more test applications and improve the already implemented algorithm.
 
 \subsection{Application}
 
-The \gls{FFT} algorithm is implemented in many practical applications, however the performance tests might give different results with other algorithms. The \gls{FFT} is very easy parallelized and put great demand on the memory by making large strides. It would be of interest to expand with other algorithms that puts more strain on the use of arithmetic operations.
+The \gls{FFT} algorithm is implemented in many practical applications, the performance tests might give different results with other algorithms. The \gls{FFT} is very easy parallelized and put great demand on the memory by making large strides. It would be of interest to expand with other algorithms that puts more strain on the use of arithmetic operations.
 
 \subsubsection{FFT algorithms}
 
-The benchmark application is much slower then the external libraries for the \gls{GPU}, the room for improvements ought to be rather large. One can not alone expect to beat a mature and optimized library such as {\CUFFT}, but one could at least expect a smaller difference in performance in some cases. Improved or further use of shared memory and explore a precomputed twiddle factor table would be a topic to expand upon. Most importantly would probably be to examine how to improve the access pattern towards the global memory.
+The benchmark application is much slower than the external libraries for the \gls{GPU}, the room for improvements ought to be rather large. One can not alone expect to beat a mature and optimized library such as {\CUFFT}, but one could at least expect a smaller difference in performance in some cases. Improved or further use of shared memory and explore a precomputed twiddle factor table would be a topic to expand upon. Most important would probably be to examine how to improve the access pattern towards the global memory.
 
 For the basic algorithm there are several options to remove some of the overhead when including the bit-reversal as a separate step by selecting an algorithm with different geometry.
 
@@ -298,18 +296,18 @@ Based on {\CUFFT} that uses {\CTALG} and Bluestein's algorithm, a suggested exte
 
 \subsubsection{More technologies}
 
-The graphic cards used in this thesis are at least one generation old compared to the current latest graphic cards. There would be interesting to see if the cards have the same differences in later generations and to see how much have been improved over the generations. It is likely that the software drivers are differently optimized towards the newer graphic cards.
+The graphic cards used in this thesis are at least one generation old compared to the latest graphic cards as of late 2015. It would be interesting to see if the cards have the same differences in later generations and to see how much have been improved over the generations. It is likely that the software drivers are differently optimized towards the newer graphic cards.
 
-The DirectX 12 \gls{API} was released in the fourth quarter of 2015 but this thesis only utilized the DirectX 11 API drivers. The release of \emph{Vulkan} which is a of low-overhead graphics and compute \gls{API} comes with the premise much like DirectX 12 with high performance and more low level interaction. In a similar way AMDs \emph{Mantle} is an alternative to Direct3D with the aim of reducing overhead. Most likely will the (new) hardware support the newer APIs more optimized during the coming years.
+The DirectX 12 \gls{API} was released in the fourth quarter of 2015 but this thesis only utilized the DirectX 11 API drivers. The release of \emph{Vulkan}, comes with the premise much like DirectX 12 with high performance and more low level interaction. In a similar way AMDs \emph{Mantle} is an alternative to Direct3D with the aim of reducing overhead. Most likely, the (new) hardware will support the newer APIs in a more optimized way during the coming years.
 
 \subsubsection{Graphics cards}
 
-The {\NVCARD} have the \textit{Kepler} micro architecture. The model have been succeeded by booth the 700 and 900 GeForce series and the micro architecture have been followed by \textit{Maxwell} (2014). Both Kepler and Maxwell uses 28nm design. The next micro architecture is \textit{Pascal} and is due in 2016. Pascal will include 3D memory, \gls{HBM2}, that will move onto the same package as the GPU and greatly improve memory bandwidth and total size. Pascal will use 16nm transistor design that will grant higher speed and energy efficiency.
+The {\NVCARD} have the \textit{Kepler} micro architecture. The model have been succeeded by booth the 700 and 900 GeForce series and the micro architecture have been followed by \textit{Maxwell} (2014). Both Kepler and Maxwell uses 28nm design. The next micro architecture is \textit{Pascal} and is due in 2016. Pascal will include 3D memory and \gls{HBM2} that will move onto the same package as the GPU and greatly improve memory bandwidth and total size. Pascal will use 16nm transistor design that will grant higher speed and energy efficiency.
 
-The {\AMDCARD} have the \gls{GCN} 1.1 micro architecture and have been succeeded by the Radeon Rx 300 Series and \gls{GCN} 1.2. The latest graphic cards in the Rx 300 series include cards with \gls{HBM} and will likely be succeeded by \gls{HBM2}. The {\AMDCARD} is however not target towards the high-end consumer so it would be interesting to see the performance with a high-end AMD GPU.
+The {\AMDCARD} have the \gls{GCN} 1.1 micro architecture and have been succeeded by the Radeon Rx 300 Series and \gls{GCN} 1.2. The latest graphic cards in the Rx 300 series include cards with \gls{HBM} and will likely be succeeded by \gls{HBM2}. The {\AMDCARD} is not target towards the high-end consumer so it would be interesting to see the performance with a high-end AMD GPU.
 
 \subsubsection{\INTELCPU}
 
 The used {\INTELCPU} have four real cores but can utilize up to eight threads in hardware. Currently the trend is to utilize more cores per die when designing new CPUs. The release of Intel Core i7-6950X and i7-6900K targeting the high-end consumer market will have 10 and 8 cores. The i7-6950X is expected some time in the second quarter in 2016.
 
-Powerful multi-core \gls{CPU}s will definitely challenge older GPUs, however it would make a interesting comparison with high-end consumer products by compare the newest multi-core CPUs and GPUs. This thesis was made with hardware from the same generation (released 2012-2013) and the development in parallel programming have progressed and matured since.
+Powerful multi-core \gls{CPU}s will definitely challenge GPUs in terms of potential raw computing capability. It would make for an interesting comparison by using high-end consumer products of the newest multi-core CPUs and GPUs. This work was made with processing units from the same generation (released in 2012-2013) and the development in parallel programming have progressed and matured since.

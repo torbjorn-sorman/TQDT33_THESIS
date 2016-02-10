@@ -118,7 +118,7 @@ The difference between the \gls{FFT} kernel for \gls{1D} and \gls{2D} is the ind
 
 \subsubsection{Transpose}
 
-The transpose kernel uses a different index mapping of the 2D-data and threads per blocks than the \gls{FFT} kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \code{blockIdx.x} and \code{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tile rows and columns are diveded over the \code{threadIdx.x} and \code{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for code example.
+The transpose kernel uses a different index mapping of the 2D-data and threads per blocks than the \gls{FFT} kernel. The data is tiled in a grid pattern where each tile represents one block, indexed by \code{blockIdx.x} and \code{blockIdx.y}. The tile size is a multiple of 32 for both dimensions and limited to the size of the shared memory buffer, see table \ref{tab:threads-per-block} for specific size per technology. To avoid the banking issues, the last dimension is increased with one but not used. However, resolving the banking issue have little effect on total running-time so when shared memory is limited to 32768, the extra column is not used. The tile rows and columns are divided over the \code{threadIdx.x} and \code{threadIdx.y} index respectively. See figure \ref{lst:cuda:device-transpose} for a code example of the transpose kernel.
 
 Shared memory example: The {\CU} shared memory can allocate 49152 bytes and a single data point require $\code{sizeof(float)} \cdot 2 = 8$ bytes. That leaves room for a tile size of $64 \cdot (64 + 1) \cdot 8 = 33280$ bytes. Where the integer $64$ is the highest power of two that fits.
 
@@ -142,7 +142,7 @@ The transpose kernel uses the shared memory and tiling of the image to avoid lar
 
 \subsection{Differences}%
 \subsubsection{Setup}%
-The majority of differences in the implementations were related to the setup phase. The {\CU} implementation is the most straight forward, using \code{cudaMalloc()} to allocate a buffer and \code{cudaMemcpy()} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer as the kernel source and is most practical if written in a separate file and read as a file stream to a \code{char} buffer. {\DX} shaders are most easily compiled from file. Figure \ref{fig:code:setup} gives a simplified overview of how to setup the kernels in the different technologies.%
+The majority of differences in the implementations were related to the setup phase. The {\CU} implementation is the most straight forward, using \code{cudaMalloc()} to allocate a buffer and \code{cudaMemcpy()} to populate it. With {\CU} you can write the device code in the same file as the host code and share functions. {\OCL} and {\GL} require a \code{char *} buffer as the kernel source and is most practical if written in a separate source file and read as a file stream to a \code{char} buffer. {\DX} shaders are most easily compiled from file. Figure \ref{fig:code:setup} gives a simplified overview of how to setup the kernels in the different technologies.%
 \begin{figure}%
 	\centering%
 	\def \setupWidth {\textwidth / 2 - 18pt}%
@@ -167,7 +167,7 @@ The majority of differences in the implementations were related to the setup pha
 
 \subsubsection{Kernel execution}
 
-Kernel execution in {\CU} is very much like any procedure execution in {\CPP} with the only difference that the kernel launch syntax $<<<$ and $>>>$ to set the block and thread dimension.
+Kernel launch in {\CU} is like a procedure call in {\CPP} with the difference that the kernel launch syntax require $<<<$ and $>>>$ to set the block and thread dimension. The special syntax is used in-between the name and the function operators \code{()}, see example: \code{kernel\_name$<<<$threadDim, blockDim$>>>$()}.
 
 The other technologies require some more setup; {\OCL} and {\GL} need one function call per parameter. {\OCL} maps with index, whereas {\GL} maps with a string to the parameter. In {\DX} a constant buffer is suitable for the parameters. The constant buffer is read-only and accessible globally over the kernel. {\DX} and {\GL} share a similar launch style where the compute shader is set as the current program to the device context, and a dispatch call is made with the group (block) configuration. See table \ref{tab:kernel-execution} for a list of how the kernels are launched.
 
@@ -214,7 +214,7 @@ The {\OMP} implementation benefits in performance from calculating the twiddle f
 
 \subsubsection{Twiddle factors}
 
-The twiddle factor are stored for each butterfly operation. To save time, only the real part are calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$ to store. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps: first calculate the real values, then copy from real to imaginary.
+The twiddle factor are stored for each butterfly operation. To save time, only the real part is calculated and the imaginary part is retrieved from the real parts due to the fact that $\sin(x) = \cos(\pi/2 + x)$ and $\sin(\pi/2 + x) = -\cos(x)$. See figure \ref{tab:omp:twiddle-overview} for an example. The calculations will be split among the threads by static scheduling in two steps: first calculate the real values, then copy from real to imaginary.
 
 \begin{table}
 	\centering
@@ -246,7 +246,7 @@ The implementation of \gls{2D} \gls{FFT} with {\OMP} runs the transformations ro
 
 \subsection{Differences with GPU}
 
-The OpenMP implementation differs from the \gls{GPU}-implementations in two ways: twiddle factors are pre-computed, and all stages uses the constant geometry algorithm. The number of parallel threads are on the {\INTELCPU} four, whereas the number is on the \gls{GPU} up to 192 (seven warps, one per \gls{SM}, with 32 threads each). This highly effects the performance when the size of the problem grows.
+The OpenMP implementation differs from the \gls{GPU}-implementations in two ways: twiddle factors are pre-computed, and all stages uses the constant geometry algorithm. The number of parallel threads are on the {\INTELCPU} four, whereas the number is on the \gls{GPU} up to 192 (seven warps, one per \gls{SM}, with 32 threads each).
 
 \section{Benchmark configurations}
 
@@ -260,7 +260,7 @@ All tests executed on the \gls{GPU} utilize some implementation of event time st
 
 \subsection{Reference libraries}
 
-One reference libraries per platform was included to compare how well the FFT implementation performed. The \emph{\FFTW} library for the \gls{CPU}, runs a planning scheme to create an execution plan for each environment and data input size. Similar strategy is used in the {\CUFFT} and {\CLFFT} libraries used for the {\NVCARD} and {\AMDCARD} respectively. Table \ref{tab:external-implementations} sums up information about the external libraries.
+One reference library per platform was included to compare how well the FFT implementation performed. The \emph{\FFTW} library for the \gls{CPU}, runs a planning scheme to create an execution plan for each environment and data input size. Similar strategy is used in the {\CUFFT} and {\CLFFT} libraries used for the {\NVCARD} and {\AMDCARD} respectively. Table \ref{tab:external-implementations} sums up information about the external libraries.
 
 \begin{table}
 	\centering

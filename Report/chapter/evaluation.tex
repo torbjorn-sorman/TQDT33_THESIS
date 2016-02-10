@@ -4,7 +4,7 @@
 
 \newcommand{\plotwidth}{{\textwidth} / 2 + 93pt}
 
-The results will be shown for the two graphics cards {\NVCARD} and \AMDCARD, where the technologies where applicable. The tested technologies are shown in table \ref{tab:platform-technologies}. The basics of each technology or library is explained in chapter \ref{cha:technologies}.
+The results will be shown for the two graphics cards {\NVCARD} and \AMDCARD, where the technologies were applicable. The tested technologies are shown in table \ref{tab:platform-technologies}. The basics of each technology or library is explained in chapter \ref{cha:technologies}.
 
 \begin{table}
 	\centering
@@ -28,7 +28,7 @@ The results will be shown for the two graphics cards {\NVCARD} and \AMDCARD, whe
 	\label{tab:platform-technologies}
 \end{table}
 
-The performance measure is time taken for a single forward transform using two buffers: one input and one output buffer. The implementation input size range is limited by the hardware (graphics card primary memory). However there are some unsolved issues near the upper limit on some technologies on the {\AMDCARD}.
+The performance measure is total execution time for a single forward transform using two buffers: one input and one output buffer. The implementation input size range is limited by the hardware (graphics card primary memory). However there are some unsolved issues near the upper limit on some technologies on the {\AMDCARD}.
 
 {\CU} is the primary technology and the {\NVCARD} graphics card is the primary platform. All implementations are ported from {\CU}. To compare the implementation, external libraries are included and can be found in italics in the table \ref{tab:platform-technologies}. Note that the {\CLFFT} library failed to be measured in the same manner as the other GPU implementations: the times are measured at host, and short sequences suffer from large overhead.
 
@@ -163,11 +163,11 @@ Comparison of the two cards are shown in figure \ref{fig:gpu-comparison-2d}.
 
 The foremost known technologies for GPGPU, based on other resarch-interests, are {\CU} and {\OCL}. The comparisons from earlier work have focused primarily on the two \cite{fang2011comprehensive, park2011design, su2012overview}. Bringing {\DX} (or Direct3D Compute Shader) and {\GL} Compute Shader to the table makes for an interesting mix since the result from the experiment is that both are strong alternatives in terms of raw performance.
 
-The most accurate and fair comparison with a GPU is when number of data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturating the GPUs streaming multiprocessors, there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The results from running the benchmark application on small sets of data are more or less discarded in the sense of benchmarking.
+The most accurate and fair comparison with a GPU is when number of data is scaled up, the least amount of elements should be in the order of $2^{12}$. By not fully saturating the GPUs streaming multiprocessors, there is no gain from moving from the CPU. One idea is to make sure that even if the sequences are short, they should be calculated in batches. The results from running the benchmark application on small sets of data are more or less discarded in the evaluation.
 
 \subsubsection{The CPU vs GPU}
 
-The implementation aimed at sequences of two-dimensional data was however successful at proving the strength of the GPU versus the CPU. The difference in execution time of the CPU and GPU is a factor of 40 times slower when running a 2D FFT over large data. Compared to the multi-core {\OMP} solution, the difference is still a factor of 15 times slower. Even the optimized {\FFTW} solution is 10 times slower. As a side note, the {\CUFFT} is 36 times faster than {\FFTW} on large enough sequences, they do use the same strategy (build an execution plan based on current hardware and data size) and likely use different hard-coded unrolled FFTs for smaller sizes.
+The implementation aimed at sequences of two-dimensional data was however successful at proving the strength of the GPU versus the CPU. The difference in execution time of the CPU and GPU is a factor of 40 times slower when running a 2D FFT over large data. Compared to the multi-core {\OMP} solution, the difference is still a factor of 15 times slower. Even the optimized {\FFTW} solution is a factor of 10 times slower. As a side note, the {\CUFFT} is 36 times faster than {\FFTW} on large enough sequences, they do use the same strategy (build an execution plan based on current hardware and data size) and likely use different hard-coded unrolled FFTs for smaller sizes.
 
 \subsubsection{The GPU}
 
@@ -175,7 +175,7 @@ The unsurprising result from the experiments is that {\CU} is the fastest techno
 
 {\GL} is performing on par with {\DX} on the {\AMDCARD}. The exception is that the long sequences fails with {\GL}-solution on the {\AMDCARD}, sequences otherwise working on the {\NVCARD}. The performance of the {\GL} tests are equal or better then {\OCL} in 1D, but outperforming {\OCL} in 2D.
 
-The biggest surprise is actually the {\OCL} implementation. Falling behind by a relatively big margin on both graphics cards. This large margin was not anticipated based on other papers in comparisons. Effort has been made to assure that the code does in fact run fairly compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about $1.6$ and $1.8$ times slower for 1D and 2D respectively on the {\NVCARD}. The figure \ref{fig:gpu-comparison-tech} and \ref{fig:gpu-comparison-tech-2d} shows that {\DX} is a factor of about $0.8$ of the execution-time of {\OCL}. {\GL} beats the {\OCL} solution and is on par with {\DX} in terms of execution time. However, fails to execute the longest sequences on the {\AMDCARD}. The one thing that goes in favor of {\OCL} is that the implementation did scale without problem: All sequences was computed as expected. The figures \ref{fig:gpu:implementation:r260x} and \ref{fig:gpu:implementation-2d:r260x} shows that something happened with the other implementations, even {\CLFFT} had problem with the last sequence. {\GL} and {\DX} could not execute all sequences.
+The biggest surprise is actually the {\OCL} implementation. Falling behind by a relatively big margin on both graphics cards. This large margin was not anticipated based on other papers in comparisons. Effort has been made to assure that the code does in fact run fairly compared to the other technologies. The ratio for {\OCL} versus {\CU} on long sequences are about $1.6$ and $1.8$ times slower for 1D and 2D respectively on the {\NVCARD}. The figure \ref{fig:gpu-comparison-tech} and \ref{fig:gpu-comparison-tech-2d} shows that {\DX} is a factor of about $0.8$ of the execution-time of {\OCL}. {\GL} beats the {\OCL} solution and is on par with {\DX} in terms of execution time. However, fails to execute the longest sequences on the {\AMDCARD}. The one thing that goes in favor of {\OCL} is that the implementation did scale without problem: All sequences were computed as expected. The figures \ref{fig:gpu:implementation:r260x} and \ref{fig:gpu:implementation-2d:r260x} shows that something happened with the other implementations, even {\CLFFT} had problem with the last sequence. {\GL} and {\DX} could not execute all sequences.
 
 \subsubsection{External libraries}
 
@@ -215,13 +215,13 @@ The biggest issue with {\GL} is the way the device is selected, it is handled by
 
 \subsection{Method}
 
-The first issue that have to be highlighted is the fact that \gls{1D} \gls{FFT}s were measured by single sequence execution instead of executing sequences in batch. The \gls{2D} \gls{FFT} implementation did inherently run several \gls{1D} sequences in batch and provided relevant results. One solution would have been to modify the \gls{2D} execution to accept a batch of sequences organized as \gls{2D} data, but this would have eliminated the second part of running column wise transformations.
+The first issue that have to be highlighted is the fact that \gls{1D} \gls{FFT}s were measured by single sequence execution instead of executing sequences in batch. The \gls{2D} \gls{FFT} implementation did inherently run several \gls{1D} sequences in batch and provided relevant results. One solution would have been to modify the \gls{2D} transformation to accept a batch of sequences organized as \gls{2D} data. The second part of performing column-wise transformations would then be skipped.
 
 The two graphics cards used are not each others counterparts, the releases differs 17 months ({\NVCARD} released May 10, 2012 compared to {\AMDCARD} in October 8, 2013). The recommended release price hints the targeted audience and capacity of the cards, the {\NVCARD} was priced at \$400 compared to the {\AMDCARD} at \$139. Looking at the {\OCL} performance on both cards as seen in figure \ref{fig:gpu-comparison-2d}, revealed that medium to short sequences are about the same, but longer sequences goes in favour of the {\NVCARD}.
 
 \subsubsection{Algorithm}
 
-The \gls{FFT} implementation was rather straight forward and without heavy optimization. The implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} indicates {\CUFFT} to perform three to four times faster then the benchmark application. Obviously there is a lot to improve. This is not a big issue when benchmarking, but it removes some of the credibility of the algorithm as something practically useful.
+The \gls{FFT} implementation was rather straight forward and without heavy optimization. The implementation lacked in performance compared to the NVIDIA developed {\CUFFT} library. Figure \ref{fig:gpu:implementation-2d:gtx} shows {\CUFFT} to perform three to four times faster then the benchmark application. Obviously there is a lot to improve. This is not a big issue when benchmarking, but it removes some of the credibility of the algorithm as something practically useful.
 
 By examining the code with NVIDIA Nsight\footnote{A tool for debugging and profiling CUDA applications.}, the bottleneck was the memory access pattern when outputting data after bit-reversing the index. There were no coalesced accesses and bad data locality. There are algorithms that solves this by combining the index transpose operations with the FFT computation as in \cite{govindaraju2008high}.
 

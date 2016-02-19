@@ -832,7 +832,7 @@
 \RequirePackage[latin1]{inputenc}
 \fi
 
-\RequirePackage[english, swedish]{babel}
+\RequirePackage[swedish, english]{babel}
 \AtBeginDocument{\relax\selectlanguage{english}}% Can't see why the \relax is needed here.  However, it really was needed at one point, so be very careful if you plan to remove it!  Hint: to detect problems after removing it, select a language that does not exist, turn off the hyperref option, and play around with other options as well, and make sure that the document always fails to compile due to the bad language name.
 
 \RequirePackage{rtthesis-papers}

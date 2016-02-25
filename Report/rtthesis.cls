@@ -150,6 +150,7 @@
   \def\thesistypephd{phd}
   \def\thesistypelic{lic}
   \def\thesistypemsc{msc}
+  \def\thesistypebsc{bsc}
   \ifx\thesis@type\@empty
     \ClassError{rtthesis}{%
       The thesis type must be set via setupThesis, by\MessageBreak
@@ -165,6 +166,8 @@
   \else\ifx\thesis@type\thesistypelic
   \RequirePackage{rtlic}%
   \else\ifx\thesis@type\thesistypemsc
+  \RequirePackage{rtmsc}%
+  \else\ifx\thesis@type\thesistypebsc
   \RequirePackage{rtmsc}%
   \else
     \ClassError{rtthesis}{%
